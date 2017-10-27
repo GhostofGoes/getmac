@@ -21,19 +21,44 @@ Sources:
     Source: https://github.com/python/cpython/blob/master/Lib/uuid.py
 """
 
+# Feature TODO
+#   interface
+#   ip
+#   ip6
+#   make_arp_request
+#   docstrings
+#   comments
+#   slim down
+#   speed up
+#   remove print statements OR log errors to stderr OR use logging
+
+
+# Platform TODO
+#   Linux
+#   Windows
+#   Darwin (Mac OS)
+#   OpenBSD
+#   FreeBSD
+#   Android
+
+# Project TODO
+#   Setup Travis (notably with Darwin instances as well)
+#   Setup PyPI
+#   Badges in readme :P
+#   Documentation
+#   Examples of usage in README
+#   Sick ACII Cinema capture of usage? (for lulz)
+#   Emoji
+#   memes
+#   ???
+#   profit
+
 
 from __future__ import print_function
 import sys
 import os
 import re
 import struct
-
-# TODO list
-#   ip addr vs ifconfig?
-#   IPv6?
-#   Android
-#   OpenBSD + FreeBSD
-#   Solaris?
 
 
 def get_mac_address(interface=None, ip=None, ip6=None, make_arp_request=False):
