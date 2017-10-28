@@ -7,12 +7,15 @@ Cross-platform Pure-Python 2/3 cross-compatible tool to get a damn MAC address.
 
 It enables you to get the MAC addresses of:
     A local network interface
-    A remote host
+    A remote host (using IPv4, IPv6, or DNS hostname)
     Your neighbor
     Your dog
     Your mother
 
 It provides one function: get_mac_address()
+
+
+For the time being, it assumes you are using Ethernet.
 
 
 Sources:
@@ -25,12 +28,15 @@ Sources:
 #   interface
 #   ip
 #   ip6
+#   hostname -> IPv4
+#   hostname -> IPv6
 #   make_arp_request
 #   docstrings
 #   comments
 #   slim down
 #   speed up
 #   remove print statements OR log errors to stderr OR use logging
+#   Test against non-ethernet interfaces (WiFi, LTE, etc.)
 
 
 # Platform TODO
@@ -64,17 +70,25 @@ import socket
 import re
 
 
-
-def get_mac_address(interface=None, ip=None, ip6=None, make_arp_request=False):
+def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, make_arp_request=False):
     # TODO: docstring
+
+    # Get the MAC address of a remote host by hostname
+    if hostname is not None:
+        print("Hostname: %s" % hostname)
+        ip = socket.gethostbyname(hostname)
+        # TODO: use getaddrinfo to support ipv6
 
     # Get MAC of a IPv4 remote host
     if ip is not None:
-        pass
+        print("IPv4 address: %s" % ip)
 
     # Get MAC of a IPv6 remote host
     elif ip6 is not None:
-        pass
+        if not socket.has_ipv6:
+            raise Exception("Cannot get the MAC address of a IPv6 host: "
+                            "IPv6 is not supported on this system")
+        print("IPv6 address: %s" % ip6)
 
     # Get MAC of a local interface
     else:
@@ -84,7 +98,6 @@ def get_mac_address(interface=None, ip=None, ip6=None, make_arp_request=False):
             iface = 'default'  # TODO
 
         # TODO: use IP of interface for functions that require an IP
-
 
         if sys.platform == 'win32':
             getters = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
@@ -96,7 +109,7 @@ def get_mac_address(interface=None, ip=None, ip6=None, make_arp_request=False):
             try:
                 _node = getter()
             except Exception as ex:
-                print("Exception: %s" % ex.message)
+                print("Exception: %s" % str(ex))
                 continue
             if _node is not None:
                 return _node
@@ -155,7 +168,6 @@ def _get_remote_mac(host):
 
 def _windll_getnode():
     """Get the hardware address on Windows using ctypes."""
-    import ctypes
     # _load_system_functions()
     # _buffer = ctypes.create_string_buffer(16)
     # if _UuidCreate(_buffer) == 0:
@@ -164,25 +176,34 @@ def _windll_getnode():
 
 
 # TODO: extend to specific interface
-def _ipconfig_getnode():
+def _ipconfig_getnode(interface):
     """Get the hardware address on Windows by running ipconfig.exe."""
     dirs = ['', r'c:\windows\system32', r'c:\winnt\system32']
     try:
+        # TODO: what the heck is this doing
         buffer = ctypes.create_string_buffer(300)
         ctypes.windll.kernel32.GetSystemDirectoryA(buffer, 300)
         dirs.insert(0, buffer.value.decode('mbcs'))
     except:
         pass
-    for dir in dirs:
+
+    # TODO: try running without absolute path to the executable?
+    # Try running ipconfig various ways
+    for likely_spot in dirs:
         try:
-            pipe = os.popen(os.path.join(dir, 'ipconfig') + ' /all')
+            pipe = os.popen(os.path.join(likely_spot, 'ipconfig') + ' /all')
         except OSError:
             continue
         with pipe:
-            for line in pipe:
-                value = line.split(':')[-1].strip().lower()
-                if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
-                    return int(value.replace('-', ''), 16)
+            output = str(pipe.stdout)
+            # Ethernet 3[\s\S]*Physical Address.*([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})\s
+            match = re.search(re.escape(interface) +
+                              r'[\s\S]*Physical Address.*([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})\s',
+                              output)
+            # for line in pipe:
+            #     value = line.split(':')[-1].strip().lower()
+            #     if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
+            #         return value.replace('-', '')
     print("failed ipconfig")
 
 
@@ -216,10 +237,10 @@ def _netbios_getnode():
         if win32wnet.Netbios(ncb) != 0:
             continue
         status._unpack()
-        bytes = status.adapter_address[:6]
-        if len(bytes) != 6:
+        raw_bytes = status.adapter_address[:6]
+        if len(raw_bytes) != 6:
             continue
-        return int.from_bytes(bytes, 'big')
+        return int.from_bytes(raw_bytes, 'big')
     print("Failed netbios")
 
 
@@ -232,7 +253,7 @@ def _netbios_getnode():
 # Source: https://stackoverflow.com/a/4789267/2214380
 def _linux_iface_addr(ifname):
     import fcntl
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # TODO: ip6?
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', ifname[:15]))
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
 
