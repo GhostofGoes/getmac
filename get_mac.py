@@ -34,7 +34,7 @@ Sources:
 #   docstrings
 #   comments
 #   slim down
-#   speed up
+#   speed up (spend a lot of time on performance tuning with the regexes)
 #   remove print statements OR log errors to stderr OR use logging
 #   Test against non-ethernet interfaces (WiFi, LTE, etc.)
 
@@ -175,7 +175,6 @@ def _windll_getnode():
     #     # return UUID(bytes=bytes_(_buffer.raw)).node
 
 
-# TODO: extend to specific interface
 def _ipconfig_getnode(interface):
     """Get the hardware address on Windows by running ipconfig.exe."""
     dirs = ['', r'c:\windows\system32', r'c:\winnt\system32']
@@ -196,10 +195,16 @@ def _ipconfig_getnode(interface):
             continue
         with pipe:
             output = str(pipe.stdout)
-            # Ethernet 3[\s\S]*Physical Address.*([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})\s
-            match = re.search(re.escape(interface) +
-                              r'[\s\S]*Physical Address.*([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})\s',
-                              output)
+            exp = re.escape(interface) + \
+                r'(?:\n?[^\n]*){1,8}Physical Address.+([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
+            match = re.search(exp, output)
+            if match:
+                mac = str(match.groups()[0])
+                print("Found interface %s in ipconfig. mac: %s" % (interface, mac))
+                return mac
+            else:
+                print("Did not find interface %s in ifconfig." % interface)
+                return None
             # for line in pipe:
             #     value = line.split(':')[-1].strip().lower()
             #     if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
