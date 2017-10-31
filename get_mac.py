@@ -56,7 +56,7 @@ Sources:
 #   Badges in readme :P
 #   Documentation
 #   Examples of usage in README
-#   Sick ACII Cinema capture of usage? (for lulz)
+#   Sick ASCII Cinema capture of usage? (for lulz)
 #   Emoji
 #   memes
 #   ???
@@ -72,7 +72,7 @@ import socket
 import re
 import shlex
 
-from subprocess import Popen, PIPE, check_output
+from subprocess import check_output
 try:
     from subprocess import DEVNULL  # py3k
 except ImportError:
@@ -264,10 +264,10 @@ def _netbios_getnode():
 
 # Get MAC of a specific local interface on Linux
 # Source: https://stackoverflow.com/a/4789267/2214380
-def _linux_iface_addr(ifname):
+def _linux_iface_addr(interface):
     import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # TODO: ip6?
-    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', ifname[:15]))
+    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', interface[:15]))
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
 
 
@@ -285,17 +285,13 @@ def _ifconfig_getnode(interface):
     """Get the hardware address on Unix by running ifconfig."""
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     for args in ('', '-a', '-v'):
-        # mac = _find_mac('ifconfig', args, [b'hwaddr', b'ether'], lambda i: i+1)
-        proc = _popen('ifconfig', args)
-        output = str(proc)
         match = re.search(
-            re.escape(interface) + r'.*(HWaddr|Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})', output)
+            re.escape(interface) + r'.*(HWaddr|Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            _popen('ifconfig', args))
         if match:
             mac = str(match.groups()[1])
-            print("Found interface %s in ifconfig. Result: %s" % (interface, mac))
             return mac
         else:
-            print("Did not find interface %s in ifconfig." % interface)
             continue
     return None
 
@@ -303,25 +299,19 @@ def _ifconfig_getnode(interface):
 def _ip_getnode(interface):
     """Get the hardware address on Unix by running "ip link list"."""
     # This works on Linux with iproute2.
-    # mac = _find_mac('ip', 'link list', [b'link/ether'], lambda i: i+1)
-    proc = _popen('ip', 'link list')
-    output = str(proc)
     match = re.search(
-        re.escape(interface) + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})', output)
+        re.escape(interface) + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+        _popen('ip', 'link list'))
     if match:
         mac = str(match.groups()[0])
-        print("Found interface %s in ip link list. Result: %s" % (interface, mac))
         return mac
-    else:
-        print("Did not find interface %s in ip link list." % interface)
-        return None
+    return None
 
 
 def _arp_getnode(ip):
     """Get the hardware address on Unix by running arp."""
     # TODO: Try getting the MAC addr from arp based on our IP address (Solaris).
     mac = _find_mac('arp', '-an', [ip], lambda i: -1)
-    print("arp mac: %s", mac)
     return mac
 
 
@@ -335,37 +325,13 @@ def _lanscan_getnode():
 def _netstat_getnode(interface):
     """Get the hardware address on Unix by running netstat."""
     # This might work on AIX, Tru64 UNIX.
-    try:
-        proc = _popen('netstat', '-iae')
-        output = str(proc)
-        match = re.search(
-            re.escape(interface) + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})', output)
-        if match:
-            mac = str(match.groups()[1])
-            print("Found interface %s in netstat. Result: %s" % (interface, mac))
-            return mac
-        else:
-            print("Did not find interface %s in netstat." % interface)
-            return None
-        # TODO: AIX, Tru64 UNIX?
-        # with proc:
-        #     words = proc.stdout.readline().rstrip().split()
-        #     try:
-        #         i = words.index(b'Address')
-        #     except ValueError:
-        #         return
-        #     for line in proc.stdout:
-        #         try:
-        #             words = line.rstrip().split()
-        #             word = words[i]
-        #             if len(word) == 17 and word.count(b':') == 5:
-        #                 mac = int(word.replace(b':', b''), 16)
-        #                 if mac:
-        #                     return mac
-        #         except (ValueError, IndexError):
-        #             pass
-    except OSError:
-        pass
+    match = re.search(
+        re.escape(interface) + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+        _popen('netstat', '-iae'))
+    if match:
+        mac = str(match.groups()[1])
+        return mac
+    return None
 
 
 # ***********************************
