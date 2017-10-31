@@ -21,7 +21,10 @@ For the time being, it assumes you are using Ethernet.
 Sources:
     Majority of the methods used to attempt, the core logic (notably "getters"),
     and a few others things are attributed to the CPython project and it's UUID code.
-    Source: https://github.com/python/cpython/blob/master/Lib/uuid.py
+    Source 1:
+        https://github.com/python/cpython/blob/master/Lib/uuid.py
+    Source 2 (Python 2.7 implementation):
+        https://github.com/python/cpython/blob/2.7/Lib/uuid.py
 """
 
 # Feature TODO
@@ -64,10 +67,16 @@ from __future__ import print_function
 import ctypes
 import os
 import sys
-import subprocess
 import struct
 import socket
 import re
+import shlex
+
+from subprocess import Popen, PIPE, check_output
+try:
+    from subprocess import DEVNULL  # py3k
+except ImportError:
+    DEVNULL = open(os.devnull, 'wb')
 
 
 def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, make_arp_request=False):
@@ -100,16 +109,20 @@ def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, make_arp_r
         # TODO: use IP of interface for functions that require an IP
 
         if sys.platform == 'win32':
-            getters = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+            # _windll_getnode,
+            iface_getters = [_netbios_getnode, _ipconfig_getnode]
         else:
-            getters = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
-                       _arp_getnode, _lanscan_getnode, _netstat_getnode]
+            # _unix_getnode, _arp_getnode, lanscan_getnode
+            iface_getters = [_ifconfig_getnode, _ip_getnode,
+                             _netstat_getnode, _linux_iface_addr]
 
-        for getter in getters:
+        import traceback
+        for getter in iface_getters:
             try:
-                _node = getter()
+                _node = getter(iface)
             except Exception as ex:
                 print("Exception: %s" % str(ex))
+                traceback.print_exc()
                 continue
             if _node is not None:
                 return _node
@@ -120,11 +133,8 @@ def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, make_arp_r
 # ***************************
 
 
-# ** Windows: Hosts **
-
-
 # Source: https://code.activestate.com/recipes/347812-get-the-mac-address-of-a-remote-computer/
-def _get_remote_mac(host):
+def _win_get_remote_mac(host):
     """ Returns the MAC address of a network host, requires >= WIN2K. """
 
     # Check for api availability
@@ -163,9 +173,6 @@ def _get_remote_mac(host):
     return macaddr.upper()
 
 
-# ** Windows: Interfaces **
-
-
 def _windll_getnode():
     """Get the hardware address on Windows using ctypes."""
     # _load_system_functions()
@@ -193,18 +200,19 @@ def _ipconfig_getnode(interface):
             pipe = os.popen(os.path.join(likely_spot, 'ipconfig') + ' /all')
         except OSError:
             continue
-        with pipe:
-            output = str(pipe.stdout)
-            exp = re.escape(interface) + \
-                r'(?:\n?[^\n]*){1,8}Physical Address.+([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
-            match = re.search(exp, output)
-            if match:
-                mac = str(match.groups()[0])
-                print("Found interface %s in ipconfig. mac: %s" % (interface, mac))
-                return mac
-            else:
-                print("Did not find interface %s in ifconfig." % interface)
-                return None
+        # output = str(pipe.stdout)
+        output = _popen(os.path.join(likely_spot, 'ipconfig'), '/all')
+        print(output)
+        exp = re.escape(interface) + \
+            r'(?:\n?[^\n]*){1,8}Physical Address.+([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
+        match = re.search(exp, output)
+        if match:
+            mac = str(match.groups()[0])
+            print("Found interface %s in ipconfig. mac: %s" % (interface, mac))
+            return mac
+        else:
+            print("Did not find interface %s in ifconfig." % interface)
+            return None
             # for line in pipe:
             #     value = line.split(':')[-1].strip().lower()
             #     if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
@@ -278,20 +286,17 @@ def _ifconfig_getnode(interface):
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     for args in ('', '-a', '-v'):
         # mac = _find_mac('ifconfig', args, [b'hwaddr', b'ether'], lambda i: i+1)
-        proc = _popen('ifconfig', [args])
-        if not proc:
-            return
-        with proc:
-            output = str(proc.stdout)
-            match = re.search(
-                re.escape(interface) + r'.*(HWaddr|Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})', output)
-            if match:
-                mac = str(match.groups()[1])
-                print("Found interface %s in ifconfig. Result: %s" % (interface, mac))
-                return mac
-            else:
-                print("Did not find interface %s in ifconfig." % interface)
-                continue
+        proc = _popen('ifconfig', args)
+        output = str(proc)
+        match = re.search(
+            re.escape(interface) + r'.*(HWaddr|Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})', output)
+        if match:
+            mac = str(match.groups()[1])
+            print("Found interface %s in ifconfig. Result: %s" % (interface, mac))
+            return mac
+        else:
+            print("Did not find interface %s in ifconfig." % interface)
+            continue
     return None
 
 
@@ -299,28 +304,25 @@ def _ip_getnode(interface):
     """Get the hardware address on Unix by running "ip link list"."""
     # This works on Linux with iproute2.
     # mac = _find_mac('ip', 'link list', [b'link/ether'], lambda i: i+1)
-    proc = _popen('ip', ['link', 'list'])
-    if not proc:
-        return
-    with proc:
-        output = str(proc.stdout)
-        match = re.search(
-            re.escape(interface) + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})', output)
-        if match:
-            mac = str(match.groups()[0])
-            print("Found interface %s in ip link list. Result: %s" % (interface, mac))
-            return mac
-        else:
-            print("Did not find interface %s in ip link list." % interface)
-            return None
+    proc = _popen('ip', 'link list')
+    output = str(proc)
+    match = re.search(
+        re.escape(interface) + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})', output)
+    if match:
+        mac = str(match.groups()[0])
+        print("Found interface %s in ip link list. Result: %s" % (interface, mac))
+        return mac
+    else:
+        print("Did not find interface %s in ip link list." % interface)
+        return None
 
 
-# TODO: extend to specific interface
 def _arp_getnode(ip):
     """Get the hardware address on Unix by running arp."""
-    # Try getting the MAC addr from arp based on our IP address (Solaris).
-    # TODO: os.fsencode? wat?
-    return _find_mac('arp', '-an', [ip], lambda i: -1)  # os.fsencode(ip)
+    # TODO: Try getting the MAC addr from arp based on our IP address (Solaris).
+    mac = _find_mac('arp', '-an', [ip], lambda i: -1)
+    print("arp mac: %s", mac)
+    return mac
 
 
 # TODO: extend to specific interface
@@ -330,30 +332,38 @@ def _lanscan_getnode():
     return _find_mac('lanscan', '-ai', [b'lan0'], lambda i: 0)
 
 
-# TODO: extend to specific interface
-def _netstat_getnode():
+def _netstat_getnode(interface):
     """Get the hardware address on Unix by running netstat."""
     # This might work on AIX, Tru64 UNIX.
     try:
-        proc = _popen('netstat', '-ia')
-        if not proc:
-            return
-        with proc:
-            words = proc.stdout.readline().rstrip().split()
-            try:
-                i = words.index(b'Address')
-            except ValueError:
-                return
-            for line in proc.stdout:
-                try:
-                    words = line.rstrip().split()
-                    word = words[i]
-                    if len(word) == 17 and word.count(b':') == 5:
-                        mac = int(word.replace(b':', b''), 16)
-                        if mac:
-                            return mac
-                except (ValueError, IndexError):
-                    pass
+        proc = _popen('netstat', '-iae')
+        output = str(proc)
+        match = re.search(
+            re.escape(interface) + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})', output)
+        if match:
+            mac = str(match.groups()[1])
+            print("Found interface %s in netstat. Result: %s" % (interface, mac))
+            return mac
+        else:
+            print("Did not find interface %s in netstat." % interface)
+            return None
+        # TODO: AIX, Tru64 UNIX?
+        # with proc:
+        #     words = proc.stdout.readline().rstrip().split()
+        #     try:
+        #         i = words.index(b'Address')
+        #     except ValueError:
+        #         return
+        #     for line in proc.stdout:
+        #         try:
+        #             words = line.rstrip().split()
+        #             word = words[i]
+        #             if len(word) == 17 and word.count(b':') == 5:
+        #                 mac = int(word.replace(b':', b''), 16)
+        #                 if mac:
+        #                     return mac
+        #         except (ValueError, IndexError):
+        #             pass
     except OSError:
         pass
 
@@ -363,47 +373,70 @@ def _netstat_getnode():
 # ***********************************
 
 
-def _popen(command, *args):
-    import shutil
-    executable = shutil.which(command)
-    if executable is None:
-        path = os.pathsep.join(('/sbin', '/usr/sbin'))
-        executable = shutil.which(command, path=path)
-        if executable is None:
-            return None
+def _popen(command, args):
+    """
+
+    :param str command:
+    :param str args:
+    :return:
+    """
+    path = os.environ.get("PATH", os.defpath).split(os.pathsep)
+    path.extend(('/sbin', '/usr/sbin'))
+    for directory in path:
+        executable = os.path.join(directory, command)
+        if (os.path.exists(executable) and
+                os.access(executable, os.F_OK | os.X_OK) and
+                not os.path.isdir(executable)):
+            break
+    else:
+        return None
     # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
     # on stderr (Note: we don't have an example where the words we search
     # for are actually localized, but in theory some system could do so.)
     env = dict(os.environ)
     env['LC_ALL'] = 'C'
-    proc = subprocess.Popen((executable,) + args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.DEVNULL,
-                            env=env)
+    cmd = [executable] + shlex.split(args)
+    proc = check_output(cmd, stderr=DEVNULL)
+    # proc = Popen(cmd, stdout=PIPE, stderr=DEVNULL, env=env)
     return proc
 
 
 def _find_mac(command, args, hw_identifiers, get_index):
     try:
-        proc = _popen(command, *args.split())
-        if not proc:
-            return
-        with proc:
-            for line in proc.stdout:
-                words = line.lower().rstrip().split()
-                for i in range(len(words)):
-                    if words[i] in hw_identifiers:
-                        try:
-                            word = words[get_index(i)]
-                            mac = int(word.replace(b':', b''), 16)
-                            if mac:
-                                return mac
-                        except (ValueError, IndexError):
-                            # Virtual interfaces, such as those provided by
-                            # VPNs, do not have a colon-delimited MAC address
-                            # as expected, but a 16-byte HWAddr separated by
-                            # dashes. These should be ignored in favor of a
-                            # real MAC address
-                            print("found a virtual interface address")
+        proc = _popen(command, args)
+        for line in proc:
+            words = line.lower().rstrip().split()
+            for i in range(len(words)):
+                if words[i] in hw_identifiers:
+                    try:
+                        word = words[get_index(i)]
+                        mac = int(word.replace(b':', b''), 16)
+                        if mac:
+                            return mac
+                    except (ValueError, IndexError):
+                        # Virtual interfaces, such as those provided by
+                        # VPNs, do not have a colon-delimited MAC address
+                        # as expected, but a 16-byte HWAddr separated by
+                        # dashes. These should be ignored in favor of a
+                        # real MAC address
+                        print("found a virtual interface address")
     except OSError:
         print("OSError in find_mac")
+
+
+if __name__ == "__main__":
+    # print(get_mac_address(interface="eth1"))
+
+    if sys.platform == 'win32':
+        # _windll_getnode, _netbios_getnode
+        iface_getters = [_ipconfig_getnode]
+        iface = "Ethernet 3"
+    else:
+        # _unix_getnode, _arp_getnode, lanscan_getnode
+        iface_getters = [_ifconfig_getnode, _ip_getnode,
+                         _netstat_getnode, _linux_iface_addr]
+        iface = "eth1"
+
+    for getter in iface_getters:
+        print("Getter: %s" % getter.__name__)
+        print("MAC: %s\n" % getter(iface))
