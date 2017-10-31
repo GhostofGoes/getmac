@@ -184,40 +184,22 @@ def _windll_getnode():
 
 def _ipconfig_getnode(interface):
     """Get the hardware address on Windows by running ipconfig.exe."""
-    dirs = ['', r'c:\windows\system32', r'c:\winnt\system32']
-    try:
-        # TODO: what the heck is this doing
-        buffer = ctypes.create_string_buffer(300)
-        ctypes.windll.kernel32.GetSystemDirectoryA(buffer, 300)
-        dirs.insert(0, buffer.value.decode('mbcs'))
-    except:
-        pass
-
-    # TODO: try running without absolute path to the executable?
-    # Try running ipconfig various ways
-    for likely_spot in dirs:
-        try:
-            pipe = os.popen(os.path.join(likely_spot, 'ipconfig') + ' /all')
-        except OSError:
-            continue
-        # output = str(pipe.stdout)
-        output = _popen(os.path.join(likely_spot, 'ipconfig'), '/all')
-        print(output)
-        exp = re.escape(interface) + \
-            r'(?:\n?[^\n]*){1,8}Physical Address.+([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
-        match = re.search(exp, output)
-        if match:
-            mac = str(match.groups()[0])
-            print("Found interface %s in ipconfig. mac: %s" % (interface, mac))
-            return mac
-        else:
-            print("Did not find interface %s in ifconfig." % interface)
-            return None
-            # for line in pipe:
-            #     value = line.split(':')[-1].strip().lower()
-            #     if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
-            #         return value.replace('-', '')
-    print("failed ipconfig")
+    output = _popen('ipconfig', '/all')
+    print(output)
+    exp = re.escape(interface) + \
+        r'(?:\n?[^\n]*){1,8}Physical Address.+([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
+    match = re.search(exp, output)
+    if match:
+        mac = str(match.groups()[0])
+        print("Found interface %s in ipconfig. mac: %s" % (interface, mac))
+        return mac
+    else:
+        print("Did not find interface %s in ifconfig." % interface)
+        return None
+        # for line in pipe:
+        #     value = line.split(':')[-1].strip().lower()
+        #     if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
+        #         return value.replace('-', '')
 
 
 # TODO: extend to specific interface
@@ -347,15 +329,18 @@ def _popen(command, args):
     :return:
     """
     path = os.environ.get("PATH", os.defpath).split(os.pathsep)
-    path.extend(('/sbin', '/usr/sbin'))
+    if sys.platform != 'win32':
+        path.extend(('/sbin', '/usr/sbin'))
     for directory in path:
+        print("Trying: %s" % str(directory))
         executable = os.path.join(directory, command)
         if (os.path.exists(executable) and
                 os.access(executable, os.F_OK | os.X_OK) and
                 not os.path.isdir(executable)):
             break
     else:
-        return None
+        print("failed!")
+        executable = command
     # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
     # on stderr (Note: we don't have an example where the words we search
     # for are actually localized, but in theory some system could do so.)
