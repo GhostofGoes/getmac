@@ -14,9 +14,7 @@ It enables you to get the MAC addresses of:
 
 It provides one function: get_mac_address()
 
-
 For the time being, it assumes you are using Ethernet.
-
 
 Sources:
     Majority of the methods used to attempt, the core logic (notably "getters"),
@@ -40,6 +38,7 @@ Sources:
 #   speed up (spend a lot of time on performance tuning with the regexes)
 #   remove print statements OR log errors to stderr OR use logging
 #   Test against non-ethernet interfaces (WiFi, LTE, etc.)
+#   Threading (spin out all attempts, plus make itself thread-friendly)
 
 
 # Platform TODO
@@ -74,13 +73,35 @@ import shlex
 
 from subprocess import check_output
 try:
-    from subprocess import DEVNULL  # py3k
+    from subprocess import DEVNULL  # Python 3
 except ImportError:
-    DEVNULL = open(os.devnull, 'wb')
+    DEVNULL = open(os.devnull, 'wb')  # Python 2
 
 
-def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, make_arp_request=False):
-    # TODO: docstring
+def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, arp_request=False):
+    """
+    Gets a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
+
+    You must only use one of the first four arguments. If none of the arguments are selected,
+    the default network interface for the system will be assumed.
+
+    For remote hosts, it is assumed you have already communicated with the host
+    (thus populating the ARP table), and that they reside on your local network.
+
+    Exceptions will be handled silently and returned as a None.
+    If you run into problems, create an issue on GitHub, or set DEBUG to true if you're brave.
+
+    :param str interface: Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
+    :param str ip: Canonical dotted decimal IPv4 address of a remote host (e.g 192.168.0.1)
+    :param str ip6: Canononical shortened IPv6 address of a remote host (e.g ff02::1:ffe7:7f19)
+    :param str hostname: DNS hostname of a remote host (e.g "router1.mycorp.com")
+    :param bool arp_request: Whether to make a ARP/NDP request to the remote host
+    to populate the ARP/NDP tables for IPv4/IPv6, respectfully
+    :return: Lowercase colon-seperated MAC address,
+    or None if one could not be found or there was an error
+    :rtype: str or None
+    """
+    mac = None
 
     # Get the MAC address of a remote host by hostname
     if hostname is not None:
@@ -88,11 +109,12 @@ def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, make_arp_r
         ip = socket.gethostbyname(hostname)
         # TODO: use getaddrinfo to support ipv6
 
-    # Get MAC of a IPv4 remote host
+    # Get MAC of a IPv4 remote host (or a resolved hostname)
     if ip is not None:
         print("IPv4 address: %s" % ip)
 
     # Get MAC of a IPv6 remote host
+    # TODO: "netsh int ipv6 show neigh" (windows cmd)
     elif ip6 is not None:
         if not socket.has_ipv6:
             raise Exception("Cannot get the MAC address of a IPv6 host: "
@@ -110,11 +132,11 @@ def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, make_arp_r
 
         if sys.platform == 'win32':
             # _windll_getnode,
-            iface_getters = [_netbios_getnode, _ipconfig_getnode]
+            iface_getters = [_windows_netbios, _windows_ipconfig_by_interface]
         else:
-            # _unix_getnode, _arp_getnode, lanscan_getnode
-            iface_getters = [_ifconfig_getnode, _ip_getnode,
-                             _netstat_getnode, _linux_iface_addr]
+            # _unix_getnode, _linux_arp_by_ip, lanscan_getnode
+            iface_getters = [_linux_ifconfig_by_interface, _linux_ip_by_interface,
+                             _linux_netstat_by_interface, _linux_fcntl_by_interface]
 
         import traceback
         for getter in iface_getters:
@@ -125,7 +147,13 @@ def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, make_arp_r
                 traceback.print_exc()
                 continue
             if _node is not None:
-                return _node
+                mac = _node
+                break
+
+    if mac is not None:
+        return str(mac).lower()
+    else:
+        return mac
 
 
 # ***************************
@@ -169,12 +197,12 @@ def _win_get_remote_mac(host):
         else:
             replacestr = 'x'
         macaddr = ''.join([macaddr, hex(intval).replace(replacestr, '')])
-
-    return macaddr.upper()
+    return macaddr
 
 
 def _windll_getnode():
     """Get the hardware address on Windows using ctypes."""
+    pass
     # _load_system_functions()
     # _buffer = ctypes.create_string_buffer(16)
     # if _UuidCreate(_buffer) == 0:
@@ -182,28 +210,27 @@ def _windll_getnode():
     #     # return UUID(bytes=bytes_(_buffer.raw)).node
 
 
-def _ipconfig_getnode(interface):
+def _windows_ipconfig_by_interface(interface):
     """Get the hardware address on Windows by running ipconfig.exe."""
     output = _popen('ipconfig', '/all')
-    print(output)
     exp = re.escape(interface) + \
         r'(?:\n?[^\n]*){1,8}Physical Address.+([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
     match = re.search(exp, output)
     if match:
-        mac = str(match.groups()[0])
-        print("Found interface %s in ipconfig. mac: %s" % (interface, mac))
+        mac = match.groups()[0]
+        # print("Found interface %s in ipconfig. mac: %s" % (interface, mac))
         return mac
+        # print("Did not find interface %s in ifconfig." % interface)
     else:
-        print("Did not find interface %s in ifconfig." % interface)
         return None
-        # for line in pipe:
-        #     value = line.split(':')[-1].strip().lower()
-        #     if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
-        #         return value.replace('-', '')
+    # for line in pipe:
+    #     value = line.split(':')[-1].strip().lower()
+    #     if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
+    #         return value.replace('-', '')
 
 
 # TODO: extend to specific interface
-def _netbios_getnode():
+def _windows_netbios():
     """Get the hardware address on Windows using NetBIOS calls.
     See http://support.microsoft.com/kb/118623 for details.
 
@@ -246,7 +273,7 @@ def _netbios_getnode():
 
 # Get MAC of a specific local interface on Linux
 # Source: https://stackoverflow.com/a/4789267/2214380
-def _linux_iface_addr(interface):
+def _linux_fcntl_by_interface(interface):
     import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # TODO: ip6?
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', interface[:15]))
@@ -263,7 +290,7 @@ def _unix_getnode():
     # return UUID(bytes=uuid_time).node
 
 
-def _ifconfig_getnode(interface):
+def _linux_ifconfig_by_interface(interface):
     """Get the hardware address on Unix by running ifconfig."""
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     for args in ('', '-a', '-v'):
@@ -271,49 +298,59 @@ def _ifconfig_getnode(interface):
             re.escape(interface) + r'.*(HWaddr|Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
             _popen('ifconfig', args))
         if match:
-            mac = str(match.groups()[1])
+            mac = match.groups()[1]  # Note the 1
             return mac
         else:
             continue
     return None
 
 
-def _ip_getnode(interface):
+def _linux_ip_by_interface(interface):
     """Get the hardware address on Unix by running "ip link list"."""
     # This works on Linux with iproute2.
     match = re.search(
         re.escape(interface) + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
         _popen('ip', 'link list'))
     if match:
-        mac = str(match.groups()[0])
+        mac = match.groups()[0]
         return mac
-    return None
+    else:
+        return None
 
 
-def _arp_getnode(ip):
+# TODO: helper function for "match search if match etc" redundancy
+
+
+def _linux_arp_by_ip(ip):
     """Get the hardware address on Unix by running arp."""
-    # TODO: Try getting the MAC addr from arp based on our IP address (Solaris).
-    mac = _find_mac('arp', '-an', [ip], lambda i: -1)
-    return mac
+    match = re.search(
+        r'\(' + re.escape(ip) + r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+        _popen('arp', '-an'))
+    if match:
+        mac = match.groups()[0]
+        return mac
+    else:
+        return None
 
 
 # TODO: extend to specific interface
-def _lanscan_getnode():
+def _linux_lanscan():
     """Get the hardware address on Unix by running lanscan."""
     # This might work on HP-UX.
     return _find_mac('lanscan', '-ai', [b'lan0'], lambda i: 0)
 
 
-def _netstat_getnode(interface):
+def _linux_netstat_by_interface(interface):
     """Get the hardware address on Unix by running netstat."""
     # This might work on AIX, Tru64 UNIX.
     match = re.search(
         re.escape(interface) + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
         _popen('netstat', '-iae'))
     if match:
-        mac = str(match.groups()[1])
+        mac = match.groups()[1]
         return mac
-    return None
+    else:
+        return None
 
 
 # ***********************************
@@ -356,12 +393,12 @@ def _find_mac(command, args, hw_identifiers, get_index):
     try:
         proc = _popen(command, args)
         for line in proc:
-            words = line.lower().rstrip().split()
+            words = str(line).lower().rstrip().split()
             for i in range(len(words)):
                 if words[i] in hw_identifiers:
                     try:
                         word = words[get_index(i)]
-                        mac = int(word.replace(b':', b''), 16)
+                        mac = int(word.replace(':', ''), 16)  # b':', b''
                         if mac:
                             return mac
                     except (ValueError, IndexError):
@@ -379,15 +416,26 @@ if __name__ == "__main__":
     # print(get_mac_address(interface="eth1"))
 
     if sys.platform == 'win32':
-        # _windll_getnode, _netbios_getnode
-        iface_getters = [_ipconfig_getnode]
-        iface = "Ethernet 3"
+        # _windll_getnode, _windows_netbios
+        getters = [_windows_ipconfig_by_interface]
+        test_interface = "Ethernet 3"
     else:
-        # _unix_getnode, _arp_getnode, lanscan_getnode
-        iface_getters = [_ifconfig_getnode, _ip_getnode,
-                         _netstat_getnode, _linux_iface_addr]
-        iface = "eth1"
+        # _unix_getnode, _linux_arp_by_ip, lanscan_getnode
+        getters = [_linux_ifconfig_by_interface, _linux_ip_by_interface,
+                         _linux_netstat_by_interface, _linux_fcntl_by_interface]
+        test_interface = "eth1"
 
-    for getter in iface_getters:
-        print("Getter: %s" % getter.__name__)
-        print("MAC: %s\n" % getter(iface))
+    for getter in getters:
+        print("Interface Getter: %s" % getter.__name__)
+        print("MAC: %s\n" % getter(test_interface))
+
+    if sys.platform == 'win32':
+        getters = [_win_get_remote_mac]
+    else:
+        getters = [_linux_arp_by_ip]
+
+    test_ip = "10.0.0.1"
+
+    for getter in getters:
+        print("IP Getter: %s" % getter.__name__)
+        print("MAC: %s\n" % getter(test_ip))
