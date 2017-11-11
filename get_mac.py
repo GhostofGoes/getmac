@@ -14,15 +14,17 @@ It enables you to get the MAC addresses of:
 
 It provides one function: get_mac_address()
 
-For the time being, it assumes you are using Ethernet.
-
 Sources:
-    Majority of the methods used to attempt, the core logic (notably "getters"),
-    and a few others things are attributed to the CPython project and it's UUID code.
-    Source 1:
+    Many of the methods used to accquire an address and the core logic framework
+    are attributed to the CPython project's UUID implementation.
         https://github.com/python/cpython/blob/master/Lib/uuid.py
-    Source 2 (Python 2.7 implementation):
         https://github.com/python/cpython/blob/2.7/Lib/uuid.py
+    Other sources are noted with inline comments at the appropriate sections.
+
+Messages are output using the warnings library.
+If you are using logging, they can be captured using logging.captureWarnings().
+Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
+https://docs.python.org/2/library/warnings.html
 """
 
 # Feature TODO
@@ -32,13 +34,13 @@ Sources:
 #   hostname -> IPv4
 #   hostname -> IPv6
 #   make_arp_request
-#   docstrings
-#   comments
+#   Unicode handling
 #   slim down
 #   speed up (spend a lot of time on performance tuning with the regexes)
-#   remove print statements OR log errors to stderr OR use logging
+#   remove print statements
 #   Test against non-ethernet interfaces (WiFi, LTE, etc.)
 #   Threading (spin out all attempts, plus make itself thread-friendly)
+#   docstrings
 
 
 # Platform TODO
@@ -51,6 +53,8 @@ Sources:
 
 # Project TODO
 #   Setup Travis (notably with Darwin instances as well)
+#   Automated testing (using vcrpy and unittest)
+#   comments
 #   Setup PyPI
 #   Badges in readme :P
 #   Documentation
@@ -70,10 +74,10 @@ import struct
 import socket
 import re
 import shlex
-
+import warnings
 from subprocess import check_output
 try:
-    from subprocess import DEVNULL  # Python 3
+    from subprocess import DEVNULL    # Python 3
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Python 2
 
@@ -81,7 +85,7 @@ except ImportError:
 def get_mac_address(interface=None, ip=None, ip6=None,
                     hostname=None, arp_request=False):
     """
-    Gets a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
+    Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 
     You must only use one of the first four arguments.
     If none of the arguments are selected,
@@ -94,17 +98,25 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     If you run into problems, create an issue on GitHub,
     or set DEBUG to true if you're brave.
 
-    :param str interface: Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
-    :param str ip: Canonical dotted decimal IPv4 address of a remote host (e.g 192.168.0.1)
-    :param str ip6: Canononical shortened IPv6 address of a remote host (e.g ff02::1:ffe7:7f19)
-    :param str hostname: DNS hostname of a remote host (e.g "router1.mycorp.com")
-    :param bool arp_request: Whether to make a ARP/NDP request to the remote host
+    For the time being, it assumes you are using Ethernet.
+
+    :param str interface: Name of a local network interface
+    (e.g "Ethernet 3", "eth0", "ens32")
+    :param str ip: Canonical dotted decimal IPv4 address of a remote host
+    (e.g 192.168.0.1)
+    :param str ip6: Canononical shortened IPv6 address of a remote host
+    (e.g ff02::1:ffe7:7f19)
+    :param str hostname: DNS hostname of a remote host
+    (e.g "router1.mycorp.com")
+    :param bool arp_request: Make a ARP/NDP request to the remote host
     to populate the ARP/NDP tables for IPv4/IPv6, respectfully
     :return: Lowercase colon-seperated MAC address,
     or None if one could not be found or there was an error
     :rtype: str or None
     """
-    mac = None
+    mac = None  # MAC address
+    funcs = []  # Functions to try using to get a MAC
+    arg = None  # Argument to the functions (e.g IP or interface)
 
     # Get the MAC address of a remote host by hostname
     if hostname is not None:
@@ -115,9 +127,9 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     # Populate the ARP table using a simple ping
     if arp_request and not (ip is None or ip6 is None):
         print("sending ping")
-        if sys.platform == 'win32':
+        if sys.platform == 'win32':  # Windows
             _popen("ping", "-n 1 %s" % ip if ip is not None else ip6)
-        else:
+        else:  # Non-Windows
             if ip is not None:  # IPv4
                 _popen("ping", "-c 1 %s" % ip)
             else:  # IPv6
@@ -126,66 +138,53 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     # Get MAC of a IPv4 remote host (or a resolved hostname)
     if ip is not None:
         print("IPv4 address: %s" % ip)
-        if sys.platform == 'win32':
-            ip_getters = [_windows_get_remote_mac]
-        else:
-            ip_getters = [_unix_arp_by_ip]
-
-        for ip_getter in ip_getters:
-            try:
-                mac = ip_getter(ip)
-            except Exception as ex:
-                print("Exception: %s" % str(ex))
-                import traceback
-                traceback.print_exc()
-                continue
-            if mac is not None:
-                break
+        arg = ip
+        if sys.platform == 'win32':  # Windows
+            funcs = [_windows_get_remote_mac]
+        else:  # Non-Windows
+            funcs = [_unix_arp_by_ip]
 
     # Get MAC of a IPv6 remote host
     # TODO: "netsh int ipv6 show neigh" (windows cmd)
     elif ip6 is not None:
         if not socket.has_ipv6:
-            raise Exception("Cannot get the MAC address of a IPv6 host: "
-                            "IPv6 is not supported on this system")
+            warnings.warn("Cannot get the MAC address of a IPv6 host: "
+                          "IPv6 is not supported on this system",
+                          RuntimeWarning)
+            return None
         print("IPv6 address: %s" % ip6)
+        arg = ip6
 
     # Get MAC of a local interface
     else:
         if interface is not None:
-            iface = str(interface)
+            arg = str(interface)
         else:
             # TODO: select EITHER interface that is default
             #  route OR first interface found on system
-            iface = 'default'
+            arg = 'default'
 
-        if sys.platform == 'win32':
+        if sys.platform == 'win32':  # Windows
             # _windll_getnode,
-            iface_getters = [_windows_netbios, _windows_ipconfig_by_interface]
-        else:
+            funcs = [_windows_ipconfig_by_interface]
+        else:  # Non-Windows
             # _unix_getnode, _unix_arp_by_ip, lanscan_getnode
-            iface_getters = [_unix_ifconfig_by_interface,
-                             _unix_ip_by_interface,
-                             _unix_netstat_by_interface,
-                             _unix_fcntl_by_interface]
+            funcs = [_unix_ifconfig_by_interface, _unix_ip_by_interface,
+                     _unix_netstat_by_interface, _unix_fcntl_by_interface]
 
-        for getter in iface_getters:
-            try:
-                mac = getter(iface)
-            except Exception as ex:
-                print("Exception: %s" % str(ex))
-                import traceback
-                traceback.print_exc()
-                continue
-            if mac is not None:
-                break
-
-
-
-    # TODO: put getter iteration logic here, since its
-    #  common to all 3 (ip, ip6, interface)
-
-
+    # We try every function and see if it returned a MAC address
+    # If it returns None or raises an exception,
+    # we continue and try the next function
+    for func in funcs:
+        try:
+            mac = func(arg)
+        except Exception as ex:
+            print("Exception: %s" % str(ex))
+            import traceback
+            traceback.print_exc()
+            continue
+        if mac is not None:
+            break
 
     if mac is not None:
         # lowercase, colon-separated
@@ -200,8 +199,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
 # *-#-*     Windows     *-#-*
 # ***************************
 
-
-# Source: https://code.activestate.com/recipes/347812-get-the-mac-address-of-a-remote-computer/
+# Source: https://goo.gl/ymhZ9p
 def _windows_get_remote_mac(host):
     # requires windows 2000 or newer
 
@@ -258,45 +256,9 @@ def _windows_ipconfig_by_interface(interface):
                    _popen('ipconfig', '/all'))
 
 
-# TODO: extend to specific interface
-def _windows_netbios():
-    # See http://support.microsoft.com/kb/118623 for details.
-    # Requires: pywin32 (pip install pypiwin32)
-    import win32wnet
-    import netbios
-    ncb = netbios.NCB()
-    ncb.Command = netbios.NCBENUM
-    ncb.Buffer = adapters = netbios.LANA_ENUM()
-    adapters._pack()
-    if win32wnet.Netbios(ncb) != 0:
-        return
-    adapters._unpack()
-    for i in range(adapters.length):
-        ncb.Reset()
-        ncb.Command = netbios.NCBRESET
-        ncb.Lana_num = ord(adapters.lana[i])
-        if win32wnet.Netbios(ncb) != 0:
-            continue
-        ncb.Reset()
-        ncb.Command = netbios.NCBASTAT
-        ncb.Lana_num = ord(adapters.lana[i])
-        ncb.Callname = '*'.ljust(16)
-        ncb.Buffer = status = netbios.ADAPTER_STATUS()
-        if win32wnet.Netbios(ncb) != 0:
-            continue
-        status._unpack()
-        raw_bytes = status.adapter_address[:6]
-        if len(raw_bytes) != 6:
-            continue
-        return int.from_bytes(raw_bytes, 'big')
-    print("Failed netbios")
-    return None
-
-
 # ******************************
 # *-#-*     Unix/Linux     *-#-*
 # ******************************
-
 
 # Source: https://stackoverflow.com/a/4789267/2214380
 def _unix_fcntl_by_interface(interface):
@@ -391,33 +353,32 @@ def _popen(command, args):
 
 
 def _find_mac(command, args, hw_identifiers, get_index):
-    try:
-        proc = _popen(command, args)
-        for line in proc:
-            words = str(line).lower().rstrip().split()
-            for i in range(len(words)):
-                if words[i] in hw_identifiers:
-                    try:
-                        word = words[get_index(i)]
-                        mac = int(word.replace(':', ''), 16)  # b':', b''
-                        if mac:
-                            return mac
-                    except (ValueError, IndexError):
-                        # Virtual interfaces, such as those provided by
-                        # VPNs, do not have a colon-delimited MAC address
-                        # as expected, but a 16-byte HWAddr separated by
-                        # dashes. These should be ignored in favor of a
-                        # real MAC address
-                        print("found a virtual interface address")
-    except OSError:
-        print("OSError in find_mac")
+    proc = _popen(command, args)
+    for line in proc:
+        words = str(line).lower().rstrip().split()
+        for i in range(len(words)):
+            if words[i] in hw_identifiers:
+                try:
+                    word = words[get_index(i)]
+                    mac = int(word.replace(':', ''), 16)  # b':', b''
+                    if mac:
+                        return mac
+                except (ValueError, IndexError):
+                    # Virtual interfaces, such as those provided by
+                    # VPNs, do not have a colon-delimited MAC address
+                    # as expected, but a 16-byte HWAddr separated by
+                    # dashes. These should be ignored in favor of a
+                    # real MAC address
+                    print("found a virtual interface address")  # TODO
 
 
+# TODO: move testing to external file(s)
 if __name__ == "__main__":
-    # print(get_mac_address(interface="eth1"))
+    print(get_mac_address(interface="eth1"))
+    print(get_mac_address(ip="10.0.0.1"))
 
     if sys.platform == 'win32':
-        # _windll_getnode, _windows_netbios
+        # _windll_getnode
         getters = [_windows_ipconfig_by_interface]
         test_interface = "Ethernet 3"
     else:
