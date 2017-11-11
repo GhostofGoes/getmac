@@ -78,18 +78,21 @@ except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Python 2
 
 
-def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, arp_request=False):
+def get_mac_address(interface=None, ip=None, ip6=None,
+                    hostname=None, arp_request=False):
     """
     Gets a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 
-    You must only use one of the first four arguments. If none of the arguments are selected,
+    You must only use one of the first four arguments.
+    If none of the arguments are selected,
     the default network interface for the system will be assumed.
 
     For remote hosts, it is assumed you have already communicated with the host
     (thus populating the ARP table), and that they reside on your local network.
 
     Exceptions will be handled silently and returned as a None.
-    If you run into problems, create an issue on GitHub, or set DEBUG to true if you're brave.
+    If you run into problems, create an issue on GitHub,
+    or set DEBUG to true if you're brave.
 
     :param str interface: Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
     :param str ip: Canonical dotted decimal IPv4 address of a remote host (e.g 192.168.0.1)
@@ -152,7 +155,8 @@ def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, arp_reques
         if interface is not None:
             iface = str(interface)
         else:
-            # TODO: select EITHER interface that is default route OR first interface found on system
+            # TODO: select EITHER interface that is default
+            #  route OR first interface found on system
             iface = 'default'
 
         if sys.platform == 'win32':
@@ -160,8 +164,10 @@ def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, arp_reques
             iface_getters = [_windows_netbios, _windows_ipconfig_by_interface]
         else:
             # _unix_getnode, _unix_arp_by_ip, lanscan_getnode
-            iface_getters = [_unix_ifconfig_by_interface, _unix_ip_by_interface,
-                             _unix_netstat_by_interface, _unix_fcntl_by_interface]
+            iface_getters = [_unix_ifconfig_by_interface,
+                             _unix_ip_by_interface,
+                             _unix_netstat_by_interface,
+                             _unix_fcntl_by_interface]
 
         for getter in iface_getters:
             try:
@@ -176,7 +182,8 @@ def get_mac_address(interface=None, ip=None, ip6=None, hostname=None, arp_reques
 
 
 
-    # TODO: put getter iteration logic here, since its common to all 3 (ip, ip6, interface)
+    # TODO: put getter iteration logic here, since its
+    #  common to all 3 (ip, ip6, interface)
 
 
 
@@ -246,7 +253,8 @@ def _windll_getnode():
 
 def _windows_ipconfig_by_interface(interface):
     return _search(re.escape(interface) +
-                   r'(?:\n?[^\n]*){1,8}Physical Address.+([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})',
+                   r'(?:\n?[^\n]*){1,8}Physical Address.+'
+                   r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})',
                    _popen('ipconfig', '/all'))
 
 
@@ -309,7 +317,8 @@ def _unix_getnode():
 def _unix_ifconfig_by_interface(interface):
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     for arg in ('', '-a', '-av', '-v'):
-        mac = _search(re.escape(interface) + r'.*(HWaddr|Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+        mac = _search(re.escape(interface) +
+                      r'.*(HWaddr|Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
                       _popen('ifconfig', arg))
         if mac:
             return mac
@@ -319,13 +328,15 @@ def _unix_ifconfig_by_interface(interface):
 
 
 def _unix_ip_by_interface(interface):
-    return _search(re.escape(interface) + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+    return _search(re.escape(interface) +
+                   r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
                    _popen('ip', 'link list'))
 
 
 def _unix_arp_by_ip(ip):
     try:
-        return _search(r'\(' + re.escape(ip) + r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+        return _search(r'\(' + re.escape(ip) +
+                       r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
                        _popen('arp', '-an'))
     except Exception:
         return _search(re.escape(ip) + r'.*([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
@@ -337,7 +348,8 @@ def _hp_ux_lanscan(interface):
 
 
 def _unix_netstat_by_interface(interface):
-    return _search(re.escape(interface) + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+    return _search(re.escape(interface) +
+                   r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
                    _popen('netstat', '-iae'), group_index=1)
 
 
