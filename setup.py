@@ -26,7 +26,7 @@ setup(
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': [
-            'get-mac = src.get_mac:_get_mac_main'
+            'get-mac = get_mac.getmac:_get_mac_main'
         ]
     },
     platforms=["any"],
