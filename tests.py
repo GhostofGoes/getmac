@@ -4,6 +4,7 @@
 """Unit and functional tests for get-mac."""
 
 import get_mac
+
 get_mac.DEBUG = True
 
 

@@ -1,0 +1,23 @@
+language: python
+python:
+  - '2.6'
+  - '2.7'
+  - 'pypy'
+  - '3.4'
+  - '3.5'
+  - '3.6'
+
+install:
+  - 'python setup.py install'
+script:
+  - get-mac
+
+notifications:
+  email:
+    on_success: never
+    on_failure: change
+deploy:
+  provider: pypi
+  user: ghostofgoes
+  password:
+    secure: i3QZMWKiv8hWCsXtAde9HkQNu7VVn5UpzP0LipalI5NvaWJxuXw4A7cZyepJN9y/2EfZ5wzF9CbpxwdfO6jIaabaxitr9bdhQXomkLlxfuJMW9EiMfMBZ9TuYSsCoffhu7UhNlSnPuoqJDxoqxZwli2h4M3JP/jx+CuIptQfyeiHhGzVjPPUqsZ1KaUWE6SHSeowxoK+LvqRv4iVe/WMy9dxGMpIUx62M76e8mOaLfngWcsWImS+8bs40uiRnFw0JXmUHHapLnPDUO7CloyBmb0gJFyQrTbIZZFAkRNcXw80hdwzoBrrum4SfeHPTJrWk0GLnENDJePWYyzym/OQ+gThrsa613+VSuv7nUe3B66ODTiCiVjjOUVxBB+dQQ0ZvbwMbq/DQ887ihUgh/zT3c27pugBb35Qc4yKZ1cH15xQceazA34njSXtl66pGvQ+ZlJjwR7pPCjJt2p8WS4lE4yGssiRqL/SlOKYfLRJgPUZcXywjPq5rC+7kJdBcfOPxlEPSjNWjfqlE2HdwH7Nmbi8IxTit4sSn7JwtJQz1+Ab5rGFVxwQjUsZR3mhxZ9aP2fsKo2+YOe057c7VU39aF9jV/Ay6ChWRI4wAwzuO573RS9LRO3fFJ6l8NWW6l4WGeLbUCJvlffVUPwp/QDJgmCeC/FjXyZuzfM7wxeH1SY=

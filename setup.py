@@ -4,7 +4,7 @@
 # Source: https://github.com/GhostofGoes/ADLES/blob/master/setup.py
 
 from setuptools import setup, find_packages
-from get_mac import __version__
+from get_mac.getmac import __version__
 
 
 with open('README.rst') as f:  # Loads in the README for PyPI
@@ -22,14 +22,14 @@ setup(
     url="https://github.com/GhostofGoes/get-mac",
     download_url='https://pypi.python.org/pypi/get-mac',
     license="MIT",
-    packages=find_packages(exclude=['tests.py']),
+    packages=find_packages(exclude=["tests.py"]),
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': [
-            'get-mac = get_mac:_get_mac_main'
+            'get-mac = src.get_mac:_get_mac_main'
         ]
     },
-    platforms=['Windows', 'Linux', 'Mac OS-X', 'Unix'],
+    platforms=["any"],
     keywords="get-mac mac-address mac address networking networks layer2 "
              "media access control ieee 802 mac-48 ethernet lol",
     classifiers=[  # Used by PyPI to classify the project and make it searchable
