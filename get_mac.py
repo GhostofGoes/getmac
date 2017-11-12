@@ -3,7 +3,7 @@
 
 
 """
-Cross-platform Pure-Python 2/3 cross-compatible tool to get a damn MAC address.
+Cross-platform Pure-Python 2/3 tool to get a gosh-darn MAC address.
 
 It enables you to get the MAC addresses of:
     A local network interface
@@ -34,6 +34,7 @@ https://docs.python.org/2/library/warnings.html
 #   hostname -> IPv4
 #   hostname -> IPv6
 #   make_arp_request
+#   Commandline interface
 #   Unicode handling
 #   slim down
 #   speed up (spend a lot of time on performance tuning with the regexes)
@@ -372,6 +373,11 @@ def _find_mac(command, args, hw_identifiers, get_index):
                     print("found a virtual interface address")  # TODO
 
 
+def main():
+    # TODO: commandline interface
+    pass
+
+
 # TODO: move testing to external file(s)
 if __name__ == "__main__":
     print(get_mac_address(interface="eth1"))
@@ -396,7 +402,7 @@ if __name__ == "__main__":
     else:
         getters = [_unix_arp_by_ip]
 
-    test_ip = "10.0.0.1"
+    test_ip = "10.0.0.1"  # personal information leakage uh oh
 
     for test_getter in getters:
         print("IP Getter: %s" % test_getter.__name__)
