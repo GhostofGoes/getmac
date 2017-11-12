@@ -26,7 +26,7 @@ setup(
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': [
-            'get-mac = get_mac:main'
+            'get-mac = get_mac:_get_mac_main'
         ]
     },
     platforms=['Windows', 'Linux', 'Mac OS-X', 'Unix'],

@@ -1,0 +1,38 @@
+
+# Feature TODO
+#   interface
+#   ip
+#   ip6
+#   hostname -> IPv4
+#   hostname -> IPv6
+#   make_arp_request
+#   Commandline interface
+#   Unicode handling
+#   slim down
+#   speed up (spend a lot of time on performance tuning with the regexes)
+#   Test against non-ethernet interfaces (WiFi, LTE, etc.)
+#   Threading (spin out all attempts, plus make itself thread-friendly)
+#   docstrings
+
+
+# Platform TODO
+#   Linux
+#   Windows
+#   Darwin (Mac OS)
+#   OpenBSD
+#   FreeBSD
+#   Android
+
+# Project TODO
+#   Setup Travis (notably with Darwin instances as well)
+#   Automated testing (using vcrpy and unittest)
+#   comments
+#   Setup PyPI
+#   Badges in readme :P
+#   Documentation
+#   Examples of usage in README
+#   Sick ASCII Cinema capture of usage? (for lulz)
+#   Emoji
+#   memes
+#   ???
+#   profit

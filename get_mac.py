@@ -28,48 +28,7 @@ Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/2/library/warnings.html
 """
 
-__version__ = "0.0.2"
-
-
-# CHANGELOG: todo
-
-# Feature TODO
-#   interface
-#   ip
-#   ip6
-#   hostname -> IPv4
-#   hostname -> IPv6
-#   make_arp_request
-#   Commandline interface
-#   Unicode handling
-#   slim down
-#   speed up (spend a lot of time on performance tuning with the regexes)
-#   Test against non-ethernet interfaces (WiFi, LTE, etc.)
-#   Threading (spin out all attempts, plus make itself thread-friendly)
-#   docstrings
-
-
-# Platform TODO
-#   Linux
-#   Windows
-#   Darwin (Mac OS)
-#   OpenBSD
-#   FreeBSD
-#   Android
-
-# Project TODO
-#   Setup Travis (notably with Darwin instances as well)
-#   Automated testing (using vcrpy and unittest)
-#   comments
-#   Setup PyPI
-#   Badges in readme :P
-#   Documentation
-#   Examples of usage in README
-#   Sick ASCII Cinema capture of usage? (for lulz)
-#   Emoji
-#   memes
-#   ???
-#   profit
+__version__ = "0.0.3"
 
 
 import ctypes
@@ -194,13 +153,23 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         if mac is not None:
             break
 
+    # Make sure address is formatted properly
     if mac is not None:
         # lowercase, colon-separated
         # NOTE: we cast to str ONLY here and NO WHERE ELSE to prevent
         # possibly returning "None" strings.
-        return str(mac).lower().replace("-", ":")
-    else:
-        return mac
+        mac = str(mac).lower().replace("-", ":")
+
+        # Fix cases where there are no colons
+        if len(mac) == 12:
+            # Source: https://stackoverflow.com/a/3258612/2214380
+            mac = ':'.join(mac[i:i + 2] for i in range(0, len(mac), 2))
+
+        # MAC address should ALWAYS be 17 characters with the colons
+        if len(mac) != 17:
+            mac = None
+
+    return mac
 
 
 # ***************************
@@ -370,6 +339,6 @@ def _find_mac(command, args, hw_identifiers, get_index):
                     return mac
 
 
-def main():
+def _get_mac_main():
     # TODO: commandline interface
     pass
