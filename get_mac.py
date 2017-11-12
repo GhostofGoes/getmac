@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# http://multivax.com/last_question.html
 
 """
 Cross-platform Pure-Python 2/3 tool to get a gosh-darn MAC address.
