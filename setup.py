@@ -4,6 +4,7 @@
 # Source: https://github.com/GhostofGoes/ADLES/blob/master/setup.py
 
 from setuptools import setup, find_packages
+from get_mac import __version__
 
 
 with open('README.rst') as f:  # Loads in the README for PyPI
@@ -12,7 +13,7 @@ with open('README.rst') as f:  # Loads in the README for PyPI
 
 setup(
     name='get-mac',
-    version="0.0.1",
+    version=__version__,
     author="Christopher Goes",
     author_email="goesc@acm.org",
     description='Cross-platform Pure-Python 2/3 tool '
