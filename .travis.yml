@@ -1,19 +1,17 @@
 language: python
 python:
-  - '2.6'
-  - '2.7'
-  - 'pypy'
-  - 'pypy3'
-  - '3.3'
-  - '3.4'
-  - '3.5'
-  - '3.6'
-
+- '2.6'
+- '2.7'
+- pypy
+- pypy3
+- '3.3'
+- '3.4'
+- '3.5'
+- '3.6'
 install:
-  - 'python setup.py install'
+- python setup.py install
 script:
-  - get-mac
-
+- get-mac
 notifications:
   email:
     on_success: never
@@ -22,4 +20,4 @@ deploy:
   provider: pypi
   user: ghostofgoes
   password:
-    secure: i3QZMWKiv8hWCsXtAde9HkQNu7VVn5UpzP0LipalI5NvaWJxuXw4A7cZyepJN9y/2EfZ5wzF9CbpxwdfO6jIaabaxitr9bdhQXomkLlxfuJMW9EiMfMBZ9TuYSsCoffhu7UhNlSnPuoqJDxoqxZwli2h4M3JP/jx+CuIptQfyeiHhGzVjPPUqsZ1KaUWE6SHSeowxoK+LvqRv4iVe/WMy9dxGMpIUx62M76e8mOaLfngWcsWImS+8bs40uiRnFw0JXmUHHapLnPDUO7CloyBmb0gJFyQrTbIZZFAkRNcXw80hdwzoBrrum4SfeHPTJrWk0GLnENDJePWYyzym/OQ+gThrsa613+VSuv7nUe3B66ODTiCiVjjOUVxBB+dQQ0ZvbwMbq/DQ887ihUgh/zT3c27pugBb35Qc4yKZ1cH15xQceazA34njSXtl66pGvQ+ZlJjwR7pPCjJt2p8WS4lE4yGssiRqL/SlOKYfLRJgPUZcXywjPq5rC+7kJdBcfOPxlEPSjNWjfqlE2HdwH7Nmbi8IxTit4sSn7JwtJQz1+Ab5rGFVxwQjUsZR3mhxZ9aP2fsKo2+YOe057c7VU39aF9jV/Ay6ChWRI4wAwzuO573RS9LRO3fFJ6l8NWW6l4WGeLbUCJvlffVUPwp/QDJgmCeC/FjXyZuzfM7wxeH1SY=
+    secure: MHRFYkv1GCzHrp65XCpLazkYExmiLipvTuXNMYBHdSkS8ZO183NL8hYzpJ0FhX+oMNx5caTeyQADGyb/EEHVbz4i1G2DeyxnLxZErYIICsKOpYe2SvNb/5ojnrpzFR7bp+2T0t8Cc9k+kTop3qBblSGtpBblqYS5A44lvzBPN/+y/jL1pdY679GnLqNEu9A7Pq5dN32yA0uPxnjxckWJDZvAC8eQNUFmpScnkXdL5CswUelo5QanH8HwrJdu2BWphdhRc0SJ2VK/vIK9xf0XbQOyMo+muhTaAoc9kZjNT+pNAyKlYbWHUA9/0wpdjkGk4my7OUQmST2MOAYpY9Vf0MH0N3hfNr5sC3b7cczMP7uEOcKZvkEaZeGmicbTrW5Z+Ti7M2LUJv4QgWoFGtrvZ8zciuomGR6sWmCOcFjQtx2EpR2FYwT3AGhCYmAlrGpbn2OEZOihmyUSA8vI0InWKpLVp62j8TClz5CNJuwRokgrUeMEiW200DQWzt3Oe8ivBL4j3xmOq/rHgc/DIl8D6bu6AhK/XvXVQnrwS5QQO4PKpR5x+z8a9c4JJx5W/cclpNEBR3Sa1oTlTaxD/nhjSKFRm2ruaDUysWFw9qsepbi3la+/QAjJ30s5zjou2KGbC39d+swupvwzb+NMFqneLURiqNlOGHwlVaNvkGrIXjI=
