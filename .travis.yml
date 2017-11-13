@@ -1,9 +1,5 @@
 language: python
 
-os:
-  - linux
-  - osx
-
 python:
   - '2.6'
   - '2.7'
@@ -14,6 +10,27 @@ python:
   - '3.6'
   - pypy
   - pypy3
+
+matrix:
+  include:
+    - language: generic
+      os: osx
+      before_install:
+        - brew update
+        - brew install python3
+        - virtualenv env3 -p python3
+        - source env3/bin/activate
+    - language: generic
+      os: osx
+      before_install:
+        - brew update
+        - brew install python
+        - virtualenv env2 -p python
+        - source env2/bin/activate
+    - os: linux
+      dist: trusty
+    - os: linux
+      dist: precise
 
 install:
   - python setup.py install
