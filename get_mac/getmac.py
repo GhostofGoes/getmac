@@ -39,7 +39,7 @@ import socket
 import re
 import shlex
 import warnings
-from subprocess import check_output
+from subprocess import Popen, PIPE, CalledProcessError
 try:
     from subprocess import DEVNULL    # Python 3
 except ImportError:
@@ -323,8 +323,15 @@ def _popen(command, args):
     env = dict(os.environ)
     env['LC_ALL'] = 'C'
     cmd = [executable] + shlex.split(args)
-    proc = check_output(cmd, stderr=DEVNULL)
-    return proc
+    # proc = check_output(cmd, stderr=DEVNULL)
+    # return proc
+    # Using this instead of check_output is for Python 2.6 compatibility
+    process = Popen(cmd, stdout=PIPE, stderr=DEVNULL)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        raise CalledProcessError(retcode, cmd, output=output)
+    return output
 
 
 def _find_mac(command, args, hw_identifiers, get_index):
