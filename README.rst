@@ -1,11 +1,16 @@
+.. image:: https://badge.fury.io/py/get-mac.svg
+    :target: https://badge.fury.io/py/get-mac
+    :alt: PyPI
 .. image:: https://travis-ci.org/GhostofGoes/get-mac.svg?branch=master
     :target: https://travis-ci.org/GhostofGoes/get-mac
+    :alt: Build Status
 
 
 Pure-Python module to easily get a gosh darn MAC address on any platform under the sun.
 
 
 It enables you to get the MAC addresses of:
+
 * A local network interface
 * A remote host (Using IPv4 or IPv6 address)
 * Your neighbor
