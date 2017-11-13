@@ -1,3 +1,5 @@
+.. image:: https://travis-ci.org/GhostofGoes/get-mac.svg?branch=master
+    :target: https://travis-ci.org/GhostofGoes/get-mac
 
 
 Pure-Python module to easily get a gosh darn MAC address on any platform under the sun.
@@ -21,17 +23,21 @@ Implemented platforms
 
 Tested platforms
 ================
+* Linux
+* Windows (not by travis yet tho)
 
 Supported Python versions
 =========================
+* 2.6
 * 2.7
 * 3.4
 * 3.5
 * 3.6
+* pypy
+* pypy3
 
-If you're using something older than 2.7, I'm so sorry ;(
+If you're using something older than 2.6, I'm so sorry ;(
 
-I'll evaluate 2.6, 3.3, and pypy/pypy3 once its feature-complete.
 
 
 Not yet implemented platforms

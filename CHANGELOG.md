@@ -1,3 +1,6 @@
+0.0.4 (11/12/2017):
+* Python 2.6 compatibility
+
 0.0.3 (11/11/2017):  
 * Fixed some addresses returning without colons
 * Added more rigorous checks on addresses before returning them

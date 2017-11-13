@@ -28,7 +28,7 @@ Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/2/library/warnings.html
 """
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 
 import ctypes
