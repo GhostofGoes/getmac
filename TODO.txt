@@ -14,7 +14,6 @@
 #   speed up (spend a lot of time on performance tuning with the regexes)
 #   Test against non-ethernet interfaces (WiFi, LTE, etc.)
 #   Threading (spin out all attempts, plus make itself thread-friendly)
-#   docstrings
 
 
 # Platform TODO
@@ -26,11 +25,7 @@
 #   Android
 
 # Project TODO
-#   Setup Travis (notably with Darwin instances as well)
 #   Automated testing (using vcrpy and unittest)
-#   comments
-#   Setup PyPI
-#   Badges in readme :P
 #   Documentation
 #   Examples of usage in README
 #   Sick ASCII Cinema capture of usage? (for lulz)
