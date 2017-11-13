@@ -1,21 +1,31 @@
 language: python
+
+os:
+  - linux
+  - osx
+
 python:
-- '2.6'
-- '2.7'
-- pypy
-- pypy3
-- '3.3'
-- '3.4'
-- '3.5'
-- '3.6'
+  - '2.6'
+  - '2.7'
+  - '3.2'
+  - '3.3'
+  - '3.4'
+  - '3.5'
+  - '3.6'
+  - pypy
+  - pypy3
+
 install:
-- python setup.py install
+  - python setup.py install
+
 script:
-- get-mac
+  - get-mac
+
 notifications:
   email:
     on_success: never
     on_failure: change
+
 deploy:
   provider: pypi
   user: ghostofgoes

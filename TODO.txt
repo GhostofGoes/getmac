@@ -1,11 +1,13 @@
 
 # Feature TODO
-#   interface
-#   ip
 #   ip6
-#   hostname -> IPv4
 #   hostname -> IPv6
 #   make_arp_request
+#   Add ability to get the mac address of a socket's interface
+#   Improve:
+    ip: more methods
+    interface: more methods
+    make_arp request: method in addition to ping (sockets?)
 #   Commandline interface
 #   Unicode handling
 #   slim down
