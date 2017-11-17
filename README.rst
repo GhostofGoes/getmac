@@ -49,7 +49,6 @@ If you're using something older than 2.6, I'm so sorry ;(
 
 Not yet implemented platforms
 =============================
-(roughly in order of priority)
 * Darwin (Mac OS)
 * FreeBSD
 * OpenBSD
