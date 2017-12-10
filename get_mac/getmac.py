@@ -16,7 +16,7 @@ It enables you to get the MAC addresses of:
 It provides one function: get_mac_address()
 
 Sources:
-    Many of the methods used to accquire an address and the core logic framework
+    Many of the methods used to acquire an address and the core logic framework
     are attributed to the CPython project's UUID implementation.
         https://github.com/python/cpython/blob/master/Lib/uuid.py
         https://github.com/python/cpython/blob/2.7/Lib/uuid.py
@@ -70,13 +70,13 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     (e.g "Ethernet 3", "eth0", "ens32")
     :param str ip: Canonical dotted decimal IPv4 address of a remote host
     (e.g 192.168.0.1)
-    :param str ip6: Canononical shortened IPv6 address of a remote host
+    :param str ip6: Canonical shortened IPv6 address of a remote host
     (e.g ff02::1:ffe7:7f19)
     :param str hostname: DNS hostname of a remote host
     (e.g "router1.mycorp.com")
     :param bool arp_request: Make a ARP/NDP request to the remote host
     to populate the ARP/NDP tables for IPv4/IPv6, respectfully
-    :return: Lowercase colon-seperated MAC address,
+    :return: Lowercase colon-separated MAC address,
     or None if one could not be found or there was an error
     :rtype: str or None
     """
@@ -204,7 +204,7 @@ def _windows_get_remote_mac(host):
 
     # TODO: arp_request flag
     if SendARP(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
-        raise WindowsError('Retreival of mac address(%s) - failed' % host)
+        raise WindowsError('Retrieval of mac address(%s) - failed' % host)
 
     # Convert binary data into a string.
     macaddr = ''
@@ -215,14 +215,6 @@ def _windows_get_remote_mac(host):
             replacestr = 'x'
         macaddr = ''.join([macaddr, hex(intval).replace(replacestr, '')])
     return macaddr
-
-
-def _windll_getnode():
-    pass
-    # _load_system_functions()
-    # _buffer = ctypes.create_string_buffer(16)
-    # if _UuidCreate(_buffer) == 0:
-    #     # return UUID(bytes=bytes_(_buffer.raw)).node
 
 
 def _windows_ipconfig_by_interface(interface):
@@ -242,13 +234,6 @@ def _unix_fcntl_by_interface(interface):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # TODO: ip6?
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', interface[:15]))
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
-
-
-def _unix_getnode():
-    pass
-    # _load_system_functions()
-    # uuid_time, _ = _generate_time_safe()
-    # return UUID(bytes=uuid_time).node
 
 
 def _unix_ifconfig_by_interface(interface):
