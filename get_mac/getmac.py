@@ -28,7 +28,7 @@ Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/2/library/warnings.html
 """
 
-__version__ = "0.0.4"
+__version__ = "0.1.0"
 
 
 import ctypes
@@ -264,10 +264,13 @@ def _unix_ifconfig_by_interface(interface):
     return None
 
 
+# It would seem that "list" breaks this on Android API 24+ due to SELinux.
+# https://github.com/python/cpython/pull/4696/files
+# https://bugs.python.org/issue32199
 def _unix_ip_by_interface(interface):
     return _search(re.escape(interface) +
                    r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-                   _popen('ip', 'link list'))
+                   _popen('ip', 'link'))
 
 
 def _unix_arp_by_ip(ip):

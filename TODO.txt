@@ -1,3 +1,6 @@
+Support everything on this list: https://www.python.org/dev/peps/pep-0011/#no-longer-supported-platforms
+That is partially in jest, partially insane[ity].
+
 
 # Feature TODO
 #   ip6
@@ -17,12 +20,12 @@
 
 
 # Platform TODO
-#   Linux
-#   Windows
+#   Linux (Debian and RHEL-based)
+#   Windows (XP+)
 #   Darwin (Mac OS)
 #   OpenBSD
 #   FreeBSD
-#   Android
+#   Android (Which you could argue [correctly] is Linux)
 
 # Project TODO
 #   Automated testing (using vcrpy and unittest)
