@@ -1,4 +1,16 @@
 
+# 0.2.0 (TBD)
+## Added
+
+
+## Changed
+* CLI will output a blank string if it failed, instead of "None"
+* CLI will always exit with a 0
+* Added an argumnent for debugging: `--debug`
+* Removed `-d` option from `--no-network-requests`
+
+## Dev
+
 
 # 0.1.0 (04/15/2018):
 ## Added
