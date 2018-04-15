@@ -1,11 +1,12 @@
 
 # 0.2.0 (TBD)
 ## Added
-
+* Checks for default interface on Unix systems
 
 ## Changed
-* CLI will output a blank string if it failed, instead of "None"
-* CLI will always exit with a 0
+* CLI will output nothing if it failed, instead of "None"
+* CLI will return with 1 on error, 0 on success
+* No CLI arguments now implies the default host network interface
 * Added an argumnent for debugging: `--debug`
 * Removed `-d` option from `--no-network-requests`
 

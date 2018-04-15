@@ -16,8 +16,10 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Python 2
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 DEBUG = False  # TODO
+
+# TODO: better way of doing functions. Lookup table in a dict?
 
 
 def get_mac_address(interface=None, ip=None, ip6=None,
@@ -69,7 +71,8 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         if sys.platform == 'win32':  # Windows
             funcs = [_windows_get_remote_mac]
         else:  # Non-Windows
-            funcs = [_unix_arp_by_ip]
+            funcs = [_unix_ip_arp_command, _unix_ip_cat_arp,
+                     _unix_ip_ip_command]
 
     # Get MAC of a IPv6 remote host
     # TODO: "netsh int ipv6 show neigh" (windows cmd)
@@ -88,18 +91,21 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         # Determine what interface is "default" (has default route)
         elif sys.platform == 'win32':  # Windows
             # TODO: default route OR first interface found windows
-            arg = "Ethernet 1"
+            arg = 'Ethernet 1'
         else:  # Non-Windows
-            # TODO: default route OR first interface found non-windows
-            arg = 'eth0'
+            # Try to use the IP command to get default interface
+            arg = _unix_default_interface_ip_command()
+            if arg is None:
+                arg = 'eth0'
 
         if sys.platform == 'win32':  # Windows
             # _windll_getnode,
             funcs = [_windows_ipconfig_by_interface]
         else:  # Non-Windows
             # _unix_getnode, _unix_arp_by_ip, lanscan_getnode
-            funcs = [_unix_ifconfig_by_interface, _unix_ip_by_interface,
-                     _unix_netstat_by_interface, _unix_fcntl_by_interface]
+            funcs = [_unix_ifconfig_by_interface, _unix_interface_ip_command,
+                     _unix_netstat_by_interface, _unix_fcntl_by_interface,
+                     _unix_lanscan_interface]
 
     # We try every function and see if it returned a MAC address
     # If it returns None or raises an exception,
@@ -121,7 +127,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         # lowercase, colon-separated
         # NOTE: we cast to str ONLY here and NO WHERE ELSE to prevent
         # possibly returning "None" strings.
-        mac = str(mac).lower().replace("-", ":")
+        mac = str(mac).lower().strip().replace('-', ':').replace(' ', '')
 
         # Fix cases where there are no colons
         if len(mac) == 12:
@@ -135,11 +141,11 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     return mac
 
 
-# Source: https://goo.gl/ymhZ9p
 def _windows_get_remote_mac(host):
-    # requires windows 2000 or newer
+    # Source: https://goo.gl/ymhZ9p
+    # Requires windows 2000 or newer
 
-    # Check for api availability
+    # Check for API availability
     try:
         SendARP = ctypes.windll.Iphlpapi.SendARP
     except Exception:
@@ -186,8 +192,8 @@ def _windows_ipconfig_by_interface(interface):
                    _popen('ipconfig', '/all'))
 
 
-# Source: https://stackoverflow.com/a/4789267/2214380
 def _unix_fcntl_by_interface(interface):
+    # Source: https://stackoverflow.com/a/4789267/2214380
     import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # TODO: ip6?
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', interface[:15]))
@@ -210,23 +216,29 @@ def _unix_ifconfig_by_interface(interface):
 # It would seem that "list" breaks this on Android API 24+ due to SELinux.
 # https://github.com/python/cpython/pull/4696/files
 # https://bugs.python.org/issue32199
-def _unix_ip_by_interface(interface):
+def _unix_interface_ip_command(interface):
     return _search(re.escape(interface) +
                    r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
                    _popen('ip', 'link'))
 
 
-def _unix_arp_by_ip(ip):
-    try:
-        return _search(r'\(' + re.escape(ip) +
-                       r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-                       _popen('arp', '-an'))
-    except Exception:
-        return _search(re.escape(ip) + r'.*([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-                       _popen('cat', '/proc/net/arp'))
+def _unix_ip_ip_command(ip):
+    pass
 
 
-def _hp_ux_lanscan(interface):
+def _unix_ip_arp_command(ip):
+    return _search(r'\(' + re.escape(ip) +
+                   r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+                   _popen('arp', '-an'))
+
+
+def _unix_ip_cat_arp(ip):
+    return _search(re.escape(ip) + r'.*([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+                   _popen('cat', '/proc/net/arp'))
+
+
+def _unix_lanscan_interface(interface):
+    # Might work on HP-UX
     return _find_mac('lanscan', '-ai', [interface], lambda i: 0)
 
 
@@ -236,6 +248,18 @@ def _unix_netstat_by_interface(interface):
                    _popen('netstat', '-iae'), group_index=1)
 
 
+def _unix_default_interface_ip_command():
+    return _search(r'.*dev ([0-9a-z]*)',
+                   _popen('ip', 'route get 0.0.0.0'), group_index=0)
+
+
+# TODO
+def _unix_default_interface_route_command():
+    return _search(r'.*(0\.0\.0\.0).*([0-9a-z]*)\n',
+                   _popen('route', '-n'), group_index=0)
+
+
+# TODO: comments
 def _search(regex, text, group_index=0):
     match = re.search(regex, text)
     if match:
@@ -265,18 +289,16 @@ def _popen(command, args):
     env = dict(os.environ)
     env['LC_ALL'] = 'C'
     cmd = [executable] + shlex.split(args)
-    # proc = check_output(cmd, stderr=DEVNULL)
-    # return proc
     # Using this instead of check_output is for Python 2.6 compatibility
     process = Popen(cmd, stdout=PIPE, stderr=DEVNULL)
     output, unused_err = process.communicate()
     retcode = process.poll()
     if retcode:
         raise CalledProcessError(retcode, cmd, output=output)
-    return output
+    return str(output)
 
 
-# TODO: comment
+# TODO: comments
 def _find_mac(command, args, hw_identifiers, get_index):
     proc = _popen(command, args)
     for line in proc:

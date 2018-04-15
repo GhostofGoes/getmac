@@ -21,7 +21,7 @@ def main():
     parser.add_argument('--no-network-requests', action='store_true',
                         help='Disable refreshing of the ARP '
                              'table by making a network request (ping)')
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument('--interface', type=str, default=None,
                        help='Name of a network interface on the system')
     group.add_argument('--ip', type=str, default=None,
@@ -40,8 +40,12 @@ def main():
     mac = getmac.get_mac_address(interface=args.interface, ip=args.ip,
                                  ip6=args.ip6, hostname=args.hostname,
                                  network_request=args.no_network_requests)
-    print("" if mac is None else mac)
-    sys.exit(0)
+
+    if mac is not None:
+        print(mac)
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 
 if __name__ == '__main__':
