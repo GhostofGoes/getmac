@@ -1,35 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # http://multivax.com/last_question.html
-
-"""
-Cross-platform Pure-Python 2/3 tool to get a gosh-darn MAC address.
-
-It enables you to get the MAC addresses of:
-    A local network interface
-    A remote host (using IPv4, IPv6, or DNS hostname)
-    Your neighbor
-    Your dog
-    Your mother
-
-It provides one function: get_mac_address()
-
-Sources:
-    Many of the methods used to acquire an address and the core logic framework
-    are attributed to the CPython project's UUID implementation.
-        https://github.com/python/cpython/blob/master/Lib/uuid.py
-        https://github.com/python/cpython/blob/2.7/Lib/uuid.py
-    Other sources are noted with inline comments at the appropriate sections.
-
-Messages are output using the warnings library.
-If you are using logging, they can be captured using logging.captureWarnings().
-Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
-https://docs.python.org/2/library/warnings.html
-"""
-
-__version__ = "0.1.0"
-
 
 import ctypes
 import os
@@ -45,44 +16,36 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Python 2
 
+__version__ = '0.1.0'
 DEBUG = False  # TODO
 
 
 def get_mac_address(interface=None, ip=None, ip6=None,
-                    hostname=None, arp_request=False):
+                    hostname=None, network_request=True):
     """
     Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 
-    You must only use one of the first four arguments.
-    If none of the arguments are selected,
-    the default network interface for the system will be assumed.
-
-    For remote hosts, it is assumed you have already communicated with the host
-    (thus populating the ARP table), and that they reside on your local network.
+    You must only use one of the first four arguments. If none of the arguments
+    are selected, the default network interface for the system will be used.
 
     Exceptions will be handled silently and returned as a None.
-    If you run into problems, create an issue on GitHub,
-    or set DEBUG to true if you're brave.
-
     For the time being, it assumes you are using Ethernet.
 
-    :param str interface: Name of a local network interface
-    (e.g "Ethernet 3", "eth0", "ens32")
-    :param str ip: Canonical dotted decimal IPv4 address of a remote host
-    (e.g 192.168.0.1)
-    :param str ip6: Canonical shortened IPv6 address of a remote host
-    (e.g ff02::1:ffe7:7f19)
-    :param str hostname: DNS hostname of a remote host
-    (e.g "router1.mycorp.com")
-    :param bool arp_request: Make a ARP/NDP request to the remote host
-    to populate the ARP/NDP tables for IPv4/IPv6, respectfully
-    :return: Lowercase colon-separated MAC address,
-    or None if one could not be found or there was an error
-    :rtype: str or None
+    Args:
+        interface (str): Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
+        ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g 192.168.0.1)
+        ip6 (str): Canonical shortened IPv6 address of a remote host (e.g ff02::1:ffe7:7f19)
+        hostname (str): DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
+        network_request (bool): Ping a remote host to populate the ARP/NDP tables for IPv4/IPv6
+    Returns:
+        Lowercase colon-separated MAC address, or None if one could not be
+        found or there was an error.
     """
     mac = None  # MAC address
     funcs = []  # Functions to try using to get a MAC
     arg = None  # Argument to the functions (e.g IP or interface)
+
+    # TODO: move interface here, so we don't try to ping if no IP is set
 
     # Get the MAC address of a remote host by hostname
     if hostname is not None:
@@ -91,7 +54,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         # This would handle case of an IPv6 host
 
     # Populate the ARP table using a simple ping
-    if arp_request:
+    if network_request:
         if sys.platform == 'win32':  # Windows
             _popen("ping", "-n 1 %s" % ip if ip is not None else ip6)
         else:  # Non-Windows
@@ -172,10 +135,6 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     return mac
 
 
-# ***************************
-# *-#-*     Windows     *-#-*
-# ***************************
-
 # Source: https://goo.gl/ymhZ9p
 def _windows_get_remote_mac(host):
     # requires windows 2000 or newer
@@ -217,16 +176,15 @@ def _windows_get_remote_mac(host):
     return macaddr
 
 
+# TODO: windows remote mac using `arp`, add to README
+
+
 def _windows_ipconfig_by_interface(interface):
     return _search(re.escape(interface) +
                    r'(?:\n?[^\n]*){1,8}Physical Address.+'
                    r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})',
                    _popen('ipconfig', '/all'))
 
-
-# ******************************
-# *-#-*     Unix/Linux     *-#-*
-# ******************************
 
 # Source: https://stackoverflow.com/a/4789267/2214380
 def _unix_fcntl_by_interface(interface):
@@ -246,7 +204,7 @@ def _unix_ifconfig_by_interface(interface):
             return mac
         else:
             continue
-    return None
+    return None  # TODO: unreachable?
 
 
 # It would seem that "list" breaks this on Android API 24+ due to SELinux.
@@ -277,10 +235,6 @@ def _unix_netstat_by_interface(interface):
                    r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
                    _popen('netstat', '-iae'), group_index=1)
 
-
-# ***********************************
-# *-#-*     Utilities/Other     *-#-*
-# ***********************************
 
 def _search(regex, text, group_index=0):
     match = re.search(regex, text)
@@ -322,6 +276,7 @@ def _popen(command, args):
     return output
 
 
+# TODO: comment
 def _find_mac(command, args, hw_identifiers, get_index):
     proc = _popen(command, args)
     for line in proc:
@@ -332,8 +287,3 @@ def _find_mac(command, args, hw_identifiers, get_index):
                 mac = int(word.replace(':', ''), 16)  # b':', b''
                 if mac:
                     return mac
-
-
-def _get_mac_main():
-    # TODO: commandline interface
-    pass

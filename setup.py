@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Source: https://github.com/GhostofGoes/ADLES/blob/master/setup.py
-
 from setuptools import setup, find_packages
-from get_mac.getmac import __version__
+from getmac.getmac import __version__
 
 
 with open('README.rst') as f:  # Loads in the README for PyPI
@@ -16,8 +14,8 @@ setup(
     version=__version__,
     author="Christopher Goes",
     author_email="goesc@acm.org",
-    description='Cross-platform Pure-Python 2/3 tool '
-                'to get a gosh-darn MAC address.',
+    description='Python interface to get the MAC address '
+                'of remote hosts or network interfaces.',
     long_description=long_description,  # This is what you see on PyPI page
     url="https://github.com/GhostofGoes/get-mac",
     download_url='https://pypi.python.org/pypi/get-mac',
@@ -26,12 +24,12 @@ setup(
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': [
-            'get-mac = get_mac.getmac:_get_mac_main'
+            'get-mac = getmac.__main__:main'
         ]
     },
     platforms=["any"],
-    keywords="get-mac mac-address mac address networking networks layer2 "
-             "media access control ieee 802 mac-48 ethernet lol",
+    keywords="get-mac getmac mac-address mac address networking networks layer2 osi "
+             "media access control ieee 802 mac-48 ethernet network python layer-2",
     classifiers=[  # Used by PyPI to classify the project and make it searchable
         'Development Status :: 2 - Pre-Alpha',
         'Environment :: Console',
@@ -43,6 +41,7 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',

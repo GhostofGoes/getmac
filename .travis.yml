@@ -38,7 +38,14 @@ install:
   - python setup.py install
 
 script:
+  - get-mac --help
+  - get-mac --version
   - get-mac
+  - get-mac --hostname localhost
+  - get-mac --ip 127.0.0.1
+  - python -m getmac --help
+  - python -m getmac --version
+  - python -m getmac
 
 notifications:
   email:
@@ -50,3 +57,5 @@ deploy:
   user: ghostofgoes
   password:
     secure: liKDOCikijEVxIZ/Lo/pTSuM4FXVIlDZYIYVcEGN6M0Kfsy8ucNyg372Yu9/fDb3/VgKifdVAl2Pu/ouAZLZQzIZR/dNpz5apO9DaUtuAOreK8/ry/fvgjDzsrO1JF8Z8QdyObiJd0ZR5BsRifo2mWas6MZzRbdurUHtgTkDGEn7tIVhvHvGoTmxFN2LYqczW6RIBXgoGMpk1QPIknfVUynM+DNfURRoQrbTYCoagflItfW9JA+ZGhpp+yX6nk3SVe9OdUozy46m4VGKV8AgXwpRL20aR5lzfAK9/OJcmlWHyQNlKOwoVeEukccW7y/AHic7UtyDU+0ILlB1boWeN3/XQmPT1nFkDsmDv/l+adWxPNz0+FrZdAefyTYCXBM/aHv+U2YgmtDKx/6mcjrnbrUFlJaWUKAB9gpOYpayptldvanOPmZmTVAaq0FoOSBHJfuFqG3EBsm4B8grBnJNJ8+wKrd1ZTzwz13E/vlJ4N3NLYn5fNR1ndDSwqIHVmL2dOIUCdsF7iFQaeWhWG2KRm7i0fnNsgfOcs4WgYtyQO+OH3kyOLB4erX3QwNy1naX9w0PsJUABG4ABn6NWRVg8koPFnBThDOo8V/UPQUqgZ64HV+fE01HUWiFZJBCy5GzKp5ZJfTEOty0Zs396KEL8asbSMwF9aU6+LVLEcB3qlA=
+  on:
+    tags: true
