@@ -98,13 +98,17 @@ def get_mac_address(interface=None, ip=None, ip6=None,
             to_find = interface
 
         # Default to finding MAC of the interface with the default route
+        # TODO: function for determining default interface
         elif IS_WINDOWS:
             # TODO: default route OR first interface found windows
             to_find = 'Ethernet'
         else:
             # Try to use the IP command to get default interface
             # TODO: default interface
-            to_find = _unix_default_interface_ip_command()
+            try:
+                to_find = _unix_default_interface_ip_command()
+            except Exception:
+                to_find = None
             if to_find is None:
                 to_find = 'eth0'
 
@@ -225,29 +229,39 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (esc + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
              1, 'netstat', ['-iae']),
 
+            # ip link (Don't use 'list' due to SELinux [Android 24+])
+            (esc + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             0, 'ip', ['link']),
+
             # ifconfig
             (esc + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
              1, 'ifconfig', ['', '-a', '-v']),
 
-            # ip link (Don't use 'list' due to SELinux [Android 24+])
-            (esc + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-             0, 'ip', ['link']),
+            # Mac OS X
+            (esc + r'.*(ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             1, 'ifconfig', ['']),
 
             # Tru64 ('-av')
             (esc + r'.*(Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
              1, 'ifconfig', ['-av']),
 
             # HP-UX
-            lambda x: _find_mac('lanscan', '-ai', [x], lambda i: 0),
+            lambda x: _find_mac('lanscan', '-ai',
+                                ['lan0' if x == 'eth0' else x], lambda i: 0),
         ]
 
     # Non-Windows - Remote Host
     elif type_of_thing in ['ip', 'ip6', 'hostname']:
         methods = [
-            (r'\(' + esc + r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-             0, 'arp', ['-an']),
             (esc + r'.*([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
              0, 'cat', ['/proc/net/arp']),
+
+            (r'\(' + esc + r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             0, 'arp', ['-an']),
+
+            # Linux, FreeBSD and NetBSD
+            lambda x: _find_mac('arp', '-an', [os.fsencode('(%s)' % x)],
+                                lambda i: i + 2),
             # TODO: "ip neighbor show"
             # TODO: "arping"
         ]
