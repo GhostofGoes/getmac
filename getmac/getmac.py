@@ -12,14 +12,23 @@ import shlex
 import warnings
 from subprocess import Popen, PIPE, CalledProcessError
 try:
-    from subprocess import DEVNULL    # Python 3
+    from subprocess import DEVNULL  # Py3
 except ImportError:
-    DEVNULL = open(os.devnull, 'wb')  # Python 2
+    DEVNULL = open(os.devnull, 'wb')  # Py2
 
 __version__ = '0.2.0'
-DEBUG = False  # TODO
 
-# TODO: better way of doing functions. Lookup table in a dict?
+PY3 = sys.version_info[0] == 3
+
+DEBUG = False
+IS_WINDOWS = False
+if sys.platform == 'win32':  # TODO: improve windows detection
+    IS_WINDOWS = True
+PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)
+if not IS_WINDOWS:
+    PATH.extend(('/sbin', '/usr/sbin'))
+ENV = dict(os.environ)
+ENV['LC_ALL'] = 'C'  # Ensure English output
 
 
 def get_mac_address(interface=None, ip=None, ip6=None,
@@ -33,6 +42,8 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     Exceptions will be handled silently and returned as a None.
     For the time being, it assumes you are using Ethernet.
 
+    NOTE: you MUST provide str-typed arguments, REGARDLESS of Python version.
+
     Args:
         interface (str): Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
         ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g 192.168.0.1)
@@ -43,91 +54,71 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error.
     """
-    mac = None  # MAC address
-    funcs = []  # Functions to try using to get a MAC
-    arg = None  # Argument to the functions (e.g IP or interface)
-
-    # TODO: move interface here, so we don't try to ping if no IP is set
-
-    # Get the MAC address of a remote host by hostname
-    if hostname is not None:
-        ip = socket.gethostbyname(hostname)
-        # TODO: IPv6 support: use getaddrinfo instead of gethostbyname
-        # This would handle case of an IPv6 host
-
     # Populate the ARP table using a simple ping
-    if network_request:
-        if sys.platform == 'win32':  # Windows
-            _popen("ping", "-n 1 %s" % ip if ip is not None else ip6)
-        else:  # Non-Windows
-            if ip is not None:  # IPv4
-                _popen("ping", "-c 1 %s" % ip)
-            else:  # IPv6
-                _popen("ping6", "-c 1 %s" % ip6)
+    if network_request and (ip or ip6 or hostname):
+        try:
+            if IS_WINDOWS:
+                _popen("ping", "-n 1 %s" % ip if ip is not None else ip6)
+            else:
+                if ip is not None:  # IPv4
+                    _popen("ping", "-c 1 %s" % ip)
+                else:  # IPv6
+                    _popen("ping6", "-c 1 %s" % ip6)
+        # If network request fails, warn and continue onward
+        except Exception:
+            warnings.warn("Ping failed due to an exception. You should disable "
+                          "these attempts by setting 'network_request' to "
+                          "False on systems generating this warning.",
+                          RuntimeWarning)
 
-    # Get MAC of a IPv4 remote host (or a resolved hostname)
-    if ip is not None:
-        arg = ip
-        if sys.platform == 'win32':  # Windows
-            funcs = [_windows_get_remote_mac]
-        else:  # Non-Windows
-            funcs = [_unix_ip_arp_command, _unix_ip_cat_arp,
-                     _unix_ip_ip_command]
+    # Resolve hostname to an IP address
+    if hostname:
+        ip = socket.gethostbyname(hostname)
+        # TODO: IPv6 support
+        #   Use getaddrinfo instead of gethostbyname
+        #   This would handle case of an IPv6 host
 
-    # Get MAC of a IPv6 remote host
-    # TODO: "netsh int ipv6 show neigh" (windows cmd)
-    elif ip6 is not None:
+    # Setup the address hunt based on the arguments specified
+    if ip6:
         if not socket.has_ipv6:
-            warnings.warn("Cannot get the MAC address of a IPv6 host: "
+            warnings.warn("getmac: Cannot get the MAC address of a IPv6 host: "
                           "IPv6 is not supported on this system",
                           RuntimeWarning)
             return None
-        arg = ip6
-
-    # Get MAC of a local interface
+        to_find = ip6
+        type_of_thing = 'ip6'
+    elif ip:
+        to_find = ip
+        type_of_thing = 'ip'
     else:
-        if interface is not None:
-            arg = str(interface)
-        # Determine what interface is "default" (has default route)
-        elif sys.platform == 'win32':  # Windows
+        # Get MAC of a local interface
+        type_of_thing = 'interface'
+        if interface:
+            to_find = interface
+
+        # Default to finding MAC of the interface with the default route
+        elif IS_WINDOWS:
             # TODO: default route OR first interface found windows
-            arg = 'Ethernet 1'
-        else:  # Non-Windows
+            to_find = 'Ethernet'
+        else:
             # Try to use the IP command to get default interface
-            arg = _unix_default_interface_ip_command()
-            if arg is None:
-                arg = 'eth0'
+            # TODO: default interface
+            to_find = _unix_default_interface_ip_command()
+            if to_find is None:
+                to_find = 'eth0'
 
-        if sys.platform == 'win32':  # Windows
-            # _windll_getnode,
-            funcs = [_windows_ipconfig_by_interface]
-        else:  # Non-Windows
-            # _unix_getnode, _unix_arp_by_ip, lanscan_getnode
-            funcs = [_unix_ifconfig_by_interface, _unix_interface_ip_command,
-                     _unix_netstat_by_interface, _unix_fcntl_by_interface,
-                     _unix_lanscan_interface]
+    # Begin the hunt!
+    mac = _hunt_for_mac(to_find, type_of_thing, net_ok=network_request)
+    if DEBUG:
+        print("Raw MAC found: ", mac)
 
-    # We try every function and see if it returned a MAC address
-    # If it returns None or raises an exception,
-    # we continue and try the next function
-    for func in funcs:
-        try:
-            mac = func(arg)
-        except Exception as ex:
-            if DEBUG:
-                print("Exception: %s" % str(ex))  # TODO
-                import traceback
-                traceback.print_exc()
-            continue
-        if mac is not None:
-            break
-
-    # Make sure address is formatted properly
+    # Check and format the result to be lowercase, colon-separated
     if mac is not None:
-        # lowercase, colon-separated
-        # NOTE: we cast to str ONLY here and NO WHERE ELSE to prevent
-        # possibly returning "None" strings.
-        mac = str(mac).lower().strip().replace('-', ':').replace(' ', '')
+        mac = str(mac)
+        if PY3:  # Strip bytestring conversion artifacts
+            mac = mac.replace("b'", '').replace("'", '')\
+                     .replace('\\n', '').replace('\\r', '')
+        mac = mac.strip().lower().replace(' ', '').replace('-', ':')
 
         # Fix cases where there are no colons
         if len(mac) == 12:
@@ -137,7 +128,6 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         # MAC address should ALWAYS be 17 characters with the colons
         if len(mac) != 17:
             mac = None
-
     return mac
 
 
@@ -146,10 +136,7 @@ def _windows_get_remote_mac(host):
     # Requires windows 2000 or newer
 
     # Check for API availability
-    try:
-        SendARP = ctypes.windll.Iphlpapi.SendARP
-    except Exception:
-        raise NotImplementedError('Usage only on Windows 2000 and above')
+    send_arp = ctypes.windll.Iphlpapi.SendARP
 
     # Doesn't work with loopbacks, but let's try and help.
     if host == '127.0.0.1' or host.lower() == 'localhost':
@@ -160,16 +147,15 @@ def _windows_get_remote_mac(host):
         inetaddr = ctypes.windll.wsock32.inet_addr(host)
         if inetaddr in (0, -1):
             raise Exception
-    except:
+    except Exception:
         hostip = socket.gethostbyname(host)
         inetaddr = ctypes.windll.wsock32.inet_addr(hostip)
 
     buffer = ctypes.c_buffer(6)
     addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
 
-    # TODO: arp_request flag
-    if SendARP(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
-        raise WindowsError('Retrieval of mac address(%s) - failed' % host)
+    if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
+        return None
 
     # Convert binary data into a string.
     macaddr = ''
@@ -182,16 +168,7 @@ def _windows_get_remote_mac(host):
     return macaddr
 
 
-# TODO: windows remote mac using `arp`, add to README
-
-
-def _windows_ipconfig_by_interface(interface):
-    return _search(re.escape(interface) +
-                   r'(?:\n?[^\n]*){1,8}Physical Address.+'
-                   r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})',
-                   _popen('ipconfig', '/all'))
-
-
+# TODO: IPv6?
 def _unix_fcntl_by_interface(interface):
     # Source: https://stackoverflow.com/a/4789267/2214380
     import fcntl
@@ -200,66 +177,117 @@ def _unix_fcntl_by_interface(interface):
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
 
 
-def _unix_ifconfig_by_interface(interface):
-    # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
-    for arg in ('', '-a', '-av', '-v'):
-        mac = _search(re.escape(interface) +
-                      r'.*(HWaddr|Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-                      _popen('ifconfig', arg))
-        if mac:
-            return mac
-        else:
+def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
+    esc = re.escape(to_find)
+    found = None
+
+    # Format of method lists
+    # Tuple:    (regex, regex index, command, command args)
+    # Function: function to call
+
+    # Windows - Network Interface
+    if IS_WINDOWS and type_of_thing == 'interface':
+        methods = [
+
+            (esc + r'(?:\n?[^\n]*){1,8}Physical Address.+'
+                   r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})',
+             0, 'ipconfig', ['/all']),
+
+            # TODO: "netsh int ipv6"
+            # TODO: getmac.exe
+        ]
+
+    # Windows - Remote Host
+    elif IS_WINDOWS and type_of_thing in ['ip', 'ip6', 'hostname']:
+
+        methods = [
+
+
+            # TODO: "netsh int ipv6 show neigh"
+            # TODO: "arping"
+            # TODO: getmac.exe
+        ]
+
+        # Add methods that make network requests
+        if net_ok:
+            methods.append(_windows_get_remote_mac)
+
+    # Non-Windows - Network Interface
+    elif type_of_thing == 'interface':
+        methods = [
+            lambda x: _popen('cat', '/sys/class/net/' + x + '/address'),
+
+            _unix_fcntl_by_interface,
+
+            # netstat
+            (esc + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             1, 'netstat', ['-iae']),
+
+            # ifconfig
+            (esc + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             1, 'ifconfig', ['', '-a', '-v']),
+
+            # ip link (Don't use 'list' due to SELinux [Android 24+])
+            (esc + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             0, 'ip', ['link']),
+
+            # Tru64 ('-av')
+            (esc + r'.*(Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             1, 'ifconfig', ['-av']),
+
+            # HP-UX
+            lambda x: _find_mac('lanscan', '-ai', [x], lambda i: 0),
+        ]
+
+    # Non-Windows - Remote Host
+    elif type_of_thing in ['ip', 'ip6', 'hostname']:
+        methods = [
+            (r'\(' + esc + r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             0, 'arp', ['-an']),
+            (esc + r'.*([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             0, 'cat', ['/proc/net/arp']),
+            # TODO: "ip neighbor show"
+            # TODO: "arping"
+        ]
+    else:  # This should never happen
+        return None
+
+    # We try every function and see if it returned a MAC address
+    # If it returns None or raises an exception,
+    # we continue and try the next function
+    for m in methods:
+        try:
+            if isinstance(m, tuple):
+                for arg in m[3]:
+                    found = _search(m[0], _popen(m[2], arg), m[1])
+                    if DEBUG:
+                        print("%s %s: %s" % (m[2], arg, found))
+            elif callable(m):
+                found = m(to_find)
+                if DEBUG:
+                    print("%s: %s" % (m.__name__, found))
+        except Exception as ex:
+            if DEBUG:
+                print("Exception: ", str(ex))
+                import traceback
+                traceback.print_exc()
             continue
-    return None  # TODO: unreachable?
-
-
-# It would seem that "list" breaks this on Android API 24+ due to SELinux.
-# https://github.com/python/cpython/pull/4696/files
-# https://bugs.python.org/issue32199
-def _unix_interface_ip_command(interface):
-    return _search(re.escape(interface) +
-                   r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-                   _popen('ip', 'link'))
-
-
-def _unix_ip_ip_command(ip):
-    pass
-
-
-def _unix_ip_arp_command(ip):
-    return _search(r'\(' + re.escape(ip) +
-                   r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-                   _popen('arp', '-an'))
-
-
-def _unix_ip_cat_arp(ip):
-    return _search(re.escape(ip) + r'.*([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-                   _popen('cat', '/proc/net/arp'))
-
-
-def _unix_lanscan_interface(interface):
-    # Might work on HP-UX
-    return _find_mac('lanscan', '-ai', [interface], lambda i: 0)
-
-
-def _unix_netstat_by_interface(interface):
-    return _search(re.escape(interface) +
-                   r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-                   _popen('netstat', '-iae'), group_index=1)
+        if found:
+            break
+    return found
 
 
 def _unix_default_interface_ip_command():
     return _search(r'.*dev ([0-9a-z]*)',
-                   _popen('ip', 'route get 0.0.0.0'), group_index=0)
+                   _popen('ip', 'route get 0.0.0.0'))
 
 
 # TODO
 def _unix_default_interface_route_command():
     return _search(r'.*(0\.0\.0\.0).*([0-9a-z]*)\n',
-                   _popen('route', '-n'), group_index=0)
+                   _popen('route', '-n'), group_index=1)
 
 
-# TODO: comments
 def _search(regex, text, group_index=0):
     match = re.search(regex, text)
     if match:
@@ -269,12 +297,7 @@ def _search(regex, text, group_index=0):
 
 
 def _popen(command, args):
-    # Try to find the full path to the actual executable of the command
-    # This prevents snafus from shell weirdness and other things
-    path = os.environ.get("PATH", os.defpath).split(os.pathsep)
-    if sys.platform != 'win32':
-        path.extend(('/sbin', '/usr/sbin'))  # Add sbin to path on Unix
-    for directory in path:
+    for directory in PATH:
         executable = os.path.join(directory, command)
         if (os.path.exists(executable) and
                 os.access(executable, os.F_OK | os.X_OK) and
@@ -283,22 +306,21 @@ def _popen(command, args):
     else:
         executable = command
 
-    # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
-    # on stderr (Note: we don't have an example where the words we search
-    # for are actually localized, but in theory some system could do so.)
-    env = dict(os.environ)
-    env['LC_ALL'] = 'C'
-    cmd = [executable] + shlex.split(args)
-    # Using this instead of check_output is for Python 2.6 compatibility
-    process = Popen(cmd, stdout=PIPE, stderr=DEVNULL)
+    if IS_WINDOWS:
+        cmd = executable + ' ' + args
+    else:
+        cmd = [executable] + shlex.split(args)
+
+    # Popen instead of check_output() for Python 2.6 compatibility
+    process = Popen(cmd, stdout=PIPE, stderr=DEVNULL, env=ENV)
     output, unused_err = process.communicate()
     retcode = process.poll()
+
     if retcode:
         raise CalledProcessError(retcode, cmd, output=output)
     return str(output)
 
 
-# TODO: comments
 def _find_mac(command, args, hw_identifiers, get_index):
     proc = _popen(command, args)
     for line in proc:
@@ -306,6 +328,6 @@ def _find_mac(command, args, hw_identifiers, get_index):
         for i in range(len(words)):
             if words[i] in hw_identifiers:
                 word = words[get_index(i)]
-                mac = int(word.replace(':', ''), 16)  # b':', b''
+                mac = int(word.replace(':', ''), 16)
                 if mac:
                     return mac

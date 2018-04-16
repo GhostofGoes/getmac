@@ -10,7 +10,11 @@
 * Added an argumnent for debugging: `--debug`
 * Removed `-d` option from `--no-network-requests`
 
+## Fixed
+* Interface lookup on Linux (including Bash for Windows)
+
 ## Dev
+* Overhaul of internals
 
 
 # 0.1.0 (04/15/2018):
