@@ -31,6 +31,8 @@ if not IS_WINDOWS:
 ENV = dict(os.environ)
 ENV['LC_ALL'] = 'C'  # Ensure English output
 
+MAC_RE = r'([0-9a-f]{2}(?::[0-9a-f]{2}){5})'
+
 
 def get_mac_address(interface=None, ip=None, ip6=None,
                     hostname=None, network_request=True):
@@ -223,31 +225,35 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             _unix_fcntl_by_interface,
 
             # Fast ifconfig
-            (r'HWaddr ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            (r'HWaddr ' + MAC_RE,
              0, 'ifconfig', [to_find]),
 
             # Fast Mac OS X
-            (r'ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            (r'ether ' + MAC_RE,
              0, 'ifconfig', [to_find]),
 
             # netstat
-            (esc + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            (esc + r'.*(HWaddr) ' + MAC_RE,
              1, 'netstat', ['-iae']),
 
             # ip link (Don't use 'list' due to SELinux [Android 24+])
-            (esc + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            (esc + r'.*\n.*link/ether ' + MAC_RE,
              0, 'ip', ['link %s' % to_find, 'link']),
 
+            # Quick attempt on Mac OS X
+            (MAC_RE, 0,
+             'networksetup', ['-getmacaddress %s' % to_find]),
+
             # ifconfig
-            (esc + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            (esc + r'.*(HWaddr) ' + MAC_RE,
              1, 'ifconfig', ['', '-a', '-v']),
 
             # Mac OS X
-            (esc + r'.*(ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            (esc + r'.*(ether) ' + MAC_RE,
              1, 'ifconfig', ['']),
 
             # Tru64 ('-av')
-            (esc + r'.*(Ether) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            (esc + r'.*(Ether) ' + MAC_RE,
              1, 'ifconfig', ['-av']),
 
             # HP-UX
@@ -258,10 +264,10 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     # Non-Windows - Remote Host
     elif type_of_thing in ['ip', 'ip6', 'hostname']:
         methods = [
-            (esc + r'.*([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            (esc + r'.*' + MAC_RE,
              0, 'cat', ['/proc/net/arp']),
 
-            (r'\(' + esc + r'\)\s+at\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+            (r'\(' + esc + r'\)\s+at\s+' + MAC_RE,
              0, 'arp', ['-an']),
 
             # Linux, FreeBSD and NetBSD
