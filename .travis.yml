@@ -47,13 +47,13 @@ install:
 script:
   - get-mac --help
   - get-mac --version
-  - get-mac
-  - get-mac --hostname localhost --debug
-  - get-mac --ip 127.0.0.1 --debug
-  - get-mac --ip6 '::1'
+  - get-mac --no-network-requests --debug
+  - get-mac --hostname localhost --no-network-requests --debug
+  - get-mac --ip 127.0.0.1 --no-network-requests --debug
+  - get-mac --ip6 '::1' --no-network-requests --debug
   - python -m getmac --help
   - python -m getmac --version
-  - python -m getmac
+  - python -m getmac --no-network-requests --debug
 
 notifications:
   email:
