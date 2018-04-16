@@ -60,20 +60,27 @@ notifications:
 
 before_deploy:
 - python setup.py bdist_egg
+- tar czf getmac.tar.gz ./getmac
 
 
 deploy:
   matrix:
   - provider: pypi
+    skip_cleanup: true
     user: ghostofgoes
     password:
         secure: LlVHnj7TrXyEjj+gBQx9+rVzCi5SB2DyfqfQ35CpAFjjkJMbE2nnzMxMh+O7sFo+OFoBLQDpwwRbdT3OLBhQ+GbI7VKNXGB496t+OWcYtvl+kVpXiOCtDuOUq//mi8g51sJArwHOa7gU61ZEQOJsasv/Iw3DkkB2IeB/8/FyJqtsd/qMcLdcQy1XtODes4UZ2qZdE2UIzA8Q2Hk9IvubtGrC5726OqDxoqNoabFysbYgpICqURsBAY42KgEA8na03su0/4wbbF/guVl31shiXeufNjC1M6MicnrxI40yQ9LB+QOfFJfCQqmxKpWMulr4s7iAuY35B5a4XB8sfo2rRWwsuY2da1Ei9SJyLpkkkNl/yJ70GgUeALpwXE01Cvo3Da+yv889HNmOHizpX4DHsFGeXvqCKQuEOLbx5Mu6glWeaItSa5R27XzyWLPSWcgbja+huT7JC2k8pH/4A18ZY6JlEUc+ymxjwfKsXw00i1EiCJP/3ZxAkIem0oOm8Z5icLzPQ7SPDaghASA3Lpj0PneHsJu2mvb12UVi9j7q/OlbLc4JmfKi6u0RelZU48m676WsPUOLkhHrRX+OIOa+gFh9qnFXXnXhmT7OfeZsK/J/E4S5hXc6wcJJ+sk188PNWzqusbGK8FvfKYssfo1iVQSnFtPbMGGmTjXqeU0rsxI=
     on:
       tags: true
   - provider: releases
+    skip_cleanup: true
     api_key:
       secure: bXQSN042EpyEe/scfd2GO7RIa1HWoZAtf358JF1oUL03ecowXhgBCz1mYilRcoGmrA/sOthZ5vga9QnWOfFUwmamUIG4lUu0wnbsR5bRXbA3gDPHTMNcd9tq8MjDamsB4OS+ycH6v4q1M6KHI0PNgqkYUex88u48AFNO7uXVq2FiZG+bpWXu1s68cW/ZNO3rCKn8fubbDn1eVdiUjXgkMlAKPwTFXHbFRa9ANUZLZhlwo4wTFN/G40l8PgRUZm7O0Qh4VKr+ahmFQ37R6vP2QQn8jv4y7GkLROhDx9uRV3iBqIrKj1sYjZpTNe3ddl5NO1bRNN559JDniBAfc1nFuXhAhY2U4IgiKrXRpM+M1Wu80Ukbhd+jiFCs7dYRsyXjdQeNXI1CYa3mnlI3zTuzaZj9kRXkgzjEc0fUaK+pMI0i9vkoN1wMOFodB5ObwnXYqq/0CD7ElREBDCVURrAmhxPqJFXR0ZFSoRgW4uThbkFHcBcjgZaZEKek0jtkWTp+DS05mIOi0c0/VLT6SHGVnJlsQOd1cn4Qr3qCokQFs9EW2XiZ4/ZzNH+8CCKyw4h8nr70fiDJNg8pwOK6eMEaP3Pm2nAhyQWQRrbkQPaMrRM/XbJPT30LIvh8xorVBwrvHHkBBLwkcIl6xi7H87TZZQ4tyPlui2NfOs2O0O/oBu0=
-    file: ''
+    file_glob: true
+    file:
+    - './getmac/getmac.py'
+    - './getmac.tar.gz'
+    - './**/*.egg'
     on:
       repo: GhostofGoes/get-mac
       tags: true
