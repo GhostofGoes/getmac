@@ -7,12 +7,14 @@ from . import getmac
 
 
 def main():
-    """CLI entrypoint for get-mac."""
+    """CLI entrypoint. Invoked using `get-mac` or `python -m getmac`."""
 
-    # TODO: default to local interface if no args are specified
-    # TODO: argcomplete?
-    # TODO: make a note about python 2.6 and terminal interface
-    import argparse
+    try:
+        import argparse
+    except ImportError:
+        print("Python 2.6 is not supported for the terminal interface")
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(
         description='Get the MAC address of remote hosts '
                     'or network interfaces using Python.',

@@ -1,8 +1,8 @@
 
-# 0.2.0 (TBD)
+# 0.2.0 (04/15/2018)
 ## Added
-* Checks for default interface on Unix systems
-* New methods of hunting for addresses
+* Checks for default interface on Linux systems
+* New methods of hunting for addresses on Windows, Mac OS X, and Linux
 
 ## Changed
 * CLI will output nothing if it failed, instead of "None"
@@ -12,7 +12,11 @@
 * Removed `-d` option from `--no-network-requests`
 
 ## Fixed
-* Interface lookup on Linux (including Bash for Windows)
+* Interfaces on Windows and Linux (including Bash for Windows)
+* Many bugs
+
+## Removed
+* Support for Python 2.6 on the CLI
 
 ## Dev
 * Overhaul of internals
