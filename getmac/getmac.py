@@ -36,7 +36,7 @@ MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
 MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
 
 
-# TODO: add ability to match case-insensitivly
+# TODO: add ability to match case-insensitively
 def get_mac_address(interface=None, ip=None, ip6=None,
                     hostname=None, network_request=True):
     """
