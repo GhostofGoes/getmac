@@ -31,9 +31,12 @@ if not IS_WINDOWS:
 ENV = dict(os.environ)
 ENV['LC_ALL'] = 'C'  # Ensure English output
 
-MAC_RE = r'([0-9a-f]{2}(?::[0-9a-f]{2}){5})'
+# TODO: ignore case?
+MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
+MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
 
 
+# TODO: add ability to match case-insensitivly
 def get_mac_address(interface=None, ip=None, ip6=None,
                     hostname=None, network_request=True):
     """
@@ -184,10 +187,8 @@ def _unix_fcntl_by_interface(interface):
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
 
 
+# TODO: UNICODE option needed for non-english locales? (Is LC_ALL working?)
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
-    esc = re.escape(to_find)
-    found = None
-
     # Format of method lists
     # Tuple:    (regex, regex index, command, command args)
     # Function: function to call
@@ -195,10 +196,18 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     # Windows - Network Interface
     if IS_WINDOWS and type_of_thing == 'interface':
         methods = [
-            # TODO: ok, this is actually extremely slow
-            (esc + r'(?:\n?[^\n]*){1,8}Physical Address.+'
-                   r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})',
+            # getmac - Connection Name
+            (r'\r\n' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n', 0,
+             'getmac', ['/v /fo TABLE /nh']),
+
+            # ipconfig
+            (to_find + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+'
+             + MAC_RE_DASH + r'\r\n',
              0, 'ipconfig', ['/all']),
+
+            # getmac - Network Adapter (the human-readable name)
+            (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n', 0,
+             'getmac', ['/v /fo TABLE /nh']),
 
             # TODO: "netsh int ipv6"
             # TODO: getmac.exe
@@ -206,7 +215,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
     # Windows - Remote Host
     elif IS_WINDOWS and type_of_thing in ['ip', 'ip6', 'hostname']:
-
+        esc = re.escape(to_find)
         methods = [
             # TODO: "netsh int ipv6 show neigh"
             # TODO: "arping"
@@ -225,35 +234,35 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             _unix_fcntl_by_interface,
 
             # Fast ifconfig
-            (r'HWaddr ' + MAC_RE,
+            (r'HWaddr ' + MAC_RE_COLON,
              0, 'ifconfig', [to_find]),
 
             # Fast Mac OS X
-            (r'ether ' + MAC_RE,
+            (r'ether ' + MAC_RE_COLON,
              0, 'ifconfig', [to_find]),
 
             # netstat
-            (esc + r'.*(HWaddr) ' + MAC_RE,
+            (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
              1, 'netstat', ['-iae']),
 
             # ip link (Don't use 'list' due to SELinux [Android 24+])
-            (esc + r'.*\n.*link/ether ' + MAC_RE,
+            (to_find + r'.*\n.*link/ether ' + MAC_RE_COLON,
              0, 'ip', ['link %s' % to_find, 'link']),
 
             # Quick attempt on Mac OS X
-            (MAC_RE, 0,
+            (MAC_RE_COLON, 0,
              'networksetup', ['-getmacaddress %s' % to_find]),
 
             # ifconfig
-            (esc + r'.*(HWaddr) ' + MAC_RE,
+            (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
              1, 'ifconfig', ['', '-a', '-v']),
 
             # Mac OS X
-            (esc + r'.*(ether) ' + MAC_RE,
+            (to_find + r'.*(ether) ' + MAC_RE_COLON,
              1, 'ifconfig', ['']),
 
             # Tru64 ('-av')
-            (esc + r'.*(Ether) ' + MAC_RE,
+            (to_find + r'.*(Ether) ' + MAC_RE_COLON,
              1, 'ifconfig', ['-av']),
 
             # HP-UX
@@ -263,11 +272,12 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
     # Non-Windows - Remote Host
     elif type_of_thing in ['ip', 'ip6', 'hostname']:
+        esc = re.escape(to_find)
         methods = [
-            (esc + r'.*' + MAC_RE,
+            (esc + r'.*' + MAC_RE_COLON,
              0, 'cat', ['/proc/net/arp']),
 
-            (r'\(' + esc + r'\)\s+at\s+' + MAC_RE,
+            (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_COLON,
              0, 'arp', ['-an']),
 
             # Linux, FreeBSD and NetBSD
@@ -282,6 +292,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     # We try every function and see if it returned a MAC address
     # If it returns None or raises an exception,
     # we continue and try the next function
+    found = None
     for m in methods:
         try:
             if isinstance(m, tuple):
@@ -310,7 +321,7 @@ def _unix_default_interface_ip_command():
 
 # TODO
 def _unix_default_interface_route_command():
-    return _search(r'.*(0\.0\.0\.0).*([0-9a-z]*)\n',
+    return _search(r'.*' + re.escape('0.0.0.0') + r'.*([0-9a-z]*)\n',
                    _popen('route', '-n'), group_index=1)
 
 
@@ -344,7 +355,11 @@ def _popen(command, args):
 
     if retcode:
         raise CalledProcessError(retcode, cmd, output=output)
-    return str(output)
+
+    if PY3 and isinstance(output, bytes):
+        return str(output, 'utf-8')
+    else:
+        return str(output)
 
 
 def _find_mac(command, args, hw_identifiers, get_index):
