@@ -19,6 +19,9 @@ That is partially in jest, partially insane[ity].
 #   Threading (spin out all attempts, plus make itself thread-friendly)
 
 
+Unittesting of Python 2.6 (since we have it disabled on CLI tests)
+
+
 # Platform TODO
 #   Linux (Debian and RHEL-based)
 #   Windows (XP+)

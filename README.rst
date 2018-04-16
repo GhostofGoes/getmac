@@ -47,6 +47,7 @@ Terminal
 
    get-mac --interface 'eth0'
    get-mac --ip '192.168.0.1'
+   # Note: following will not work with python 2.6
    python -m getmac --interface 'eth0'
    python -m getmac --ip '192.168.0.1'
 
