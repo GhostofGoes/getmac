@@ -187,6 +187,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     if IS_WINDOWS and type_of_thing == 'interface':
         methods = [
 
+            # TODO: ok, this is actually extremely slow
             (esc + r'(?:\n?[^\n]*){1,8}Physical Address.+'
                    r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})',
              0, 'ipconfig', ['/all']),

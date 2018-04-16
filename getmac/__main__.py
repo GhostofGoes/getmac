@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 import sys
 
-import getmac
+from . import getmac
 
 
 def main():
@@ -12,12 +11,14 @@ def main():
 
     # TODO: default to local interface if no args are specified
     # TODO: argcomplete?
+    # TODO: make a note about python 2.6 and terminal interface
+    import argparse
     parser = argparse.ArgumentParser(
         description='Get the MAC address of remote hosts '
                     'or network interfaces using Python.',
         prog='get-mac', add_help=True)
     parser.add_argument('--version', action='version',
-                        version='get-mac %s' % getmac.getmac.__version__)
+                        version='get-mac %s' % getmac.__version__)
     parser.add_argument('--no-network-requests', action='store_true',
                         help='Disable refreshing of the ARP '
                              'table by making a network request (ping)')
@@ -35,7 +36,7 @@ def main():
     args = parser.parse_args()
 
     if args.debug:
-        getmac.getmac.DEBUG = True
+        getmac.DEBUG = True
 
     mac = getmac.get_mac_address(interface=args.interface, ip=args.ip,
                                  ip6=args.ip6, hostname=args.hostname,

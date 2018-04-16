@@ -3,6 +3,7 @@
 
 *.out
 bashenv/
+py2bashenv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
