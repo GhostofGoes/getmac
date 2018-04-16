@@ -1,0 +1,18 @@
+    cgoes@Supercomputer-14:~$ ifconfig
+    eth0      Link encap:Ethernet  HWaddr 74:d4:35:e9:45:71
+            inet addr:10.0.0.104  Bcast:10.0.0.255  Mask:255.255.255.0
+            inet6 addr: fe80::30e1:92aa:53e7:7f19/64 Scope:Global
+            UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+            RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+            TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+            collisions:0
+            RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+    lo        Link encap:Local Loopback
+            inet addr:127.0.0.1  Mask:255.0.0.0
+            inet6 addr: ::1/128 Scope:Global
+            UP LOOPBACK RUNNING  MTU:1500  Metric:1
+            RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+            TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+            collisions:0
+            RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)

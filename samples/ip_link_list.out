@@ -1,0 +1,9 @@
+    cgoes@Supercomputer-14:~$ ip link list
+    7: eth0: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+        link/ether 74:d4:35:e9:45:71
+    3: eth1: <> mtu 1500 group default qlen 1
+        link/ether 00:ff:55:4d:4a:3b
+    1: lo: <LOOPBACK,UP> mtu 1500 group default qlen 1
+        link/loopback 00:00:00:00:00:00
+    5: eth2: <> mtu 1472 group default qlen 1
+        link/ether 00:00:00:00:00:00:00:e0:00:00:00:00:00:00:00:00

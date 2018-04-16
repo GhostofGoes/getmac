@@ -1,7 +1,6 @@
 .idea/
 .vscode/
 
-*.out
 bashenv/
 py2bashenv/
 

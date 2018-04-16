@@ -1,0 +1,89 @@
+
+Windows IP Configuration
+
+   Host Name . . . . . . . . . . . . : Supercomputer-14
+   Primary Dns Suffix  . . . . . . . :
+   Node Type . . . . . . . . . . . . : Hybrid
+   IP Routing Enabled. . . . . . . . : No
+   WINS Proxy Enabled. . . . . . . . : No
+
+Ethernet adapter PIA:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . :
+   Description . . . . . . . . . . . : TAP-Windows Adapter V9
+   Physical Address. . . . . . . . . : 00-FF-55-4D-4A-3B
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+
+Ethernet adapter Ethernet 3:
+
+   Connection-specific DNS Suffix  . :
+   Description . . . . . . . . . . . : Intel(R) Ethernet Connection I217-V
+   Physical Address. . . . . . . . . : 74-D4-35-E9-45-71
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+   Link-local IPv6 Address . . . . . : fe80::30e1:92aa:53e7:7f19%7(Preferred)
+   IPv4 Address. . . . . . . . . . . : 10.0.0.104(Preferred)
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Lease Obtained. . . . . . . . . . : Wednesday, October 25, 2017 06:24:49 PM
+   Lease Expires . . . . . . . . . . : Sunday, October 29, 2017 08:34:48 PM
+   Default Gateway . . . . . . . . . : 10.0.0.1
+   DHCP Server . . . . . . . . . . . : 10.0.0.1
+   DHCPv6 IAID . . . . . . . . . . . : 141874229
+   DHCPv6 Client DUID. . . . . . . . : 00-01-00-01-21-69-FF-48-62-45-B4-EB-44-79
+   DNS Servers . . . . . . . . . . . : 8.8.8.8
+                                       208.67.220.220
+   NetBIOS over Tcpip. . . . . . . . : Enabled
+
+Ethernet adapter VMware Network Adapter VMnet1:
+
+   Connection-specific DNS Suffix  . :
+   Description . . . . . . . . . . . : VMware Virtual Ethernet Adapter for VMnet1
+   Physical Address. . . . . . . . . : 00-50-56-C0-00-01
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+   Link-local IPv6 Address . . . . . : fe80::5915:5273:fcc5:20f3%14(Preferred)
+   IPv4 Address. . . . . . . . . . . : 192.168.21.1(Preferred)
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Lease Obtained. . . . . . . . . . : Friday, October 27, 2017 08:34:57 PM
+   Lease Expires . . . . . . . . . . : Friday, October 27, 2017 09:04:57 PM
+   Default Gateway . . . . . . . . . :
+   DHCP Server . . . . . . . . . . . : 192.168.21.254
+   DHCPv6 IAID . . . . . . . . . . . : 234901590
+   DHCPv6 Client DUID. . . . . . . . : 00-01-00-01-21-69-FF-48-62-45-B4-EB-44-79
+   DNS Servers . . . . . . . . . . . : fec0:0:0:ffff::1%1
+                                       fec0:0:0:ffff::2%1
+                                       fec0:0:0:ffff::3%1
+   NetBIOS over Tcpip. . . . . . . . : Enabled
+
+Ethernet adapter VMware Network Adapter VMnet8:
+
+   Connection-specific DNS Suffix  . :
+   Description . . . . . . . . . . . : VMware Virtual Ethernet Adapter for VMnet8
+   Physical Address. . . . . . . . . : 00-50-56-C0-00-08
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+   Link-local IPv6 Address . . . . . : fe80::8ddb:6e5b:2b44:79d6%15(Preferred)
+   IPv4 Address. . . . . . . . . . . : 192.168.107.1(Preferred)
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Lease Obtained. . . . . . . . . . : Friday, October 27, 2017 08:35:00 PM
+   Lease Expires . . . . . . . . . . : Friday, October 27, 2017 09:05:00 PM
+   Default Gateway . . . . . . . . . :
+   DHCP Server . . . . . . . . . . . : 192.168.107.254
+   DHCPv6 IAID . . . . . . . . . . . : 251678806
+   DHCPv6 Client DUID. . . . . . . . : 00-01-00-01-21-69-FF-48-62-45-B4-EB-44-79
+   DNS Servers . . . . . . . . . . . : fec0:0:0:ffff::1%1
+                                       fec0:0:0:ffff::2%1
+                                       fec0:0:0:ffff::3%1
+   Primary WINS Server . . . . . . . : 192.168.107.2
+   NetBIOS over Tcpip. . . . . . . . : Enabled
+
+Tunnel adapter Local Area Connection* 1:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . :
+   Description . . . . . . . . . . . : Microsoft Teredo Tunneling Adapter
+   Physical Address. . . . . . . . . : 00-00-00-00-00-00-00-E0
+   DHCP Enabled. . . . . . . . . . . : No
+   Autoconfiguration Enabled . . . . : Yes
