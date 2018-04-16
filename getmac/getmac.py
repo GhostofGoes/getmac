@@ -9,7 +9,7 @@ import struct
 import socket
 import re
 import shlex
-import warnings
+from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError
 try:
     from subprocess import DEVNULL  # Py3
@@ -66,10 +66,9 @@ def get_mac_address(interface=None, ip=None, ip6=None,
                     _popen("ping6", "-c 1 %s" % ip6)
         # If network request fails, warn and continue onward
         except Exception:
-            warnings.warn("Ping failed due to an exception. You should disable "
-                          "these attempts by setting 'network_request' to "
-                          "False on systems generating this warning.",
-                          RuntimeWarning)
+            warn("Ping failed due to an exception. You should disable "
+                 "these attempts by setting 'network_request' to "
+                 "False on systems generating this warning.", RuntimeWarning)
 
     # Resolve hostname to an IP address
     if hostname:
@@ -81,9 +80,8 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     # Setup the address hunt based on the arguments specified
     if ip6:
         if not socket.has_ipv6:
-            warnings.warn("getmac: Cannot get the MAC address of a IPv6 host: "
-                          "IPv6 is not supported on this system",
-                          RuntimeWarning)
+            warn("Cannot get the MAC address of a IPv6 host: "
+                 "IPv6 is not supported on this system", RuntimeWarning)
             return None
         to_find = ip6
         type_of_thing = 'ip6'

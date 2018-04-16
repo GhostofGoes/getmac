@@ -39,7 +39,7 @@ def main():
 
     mac = getmac.get_mac_address(interface=args.interface, ip=args.ip,
                                  ip6=args.ip6, hostname=args.hostname,
-                                 network_request=args.no_network_requests)
+                                 network_request=not args.no_network_requests)
 
     if mac is not None:
         print(mac)
