@@ -2,6 +2,7 @@
 # 0.2.0 (TBD)
 ## Added
 * Checks for default interface on Unix systems
+* New methods of hunting for addresses
 
 ## Changed
 * CLI will output nothing if it failed, instead of "None"

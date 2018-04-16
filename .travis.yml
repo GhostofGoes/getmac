@@ -26,20 +26,20 @@ matrix:
       before_install:
         - virtualenv env2 -p python
         - source env2/bin/activate
-    - language: python
-      os: linux
-      dist: trusty
-      sudo: required
-      before_install:
-        - sudo apt-get update -qq
-        - sudo apt-get install -qq -y net-tools iputils-ping iputils-arping
-    - language: python
-      os: linux
-      dist: precise
-      sudo: required
-      before_install:
-        - sudo apt-get update -qq
-        - sudo apt-get install -qq -y net-tools iputils-ping iputils-arping
+#    - language: python
+#      os: linux
+#      dist: trusty
+#      sudo: required
+#      before_install:
+#        - sudo apt-get update -qq
+#        - sudo apt-get install -qq -y net-tools iputils-ping iputils-arping
+#    - language: python
+#      os: linux
+#      dist: precise
+#      sudo: required
+#      before_install:
+#        - sudo apt-get update -qq
+#        - sudo apt-get install -qq -y net-tools iputils-ping iputils-arping
 
 install:
   - python setup.py install
