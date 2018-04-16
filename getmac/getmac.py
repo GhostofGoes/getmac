@@ -193,7 +193,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     # Windows - Network Interface
     if IS_WINDOWS and type_of_thing == 'interface':
         methods = [
-
             # TODO: ok, this is actually extremely slow
             (esc + r'(?:\n?[^\n]*){1,8}Physical Address.+'
                    r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})',
@@ -207,8 +206,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     elif IS_WINDOWS and type_of_thing in ['ip', 'ip6', 'hostname']:
 
         methods = [
-
-
             # TODO: "netsh int ipv6 show neigh"
             # TODO: "arping"
             # TODO: getmac.exe
@@ -225,13 +222,21 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
             _unix_fcntl_by_interface,
 
+            # Fast ifconfig
+            (r'HWaddr ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             0, 'ifconfig', [to_find]),
+
+            # Fast Mac OS X
+            (r'ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
+             0, 'ifconfig', [to_find]),
+
             # netstat
             (esc + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
              1, 'netstat', ['-iae']),
 
             # ip link (Don't use 'list' due to SELinux [Android 24+])
             (esc + r'.*\n.*link/ether ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
-             0, 'ip', ['link']),
+             0, 'ip', ['link %s' % to_find, 'link']),
 
             # ifconfig
             (esc + r'.*(HWaddr) ([0-9a-f]{2}(?::[0-9a-f]{2}){5})',
