@@ -5,7 +5,7 @@
 
 ## Changed
 * CLI will output nothing if it failed, instead of "None"
-* CLI will return with 1 on error, 0 on success
+* CLI will return with 1 on failure, 0 on success
 * No CLI arguments now implies the default host network interface
 * Added an argumnent for debugging: `--debug`
 * Removed `-d` option from `--no-network-requests`

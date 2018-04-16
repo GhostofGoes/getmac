@@ -38,6 +38,7 @@ In Python
    eth_mac = get_mac_address(interface="eth0")
    win_mac = get_mac_address(interface="Ethernet 3")
    ip_mac = get_mac_address(ip="192.168.0.1")
+   ip6_mac = get_mac_address(ip6="::1")
    host_mac = get_mac_address(hostname="localhost")
    updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
@@ -47,6 +48,7 @@ Terminal
 
    get-mac --interface 'eth0'
    get-mac --ip '192.168.0.1'
+   get-mac --ip6 '::1'
    # Note: following will not work with python 2.6
    python -m getmac --interface 'eth0'
    python -m getmac --ip '192.168.0.1'

@@ -4,11 +4,12 @@
 
 import ctypes
 import os
+import re
 import sys
 import struct
 import socket
-import re
 import shlex
+import traceback
 from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError
 try:
@@ -66,6 +67,8 @@ def get_mac_address(interface=None, ip=None, ip6=None,
                     _popen("ping6", "-c 1 %s" % ip6)
         # If network request fails, warn and continue onward
         except Exception:
+            if DEBUG:
+                traceback.print_exc()
             warn("Ping failed due to an exception. You should disable "
                  "these attempts by setting 'network_request' to "
                  "False on systems generating this warning.", RuntimeWarning)
@@ -208,7 +211,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         ]
 
         # Add methods that make network requests
-        if net_ok:
+        if net_ok and type_of_thing != 'ip6':
             methods.append(_windows_get_remote_mac)
 
     # Non-Windows - Network Interface
@@ -268,7 +271,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         except Exception as ex:
             if DEBUG:
                 print("Exception: ", str(ex))
-                import traceback
                 traceback.print_exc()
             continue
         if found:
