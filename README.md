@@ -1,10 +1,6 @@
-.. image:: https://badge.fury.io/py/get-mac.svg
-    :target: https://badge.fury.io/py/get-mac
-    :alt: PyPI
-.. image:: https://travis-ci.org/GhostofGoes/get-mac.svg?branch=master
-    :target: https://travis-ci.org/GhostofGoes/get-mac
-    :alt: Build Status
 
+[![Latest versionon PyPI](https://badge.fury.io/py/get-mac.svg)(https://pypi.org/project/get-mac/)]
+[![Travis CI build status](https://travis-ci.org/GhostofGoes/get-mac.svg?branch=master)(https://travis-ci.org/GhostofGoes/get-mac)]
 
 Get the MAC address of remote hosts or network interfaces using Python.
 
