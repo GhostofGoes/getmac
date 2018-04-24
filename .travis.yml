@@ -60,7 +60,6 @@ notifications:
 
 before_deploy:
 - python setup.py bdist_egg
-- tar czf getmac.tar.gz ./getmac
 
 
 deploy:
@@ -79,7 +78,6 @@ deploy:
     file_glob: true
     file:
     - './getmac/getmac.py'
-    - './getmac.tar.gz'
     - './**/*.egg'
     on:
       repo: GhostofGoes/get-mac

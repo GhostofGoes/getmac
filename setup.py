@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from getmac.getmac import __version__
 
 
-with open('README.rst') as f:  # Loads in the README for PyPI
+with open('README.md') as f:  # Loads in the README for PyPI
     long_description = f.read()
 
 
@@ -17,8 +17,10 @@ setup(
     description='Python interface to get the MAC address '
                 'of remote hosts or network interfaces.',
     long_description=long_description,  # This is what you see on PyPI page
+    # PEP 566, PyPI Warehouse, setuptools>=38.6.0 make markdown possible
+    long_description_content_type='text/markdown',
     url="https://github.com/GhostofGoes/get-mac",
-    download_url='https://pypi.python.org/pypi/get-mac',
+    download_url='https://pypi.org/project/get-mac/',
     license="MIT",
     packages=find_packages(exclude=["tests.py"]),
     zip_safe=True,
