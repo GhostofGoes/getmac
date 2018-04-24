@@ -1,4 +1,8 @@
 
+
+# 0.2.1
+Nothing changed. PyPI just won't let me push changes without a new version.
+
 # 0.2.0 (04/15/2018)
 ## Added
 * Checks for default interface on Linux systems

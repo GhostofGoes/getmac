@@ -17,7 +17,7 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Py2
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 PY3 = sys.version_info[0] == 3
 
