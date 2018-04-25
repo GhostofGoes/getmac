@@ -1,15 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# http://multivax.com/last_question.html
-
-import ctypes
-import os
-import re
-import sys
-import struct
-import socket
-import shlex
-import traceback
+import ctypes, os, re, sys, struct, socket, shlex, traceback
 from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError
 try:
@@ -18,13 +9,10 @@ except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Py2
 
 __version__ = '0.2.1'
+DEBUG = False
 
 PY3 = sys.version_info[0] == 3
-
-DEBUG = False
-IS_WINDOWS = False
-if sys.platform == 'win32':  # TODO: improve windows detection
-    IS_WINDOWS = True
+IS_WINDOWS = sys.platform == 'win32'  # TODO: improve windows detection
 PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)
 if not IS_WINDOWS:
     PATH.extend(('/sbin', '/usr/sbin'))
@@ -117,7 +105,6 @@ def get_mac_address(interface=None, ip=None, ip6=None,
             if to_find is None:
                 to_find = 'eth0'
 
-    # Begin the hunt!
     mac = _hunt_for_mac(to_find, type_of_thing, net_ok=network_request)
     if DEBUG:
         print("Raw MAC found: ", mac)

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
+# http://multivax.com/last_question.html
+
 """Unit and functional tests for get-mac."""
 
 import unittest
