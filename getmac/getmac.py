@@ -329,7 +329,10 @@ def _popen(command, args):
             break
     else:
         executable = command
+    return _call_proc(executable, args)
 
+
+def _call_proc(executable, args):
     if IS_WINDOWS:
         cmd = executable + ' ' + args
     else:

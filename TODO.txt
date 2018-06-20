@@ -2,6 +2,10 @@ Support everything on this list: https://www.python.org/dev/peps/pep-0011/#no-lo
 That is partially in jest, partially insane[ity].
 
 
+# Bugs
+* Interface IP on Ubuntu gets loopback, instead of primary interface
+
+
 # Feature TODO
 #   ip6
 #   hostname -> IPv6
