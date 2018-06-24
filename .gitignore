@@ -1,8 +1,10 @@
 .idea/
 .vscode/
 
-bashenv/
-py2bashenv/
+.bashenv/
+.py2bashenv/
+.pypy3env/
+.pypy2env/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -5,6 +5,9 @@ That is partially in jest, partially insane[ity].
 # Bugs
 * Interface IP on Ubuntu gets loopback, instead of primary interface
 
+# Misc
+* [ ] ignore case on MAC regexs?
+
 
 # Feature TODO
 #   ip6
@@ -16,7 +19,7 @@ That is partially in jest, partially insane[ity].
     interface: more methods
     make_arp request: method in addition to ping (sockets?)
 #   Commandline interface
-#   Unicode handling
+#   Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
 #   slim down
 #   speed up (spend a lot of time on performance tuning with the regexes)
 #   Test against non-ethernet interfaces (WiFi, LTE, etc.)
@@ -24,6 +27,7 @@ That is partially in jest, partially insane[ity].
 
 
 Unittesting of Python 2.6 (since we have it disabled on CLI tests)
+TODO: use optparse instead of argparse?
 
 
 # Platform TODO
