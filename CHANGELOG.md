@@ -1,5 +1,6 @@
 # master
- 
+## Added
+* Short varients of CLI arguments
 
 ## Dev:
 * 

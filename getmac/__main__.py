@@ -25,15 +25,15 @@ def main():
                         help='Disable refreshing of the ARP '
                              'table by making a network request (ping)')
     group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument('--interface', type=str, default=None,
+    group.add_argument('-i', '--interface', type=str, default=None,
                        help='Name of a network interface on the system')
-    group.add_argument('--ip', type=str, default=None,
+    group.add_argument('-4', '--ip', type=str, default=None,
                        help='IPv4 address of a remote host')
-    group.add_argument('--ip6', type=str, default=None,
+    group.add_argument('-6', '--ip6', type=str, default=None,
                        help='IPv6 address of a remote host')
-    group.add_argument('--hostname', type=str, default=None,
+    group.add_argument('-h', '--hostname', type=str, default=None,
                        help='Hostname of a remote host')
-    parser.add_argument('--debug', action='store_true',
+    parser.add_argument('-d', '--debug', action='store_true',
                         help='For debugging failures')
     args = parser.parse_args()
 
