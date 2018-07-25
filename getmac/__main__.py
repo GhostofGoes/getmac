@@ -31,7 +31,7 @@ def main():
                        help='IPv4 address of a remote host')
     group.add_argument('-6', '--ip6', type=str, default=None,
                        help='IPv6 address of a remote host')
-    group.add_argument('-h', '--hostname', type=str, default=None,
+    group.add_argument('-n', '--hostname', type=str, default=None,
                        help='Hostname of a remote host')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='For debugging failures')
