@@ -7,25 +7,27 @@ python:
 - '3.4'
 - '3.5'
 - '3.6'
-- pypy
-- pypy3
+- '3.7'
+- '3.8-dev'
+- 'pypy2.7'
+- 'pypy3.5'
 
-matrix:
-  allow_failures:
-  - os: osx
-  include:
-  - language: generic
-    os: osx
-    before_install:
-    - brew update
-    - brew upgrade python
-    - virtualenv env3 -p python3
-    - source env3/bin/activate
-  - language: generic
-    os: osx
-    before_install:
-    - virtualenv env2 -p python
-    - source env2/bin/activate
+#matrix:
+#  allow_failures:
+#  - os: osx
+#  include:
+#  - language: generic
+#    os: osx
+#    before_install:
+#    - brew update
+#    - brew upgrade python
+#    - virtualenv env3 -p python3
+#    - source env3/bin/activate
+#  - language: generic
+#    os: osx
+#    before_install:
+#    - virtualenv env2 -p python
+#    - source env2/bin/activate
 #    - language: python
 #      os: linux
 #      dist: trusty
