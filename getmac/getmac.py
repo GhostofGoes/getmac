@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import ctypes, os, re, sys, struct, socket, shlex, traceback
+import ctypes, os, re, sys, struct, socket, shlex, traceback, platform
 from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError
 try:
@@ -8,18 +8,18 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Py2
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 DEBUG = False
 
 PY2 = sys.version_info[0] == 2
-IS_WINDOWS = sys.platform == 'win32'  # TODO: improve windows detection
+IS_WINDOWS = platform.system() == 'Windows'  # This will match Windows and Cygwin
 
-PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)
+PATH = os.environ.get('PATH', os.defpath).split(os.pathsep)
 if not IS_WINDOWS:
     PATH.extend(('/sbin', '/usr/sbin'))
 
 ENV = dict(os.environ)
-ENV['LC_ALL'] = 'C'  # Ensure English output
+ENV['LC_ALL'] = 'C'  # Ensure ASCII/English output so we parse correctly
 
 IP4 = 0
 IP6 = 1
@@ -57,12 +57,18 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     if network_request and (ip or ip6 or hostname):
         try:
             if IS_WINDOWS:
-                _popen("ping", "-n 1 %s" % ip if ip is not None else ip6)
+                if hostname:
+                    _popen('ping', '-4 -n 1 %s' % hostname)
+                    _popen('ping', '-6 -n 1 %s' % hostname)
+                elif ip6:
+                    _popen('ping', '-6 -n 1 %s' % ip6)
+                else:
+                    _popen('ping', '-n 1 %s' % ip)  # ip if ip is not None else ip6
             else:
-                if ip is not None:  # IPv4
-                    _popen("ping", "-c 1 %s" % ip)
+                if ip:  # IPv4
+                    _popen('ping', '-c 1 %s' % ip if ip else hostname)
                 else:  # IPv6
-                    _popen("ping6", "-c 1 %s" % ip6)
+                    _popen('ping6', '-c 1 %s' % ip6)
         # If network request fails, warn and continue onward
         except Exception:
             if DEBUG:
@@ -122,7 +128,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
 
         # Fix cases where there are no colons
         if len(mac) == 12:
-            # Source: https://stackoverflow.com/a/3258612/2214380
+            # Source: stackoverflow.com/a/3258612/2214380
             mac = ':'.join(mac[i:i + 2] for i in range(0, len(mac), 2))
 
         # MAC address should ALWAYS be 17 characters with the colons
@@ -184,8 +190,7 @@ def _find_mac(command, args, hw_identifiers, get_index):
 
 
 def _windows_get_remote_mac_ctypes(host):
-    # Source: https://goo.gl/ymhZ9p
-    send_arp = ctypes.windll.Iphlpapi.SendARP
+    # Source: goo.gl/ymhZ9p
     try:
         inetaddr = ctypes.windll.wsock32.inet_addr(host)
         if inetaddr in (0, -1):
@@ -197,6 +202,7 @@ def _windows_get_remote_mac_ctypes(host):
     buffer = ctypes.c_buffer(6)
     addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
 
+    send_arp = ctypes.windll.Iphlpapi.SendARP
     if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
         return None
 
@@ -213,7 +219,8 @@ def _windows_get_remote_mac_ctypes(host):
 
 # TODO: IPv6?
 def _unix_fcntl_by_interface(interface):
-    import fcntl  # Source: https://stackoverflow.com/a/4789267/2214380
+    # Source: stackoverflow.com/a/4789267/2214380
+    import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # TODO: ip6?
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', interface[:15]))
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
@@ -263,7 +270,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         ]
 
     # Windows - Remote Host
-    elif IS_WINDOWS and type_of_thing in (IP4, IP6, HOSTNAME):
+    elif IS_WINDOWS and type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
         methods = [
             # TODO: "netsh int ipv6 show neigh"
@@ -320,7 +327,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         ]
 
     # Non-Windows - Remote Host
-    elif type_of_thing in (IP4, IP6, HOSTNAME):
+    elif type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
         methods = [
             (esc + r'.*' + MAC_RE_COLON,
