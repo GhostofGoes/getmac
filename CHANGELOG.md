@@ -1,4 +1,4 @@
-# master
+# 0.2.2 (08/02/2018)
 ## Added
 * Short versions of CLI arguments (e.g. "-i" for "--interface")
 
@@ -12,7 +12,6 @@
 
 ## Dev:
 * Improvements to internal code
-
 
 # 0.2.1
 Nothing changed. PyPI just won't let me push changes without a new version.
