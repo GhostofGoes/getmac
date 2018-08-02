@@ -1,7 +1,7 @@
 # master
 ## Added
-* Attempt to use `psutil` if available to find interface MACs
-
+* Attempt to use `psutil` (if available) to find interface MACs on all platforms
+* Attempt to use `netifacts` (if available) to find interface MAC on Non-Windows platforms
 ## Changed
 *
 

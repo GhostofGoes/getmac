@@ -223,18 +223,21 @@ def _unix_fcntl_by_interface(iface):
 
 
 def _psutil_by_interface(iface):
-    # Try using psutil if it's installed
-    try:
-        from psutil import net_if_addrs, AF_LINK
-        nics = net_if_addrs()
-        if iface in nics:
-            nic = nics[iface]
-            for i in nic:
-                if i.family == AF_LINK:
-                    return i.address
-    except ImportError:
-        return None
-    return None
+    # Try using psutil if it's installed (exceptions are handled by caller)
+    import psutil
+    nics = psutil.net_if_addrs()
+    if iface in nics:
+        nic = nics[iface]
+        for i in nic:
+            if i.family == psutil.AF_LINK:
+                return i.address
+
+
+def _netifaces_by_interface(iface):
+    # Try using netifaces if it's installed
+    # This method doesn't work on Windows
+    import netifaces
+    return netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
 
 
 # TODO: UNICODE option needed for non-english locales? (Is LC_ALL working?)
@@ -322,6 +325,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
                                 ['lan0' if x == 'eth0' else x], lambda i: 0),
 
             _psutil_by_interface,
+            _netifaces_by_interface,
         ]
 
     # Non-Windows - Remote Host
