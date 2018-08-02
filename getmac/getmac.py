@@ -97,20 +97,14 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         typ = INTERFACE
         if interface:
             to_find = interface
-        # TODO: function for determining default interface
         # Default to finding MAC of the interface with the default route
-        elif IS_WINDOWS:
-            # TODO: default route OR first interface found windows
-            to_find = 'Ethernet'
         else:
-            # Try to use the IP command to get default interface
-            # TODO: default interface
-            try:
-                to_find = _unix_default_interface_ip_command()
-            except Exception:
-                to_find = None
+            to_find = _hunt_default_iface()
             if to_find is None:
-                to_find = 'eth0'
+                if IS_WINDOWS:
+                    to_find = 'Ethernet'
+                else:
+                    to_find = 'eth0'
 
     mac = _hunt_for_mac(to_find, typ, net_ok=network_request)
     if DEBUG:
@@ -250,17 +244,16 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     if IS_WINDOWS and type_of_thing == INTERFACE:
         methods = [
             # getmac - Connection Name
-            (r'\r\n' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n', 0,
-             'getmac', ['/v /fo TABLE /nh']),
+            (r'\r\n' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
+             0, 'getmac', ['/v /fo TABLE /nh']),
 
             # ipconfig
-            (to_find + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+'
-             + MAC_RE_DASH + r'\r\n',
+            (to_find + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+' + MAC_RE_DASH + r'\r\n',
              0, 'ipconfig', ['/all']),
 
             # getmac - Network Adapter (the human-readable name)
-            (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n', 0,
-             'getmac', ['/v /fo TABLE /nh']),
+            (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
+             0, 'getmac', ['/v /fo TABLE /nh']),
 
             _psutil_by_interface,
 
@@ -305,8 +298,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'ip', ['link %s' % to_find, 'link']),
 
             # Quick attempt on Mac OS X
-            (MAC_RE_COLON, 0,
-             'networksetup', ['-getmacaddress %s' % to_find]),
+            (MAC_RE_COLON,
+             0, 'networksetup', ['-getmacaddress %s' % to_find]),
 
             # ifconfig
             (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
@@ -349,10 +342,10 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             print("ERROR: reached end of _hunt_for_mac() if-else chain!")
         return None
 
-    return _try_methods(to_find, methods)
+    return _try_methods(methods, to_find)
 
 
-def _try_methods(to_find, methods):
+def _try_methods(methods, to_find=None):
     # We try every function and see if it returned a MAC address
     # If it returns None or raises an exception,
     # we continue and try the next function
@@ -360,12 +353,16 @@ def _try_methods(to_find, methods):
     for m in methods:
         try:
             if isinstance(m, tuple):
-                for arg in m[3]:
+                for arg in m[3]:  # m[3]: list(str)
+                    # _search: (regex, _popen(command, arg), regex index)
                     found = _search(m[0], _popen(m[2], arg), m[1])
                     if DEBUG:
                         print("%s %s: %s" % (m[2], arg, found))
             elif callable(m):
-                found = m(to_find)
+                if to_find is not None:
+                    found = m(to_find)
+                else:
+                    found = m()
                 if DEBUG:
                     print("%s: %s" % (m.__name__, found))
         except Exception as ex:
@@ -378,14 +375,26 @@ def _try_methods(to_find, methods):
     return found
 
 
-def _unix_default_interface_ip_command():
-    return _search(r'.*dev ([0-9a-z]*)',
-                   _popen('ip', 'route get 0.0.0.0'))
+def _unix_default_interface_netifaces():
+    import netifaces
+    return list(netifaces.gateways()['default'].values())[0][1]
 
 
-# TODO
-def _unix_default_interface_route_command():
-    return _search(r'.*' + re.escape('0.0.0.0') + r'.*([0-9a-z]*)\n',
-                   _popen('route', '-n'), group_index=1)
+def _hunt_default_iface():
+    if IS_WINDOWS:
+        methods = []
+    else:
+        methods = [
+            # 'ip route' command
+            (r'.*dev ([0-9a-z]*)',
+             0, 'ip', ['route get 0.0.0.0']),
 
+            # 'route' command
+            # TODO: get this working (need to work on the regex)
+            # (r'.*' + re.escape('0.0.0.0') + r'.*([0-9a-z]*)\n',
+            #  1, 'route', ['-n']),
 
+            _unix_default_interface_netifaces,
+        ]
+
+    return _try_methods(methods=methods)
