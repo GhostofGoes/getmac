@@ -214,12 +214,27 @@ def _windows_get_remote_mac_ctypes(host):
 
 
 # TODO: IPv6?
-def _unix_fcntl_by_interface(interface):
+def _unix_fcntl_by_interface(iface):
     import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 0x8927 = SIOCGIFADDR
-    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', interface[:15]))
+    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', iface[:15]))
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
+
+
+def _psutil_by_interface(iface):
+    # Try using psutil if it's installed
+    try:
+        from psutil import net_if_addrs, AF_LINK
+        nics = net_if_addrs()
+        if iface in nics:
+            nic = nics[iface]
+            for i in nic:
+                if i.family == AF_LINK:
+                    return i.address
+    except ImportError:
+        return None
+    return None
 
 
 # TODO: UNICODE option needed for non-english locales? (Is LC_ALL working?)
@@ -243,6 +258,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # getmac - Network Adapter (the human-readable name)
             (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n', 0,
              'getmac', ['/v /fo TABLE /nh']),
+
+            _psutil_by_interface,
 
             # TODO: "netsh int ipv6"
             # TODO: getmac.exe
@@ -303,6 +320,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # HP-UX
             lambda x: _find_mac('lanscan', '-ai',
                                 ['lan0' if x == 'eth0' else x], lambda i: 0),
+
+            _psutil_by_interface,
         ]
 
     # Non-Windows - Remote Host

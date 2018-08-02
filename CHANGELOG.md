@@ -1,5 +1,18 @@
 # master
 ## Added
+* Attempt to use `psutil` if available to find interface MACs
+
+## Changed
+*
+
+## Fixed
+*
+
+## Dev:
+*
+
+# 0.2.2
+## Added
 * Short versions of CLI arguments (e.g. "-i" for "--interface")
 
 ## Changed
@@ -12,7 +25,6 @@
 
 ## Dev:
 * Improvements to internal code
-
 
 # 0.2.1
 Nothing changed. PyPI just won't let me push changes without a new version.
