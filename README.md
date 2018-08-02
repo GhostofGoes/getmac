@@ -101,8 +101,9 @@ Many of the methods used to acquire an address and the core logic framework
 are attributed to the CPython project's UUID implementation.
 * https://github.com/python/cpython/blob/master/Lib/uuid.py
 * https://github.com/python/cpython/blob/2.7/Lib/uuid.py
-
-Other sources are noted with inline comments at the appropriate sections.
+* [_unix_fcntl_by_interface](https://stackoverflow.com/a/4789267/2214380)
+* [_windows_get_remote_mac_ctypes](goo.gl/ymhZ9p)
+* [String joining](https://stackoverflow.com/a/3258612/2214380)
 
 # TODO
 Full list of tasks and bugs can be found in TODO.md

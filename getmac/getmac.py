@@ -126,7 +126,6 @@ def get_mac_address(interface=None, ip=None, ip6=None,
 
         # Fix cases where there are no colons
         if len(mac) == 12:
-            # Source: stackoverflow.com/a/3258612/2214380
             mac = ':'.join(mac[i:i + 2] for i in range(0, len(mac), 2))
 
         # MAC address should ALWAYS be 17 characters with the colons
@@ -188,7 +187,6 @@ def _find_mac(command, args, hw_identifiers, get_index):
 
 
 def _windows_get_remote_mac_ctypes(host):
-    # Source: goo.gl/ymhZ9p
     try:
         inetaddr = ctypes.windll.wsock32.inet_addr(host)
         if inetaddr in (0, -1):
@@ -217,17 +215,11 @@ def _windows_get_remote_mac_ctypes(host):
 
 # TODO: IPv6?
 def _unix_fcntl_by_interface(interface):
-    # Source: stackoverflow.com/a/4789267/2214380
     import fcntl
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # TODO: ip6?
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # 0x8927 = SIOCGIFADDR
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', interface[:15]))
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
-
-
-win_ifce_methods = []
-win_host_methods = []
-other_ifce_methods = []
-other_host_methods = []
 
 
 # TODO: UNICODE option needed for non-english locales? (Is LC_ALL working?)
@@ -330,6 +322,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # TODO: "arping"
         ]
     else:  # This should never happen
+        if DEBUG:
+            print("ERROR: reached end of _hunt_for_mac() if-else chain!")
         return None
 
     return _try_methods(to_find, methods)
