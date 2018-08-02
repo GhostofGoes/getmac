@@ -9,8 +9,7 @@ It provides a platform-independant interface to get the MAC addresses of:
 * System network interfaces (by interface name)
 * Remote hosts (by IPv4/IPv6 address or hostname)
 
-It provides one function: get_mac_address()
-
+It provides one function: `get_mac_address()`
 
 ## Features
 * Pure-Python
@@ -20,10 +19,9 @@ It provides one function: get_mac_address()
 * Can be used as an independant .py file
 * Simple terminal tool (when installed as a package)
 
-
 # Usage
 
-## In Python
+## Python examples
 ```python
 from getmac import get_mac_address
 eth_mac = get_mac_address(interface="eth0")
@@ -34,25 +32,27 @@ host_mac = get_mac_address(hostname="localhost")
 updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 ```
 
-## Terminal
+## Terminal examples
 ```bash
 get-mac --interface 'eth0'
 get-mac --ip '192.168.0.1'
 get-mac --ip6 '::1'
-# Note: following will not work with python 2.6
 python -m getmac --interface 'eth0'
 python -m getmac --ip '192.168.0.1'
+python -m getmac --ip6 '::1'
 ```
 
+Note: the terminal interface will not work on Python 2.6 (Sorry CentOS 6 users!).
 
-# get_mac_address()
+## get_mac_address()
 * `interface`: Name of a network interface on the system.
 * `ip`: IPv4 address of a remote host.
 * `ip6`: IPv6 address of a remote host.
 * `hostname`: Hostname of a remote host.
 * `network_request`: If an network request (ping usually) should be made to update and populate the
-ARP table of remote hosts used to lookup MACs in most circumstances. Disable this if you want to
-just use what's already in the table, or if you have requirements to prevent network traffic.
+ARP table of remote hosts used to lookup MACs in most circumstances.
+Disable this if you want to just use what's already in the table, or
+if you have requirements to prevent network traffic.
 
 ## Notes
 * The first four arguments are mutually exclusive. `network_request` does not have any functionality
@@ -66,8 +66,6 @@ when the `interface` argument is specified, and can be safely set if using in a 
 If you are using logging, they can be captured using logging.captureWarnings().
 Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/3/library/warnings.html
-
-
 
 # Platforms
 * Windows
@@ -85,14 +83,13 @@ https://docs.python.org/3/library/warnings.html
 * Generic Unix-based
     * Commands: `netstat`, `cat`
 
-
 # Caveats & Known issues
 
 ## Caveats
-* Depending on the platform, there could be a performance detriment, due to heavy usage of
-regular expressions.
-* Testing is only on a few platforms (Ubuntu 14+, Windows 10, OSX), so your mileage may vary.
-Please report any problems by opening a issue on GitHub!
+* Depending on the platform, there could be a performance detriment,
+due to heavy usage of regular expressions.
+* Testing is only on a few platforms (Ubuntu 14+, Windows 10, OSX), so your
+mileage may vary. Please report any problems by opening a issue on GitHub!
 
 ## Known Issues
 * Hostnames for IPv6 devices are not yet supported.
@@ -104,22 +101,12 @@ Many of the methods used to acquire an address and the core logic framework
 are attributed to the CPython project's UUID implementation.
 * https://github.com/python/cpython/blob/master/Lib/uuid.py
 * https://github.com/python/cpython/blob/2.7/Lib/uuid.py
-
-Other sources are noted with inline comments at the appropriate sections.
-
-
+* [_unix_fcntl_by_interface](https://stackoverflow.com/a/4789267/2214380)
+* [_windows_get_remote_mac_ctypes](goo.gl/ymhZ9p)
+* [String joining](https://stackoverflow.com/a/3258612/2214380)
 
 # TODO
-* Cache results on regex-heavy functions (add a arg to disable this behavior)
-* Decide on what the error behavior should be. Is returning None for both
-errors and simple failures to find acceptable?
-* New platforms
-    * Android
-    * FreeBSD
-    * OpenBSD
-    * Solaris
-    * Windows pre-2000
-
+Full list of tasks and bugs can be found in TODO.md
 
 # License
 MIT. Feel free to copy, modify, and use to your heart's content. Have fun!
