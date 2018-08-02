@@ -1,9 +1,17 @@
 # master
 ## Added
-* Short varients of CLI arguments
+* Short versions of CLI arguments (e.g. "-i" for "--interface")
+
+## Changed
+* Improved usage of "ping" across platforms and IP versions
+* Various minor tweaks for performance
+* Improved Windows detection
+
+## Fixed
+* Use of ping command with hostname
 
 ## Dev:
-* 
+* Improvements to internal code
 
 
 # 0.2.1

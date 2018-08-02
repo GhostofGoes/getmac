@@ -57,18 +57,16 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     if network_request and (ip or ip6 or hostname):
         try:
             if IS_WINDOWS:
-                if hostname:
-                    _popen('ping', '-4 -n 1 %s' % hostname)
-                    _popen('ping', '-6 -n 1 %s' % hostname)
-                elif ip6:
+                if ip6:
                     _popen('ping', '-6 -n 1 %s' % ip6)
                 else:
-                    _popen('ping', '-n 1 %s' % ip)  # ip if ip is not None else ip6
+                    _popen('ping', '-n 1 %s' % ip if ip else hostname)
             else:
-                if ip:  # IPv4
-                    _popen('ping', '-c 1 %s' % ip if ip else hostname)
-                else:  # IPv6
+                if ip6:
                     _popen('ping6', '-c 1 %s' % ip6)
+                else:
+                    _popen('ping', '-c 1 %s' % ip if ip else hostname)
+
         # If network request fails, warn and continue onward
         except Exception:
             if DEBUG:
@@ -238,17 +236,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     # Tuple:    (regex, regex index, command, command args)
     # Function: function to call
 
-    if IS_WINDOWS:
-        if type_of_thing == INTERFACE:
-            pass
-        else:
-            pass
-    else:
-        if type_of_thing == INTERFACE:
-            pass
-        else:
-            pass
-
     # Windows - Network Interface
     if IS_WINDOWS and type_of_thing == INTERFACE:
         methods = [
@@ -337,7 +324,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'arp', ['-an']),
 
             # Linux, FreeBSD and NetBSD
-            lambda x: _find_mac('arp', '-an', [bytes('(%s)' % x)],  # [os.fsencode('(%s)' % x)]
+            lambda x: _find_mac('arp', '-an', [bytes('(%s)' % x)],
                                 lambda i: i + 2),
             # TODO: "ip neighbor show"
             # TODO: "arping"
