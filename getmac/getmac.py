@@ -8,7 +8,7 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Py2
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 DEBUG = False
 
 PY2 = sys.version_info[0] == 2
@@ -187,6 +187,8 @@ def _find_mac(command, args, hw_identifiers, get_index):
 
 
 def _windows_get_remote_mac_ctypes(host):
+    if not PY2:  # Convert to bytes on Python 3+ (Fixes #7)
+        host = host.encode()
     try:
         inetaddr = ctypes.windll.wsock32.inet_addr(host)
         if inetaddr in (0, -1):
