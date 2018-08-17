@@ -208,38 +208,50 @@ def _windows_get_remote_mac_ctypes(host):
 
 
 # TODO: IPv6?
-def _unix_fcntl_by_interface(iface):
+def _unix_fcntl_by_interface(iface_name):
     import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 0x8927 = SIOCGIFADDR
-    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', iface[:15]))
+    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', iface_name[:15]))
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
 
 
-def _psutil_by_interface(iface):
+def _psutil_by_interface(iface_name):
     # Try using psutil if it's installed (exceptions are handled by caller)
     import psutil
     nics = psutil.net_if_addrs()
-    if iface in nics:
-        nic = nics[iface]
+    if iface_name in nics:
+        nic = nics[iface_name]
         for i in nic:
             if i.family == psutil.AF_LINK:
                 return i.address
 
 
-def _netifaces_by_interface(iface):
+def _netifaces_by_interface(iface_name):
     # Try using netifaces if it's installed
     # This method doesn't work on Windows
     import netifaces
-    return netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
+    return netifaces.ifaddresses(iface_name)[netifaces.AF_LINK][0]['addr']
 
 
-def _scapy_remote(host):
+def _scapy_remote(ip):
     # Try using Scapy if it's installed (exceptions are handled by caller)
     # This requires root permissions on POSIX platforms
     # On Windows, it can run successfully with normal user permissions
     from scapy.layers.l2 import getmacbyip
-    return getmacbyip(host)
+    return getmacbyip(ip)
+
+
+def _scapy_by_interface(iface_name):
+    from scapy.layers.l2 import get_if_hwaddr
+    if IS_WINDOWS:
+        from scapy.arch.windows import get_windows_if_list
+        interfaces = get_windows_if_list()
+        for interface in interfaces:
+            if iface_name in [interface['name'], interface['netid'],
+                              interface['description'], interface['win_index']]:
+                return interface['mac']
+    return get_if_hwaddr(iface_name)
 
 
 # TODO: UNICODE option needed for non-english locales? (Is LC_ALL working?)
@@ -264,6 +276,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'getmac', ['/v /fo TABLE /nh']),
 
             _psutil_by_interface,
+            _scapy_by_interface,
 
             # TODO: "netsh int ipv6"
             # TODO: getmac.exe
@@ -326,8 +339,9 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             lambda x: _find_mac('lanscan', '-ai',
                                 ['lan0' if x == 'eth0' else x], lambda i: 0),
 
-            _psutil_by_interface,
             _netifaces_by_interface,
+            _psutil_by_interface,
+            _scapy_by_interface,
         ]
 
     # Non-Windows - Remote Host
