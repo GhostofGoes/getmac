@@ -207,6 +207,41 @@ def _windows_get_remote_mac_ctypes(host):
     return macaddr
 
 
+def _powershell_remote_mac(host):
+    if PY2:
+        import _winreg as winreg
+    else:
+        import winreg
+
+    try:
+        reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
+        ps_key = winreg.OpenKey(reg, r'SOFTWARE\Microsoft\PowerShell')
+    except OSError:
+        return None
+
+    ps_location = None
+    for version in [3, 1]:
+        ver_path = str(version) + r'\PowerShellEngine'
+        try:
+            ver_key = winreg.OpenKey(ps_key, ver_path)
+            ps_location = winreg.QueryValueEx(ver_key, 'ApplicationBase')[0]
+        except OSError:
+            continue
+    if not ps_location:
+        return None
+    ps_path = os.path.join(ps_location, 'powershell.exe')
+    if '.' in host:
+        cmd = "$hostIp = '%s'; " % host
+    else:
+        return None
+    cmd += r"(gwmi -Class Win32_NetworkAdapterConfiguration | " \
+           r"where { $_.IpAddress -eq $hostIp }).MACAddress"
+    print(cmd)
+    mac = _call_proc(ps_path, '-e ' + cmd)
+    print(mac)
+    return mac
+
+
 # TODO: IPv6?
 def _unix_fcntl_by_interface(iface_name):
     import fcntl
@@ -290,6 +325,9 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # TODO: "arping"
             # TODO: getmac.exe
             _scapy_remote,
+
+            # TODO: powershell
+            # _powershell_remote_mac,
         ]
 
         # Add methods that make network requests
