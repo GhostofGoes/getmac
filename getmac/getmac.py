@@ -234,6 +234,14 @@ def _netifaces_by_interface(iface):
     return netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
 
 
+def _scapy_remote(host):
+    # Try using Scapy if it's installed (exceptions are handled by caller)
+    # This requires root permissions on POSIX platforms
+    # On Windows, it can run successfully with normal user permissions
+    from scapy.layers.l2 import getmacbyip
+    return getmacbyip(host)
+
+
 # TODO: UNICODE option needed for non-english locales? (Is LC_ALL working?)
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     # Format of method lists
@@ -268,6 +276,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # TODO: "netsh int ipv6 show neigh"
             # TODO: "arping"
             # TODO: getmac.exe
+            _scapy_remote,
         ]
 
         # Add methods that make network requests
@@ -334,6 +343,9 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # Linux, FreeBSD and NetBSD
             lambda x: _find_mac('arp', '-an', [bytes('(%s)' % x)],
                                 lambda i: i + 2),
+
+            _scapy_remote,
+
             # TODO: "ip neighbor show"
             # TODO: "arping"
         ]
