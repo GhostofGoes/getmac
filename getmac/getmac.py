@@ -31,9 +31,9 @@ MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
 MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
 
 
-# TODO: add ability to match case-insensitively
+# TODO: add ability to match user-provided arguments case-insensitively
 def get_mac_address(interface=None, ip=None, ip6=None,
-                    hostname=None, network_request=True):
+                    hostname=None, network_request=False):
     """Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 
     You must only use one of the first four arguments. If none of the arguments
