@@ -1,3 +1,9 @@
+
+# 0.2.3 (08/07/2018)
+## Fixed
+* Remote host for Python 3 on Windows
+
+
 # 0.2.2 (08/02/2018)
 ## Added
 * Short versions of CLI arguments (e.g. "-i" for "--interface")
@@ -13,8 +19,10 @@
 ## Dev:
 * Improvements to internal code
 
+
 # 0.2.1
 Nothing changed. PyPI just won't let me push changes without a new version.
+
 
 # 0.2.0 (04/15/2018)
 ## Added
