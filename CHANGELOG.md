@@ -1,4 +1,16 @@
-# master
+# 0.2.4 (08/26/2018)
+## Fixed
+* Fixed identification of remote host on OSX
+* Resolved hangs and noticable lag that occured when "network_request"
+was True (the default)
+
+
+# 0.2.3 (08/07/2018)
+## Fixed
+* Remote host for Python 3 on Windows
+
+
+# 0.2.2 (08/02/2018)
 ## Added
 * Attempt to use `psutil` (if available) to find interface MACs on all platforms
 * Attempt to use `netifacts` (if available) to find interface MAC on Non-Windows platforms
@@ -29,6 +41,7 @@
 
 # 0.2.1
 Nothing changed. PyPI just won't let me push changes without a new version.
+
 
 # 0.2.0 (04/15/2018)
 ## Added

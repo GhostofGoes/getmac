@@ -7,7 +7,7 @@ Get the MAC address of remote hosts or network interfaces using Python.
 It provides a platform-independant interface to get the MAC addresses of:
 
 * System network interfaces (by interface name)
-* Remote hosts (by IPv4/IPv6 address or hostname)
+* Remote hosts on the local network (by IPv4/IPv6 address or hostname)
 
 It provides one function: `get_mac_address()`
 
@@ -55,13 +55,22 @@ Disable this if you want to just use what's already in the table, or
 if you have requirements to prevent network traffic.
 
 ## Notes
+* If none of the arguments are selected, the default network interface for the system will be used.
+* "Remote hosts" refer to hosts in your local layer 2 network, also
+commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far
+as I know, there is not a reliable method to get a MAC address for a
+remote host external to the LAN. If you know any methods otherwise, please
+open a GitHub issue or shoot me an email, I'd love to be wrong about this.
 * The first four arguments are mutually exclusive. `network_request` does not have any functionality
 when the `interface` argument is specified, and can be safely set if using in a script.
-* If none of the arguments are selected, the default network interface for the system will be used.
-* For the time being, it assumes you are using Ethernet.
+* The physical transport is assumed to be Ethernet (802.3). Others, such as
+Wi-Fi (802.11), are currently not tested or considored. I plan to
+address this in the future, and am definitely open to pull requests
+or issues related to this, including error reports.
 * Exceptions will be handled silently and returned as a None.
-    If you run into problems, create an issue on GitHub,
-    or set DEBUG to true if you're brave.
+    If you run into problems, you can set DEBUG to true and get more
+    information about what's happening. If you're still having issues,
+    please create an issue on GitHub and include the output with DEBUG enabled.
 * Messages are output using the warnings library.
 If you are using logging, they can be captured using logging.captureWarnings().
 Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
