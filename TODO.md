@@ -34,14 +34,17 @@
 # Tests
 * [ ] Unit tests for helper methods
 * [ ] Mocked unit tests for core methods
+* [ ] Run unit tests on all of the samples I've collected thus far
 * [ ] Functional tests using Bats for all Python versions
 * [ ] Appveyor testing
 
-# Dev/project
+# Documentation
+* [ ] Sphinx documentation
+* [ ] Man page
+* [ ] HTML web documentation on ReadTheDocs
 * [ ] Screenshots
 * [ ] ASCII Cinema capture of usage
-* [ ] Sphinx documentation
-* [ ] Documentation on ReadTheDocs
+
 
 # Misc
 * [ ] Support everything on this [list](https://www.python.org/dev/peps/pep-0011/#no-longer-supported-platforms).

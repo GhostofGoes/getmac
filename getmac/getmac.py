@@ -190,18 +190,6 @@ def _call_proc(executable, args):
         return str(output)
 
 
-def _find_mac(command, args, hw_identifiers, get_index):
-    proc = _popen(command, args)
-    for line in proc:
-        words = str(line).lower().rstrip().split()
-        for i in range(len(words)):
-            if words[i] in hw_identifiers:
-                word = words[get_index(i)]
-                mac = int(word.replace(':', ''), 16)
-                if mac:
-                    return mac
-
-
 def _windows_get_remote_mac_ctypes(host):
     if not PY2:  # Convert to bytes on Python 3+ (Fixes #7)
         host = host.encode()
@@ -318,9 +306,19 @@ def _scapy_by_interface(iface_name):
     return mac
 
 
+def _ip_neigh_show_by_ip(ip):
+    output = _popen('ip', 'neighbor show %s' % ip)
+    mac = output.partition(ip)[2].partition('lladdr')[2].strip().split()[0]
+    return mac
+
+
 # TODO: UNICODE option needed for non-english locales? (Is LC_ALL working?)
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
-    # Format of method lists
+    # Sanity check
+    if not PY2 and isinstance(to_find, bytes):
+        to_find = str(to_find, 'utf-8')
+
+    # ** Format of method lists **
     # Tuple:    (regex, regex index, command, command args)
     # Function: function to call
 
@@ -403,8 +401,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              1, 'ifconfig', ['-av']),
 
             # HP-UX
-            lambda x: _find_mac('lanscan', '-ai',
-                                ['lan0' if x == 'eth0' else x], lambda i: 0),
+            # lambda x: _find_mac('lanscan', '-ai',
+            #                    ['lan0' if x == 'eth0' else x], lambda i: 0),
 
             _netifaces_by_interface,
             _psutil_by_interface,
@@ -418,24 +416,19 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (esc + r'.*' + MAC_RE_COLON,
              0, 'cat', ['/proc/net/arp']),
 
-            # (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_COLON,
-            #  0, 'arp', ['-a', to_find]),
+            _ip_neigh_show_by_ip,
 
+            # -a: BSD-style format
+            # -n: shows numerical addresses
             (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_COLON,
-             0, 'arp', ['-an', to_find]),
-
-            # Linux, FreeBSD and NetBSD
-            lambda x: _find_mac('arp', '-an', [bytes('(%s)' % x)],
-                                lambda i: i + 2),
+             0, 'arp', [to_find, '-an', '-an %s' % to_find]),
 
             # Darwin (OSX) oddness
             (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_DARWIN,
-             0, 'arp', ['-a', to_find]),
-
+             0, 'arp', [to_find, '-a', '-a %s' % to_find]),
 
             _scapy_remote,
 
-            # TODO: "ip neighbor show"
             # TODO: "arping"
         ]
     else:  # This should never happen
@@ -487,13 +480,13 @@ def _unix_default_interface_netifaces():
 
 
 def _unix_default_interface_route_command():
-    output = _call_proc('route', '-n')
+    output = _popen('route', '-n')
     iface = output.partition('0.0.0.0')[2].partition('\n')[0].split()[-1]
     return iface
 
 
 def _unix_default_interface_ip_route():
-    output = _call_proc('ip', 'route list 0/0')
+    output = _popen('ip', 'route list 0/0')
     iface = output.partition('dev')[2].partition('proto')[0].strip()
     return iface
 
