@@ -1,0 +1,1 @@
+default via 192.168.16.2 dev ens33 proto dhcp metric 100 
