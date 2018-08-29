@@ -1,3 +1,24 @@
+
+
+# 0.3.0 (xx/xx/2018)
+## Added
+* Attempt to use Python modules if they're installed. This is useful
+for larger projects that already have them installed as dependencies,
+as they provide a more reliable means of getting information.
+    * `psutil`: Interface MACs on all platforms
+    * `scapy`: Interface MACs and Remote MACs on all platforms
+    * `netifaces`: Interface MACs on Non-Windows platforms
+
+## Changed
+*
+
+## Fixed
+* Significantly improved default interface detection. Default
+interfaces are now properly detected on Linux and most other
+POSIX platforms with `ip` or `route` commands available, or the
+`netifaces` Python module.
+
+
 # 0.2.4 (08/26/2018)
 ## Fixed
 * Fixed identification of remote host on OSX
@@ -9,20 +30,6 @@ was True (the default)
 ## Fixed
 * Remote host for Python 3 on Windows
 
-
-# 0.2.2 (08/02/2018)
-## Added
-* Attempt to use `psutil` (if available) to find interface MACs on all platforms
-* Attempt to use `netifacts` (if available) to find interface MAC on Non-Windows platforms
-
-## Changed
-* Significantly improved the detection of the default interface
-
-## Fixed
-*
-
-## Dev:
-*
 
 # 0.2.2
 ## Added
@@ -38,6 +45,7 @@ was True (the default)
 
 ## Dev:
 * Improvements to internal code
+
 
 # 0.2.1
 Nothing changed. PyPI just won't let me push changes without a new version.

@@ -1,10 +1,10 @@
 
 # Bugs
-* [ ] Interface IP on Ubuntu gets loopback, instead of primary interface
+* [X] Interface IP on Ubuntu gets loopback, instead of primary interface
 
 # Features
 * [ ] Support for IPv6 hostname resolution
-* [ ] make_arp_request
+* [X] make_arp_request
 * [ ] Add ability to get the mac address of a socket's interface
 * [ ] Improve:
     ip: more methods
@@ -13,6 +13,7 @@
 * [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
 * [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
 * [ ] Threading (spin out all attempts, plus make itself thread-friendly)
+* [ ] asyncio-friendly?
 
 ## Platform TODO
 * [ ] Linux (Debian and RHEL-based)
@@ -30,12 +31,15 @@
 * [ ] Reduce the size on disk of the source code
 * [ ] Improve performance (spend a lot of time on performance tuning with the regexes)
 
+# Tests
+* [ ] Unit tests for helper methods
+* [ ] Mocked unit tests for core methods
+* [ ] Functional tests using Bats for all Python versions
+* [ ] Appveyor testing
+
 # Dev/project
-* [ ] Unit tests for individual methods (monkey patch if needed)
-* [ ] Functional tests (to the furthest extent we can)
 * [ ] Screenshots
 * [ ] ASCII Cinema capture of usage
-* [ ] Appveyor testing
 * [ ] Sphinx documentation
 * [ ] Documentation on ReadTheDocs
 

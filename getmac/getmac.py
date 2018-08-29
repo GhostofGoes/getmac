@@ -8,7 +8,7 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Py2
 
-__version__ = '0.2.4'
+__version__ = '0.3.0'
 DEBUG = False
 
 PY2 = sys.version_info[0] == 2
@@ -111,7 +111,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
 
     mac = _hunt_for_mac(to_find, typ, net_ok=network_request)
     if DEBUG:
-        print("Raw MAC found: ", mac)
+        print("Raw MAC found: %s" % mac)
 
     # Check and format the result to be lowercase, colon-separated
     if mac is not None:
@@ -166,7 +166,8 @@ def _popen(command, args):
             break
     else:
         executable = command
-    return _call_proc(executable, args)
+    output = _call_proc(executable, args)
+    return output
 
 
 def _call_proc(executable, args):
@@ -271,7 +272,8 @@ def _unix_fcntl_by_interface(iface_name):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 0x8927 = SIOCGIFADDR
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', iface_name[:15]))
-    return ':'.join(['%02x' % ord(char) for char in info[18:24]])
+    mac = ':'.join(['%02x' % ord(char) for char in info[18:24]])
+    return mac
 
 
 def _psutil_by_interface(iface_name):
@@ -289,7 +291,8 @@ def _netifaces_by_interface(iface_name):
     # Try using netifaces if it's installed
     # This method doesn't work on Windows
     import netifaces
-    return netifaces.ifaddresses(iface_name)[netifaces.AF_LINK][0]['addr']
+    mac = netifaces.ifaddresses(iface_name)[netifaces.AF_LINK][0]['addr']
+    return mac
 
 
 def _scapy_remote(ip):
@@ -297,7 +300,8 @@ def _scapy_remote(ip):
     # This requires root permissions on POSIX platforms
     # On Windows, it can run successfully with normal user permissions
     from scapy.layers.l2 import getmacbyip
-    return getmacbyip(ip)
+    mac = getmacbyip(ip)
+    return mac
 
 
 def _scapy_by_interface(iface_name):
@@ -309,7 +313,9 @@ def _scapy_by_interface(iface_name):
             if iface_name in [interface['name'], interface['netid'],
                               interface['description'], interface['win_index']]:
                 return interface['mac']
-    return get_if_hwaddr(iface_name)
+    # Do not put an 'else' here!
+    mac = get_if_hwaddr(iface_name)
+    return mac
 
 
 # TODO: UNICODE option needed for non-english locales? (Is LC_ALL working?)
@@ -456,18 +462,17 @@ def _try_methods(methods, to_find=None):
                     if DEBUG:
                         print("%s %s: %s" % (m[2], arg, found))
             elif callable(m):
+                if DEBUG:
+                    print("Trying %s (to_find: %s)" % (m.__name__, str(to_find)))
                 if to_find is not None:
                     found = m(to_find)
                 else:
                     found = m()
                 if DEBUG:
-                    print("Trying %s..." % m.__name__)
-                found = m(to_find)
-                if DEBUG:
                     print("%s: %s" % (m.__name__, found))
         except Exception as ex:
             if DEBUG:
-                print("Exception: ", str(ex))
+                print("Exception: %s" % str(ex))
                 traceback.print_exc()
             continue
         if found:
@@ -477,7 +482,20 @@ def _try_methods(methods, to_find=None):
 
 def _unix_default_interface_netifaces():
     import netifaces
-    return list(netifaces.gateways()['default'].values())[0][1]
+    iface = list(netifaces.gateways()['default'].values())[0][1]
+    return iface
+
+
+def _unix_default_interface_route_command():
+    output = _call_proc('route', '-n')
+    iface = output.partition('0.0.0.0')[2].partition('\n')[0].split()[-1]
+    return iface
+
+
+def _unix_default_interface_ip_route():
+    output = _call_proc('ip', 'route list 0/0')
+    iface = output.partition('dev')[2].partition('proto')[0].strip()
+    return iface
 
 
 def _hunt_default_iface():
@@ -485,15 +503,8 @@ def _hunt_default_iface():
         methods = []
     else:
         methods = [
-            # 'ip route' command
-            (r'.*dev ([0-9a-z]*)',
-             0, 'ip', ['route get 0.0.0.0']),
-
-            # 'route' command
-            # TODO: get this working (need to work on the regex)
-            # (r'.*' + re.escape('0.0.0.0') + r'.*([0-9a-z]*)\n',
-            #  1, 'route', ['-n']),
-
+            _unix_default_interface_route_command,
+            _unix_default_interface_ip_route,
             _unix_default_interface_netifaces,
         ]
 
