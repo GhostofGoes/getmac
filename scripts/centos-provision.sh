@@ -18,5 +18,5 @@ git clone https://github.com/GhostofGoes/get-mac.git
 
 # Create Python virtual environments
 mkdir -p "$HOME/.virtualenvs/"
-python3 -m virtualenv --python=python3 "$HOME/.virtualenvs/py34"
-python -m virtualenv --python=python2 "$HOME/.virtualenvs/py27"
+python3 -m virtualenv --python=python3 "$HOME/.virtualenvs/getmac34"
+python -m virtualenv --python=python2 "$HOME/.virtualenvs/getmac27"
