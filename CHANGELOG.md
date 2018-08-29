@@ -1,3 +1,9 @@
+# 0.2.4 (08/26/2018)
+## Fixed
+* Fixed identification of remote host on OSX
+* Resolved hangs and noticable lag that occured when "network_request"
+was True (the default)
+
 
 # 0.2.3 (08/07/2018)
 ## Fixed

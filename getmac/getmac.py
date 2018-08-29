@@ -8,7 +8,7 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Py2
 
-__version__ = '0.2.3'
+__version__ = '0.2.4'
 DEBUG = False
 
 PY2 = sys.version_info[0] == 2
@@ -29,6 +29,7 @@ HOSTNAME = 3
 # TODO: ignore case?
 MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
 MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
+MAC_RE_DARWIN = r'([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})'
 
 
 # TODO: add ability to match case-insensitively
@@ -54,26 +55,28 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error."""
     # Populate the ARP table using a simple ping
+    
     if network_request and (ip or ip6 or hostname):
         try:
             if IS_WINDOWS:
+                timeout = 100  # Milliseconds
                 if ip6:
-                    _popen('ping', '-6 -n 1 %s' % ip6)
+                    _popen('ping', '-6 -n 1 -w %d %s' % (timeout, ip6))
                 else:
-                    _popen('ping', '-n 1 %s' % ip if ip else hostname)
+                    _popen('ping', '-n 1 -w %d %s' % (timeout, ip if ip else hostname))
             else:
+                timeout = 0.1  # Just need to trigger ARP request
                 if ip6:
-                    _popen('ping6', '-c 1 %s' % ip6)
+                    _popen('ping6', '-n -q -c 1 -t1-w %f %s' % (timeout, ip6))
                 else:
-                    _popen('ping', '-c 1 %s' % ip if ip else hostname)
+                    _popen('ping', '-n -q -c1 -t1 %s & disown' % (ip if ip else hostname))
 
         # If network request fails, warn and continue onward
         except Exception:
             if DEBUG:
                 traceback.print_exc()
-            warn("Ping failed due to an exception. You should disable "
-                 "these attempts by setting 'network_request' to "
-                 "False on systems generating this warning.", RuntimeWarning)
+            # TODO: include the ip/hostname in the warning
+            warn("Ping to populate ARP table failed", RuntimeWarning)
 
     # Resolve hostname to an IP address
     if hostname:
@@ -125,11 +128,29 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         mac = mac.strip().lower().replace(' ', '').replace('-', ':')
 
         # Fix cases where there are no colons
-        if len(mac) == 12:
+        if ':' not in mac and len(mac) == 12:
+            if DEBUG:
+                print("Adding colons to MAC %s" % mac)
             mac = ':'.join(mac[i:i + 2] for i in range(0, len(mac), 2))
+        
+        # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
+        elif len(mac) < 17:
+            if DEBUG:
+                print("Length of MAC %s is %d, padding single-character "
+                      "octets with zeros" % (mac, len(mac)))
+            parts = mac.split(':')
+            new_mac = []
+            for part in parts:
+                if len(part) == 1:
+                    new_mac.append('0' + part)
+                else:
+                    new_mac.append(part)
+            mac = ':'.join(new_mac)
 
-        # MAC address should ALWAYS be 17 characters with the colons
+        # MAC address should ALWAYS be 17 characters before being returned
         if len(mac) != 17:
+            if DEBUG:
+                print("ERROR: MAC %s is not 17 characters long!" % mac)
             mac = None
     return mac
 
@@ -314,12 +335,20 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (esc + r'.*' + MAC_RE_COLON,
              0, 'cat', ['/proc/net/arp']),
 
+            # (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_COLON,
+            #  0, 'arp', ['-a', to_find]),
+
             (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_COLON,
-             0, 'arp', ['-an']),
+             0, 'arp', ['-an', to_find]),
 
             # Linux, FreeBSD and NetBSD
             lambda x: _find_mac('arp', '-an', [bytes('(%s)' % x)],
                                 lambda i: i + 2),
+
+            # Darwin (OSX) oddness
+            (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_DARWIN,
+             0, 'arp', ['-a', to_find]),
+
             # TODO: "ip neighbor show"
             # TODO: "arping"
         ]
@@ -340,10 +369,14 @@ def _try_methods(to_find, methods):
         try:
             if isinstance(m, tuple):
                 for arg in m[3]:
+                    if DEBUG:
+                        print("Trying %s %s..." % (m[2], arg))
                     found = _search(m[0], _popen(m[2], arg), m[1])
                     if DEBUG:
                         print("%s %s: %s" % (m[2], arg, found))
             elif callable(m):
+                if DEBUG:
+                    print("Trying %s..." % m.__name__)
                 found = m(to_find)
                 if DEBUG:
                     print("%s: %s" % (m.__name__, found))
@@ -366,5 +399,3 @@ def _unix_default_interface_ip_command():
 def _unix_default_interface_route_command():
     return _search(r'.*' + re.escape('0.0.0.0') + r'.*([0-9a-z]*)\n',
                    _popen('route', '-n'), group_index=1)
-
-
