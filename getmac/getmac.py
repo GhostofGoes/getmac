@@ -12,7 +12,7 @@ __version__ = '0.3.0'
 DEBUG = False
 
 PY2 = sys.version_info[0] == 2
-IS_WINDOWS = platform.system() == 'Windows'  # This will match Windows and Cygwin
+IS_WINDOWS = platform.system() == 'Windows'  # Matches Windows and Cygwin
 
 PATH = os.environ.get('PATH', os.defpath).split(os.pathsep)
 if not IS_WINDOWS:
@@ -26,13 +26,11 @@ IP6 = 1
 INTERFACE = 2
 HOSTNAME = 3
 
-# TODO: ignore case?
 MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
 MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
 MAC_RE_DARWIN = r'([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})'
 
 
-# TODO: add ability to match user-provided arguments case-insensitively
 def get_mac_address(interface=None, ip=None, ip6=None,
                     hostname=None, network_request=True):
     """Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
@@ -55,7 +53,6 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error."""
     # Populate the ARP table using a simple ping
-
     if network_request and (ip or ip6 or hostname):
         try:
             if IS_WINDOWS:
@@ -264,7 +261,6 @@ def _unix_fcntl_by_interface(iface_name):
 
 
 def _psutil_by_interface(iface_name):
-    # Try using psutil if it's installed (exceptions are handled by caller)
     import psutil
     nics = psutil.net_if_addrs()
     if iface_name in nics:
@@ -275,7 +271,6 @@ def _psutil_by_interface(iface_name):
 
 
 def _netifaces_by_interface(iface_name):
-    # Try using netifaces if it's installed
     # This method doesn't work on Windows
     import netifaces
     mac = netifaces.ifaddresses(iface_name)[netifaces.AF_LINK][0]['addr']
@@ -283,7 +278,6 @@ def _netifaces_by_interface(iface_name):
 
 
 def _scapy_remote(ip):
-    # Try using Scapy if it's installed (exceptions are handled by caller)
     # This requires root permissions on POSIX platforms
     # On Windows, it can run successfully with normal user permissions
     from scapy.layers.l2 import getmacbyip
@@ -377,9 +371,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         esc = re.escape(to_find)
         methods = [
             _scapy_remote,
-
-            # TODO: powershell
-            # _powershell_remote_mac,
+            # _powershell_remote_mac,  # (TODO)
         ]
 
         # Add methods that make network requests

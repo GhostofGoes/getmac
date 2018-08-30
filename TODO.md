@@ -5,10 +5,9 @@
 
 # Features
 * [X] make_arp_request
+* [ ] Add ability to match user-provided arguments case-insensitively
 * [ ] Add ability to get the mac address of a socket's interface
-* [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
-* [ ] Threading (spin out all attempts, plus make itself thread-friendly)
-* [ ] asyncio-friendly?
+
 
 ## IPv6
 * [ ] Support for IPv6 hostname resolution
@@ -47,7 +46,13 @@
 * [ ] Android (Which you could argue [correctly] is Linux)
 * [ ] Solaris
 
+## Other features
+* [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
+* [ ] Threading (spin out all attempts, plus make itself thread-friendly)
+* [ ] asyncio-friendly?
+
 # Improvements
+* [ ] Ignore case on regular expressions? (Better matching possibly)
 * [ ] Cache results on regex-heavy functions (add a arg to disable this behavior)
 * [ ] Ignore case on MAC regexs?
 * [ ] Reduce the size on disk of the source code

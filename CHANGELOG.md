@@ -1,6 +1,6 @@
 
 
-# 0.3.0 (xx/xx/2018)
+# 0.3.0 (08/30/2018)
 ## Added
 * Attempt to use Python modules if they're installed. This is useful
 for larger projects that already have them installed as dependencies,
