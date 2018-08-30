@@ -1,6 +1,7 @@
 
-# Bugs
+# Bugs or potential issues
 * [X] Interface IP on Ubuntu gets loopback, instead of primary interface
+* [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
 
 # Features
 * [ ] Support for IPv6 hostname resolution
@@ -10,7 +11,6 @@
     ip: more methods
     interface: more methods
     make_arp request: method in addition to ping (sockets?)
-* [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
 * [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
 * [ ] Threading (spin out all attempts, plus make itself thread-friendly)
 * [ ] asyncio-friendly?
