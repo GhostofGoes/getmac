@@ -311,7 +311,39 @@ def _ip_neigh_show_by_ip(ip):
     return mac
 
 
-# TODO: UNICODE option needed for non-english locales? (Is LC_ALL working?)
+def _uuid_hackery_by_ip(ip):
+    from uuid import _arp_getnode
+    backup = socket.gethostbyname
+    try:
+        socket.gethostbyname = lambda x: ip
+        mac1 = _arp_getnode()
+        if mac1 is not None:
+            mac1 = _uuid_convert(mac1)
+            mac2 = _arp_getnode()
+            mac2 = _uuid_convert(mac2)
+            if mac1 == mac2:
+                return mac1
+    except Exception:
+        raise
+    finally:
+        socket.gethostbyname = backup
+
+
+def _uuid_lanscan_by_interface(iface_name):
+    from uuid import _find_mac
+    if not PY2:
+        iface_name = bytes(iface_name)
+    mac = _find_mac('lanscan', '-ai', [iface_name], lambda i: 0)
+    if mac is not None:
+        mac = _uuid_convert(mac)
+    return mac
+
+
+def _uuid_convert(mac):
+    parsed = ':'.join(('%012X' % mac)[i:i+2] for i in range(0, 12, 2))
+    return parsed
+
+
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     # Sanity check
     if not PY2 and isinstance(to_find, bytes):
@@ -399,13 +431,10 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (to_find + r'.*(Ether) ' + MAC_RE_COLON,
              1, 'ifconfig', ['-av']),
 
-            # HP-UX
-            # lambda x: _find_mac('lanscan', '-ai',
-            #                    ['lan0' if x == 'eth0' else x], lambda i: 0),
-
             _netifaces_by_interface,
             _psutil_by_interface,
             _scapy_by_interface,
+            _uuid_lanscan_by_interface,
         ]
 
     # Non-Windows - Remote Host
@@ -427,6 +456,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # Darwin (OSX) oddness
             (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_DARWIN,
              0, 'arp', [to_find, '-a', '-a %s' % to_find]),
+
+            _uuid_hackery_by_ip,
 
             _scapy_remote,
 

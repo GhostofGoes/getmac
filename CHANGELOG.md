@@ -9,7 +9,9 @@ as they provide a more reliable means of getting information.
     * `scapy`: Interface MACs and Remote MACs on all platforms
     * `netifaces`: Interface MACs on Non-Windows platforms
 * New methods for remote MACs:
-    * POSIX: `ip neighbor show`
+    * POSIX: `ip neighbor show`, Abuse of `uuid._arp_getnode()`
+* New methods of Interface MACs:
+    * POSIX: `lanscan -ai` (HP-UX)
 
 ## Changed
 *
