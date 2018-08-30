@@ -1,3 +1,7 @@
+# 0.X.X (xx/xx/2018)
+## Added:
+* New methods for remote MACS
+    * POSIX: using the `arpreq` package
 
 
 # 0.3.0 (08/30/2018)
@@ -8,9 +12,9 @@ as they provide a more reliable means of getting information.
     * `psutil`: Interface MACs on all platforms
     * `scapy`: Interface MACs and Remote MACs on all platforms
     * `netifaces`: Interface MACs on Non-Windows platforms
-* New methods for remote MACs:
+* New methods for remote MACs
     * POSIX: `ip neighbor show`, Abuse of `uuid._arp_getnode()`
-* New methods of Interface MACs:
+* New methods for Interface MACs
     * POSIX: `lanscan -ai` (HP-UX)
 
 ## Changed

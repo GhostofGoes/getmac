@@ -66,6 +66,11 @@
 * [ ] Appveyor testing
 
 # Documentation
+* [ ] List of related works in README (shoutouts)
+* [ ] List of 3rd-party packages that are attempted
+* [ ] List of methods that are attempted
+* [ ] Improve docuemntation on what it can and can't do
+      (and educate the user on what MACs and broadcasts are)
 * [ ] Sphinx documentation
 * [ ] Man page
 * [ ] HTML web documentation on ReadTheDocs

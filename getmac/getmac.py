@@ -299,6 +299,12 @@ def _scapy_by_interface(iface_name):
     return mac
 
 
+def _arpreq_remote(ip):
+    import arpreq
+    mac = arpreq.arpreq(ip)
+    return mac
+
+
 def _uuid_hackery_by_ip(ip):
     from uuid import _arp_getnode
     backup = socket.gethostbyname
@@ -439,6 +445,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
             _uuid_hackery_by_ip,
             _scapy_remote,
+            _arpreq_remote,
         ]
     else:  # This should never happen
         warn("ERROR: reached end of _hunt_for_mac() if-else chain!", RuntimeError)
