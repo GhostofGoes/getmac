@@ -14,7 +14,8 @@ as they provide a more reliable means of getting information.
     * POSIX: `lanscan -ai` (HP-UX)
 
 ## Changed
-*
+* Certain critical failures that should never happen will now warn
+instead of failing silently.
 
 ## Fixed
 * Major Bugfix: search of `proc/net/arp` would return shorter addresses in the

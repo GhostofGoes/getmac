@@ -74,15 +74,12 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         # If network request fails, warn and continue onward
         except Exception:
             if DEBUG:
-                "Ping to populate ARP table failed!"
+                print("Ping to populate ARP table failed!")
                 traceback.print_exc()
 
     # Resolve hostname to an IP address
     if hostname:
         ip = socket.gethostbyname(hostname)
-        # TODO: IPv6 support
-        #   Use getaddrinfo instead of gethostbyname
-        #   This would handle case of an IPv6 host
 
     # Setup the address hunt based on the arguments specified
     if ip6:
@@ -370,18 +367,12 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
             _psutil_by_interface,
             _scapy_by_interface,
-
-            # TODO: "netsh int ipv6"
-            # TODO: getmac.exe
         ]
 
     # Windows - Remote Host
     elif IS_WINDOWS and type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
         methods = [
-            # TODO: "netsh int ipv6 show neigh"
-            # TODO: "arping"
-            # TODO: getmac.exe
             _scapy_remote,
 
             # TODO: powershell
@@ -390,7 +381,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
         # Add methods that make network requests
         if net_ok and type_of_thing != IP6:
-            methods.append(_windows_get_remote_mac_ctypes)
+            methods.insert(0, _windows_get_remote_mac_ctypes)
 
     # Non-Windows - Network Interface
     elif type_of_thing == INTERFACE:
@@ -460,12 +451,9 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             _uuid_hackery_by_ip,
 
             _scapy_remote,
-
-            # TODO: "arping"
         ]
     else:  # This should never happen
-        if DEBUG:
-            print("ERROR: reached end of _hunt_for_mac() if-else chain!")
+        warn("ERROR: reached end of _hunt_for_mac() if-else chain!", RuntimeError)
         return None
 
     return _try_methods(methods, to_find)
