@@ -16,6 +16,8 @@ as they provide a more reliable means of getting information.
 ## Changed
 * Certain critical failures that should never happen will now warn
 instead of failing silently.
+* Improved performance in some areas
+* Improved debugging output
 
 ## Fixed
 * Major Bugfix: search of `proc/net/arp` would return shorter addresses in the
@@ -26,6 +28,11 @@ same subnet if they came earlier in the sequence. Example: a search for
 interfaces are now properly detected on Linux and most other
 POSIX platforms with `ip` or `route` commands available, or the
 `netifaces` Python module.
+
+## Dev
+* Makefile
+* Vagrantfile to spin up testing VMs for various platforms using [Vagrant](https://www.vagrantup.com/docs/)
+* Added more samples of command output on platforms (Ubuntu 18.04 LTS)
 
 
 # 0.2.4 (08/26/2018)

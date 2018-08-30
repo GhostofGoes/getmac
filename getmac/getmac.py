@@ -455,7 +455,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     else:  # This should never happen
         warn("ERROR: reached end of _hunt_for_mac() if-else chain!", RuntimeError)
         return None
-
     return _try_methods(methods, to_find)
 
 
@@ -467,22 +466,22 @@ def _try_methods(methods, to_find=None):
     for m in methods:
         try:
             if isinstance(m, tuple):
-                for arg in m[3]:  # m[3]: list(str)
-                    # _search: (regex, _popen(command, arg), regex index)
+                for arg in m[3]:  # m[3] is a list(str)
                     if DEBUG:
-                        print("Trying %s %s..." % (m[2], arg))
+                        print("Trying: '%s %s'" % (m[2], arg))
+                    # Arguments: (regex, _popen(command, arg), regex index)
                     found = _search(m[0], _popen(m[2], arg), m[1])
                     if DEBUG:
-                        print("%s %s: %s" % (m[2], arg, found))
+                        print("Result: %s\n" % found)
             elif callable(m):
                 if DEBUG:
-                    print("Trying %s (to_find: %s)" % (m.__name__, str(to_find)))
+                    print("Trying: '%s' (to_find: '%s')" % (m.__name__, str(to_find)))
                 if to_find is not None:
                     found = m(to_find)
                 else:
                     found = m()
                 if DEBUG:
-                    print("%s: %s" % (m.__name__, found))
+                    print("Result: %s\n" % found)
         except Exception as ex:
             if DEBUG:
                 print("Exception: %s" % str(ex))
@@ -520,5 +519,4 @@ def _hunt_default_iface():
             _unix_default_interface_ip_route,
             _unix_default_interface_netifaces,
         ]
-
     return _try_methods(methods=methods)
