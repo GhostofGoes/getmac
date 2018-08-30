@@ -299,12 +299,6 @@ def _scapy_by_interface(iface_name):
     return mac
 
 
-def _ip_neigh_show_by_ip(ip):
-    output = _popen('ip', 'neighbor show %s' % ip)
-    mac = output.partition(ip)[2].partition('lladdr')[2].strip().split()[0]
-    return mac
-
-
 def _uuid_hackery_by_ip(ip):
     from uuid import _arp_getnode
     backup = socket.gethostbyname
@@ -334,8 +328,7 @@ def _uuid_lanscan_by_interface(iface_name):
 
 
 def _uuid_convert(mac):
-    parsed = ':'.join(('%012X' % mac)[i:i+2] for i in range(0, 12, 2))
-    return parsed
+    return ':'.join(('%012X' % mac)[i:i+2] for i in range(0, 12, 2))
 
 
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
@@ -432,7 +425,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (esc + r' .+' + MAC_RE_COLON,
              0, 'cat', ['/proc/net/arp']),
 
-            _ip_neigh_show_by_ip,
+            lambda x: _popen('ip', 'neighbor show %s' % x)
+                .partition(x)[2].partition('lladdr')[2].strip().split()[0],
 
             # -a: BSD-style format
             # -n: shows numerical addresses
@@ -444,7 +438,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'arp', [to_find, '-a', '-a %s' % to_find]),
 
             _uuid_hackery_by_ip,
-
             _scapy_remote,
         ]
     else:  # This should never happen
