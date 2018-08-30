@@ -16,6 +16,7 @@ as they provide a more reliable means of getting information.
 ## Changed
 * Certain critical failures that should never happen will now warn
 instead of failing silently.
+* Added a sanity check to the `ip6` argument (IPv6 addresses)
 * Improved performance in some areas
 * Improved debugging output
 

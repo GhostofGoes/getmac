@@ -87,6 +87,9 @@ def get_mac_address(interface=None, ip=None, ip6=None,
             warn("Cannot get the MAC address of a IPv6 host: "
                  "IPv6 is not supported on this system", RuntimeWarning)
             return None
+        elif ':' not in ip6:
+            warn("Invalid IPv6 address: %s" % ip6, RuntimeWarning)
+            return None
         to_find = ip6
         typ = IP6
     elif ip:
