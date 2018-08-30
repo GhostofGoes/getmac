@@ -15,6 +15,10 @@ as they provide a more reliable means of getting information.
 *
 
 ## Fixed
+* Major Bugfix: search of `proc/net/arp` would return shorter addresses in the
+same subnet if they came earlier in the sequence. Example: a search for
+`192.168.16.2` on Linux would instead return the MAC address of
+`192.168.16.254` with no errors or warning whatsoever.
 * Significantly improved default interface detection. Default
 interfaces are now properly detected on Linux and most other
 POSIX platforms with `ip` or `route` commands available, or the

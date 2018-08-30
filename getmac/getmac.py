@@ -412,7 +412,9 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     elif type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
         methods = [
-            (esc + r'.*' + MAC_RE_COLON,
+            # WARN: need a space, otherwise a search for 192.168.16.2
+            #       will match 192.168.16.254 if it comes first!
+            (esc + r' .+' + MAC_RE_COLON,
              0, 'cat', ['/proc/net/arp']),
 
             _ip_neigh_show_by_ip,
