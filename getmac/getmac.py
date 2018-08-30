@@ -74,9 +74,8 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         # If network request fails, warn and continue onward
         except Exception:
             if DEBUG:
+                "Ping to populate ARP table failed!"
                 traceback.print_exc()
-            # TODO: include the ip/hostname in the warning
-            warn("Ping to populate ARP table failed", RuntimeWarning)
 
     # Resolve hostname to an IP address
     if hostname:
