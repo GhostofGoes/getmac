@@ -162,8 +162,7 @@ def _popen(command, args):
             break
     else:
         executable = command
-    output = _call_proc(executable, args)
-    return output
+    return _call_proc(executable, args)
 
 
 def _call_proc(executable, args):
@@ -186,7 +185,7 @@ def _call_proc(executable, args):
         return str(output)
 
 
-def _windows_get_remote_mac_ctypes(host):
+def _windows_ctypes_host(host):
     if not PY2:  # Convert to bytes on Python 3+ (Fixes #7)
         host = host.encode()
     try:
@@ -215,7 +214,7 @@ def _windows_get_remote_mac_ctypes(host):
     return macaddr
 
 
-def _powershell_remote_mac(host):
+def _powershell_ip(host):  # TODO: WIP
     if PY2:
         import _winreg as winreg
     else:
@@ -244,23 +243,18 @@ def _powershell_remote_mac(host):
         return None
     cmd += r"(gwmi -Class Win32_NetworkAdapterConfiguration | " \
            r"where { $_.IpAddress -eq $hostIp }).MACAddress"
-    print(cmd)
-    mac = _call_proc(ps_path, '-e ' + cmd)
-    print(mac)
-    return mac
+    return _call_proc(ps_path, '-e ' + cmd)
 
 
-# TODO: IPv6?
-def _unix_fcntl_by_interface(iface_name):
+def _fcntl_iface(iface_name):
     import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 0x8927 = SIOCGIFADDR
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', iface_name[:15]))
-    mac = ':'.join(['%02x' % ord(char) for char in info[18:24]])
-    return mac
+    return ':'.join(['%02x' % ord(char) for char in info[18:24]])
 
 
-def _psutil_by_interface(iface_name):
+def _psutil_iface(iface_name):
     import psutil
     nics = psutil.net_if_addrs()
     if iface_name in nics:
@@ -270,22 +264,20 @@ def _psutil_by_interface(iface_name):
                 return i.address
 
 
-def _netifaces_by_interface(iface_name):
+def _netifaces_iface(iface_name):
     # This method doesn't work on Windows
     import netifaces
-    mac = netifaces.ifaddresses(iface_name)[netifaces.AF_LINK][0]['addr']
-    return mac
+    return netifaces.ifaddresses(iface_name)[netifaces.AF_LINK][0]['addr']
 
 
-def _scapy_remote(ip):
+def _scapy_ip(ip):
     # This requires root permissions on POSIX platforms
     # On Windows, it can run successfully with normal user permissions
     from scapy.layers.l2 import getmacbyip
-    mac = getmacbyip(ip)
-    return mac
+    return getmacbyip(ip)
 
 
-def _scapy_by_interface(iface_name):
+def _scapy_iface(iface_name):
     from scapy.layers.l2 import get_if_hwaddr
     if IS_WINDOWS:
         from scapy.arch.windows import get_windows_if_list
@@ -295,17 +287,15 @@ def _scapy_by_interface(iface_name):
                               interface['description'], interface['win_index']]:
                 return interface['mac']
     # Do not put an 'else' here!
-    mac = get_if_hwaddr(iface_name)
-    return mac
+    return get_if_hwaddr(iface_name)
 
 
-def _arpreq_remote(ip):
+def _arpreq_ip(ip):
     import arpreq
-    mac = arpreq.arpreq(ip)
-    return mac
+    return arpreq.arpreq(ip)
 
 
-def _uuid_hackery_by_ip(ip):
+def _uuid_ip(ip):
     from uuid import _arp_getnode
     backup = socket.gethostbyname
     try:
@@ -323,7 +313,7 @@ def _uuid_hackery_by_ip(ip):
         socket.gethostbyname = backup
 
 
-def _uuid_lanscan_by_interface(iface_name):
+def _uuid_lanscan_iface(iface_name):
     from uuid import _find_mac
     if not PY2:
         iface_name = bytes(iface_name)
@@ -361,28 +351,28 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
              0, 'getmac', ['/v /fo TABLE /nh']),
 
-            _psutil_by_interface,
-            _scapy_by_interface,
+            _psutil_iface,
+            _scapy_iface,
         ]
 
     # Windows - Remote Host
     elif IS_WINDOWS and type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
         methods = [
-            _scapy_remote,
-            # _powershell_remote_mac,  # (TODO)
+            _scapy_ip,
+            # _powershell_ip,  # (TODO)
         ]
 
         # Add methods that make network requests
         if net_ok and type_of_thing != IP6:
-            methods.insert(0, _windows_get_remote_mac_ctypes)
+            methods.insert(0, _windows_ctypes_host)
 
     # Non-Windows - Network Interface
     elif type_of_thing == INTERFACE:
         methods = [
             lambda x: _popen('cat', '/sys/class/net/' + x + '/address'),
 
-            _unix_fcntl_by_interface,
+            _fcntl_iface,
 
             # Fast ifconfig
             (r'HWaddr ' + MAC_RE_COLON,
@@ -416,10 +406,10 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (to_find + r'.*(Ether) ' + MAC_RE_COLON,
              1, 'ifconfig', ['-av']),
 
-            _netifaces_by_interface,
-            _psutil_by_interface,
-            _scapy_by_interface,
-            _uuid_lanscan_by_interface,
+            _netifaces_iface,
+            _psutil_iface,
+            _scapy_iface,
+            _uuid_lanscan_iface,
         ]
 
     # Non-Windows - Remote Host
@@ -443,9 +433,9 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_DARWIN,
              0, 'arp', [to_find, '-a', '-a %s' % to_find]),
 
-            _uuid_hackery_by_ip,
-            _scapy_remote,
-            _arpreq_remote,
+            _uuid_ip,
+            _scapy_ip,
+            _arpreq_ip,
         ]
     else:  # This should never happen
         warn("ERROR: reached end of _hunt_for_mac() if-else chain!", RuntimeError)
@@ -461,7 +451,7 @@ def _try_methods(methods, to_find=None):
     for m in methods:
         try:
             if isinstance(m, tuple):
-                for arg in m[3]:  # m[3] is a list(str)
+                for arg in m[3]:  # list(str)
                     if DEBUG:
                         print("Trying: '%s %s'" % (m[2], arg))
                     # Arguments: (regex, _popen(command, arg), regex index)
@@ -487,22 +477,9 @@ def _try_methods(methods, to_find=None):
     return found
 
 
-def _unix_default_interface_netifaces():
+def _netifaces_default():
     import netifaces
-    iface = list(netifaces.gateways()['default'].values())[0][1]
-    return iface
-
-
-def _unix_default_interface_route_command():
-    output = _popen('route', '-n')
-    iface = output.partition('0.0.0.0')[2].partition('\n')[0].split()[-1]
-    return iface
-
-
-def _unix_default_interface_ip_route():
-    output = _popen('ip', 'route list 0/0')
-    iface = output.partition('dev')[2].partition('proto')[0].strip()
-    return iface
+    return list(netifaces.gateways()['default'].values())[0][1]
 
 
 def _hunt_default_iface():
@@ -510,8 +487,8 @@ def _hunt_default_iface():
         methods = []
     else:
         methods = [
-            _unix_default_interface_route_command,
-            _unix_default_interface_ip_route,
-            _unix_default_interface_netifaces,
+            lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
+            lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
+            _netifaces_default,
         ]
     return _try_methods(methods=methods)

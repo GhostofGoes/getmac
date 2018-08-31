@@ -39,6 +39,7 @@
 
 ## Non-Windows
 * [ ] `arping`: investigate for remote macs
+* [ ] `fcntl`: IPv6?
 
 
 ## Platforms
