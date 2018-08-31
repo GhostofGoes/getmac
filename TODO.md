@@ -15,6 +15,8 @@
           to resolve a hostname to an IP address.
 
 ## Commands: Windows
+* [ ] Add support for Windows interface indices as a seperate
+      argument to `get_mac_address`.
 ### Remote hosts
 * [ ] `getmac.exe`
 * [ ] `netsh int ipv6 show neigh`
@@ -25,6 +27,8 @@
 * [ ] `getmac.exe`
 * [ ] `netsh int ipv6`
 * [ ] `ipconfig`
+* [ ] `wmic`: `wmic NICCONFIG where IpEnabled=True get Description IPAddress MACAddress`
+             This will also work for interface indices
 * [ ] Windows API
 
 ### Default Interfaces
@@ -32,11 +36,12 @@
 * [ ] `route print -4`
 * [ ] Windows API
 
-## Commands: not-Windows
+
+## Non-Windows
 * [ ] `arping`: investigate for remote macs
 
 
-## Platform TODO
+## Platforms
 * [x] Linux
 * [x] Windows (modern)
 * [ ] Windows (pre-2000)
