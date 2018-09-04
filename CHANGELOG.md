@@ -2,6 +2,19 @@
 ## Added:
 * New methods for remote MACS
     * POSIX: using the `arpreq` package
+* DEBUG levels: DEBUG value is now an integer, and increasing it will
+increase the amount and verbosity of output. On the CLI, it can be
+configured by increasing the amount of characters for the debug argument,
+e.g. '-dd' for DEBUG level 2.
+
+## Changed
+* Tighened up the code base a bit. `getmac.py` should now be a little smaller overall
+
+## Removed
+*
+
+## Dev
+*
 
 
 # 0.3.0 (08/30/2018)
