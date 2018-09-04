@@ -7,7 +7,9 @@
 * [X] make_arp_request
 * [ ] Add ability to match user-provided arguments case-insensitively
 * [ ] Add ability to get the mac address of a socket's interface
-
+* [ ] Add support for Unix and Windows interface indices as a seperate
+      argument to `get_mac_address`. On Windows, we could use `wmic`,
+      while on Unix and Python 3 we can use `socket.if_indextoname()`.
 
 ## IPv6
 * [ ] Support for IPv6 hostname resolution
@@ -15,8 +17,7 @@
           to resolve a hostname to an IP address.
 
 ## Commands: Windows
-* [ ] Add support for Windows interface indices as a seperate
-      argument to `get_mac_address`.
+
 ### Remote hosts
 * [ ] `getmac.exe`
 * [ ] `netsh int ipv6 show neigh`

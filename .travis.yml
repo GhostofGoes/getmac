@@ -60,9 +60,11 @@ script:
 - get-mac --help
 - get-mac --version
 - get-mac --no-network-requests --debug
+- get-mac -dd
 - python -m getmac --help
 - python -m getmac --version
 - python -m getmac --no-network-requests --debug
+- python -m getmac -dd
 
 notifications:
   email:

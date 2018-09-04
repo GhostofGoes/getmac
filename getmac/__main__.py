@@ -12,7 +12,8 @@ def main():
     try:
         import argparse
     except ImportError:
-        print("Python 2.6 is not supported for the terminal interface")
+        print("You must install argparse on Python 2.6 and below. You can "
+              "install it with 'python -m pip install --user argparse'")
         sys.exit(1)
 
     parser = argparse.ArgumentParser(
@@ -33,13 +34,14 @@ def main():
                        help='IPv6 address of a remote host')
     group.add_argument('-n', '--hostname', type=str, default=None,
                        help='Hostname of a remote host')
-    parser.add_argument('-d', '--debug', action='store_true',
-                        help='For debugging failures')
+    parser.add_argument('-d', '--debug', action='count',
+                        help='Enable increased output that is useful for '
+                             'debugging. Add more characters to increase '
+                             'the verbosity of output, e.g. \'-dd\'.')
     args = parser.parse_args()
 
     if args.debug:
-        getmac.DEBUG = True
-
+        getmac.DEBUG = args.debug
     mac = getmac.get_mac_address(interface=args.interface, ip=args.ip,
                                  ip6=args.ip6, hostname=args.hostname,
                                  network_request=not args.no_network_requests)

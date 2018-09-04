@@ -25,12 +25,13 @@ setup(
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': [
-            'get-mac = getmac.__main__:main'
-        ]
+            'get-mac = getmac.__main__:main',
+        ],
     },
     platforms=['any'],
-    keywords='get-mac getmac mac-address mac address networking networks layer2 osi '
-             'media access control ieee 802 mac-48 ethernet network python layer-2',
+    keywords='get-mac getmac macaddress mac-address mac address networking '
+             'networks layer2 osi media access control ieee 802 mac-48 '
+             'ethernet network python layer-2',
     classifiers=[  # Used by PyPI to classify the project and make it searchable
         'Development Status :: 4 - Beta',
         'Environment :: Console',
@@ -50,6 +51,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.5',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
 

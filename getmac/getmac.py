@@ -9,10 +9,10 @@ except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Py2
 
 __version__ = '0.3.0'
-DEBUG = False
+DEBUG = 0
 
 PY2 = sys.version_info[0] == 2
-IS_WINDOWS = platform.system() == 'Windows'  # Matches Windows and Cygwin
+IS_WINDOWS = platform.system() == 'Windows'
 
 PATH = os.environ.get('PATH', os.defpath).split(os.pathsep)
 if not IS_WINDOWS:
@@ -72,6 +72,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         except Exception:
             if DEBUG:
                 print("Ping to populate ARP table failed!")
+            if DEBUG >= 2:
                 traceback.print_exc()
 
     # Resolve hostname to an IP address
@@ -219,13 +220,11 @@ def _powershell_ip(host):  # TODO: WIP
         import _winreg as winreg
     else:
         import winreg
-
     try:
         reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
         ps_key = winreg.OpenKey(reg, r'SOFTWARE\Microsoft\PowerShell')
     except OSError:
         return None
-
     ps_location = None
     for version in [3, 1]:
         ver_path = str(version) + r'\PowerShellEngine'
@@ -470,6 +469,7 @@ def _try_methods(methods, to_find=None):
         except Exception as ex:
             if DEBUG:
                 print("Exception: %s" % str(ex))
+            if DEBUG >= 2:
                 traceback.print_exc()
             continue
         if found:
