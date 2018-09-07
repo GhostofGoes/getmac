@@ -1,6 +1,8 @@
 # AppVeyor.yml from https://github.com/ogrisel/python-appveyor-demo
 # License: CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/
 
+build: off
+
 environment:
   global:
     # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
@@ -82,6 +84,9 @@ environment:
 #      PYTHON_VERSION: "2.6.6"
 #      PYTHON_ARCH: "64"
 
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+
 install:
   # If there is a newer build queued for the same PR, cancel this one.
   # The AppVeyor 'rollout builds' option is supposed to serve the same
@@ -114,12 +119,19 @@ install:
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
   #  - "python -m pip install --upgrade pip"
+  - "pip install --upgrade pip"
+  - "pip install virtualenv"
+  - "virtualenv env"
+  - "env\Scripts\activate.bat"
+  - "pip install -e ."
 
 build_script:
    #  - "%CMD_IN_ENV% python setup.py install"
    - ps: python -m pip install -e .
 
 test_script:
+   - "chcp 65001"
+   - "set PYTHONIOENCODING=utf8"
    - ps: .\appveyor\run_tests.ps1
 
 #after_test:

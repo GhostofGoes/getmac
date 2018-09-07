@@ -4,7 +4,6 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser -force
 Get-ExecutionPolicy -List
 echo $env:Path
 echo "PYTHONPATH: $env:PYTHONPATH"
-echo $env:ci_type
 python --version
 python -c "import platform; print(platform.architecture())"
 
