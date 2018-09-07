@@ -95,8 +95,8 @@ install:
   - ECHO "Filesystem root:"
   - ps: "ls \"C:/\""
 
-#  - ECHO "Installed SDKs:"
-#  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
+  #  - ECHO "Installed SDKs:"
+  #  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
 
   # Install Python (from the official .msi of https://python.org) and pip when
   # not already installed.
@@ -113,10 +113,11 @@ install:
 
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
-#  - "python -m pip install --upgrade pip"
+  #  - "python -m pip install --upgrade pip"
 
 build_script:
-  - "%CMD_IN_ENV% python setup.py install"
+   #  - "%CMD_IN_ENV% python setup.py install"
+   - ps: python -m pip install -e .
 
 test_script:
    - ps: .\appveyor\run_tests.ps1
