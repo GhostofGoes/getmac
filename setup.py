@@ -20,6 +20,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/GhostofGoes/get-mac',
     download_url='https://pypi.org/project/get-mac/',
+    # project_urls={},  # TODO
     license='MIT',
     packages=find_packages(exclude=['tests.py']),
     zip_safe=True,
@@ -62,8 +63,9 @@ setup(
         'Intended Audience :: System Administrators',
         'Intended Audience :: Information Technology',
 
-        'Topic :: System :: Systems Administration',
+        'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Software Development :: Libraries',
+        'Topic :: System :: Systems Administration',
         'Topic :: System :: Networking',
         'Topic :: Utilities',
     ]
