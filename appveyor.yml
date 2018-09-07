@@ -122,7 +122,7 @@ install:
   - "pip install --upgrade pip"
   - "pip install virtualenv"
   - "virtualenv env"
-  - "env\Scripts\activate.bat"
+  - env\Scripts\activate.bat
   - "pip install -e ."
 
 build_script:
@@ -130,8 +130,8 @@ build_script:
    - ps: python -m pip install -e .
 
 test_script:
-   - "chcp 65001"
-   - "set PYTHONIOENCODING=utf8"
+   - chcp 65001
+   - set PYTHONIOENCODING=utf8
    - ps: .\appveyor\run_tests.ps1
 
 #after_test:
