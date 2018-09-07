@@ -119,14 +119,7 @@ build_script:
   - "%CMD_IN_ENV% python setup.py install"
 
 test_script:
-   - ps: "get-mac --help"
-   - ps: "get-mac --version"
-   - ps: "get-mac"
-   - ps: "get-mac --debug"
-   - ps: "get-mac --debug -i 'Ethernet'"
-   - ps: "get-mac --debug -4 127.0.0.1"
-   - ps: "get-mac --debug --no-network-requests -4 127.0.0.1"
-   - ps: "get-mac --debug -n localhost"
+   - ps: .\appveyor\run_tests.ps1
 
 #after_test:
 #  # If tests are successful, create binary packages for the project.
