@@ -6,10 +6,14 @@
 
 sudo yum -y -t -q update
 sudo yum -y -t -q install epel-release
-sudo yum -y -t -q install yum-utils git make dos2unix nano python-pip python-virtualenv
+sudo yum -y -t -q install yum-utils \
+    git make \
+    dos2unix nano \
+    python-pip python-setuptools python-virtualenv \
+    rpm-build rpm-sign rpmdevtools
 
 # https://stackoverflow.com/a/23317640/2214380
-sudo yum -y -t -q install python34 python34-setuptools
+sudo yum -y -t -q install python34 python34-setuptools python34-virtualenv
 sudo easy_install-3.4 pip
 sudo pip3 install virtualenv
 
