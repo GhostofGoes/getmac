@@ -95,8 +95,8 @@ install:
   - ECHO "Filesystem root:"
   - ps: "ls \"C:/\""
 
-  - ECHO "Installed SDKs:"
-  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
+#  - ECHO "Installed SDKs:"
+#  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
 
   # Install Python (from the official .msi of https://python.org) and pip when
   # not already installed.
@@ -113,43 +113,39 @@ install:
 
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
-  - "python -m pip install --upgrade pip"
+#  - "python -m pip install --upgrade pip"
 
 build_script:
   - "%CMD_IN_ENV% python setup.py install"
 
 test_script:
-   - ps: get-mac --help
-   - ps: get-mac --version
-   - ps: get-mac
-   - ps: get-mac --debug
-   - ps: get-mac --debug -i 'Ethernet'
-   - ps: get-mac --debug -4 127.0.0.1
-   - ps: get-mac --debug --no-network-requests -4 127.0.0.1
-   - ps: get-mac --debug -n localhost
-#  - ps: |
-#      # this produces nosetests.xml which is uploaded on_finish
-#      &$env:PYTHON\python setup.py nosetests --with-xunit
-#      if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode) }
-      
-after_test:
-  # If tests are successful, create binary packages for the project.
-  - "%CMD_IN_ENV% python setup.py bdist_wheel"
-  - "%CMD_IN_ENV% python setup.py bdist_wininst"
-  - "%CMD_IN_ENV% python setup.py bdist_msi"
-  - ps: "ls dist"
+   - ps: "get-mac --help"
+   - ps: "get-mac --version"
+   - ps: "get-mac"
+   - ps: "get-mac --debug"
+   - ps: "get-mac --debug -i 'Ethernet'"
+   - ps: "get-mac --debug -4 127.0.0.1"
+   - ps: "get-mac --debug --no-network-requests -4 127.0.0.1"
+   - ps: "get-mac --debug -n localhost"
 
-artifacts:
-  # Archive the generated packages in the ci.appveyor.com build report.
-  - path: dist\*
+#after_test:
+#  # If tests are successful, create binary packages for the project.
+#  - "%CMD_IN_ENV% python setup.py bdist_wheel"
+#  - "%CMD_IN_ENV% python setup.py bdist_wininst"
+#  - "%CMD_IN_ENV% python setup.py bdist_msi"
+#  - ps: "ls dist"
+
+#artifacts:
+#  # Archive the generated packages in the ci.appveyor.com build report.
+#  - path: dist\*
 
 #on_success:
 #  - TODO: upload the content of dist/*.whl to a public wheelhouse
 #
 
-on_finish:
-  # Upload test results to AppVeyor
-  - ps: |
-      # this uploads nosetests.xml produced in test_script step
-      $wc = New-Object 'System.Net.WebClient'
-      $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\nosetests.xml))
+#on_finish:
+#  # Upload test results to AppVeyor
+#  - ps: |
+#      # this uploads nosetests.xml produced in test_script step
+#      $wc = New-Object 'System.Net.WebClient'
+#      $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\nosetests.xml))
