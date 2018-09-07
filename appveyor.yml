@@ -127,7 +127,7 @@ install:
 
 build_script:
    #  - "%CMD_IN_ENV% python setup.py install"
-   - ps: python -m pip install -e .
+   - ps: pip install -e .
 
 test_script:
    - chcp 65001
