@@ -8,8 +8,17 @@ configured by increasing the amount of characters for the debug argument,
 e.g. '-dd' for DEBUG level 2.
 
 ## Changed
-* Tightened up the code base a bit. `getmac.py` should
-now be a little smaller overall.
+* **Significant** performance improvement for remote hosts. Previously,
+the average for `get_mac_address(ip='10.0.0.100')` was 1.71 seconds.
+Now, the average is `12.7 miliseconds`, with the special case of a unpopulated
+arp table being only slightly higher. This was brought about by changes in
+how the arp table is populated. The original method was to use the
+host's `ping` command to send an ICMP packet to the host. This took time,
+which heavily delayed the ability to actually get an address. The solution
+is to instead simply send a empty UDP packet to a high port. The port
+this packet is sent to can be configured using the module variable `getmac.PORT`.
+* Tightened up the code base a bit. `getmac.py` should take up
+less space on disk now.
 
 ## Removed
 * Support for Python 3.2 and 3.3. The total downloads from PyPI with

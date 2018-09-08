@@ -10,6 +10,7 @@ except ImportError:
 
 __version__ = '0.3.0'
 DEBUG = 0
+PORT = 55555
 
 PY2 = sys.version_info[0] == 2
 IS_WINDOWS = platform.system() == 'Windows'
@@ -48,36 +49,30 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g 192.168.0.1)
         ip6 (str): Canonical shortened IPv6 address of a remote host (e.g ff02::1:ffe7:7f19)
         hostname (str): DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
-        network_request (bool): Ping a remote host to populate the ARP/NDP tables for IPv4/IPv6
+        network_request (bool): Send a UDP packet to a remote host to populate
+        the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
+        be configured using the module variable `getmac.PORT`.
     Returns:
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error."""
-    # Populate the ARP table using a simple ping
-    if network_request and (ip or ip6 or hostname):
-        try:
-            if IS_WINDOWS:
-                timeout = 100  # Milliseconds
-                if ip6:
-                    _popen('ping', '-6 -n 1 -w %d %s' % (timeout, ip6))
-                else:
-                    _popen('ping', '-n 1 -w %d %s' % (timeout, ip if ip else hostname))
-            else:
-                timeout = 0.1  # Just need to trigger ARP request
-                if ip6:
-                    _popen('ping6', '-n -q -c 1 -t1-w %f %s' % (timeout, ip6))
-                else:
-                    _popen('ping', '-n -q -c1 -t1 %s & disown' % (ip if ip else hostname))
-
-        # If network request fails, warn and continue onward
-        except Exception:
-            if DEBUG:
-                print("Ping to populate ARP table failed!")
-            if DEBUG >= 2:
-                traceback.print_exc()
-
     # Resolve hostname to an IP address
     if hostname:
         ip = socket.gethostbyname(hostname)
+
+    # Populate the ARP table by sending a empty UDP packet to a high port
+    if network_request and (ip or ip6):
+        try:
+            if ip:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.sendto(b'', (ip, PORT))
+            else:
+                s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+                s.sendto(b'', (ip6, PORT))
+        except Exception:
+            if DEBUG:
+                print("ERROR: Failed to send ARP table population packet")
+            if DEBUG >= 2:
+                traceback.print_exc()
 
     # Setup the address hunt based on the arguments specified
     if ip6:
