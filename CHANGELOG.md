@@ -8,13 +8,23 @@ configured by increasing the amount of characters for the debug argument,
 e.g. '-dd' for DEBUG level 2.
 
 ## Changed
-* Tighened up the code base a bit. `getmac.py` should now be a little smaller overall
+* Tightened up the code base a bit. `getmac.py` should
+now be a little smaller overall.
 
 ## Removed
-*
+* Support for Python 3.2 and 3.3. The total downloads from PyPI with
+those version in August was ~53k and ~407K, respectfully. Most of those
+are likely from automated testing (e.g. TravisCI) and not actual users.
+Therefore, I've decided to drop support to simplify development,
+especially since before 3.4 the 3.x series were still very much
+"works in progress".
 
 ## Dev
-*
+* Added automated tests for Windows using Appveyor. This will test
+all supported versions except 2.5 and 2.6, which I highly doubt are
+still in use on Windows. It is not in the top 100 platforms for 2.6,
+and there's no reason to use them over 2.7 unless you have truly ugly
+ancient legacy code.
 
 
 # 0.3.0 (08/30/2018)
