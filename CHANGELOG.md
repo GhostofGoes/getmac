@@ -17,6 +17,9 @@ host's `ping` command to send an ICMP packet to the host. This took time,
 which heavily delayed the ability to actually get an address. The solution
 is to instead simply send a empty UDP packet to a high port. The port
 this packet is sent to can be configured using the module variable `getmac.PORT`.
+* "Fixed" resolution of localhost/127.0.0.1 by hardcoding the response.
+This should resolve a lot of problematic edge cases. I'm ok with this
+for now since I don't know of a case when it isn't all zeroes.
 * Tightened up the code base a bit. `getmac.py` should take up
 less space on disk now.
 

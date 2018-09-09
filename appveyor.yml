@@ -16,6 +16,16 @@ environment:
     # a later point release.
     # See: https://www.appveyor.com/docs/installed-software#python
 
+    - PYTHON: "C:\\Python26"
+      PYTHON_VERSION: "2.6.x"
+      PYTHON_ARCH: "32"
+      TOXENV: py26
+
+    - PYTHON: "C:\\Python26-x64"
+      PYTHON_VERSION: "2.6.x"
+      PYTHON_ARCH: "64"
+      TOXENV: py26
+
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7.x"
       PYTHON_ARCH: "32"
@@ -97,6 +107,11 @@ install:
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - "python -c \"import sys; print(sys.platform)\""
+  - "python -c \"import sys; print(sys.version)\""
+  - "python -c \"import os; print(os.name)\""
+  - "python -c \"import platform; print(platform.version())\""
+  - "python -c \"import platform; print(platform.uname())\""
 
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.

@@ -42,7 +42,9 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     Exceptions will be handled silently and returned as a None.
     For the time being, it assumes you are using Ethernet.
 
-    NOTE: you MUST provide str-typed arguments, REGARDLESS of Python version.
+    NOTES:
+    * You MUST provide str-typed arguments, REGARDLESS of Python version.
+    * localhost/127.0.0.1 will always return '00:00:00:00:00:00'
 
     Args:
         interface (str): Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
@@ -55,6 +57,10 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     Returns:
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error."""
+    # TODO: are there ever cases where this isn't true?
+    if (hostname and hostname == 'localhost') or (ip and ip == '127.0.0.1'):
+        return '00:00:00:00:00:00'
+
     # Resolve hostname to an IP address
     if hostname:
         ip = socket.gethostbyname(hostname)

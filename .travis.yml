@@ -68,8 +68,17 @@ matrix:
 # if this is a tag build we force full build
 before_install:
 - python -c 'import sys; print(sys.version)'
+- python -c 'import sys; print(sys.platform)'
+- python -c 'import os; print(os.name)'
+- python -c 'import platform; print(platform.version())'
+- python -c 'import platform; print(platform.uname())'
+- arp -a
+- ifconfig
+- ip a
+- ip link list
+- ip neigh
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source .travis-osx; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y net-tools iproute2; fi
+#- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y net-tools iproute2; fi
 #- export BUILD="setup.py setup.cfg tox.ini .travis.yml appveyor.yml"
 #- export SRC=$(git diff --name-only $TRAVIS_COMMIT_RANGE -- '*.py' $BUILD | grep -v conf.py | grep -v "tasks/.*.py")
 #- '[[ "$TOXENV"!="py" || (-n "$SRC" && "$TOXENV"="py") ]] && export RUN="YES"'
