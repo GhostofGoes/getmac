@@ -1,6 +1,7 @@
 # AppVeyor.yml from https://github.com/ogrisel/python-appveyor-demo
 # License: CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/
 
+# Not a C#/etc project
 build: off
 
 environment:
@@ -18,42 +19,52 @@ environment:
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7.x"
       PYTHON_ARCH: "32"
+      TOXENV: py27
 
     - PYTHON: "C:\\Python27-x64"
       PYTHON_VERSION: "2.7.x"
       PYTHON_ARCH: "64"
+      TOXENV: py27
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4.x"
       PYTHON_ARCH: "32"
+      TOXENV: py34
 
     - PYTHON: "C:\\Python34-x64"
       PYTHON_VERSION: "3.4.x"
       PYTHON_ARCH: "64"
+      TOXENV: py34
 
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5.x"
       PYTHON_ARCH: "32"
+      TOXENV: py35
 
     - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5.x"
       PYTHON_ARCH: "64"
+      TOXENV: py35
 
     - PYTHON: "C:\\Python36"
       PYTHON_VERSION: "3.6.x"
       PYTHON_ARCH: "32"
+      TOXENV: py36
 
     - PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6.x"
       PYTHON_ARCH: "64"
+      TOXENV: py36
 
     - PYTHON: "C:\\Python37"
       PYTHON_VERSION: "3.7.x"
       PYTHON_ARCH: "32"
+      TOXENV: py37
 
     - PYTHON: "C:\\Python37-x64"
       PYTHON_VERSION: "3.7.x"
       PYTHON_ARCH: "64"
+      TOXENV: py37
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -89,21 +100,29 @@ install:
 
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
-  #  - "python -m pip install --upgrade pip"
   - "python -m pip install --upgrade pip"
-  - "python -m pip install virtualenv"
-  - "virtualenv env"
-  - env\Scripts\activate.bat
-  - "python -m pip install -e ."
+  - "python -m pip install --upgrade tox"
+#  - "python -m pip install virtualenv"
+#  - "virtualenv env"
+#  - env\Scripts\activate.bat
+#  - "python -m pip install -e ."
 
-build_script:
-   #  - "%CMD_IN_ENV% python setup.py install"
-   - ps: python -m pip install -e .
+#build_script:
+#   #  - "%CMD_IN_ENV% python setup.py install"
+#   - ps: python -m pip install -e .
+
 
 test_script:
-   - chcp 65001
-   - set PYTHONIOENCODING=utf8
-   - ps: .\appveyor\run_tests.ps1
+- C:\Python36\scripts\tox
+
+cache:
+- '%LOCALAPPDATA%\pip\cache'
+- '%USERPROFILE%\.cache\pre-commit'
+
+#test_script:
+#   - chcp 65001
+#   - set PYTHONIOENCODING=utf8
+#   - ps: .\appveyor\run_tests.ps1
 
 #after_test:
 #  # If tests are successful, create binary packages for the project.

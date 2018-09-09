@@ -9,12 +9,29 @@ import getmac
 
 getmac.DEBUG = True
 
-# TODO: mock the results of Popen to be a static string
-#       with the typical output of the command being tested
+
+# TODO: mock Popen return to be string with typical output of command being tested
+
+
+class TestGetMacAddress(unittest.TestCase):
+    def test_get_mac_address_ip_localhost(self):
+        result = getmac.get_mac_address(ip='127.0.0.1')
+        self.assertIsNotNone(result)
+
+
+
 class TestFailures(unittest.TestCase):
     def test_iface_ip(self):
         pass
 
 
-if __name__ == "__main__":
+class TestInternalMethods(unittest.TestCase):
+    pass
+
+
+class TestThirdPartyPackages(unittest.TestCase):
+    pass
+
+
+if __name__ == '__main__':
     unittest.main()

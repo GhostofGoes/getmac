@@ -1,4 +1,4 @@
-.PHONY: install clean clean-build test build
+.PHONY: install clean clean-build test build upload
 
 install: clean
 	@pip install -e .
@@ -10,12 +10,15 @@ clean:
 	@find . -name '*~' -delete
 
 clean-build: clean
-	@rm -rf build/
-	@rm -rf dist/
-	@rm -rf *.egg-info
+	@rm -rf build dist *.egg *.egg-info
 
 test:
 	@python -m unittest discover -s ./test
+	@tox
 
 build: clean-build
 	@python setup.py sdist bdist_wheel
+
+upload: build
+	pip install 'twine>=1.11.0'
+	twine upload dist/*
