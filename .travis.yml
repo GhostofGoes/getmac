@@ -58,15 +58,14 @@ matrix:
   fast_finish: true
   allow_failures:
   - python: 3.8-dev
-  - python: pypy
-  - python: pypy3
+#  - python: pypy
+#  - python: pypy3
   - os: osx
+  - python: 3.6
+    env: TOXENV=flake8
+  - python: 3.6
+    env: TOXENV=spellcheck
 
-# Sadly Travis at the moment does not provide as job filter option git changeset, however we emulate it via bash
-# we have two type of tasks to run here
-# - test (TOXENV=py) => run only if source/packaging/CI files change
-# - linter and documentation -> always build
-# if this is a tag build we force full build
 before_install:
 - python -c 'import sys; print(sys.version)'
 - python -c 'import sys; print(sys.platform)'
@@ -77,94 +76,19 @@ before_install:
 - ifconfig
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ip a && ip link list && ip neigh; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source .travis-osx; fi
-#- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y net-tools iproute2; fi
-#- export BUILD="setup.py setup.cfg tox.ini .travis.yml appveyor.yml"
-#- export SRC=$(git diff --name-only $TRAVIS_COMMIT_RANGE -- '*.py' $BUILD | grep -v conf.py | grep -v "tasks/.*.py")
-#- '[[ "$TOXENV"!="py" || (-n "$SRC" && "$TOXENV"="py") ]] && export RUN="YES"'
+  #- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y net-tools iproute2; fi
 
 install:
 - pip install -U tox
 - tox --notest
-#- '[ -n "$RUN" ] && pip install -U tox'
-#- '[ -n "$RUN" ] && tox --notest'
 
 script:
 - tox
-#- '[ -n "$RUN" ] && tox'
 
-after_success:
+#after_success:
 #- '[[ "$TOXENV"="py" ]] && tox -e coverage,codecov'
 #- '[[ -n "$RUN" && "$TOXENV"="py" ]] && tox -e coverage,codecov'
 
-
-
-#matrix:
-#  include:
-#    - python: pypy
-#      env: TOXENV=pypy
-#    - python: pypy3.5
-#      env: TOXENV=pypy3
-#    - python: 3.7
-#      dist: xenial
-#      sudo: true
-#      env: TOXENV=py37
-#    - python: 3.6
-#      env: TOXENV=py36
-#    - python: 3.5
-#      env: TOXENV=py35
-#    - python: 3.4
-#      env: TOXENV=py34
-#    - python: 2.7
-#      env: TOXENV=py27
-#    # TODO: CLI is not supported nor can it run as a module on 2.6
-#    #    - python: 2.6
-
-#matrix:
-#  allow_failures:
-#  - os: osx
-#  include:
-#  - language: generic
-#    os: osx
-#    before_install:
-#    - brew update
-#    - brew upgrade python
-#    - virtualenv env3 -p python3
-#    - source env3/bin/activate
-#  - language: generic
-#    os: osx
-#    before_install:
-#    - virtualenv env2 -p python
-#    - source env2/bin/activate
-#    - language: python
-#      os: linux
-#      dist: trusty
-#      sudo: required
-#      before_install:
-#        - sudo apt-get update -qq
-#        - sudo apt-get install -qq -y net-tools iputils-ping iputils-arping
-#    - language: python
-#      os: linux
-#      dist: precise
-#      sudo: required
-#      before_install:
-#        - sudo apt-get update -qq
-#        - sudo apt-get install -qq -y net-tools iputils-ping iputils-arping
-
-#install:
-#- pip install tox
-##- python setup.py install
-#
-#script:
-#- tox
-##- get-mac --help
-##- get-mac --version
-##- get-mac --no-network-requests --debug
-##- get-mac -dd
-##- python -m getmac --help
-##- python -m getmac --version
-##- python -m getmac --no-network-requests --debug
-##- python -m getmac -dd
-#
 #notifications:
 #  email:
 #    on_success: never

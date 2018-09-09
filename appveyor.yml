@@ -109,7 +109,6 @@ install:
 
 test_script:
 - tox
-- get-mac -dd -i 'Ethernet 8'
 
 cache:
 - '%LOCALAPPDATA%\pip\cache'
