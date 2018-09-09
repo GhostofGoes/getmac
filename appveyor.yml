@@ -116,30 +116,16 @@ install:
 
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
-  - "python -m pip install --upgrade pip"
-  - "python -m pip install --upgrade tox"
-#  - "python -m pip install virtualenv"
-#  - "virtualenv env"
-#  - env\Scripts\activate.bat
-#  - "python -m pip install -e ."
-
-#build_script:
-#   #  - "%CMD_IN_ENV% python setup.py install"
-#   - ps: python -m pip install -e .
-
+  - "pip install --upgrade pip"
+  - "pip install --upgrade tox"
 
 test_script:
 - tox
-#- C:\Python36\scripts\tox
+- get-mac -dd -i 'Ethernet 8'
 
 cache:
 - '%LOCALAPPDATA%\pip\cache'
 - '%USERPROFILE%\.cache\pre-commit'
-
-#test_script:
-#   - chcp 65001
-#   - set PYTHONIOENCODING=utf8
-#   - ps: .\appveyor\run_tests.ps1
 
 #after_test:
 #  # If tests are successful, create binary packages for the project.
@@ -151,10 +137,6 @@ cache:
 #artifacts:
 #  # Archive the generated packages in the ci.appveyor.com build report.
 #  - path: dist\*
-
-#on_success:
-#  - TODO: upload the content of dist/*.whl to a public wheelhouse
-#
 
 #on_finish:
 #  # Upload test results to AppVeyor

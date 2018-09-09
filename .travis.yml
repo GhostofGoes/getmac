@@ -30,6 +30,7 @@ jobs:
     dist: trusty
   - os: osx
     language: generic
+    env: TOXENV=osx-travis
   - python: 3.6
     env: TOXENV=flake8
   - python: 3.6
@@ -89,8 +90,6 @@ install:
 
 script:
 - tox
-- '[[ "$TRAVIS_OS_NAME" == "linux" ]] && get-mac -i ens4 -dd'
-- '[[ "$TRAVIS_OS_NAME" == "osx" ]] && get-mac -i en0 -dd'
 #- '[ -n "$RUN" ] && tox'
 
 after_success:
