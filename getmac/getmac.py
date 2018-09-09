@@ -105,7 +105,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
                 if IS_WINDOWS:
                     to_find = 'Ethernet'
                 else:
-                    to_find = 'eth0'
+                    to_find = 'en0'
 
     mac = _hunt_for_mac(to_find, typ, net_ok=network_request)
     if DEBUG:
