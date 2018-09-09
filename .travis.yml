@@ -69,6 +69,7 @@ matrix:
 before_install:
 - python -c 'import sys; print(sys.version)'
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source .travis-osx; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y net-tools iproute2; fi
 #- export BUILD="setup.py setup.cfg tox.ini .travis.yml appveyor.yml"
 #- export SRC=$(git diff --name-only $TRAVIS_COMMIT_RANGE -- '*.py' $BUILD | grep -v conf.py | grep -v "tasks/.*.py")
 #- '[[ "$TOXENV"!="py" || (-n "$SRC" && "$TOXENV"="py") ]] && export RUN="YES"'

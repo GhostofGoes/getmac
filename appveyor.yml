@@ -113,7 +113,8 @@ install:
 
 
 test_script:
-- C:\Python36\scripts\tox
+- tox
+#- C:\Python36\scripts\tox
 
 cache:
 - '%LOCALAPPDATA%\pip\cache'
