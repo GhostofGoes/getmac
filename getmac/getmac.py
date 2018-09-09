@@ -488,8 +488,10 @@ def _hunt_default_iface():
         methods = []
     else:
         methods = [
-            lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
-            lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
+            lambda: _popen('route', '-n').partition('0.0.0.0')[2]
+                                         .partition('\n')[0].split()[-1],
+            lambda: _popen('ip', 'route list 0/0').partition('dev')[2]
+                                                  .partition('proto')[0].strip(),
             _netifaces_default,
         ]
     return _try_methods(methods=methods)
