@@ -22,6 +22,7 @@
 * [ ] `getmac.exe`
 * [ ] `netsh int ipv6 show neigh`
 * [ ] `arping`
+* [ ] _powershell_ip() in code_snippets.txt
 * [ ] Windows API
 
 ### Interface MACs
