@@ -19,14 +19,12 @@
 ## Commands: Windows
 
 ### Remote hosts
-* [ ] `getmac.exe`
 * [ ] `netsh int ipv6 show neigh`
 * [ ] `arping`
 * [ ] _powershell_ip() in code_snippets.txt
 * [ ] Windows API
 
 ### Interface MACs
-* [ ] `getmac.exe`
 * [ ] `netsh int ipv6`
 * [ ] `ipconfig`
 * [ ] `wmic`: `wmic NICCONFIG where IpEnabled=True get Description IPAddress MACAddress`

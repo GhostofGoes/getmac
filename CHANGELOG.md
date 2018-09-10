@@ -22,6 +22,7 @@ This should resolve a lot of problematic edge cases. I'm ok with this
 for now since I don't know of a case when it isn't all zeroes.
 * Tightened up the code base a bit. `getmac.py` should take up
 less space on disk now.
+* Various minor stability and performance improvements
 
 ## Removed
 * Support for Python 3.2 and 3.3. The total downloads from PyPI with

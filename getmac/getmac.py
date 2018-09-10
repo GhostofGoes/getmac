@@ -311,7 +311,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         methods = [
             # getmac - Connection Name
             (r'\r\n' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
-             0, 'getmac', ['/v /fo TABLE /nh']),
+             0, 'getmac', ['/NH /V']),
 
             # ipconfig
             (to_find + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+' + MAC_RE_DASH + r'\r\n',
@@ -319,7 +319,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
             # getmac - Network Adapter (the human-readable name)
             (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
-             0, 'getmac', ['/v /fo TABLE /nh']),
+             0, 'getmac', ['/NH /V']),
 
             _psutil_iface,
             _scapy_iface,
