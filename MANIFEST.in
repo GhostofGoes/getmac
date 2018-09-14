@@ -1,0 +1,9 @@
+include LICENSE README.md CHANGELOG.md
+graft getmac
+
+prune appveyor
+prune samples
+prune scripts
+prune tests
+
+global-exclude *.py[cod] __pycache__ *.so
