@@ -2,6 +2,7 @@
 # Bugs or potential issues
 * [X] Interface IP on Ubuntu gets loopback, instead of primary interface
 * [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
+* [ ] Are there ever cases where loopback != FF:FF:FF:FF:FF:FF?
 
 # Features
 * [X] make_arp_request

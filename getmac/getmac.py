@@ -20,7 +20,7 @@ if not IS_WINDOWS:
     PATH.extend(('/sbin', '/usr/sbin'))
 
 ENV = dict(os.environ)
-ENV['LC_ALL'] = 'C'  # Ensure ASCII/English output so we parse correctly
+ENV['LC_ALL'] = 'C'  # Ensure ASCII output so we parse correctly
 
 IP4 = 0
 IP6 = 1
@@ -57,7 +57,6 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     Returns:
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error."""
-    # TODO: are there ever cases where this isn't true?
     if (hostname and hostname == 'localhost') or (ip and ip == '127.0.0.1'):
         return '00:00:00:00:00:00'
 
@@ -216,53 +215,47 @@ def _windows_ctypes_host(host):
     return macaddr
 
 
-def _fcntl_iface(iface_name):
+def _fcntl_iface(iface):
     import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 0x8927 = SIOCGIFADDR
-    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', iface_name[:15]))
+    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', iface[:15]))
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
 
 
-def _psutil_iface(iface_name):
+def _psutil_iface(iface):
     import psutil
     nics = psutil.net_if_addrs()
-    if iface_name in nics:
-        nic = nics[iface_name]
+    if iface in nics:
+        nic = nics[iface]
         for i in nic:
             if i.family == psutil.AF_LINK:
                 return i.address
 
 
-def _netifaces_iface(iface_name):
-    # This method doesn't work on Windows
+def _netifaces_iface(iface):
+    """This method doesn't work on Windows"""
     import netifaces
-    return netifaces.ifaddresses(iface_name)[netifaces.AF_LINK][0]['addr']
+    return netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
 
 
 def _scapy_ip(ip):
-    # This requires root permissions on POSIX platforms
-    # On Windows, it can run successfully with normal user permissions
+    """Requires root permissions on POSIX platforms.
+    Windows does not have this limitation"""
     from scapy.layers.l2 import getmacbyip
     return getmacbyip(ip)
 
 
-def _scapy_iface(iface_name):
+def _scapy_iface(iface):
     from scapy.layers.l2 import get_if_hwaddr
     if IS_WINDOWS:
         from scapy.arch.windows import get_windows_if_list
         interfaces = get_windows_if_list()
-        for interface in interfaces:
-            if iface_name in [interface['name'], interface['netid'],
-                              interface['description'], interface['win_index']]:
-                return interface['mac']
+        for i in interfaces:
+            if any(iface in i[x] for x in ['name', 'netid', 'description', 'win_index']):
+                return i['mac']
     # Do not put an 'else' here!
-    return get_if_hwaddr(iface_name)
-
-
-def _arpreq_ip(ip):
-    import arpreq
-    return arpreq.arpreq(ip)
+    return get_if_hwaddr(iface)
 
 
 def _uuid_ip(ip):
@@ -283,14 +276,12 @@ def _uuid_ip(ip):
         socket.gethostbyname = backup
 
 
-def _uuid_lanscan_iface(iface_name):
-    from uuid import _find_mac
+def _uuid_lanscan_iface(iface):
     if not PY2:
-        iface_name = bytes(iface_name)
-    mac = _find_mac('lanscan', '-ai', [iface_name], lambda i: 0)
-    if mac is not None:
-        mac = _uuid_convert(mac)
-    return mac
+        iface = bytes(iface)
+    mac = __import__('uuid')._find_mac('lanscan', '-ai', [iface], lambda i: 0)
+    if mac:
+        return _uuid_convert(mac)
 
 
 def _uuid_convert(mac):
@@ -298,13 +289,11 @@ def _uuid_convert(mac):
 
 
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
-    # Sanity check
+    """Format of method lists:
+    Tuple:  (regex, regex index, command, command args)
+    lambda: Function to call"""
     if not PY2 and isinstance(to_find, bytes):
         to_find = str(to_find, 'utf-8')
-
-    # ** Format of method lists **
-    # Tuple:    (regex, regex index, command, command args)
-    # Function: function to call
 
     # Windows - Network Interface
     if IS_WINDOWS and type_of_thing == INTERFACE:
@@ -322,15 +311,11 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'getmac', ['/NH /V']),
 
             _psutil_iface,
-            _scapy_iface,
-        ]
+            _scapy_iface]
 
     # Windows - Remote Host
     elif IS_WINDOWS and type_of_thing in [IP4, IP6, HOSTNAME]:
-        esc = re.escape(to_find)
-        methods = [
-            _scapy_ip,
-        ]
+        methods = [_scapy_ip]
 
         # Add methods that make network requests
         if net_ok and type_of_thing != IP6:
@@ -378,15 +363,14 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             _netifaces_iface,
             _psutil_iface,
             _scapy_iface,
-            _uuid_lanscan_iface,
-        ]
+            _uuid_lanscan_iface]
 
     # Non-Windows - Remote Host
     elif type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
         methods = [
-            # WARN: need a space, otherwise a search for 192.168.16.2
-            #       will match 192.168.16.254 if it comes first!
+            # Need a space, otherwise a search for 192.168.16.2
+            # will match 192.168.16.254 if it comes first!
             (esc + r' .+' + MAC_RE_COLON,
              0, 'cat', ['/proc/net/arp']),
 
@@ -404,18 +388,16 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
             _uuid_ip,
             _scapy_ip,
-            _arpreq_ip,
-        ]
-    else:  # This should never happen
+            lambda x: __import__('arpreq').arpreq(x)]
+    else:
         warn("ERROR: reached end of _hunt_for_mac() if-else chain!", RuntimeError)
         return None
     return _try_methods(methods, to_find)
 
 
 def _try_methods(methods, to_find=None):
-    # We try every function and see if it returned a MAC address
-    # If it returns None or raises an exception,
-    # we continue and try the next function
+    """We try every method and see if it returned a MAC address. If it returns
+    None or raises an exception, we continue and try the next method."""
     found = None
     for m in methods:
         try:
@@ -447,20 +429,12 @@ def _try_methods(methods, to_find=None):
     return found
 
 
-def _netifaces_default():
-    import netifaces
-    return list(netifaces.gateways()['default'].values())[0][1]
-
-
 def _hunt_default_iface():
     if IS_WINDOWS:
         methods = []
     else:
         methods = [
-            lambda: _popen('route', '-n').partition('0.0.0.0')[2]
-                                         .partition('\n')[0].split()[-1],
-            lambda: _popen('ip', 'route list 0/0').partition('dev')[2]
-                                                  .partition('proto')[0].strip(),
-            _netifaces_default,
-        ]
+            lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
+            lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
+            lambda: list(__import__('netifaces').gateways()['default'].values())[0][1]]
     return _try_methods(methods=methods)
