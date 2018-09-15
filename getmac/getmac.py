@@ -1,5 +1,24 @@
 # -*- coding: utf-8 -*-
 
+"""Get the MAC address of remote hosts or network interfaces using Python.
+
+It provides a platform-independant interface to get the MAC addresses of:
+
+* System network interfaces (by interface name)
+* Remote hosts on the local network (by IPv4/IPv6 address or hostname)
+
+It provides one function: `get_mac_address()`
+
+Examples:
+
+    from getmac import get_mac_address
+    eth_mac = get_mac_address(interface="eth0")
+    win_mac = get_mac_address(interface="Ethernet 3")
+    ip_mac = get_mac_address(ip="192.168.0.1")
+    ip6_mac = get_mac_address(ip6="::1")
+    host_mac = get_mac_address(hostname="localhost")
+    updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)"""
+
 import ctypes, os, re, sys, struct, socket, shlex, traceback, platform
 from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError
@@ -150,8 +169,6 @@ def _search(regex, text, group_index=0):
     match = re.search(regex, text)
     if match:
         return match.groups()[group_index]
-    else:
-        return None
 
 
 def _popen(command, args):
@@ -176,7 +193,6 @@ def _call_proc(executable, args):
     process = Popen(cmd, stdout=PIPE, stderr=DEVNULL, env=ENV)
     output, unused_err = process.communicate()
     retcode = process.poll()
-
     if retcode:
         raise CalledProcessError(retcode, cmd, output=output)
 
@@ -234,14 +250,14 @@ def _psutil_iface(iface):
 
 
 def _netifaces_iface(iface):
-    """This method doesn't work on Windows"""
+    """This method does not work on Windows."""
     import netifaces
     return netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
 
 
 def _scapy_ip(ip):
     """Requires root permissions on POSIX platforms.
-    Windows does not have this limitation"""
+    Windows does not have this limitation."""
     from scapy.layers.l2 import getmacbyip
     return getmacbyip(ip)
 
