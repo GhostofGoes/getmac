@@ -40,6 +40,12 @@ elif _SYST == 'Java':
 else:
     IS_WINDOWS = False
 
+if not IS_WINDOWS and 'Microsoft' in platform.version():
+    IS_WSL = True
+else:
+    IS_WSL = False
+
+
 PATH = os.environ.get('PATH', os.defpath).split(os.pathsep)
 if not IS_WINDOWS:
     PATH.extend(('/sbin', '/usr/sbin'))
@@ -84,6 +90,9 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         found or there was an error."""
     if (hostname and hostname == 'localhost') or (ip and ip == '127.0.0.1'):
         return '00:00:00:00:00:00'
+
+    if DEBUG >= 2:
+        print("IS_WINDOWS\t%s\nIS_WSL\t\t%s" % (str(IS_WINDOWS), str(IS_WSL)))
 
     # Resolve hostname to an IP address
     if hostname:
