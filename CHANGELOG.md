@@ -1,6 +1,7 @@
 # 0.X.X (xx/xx/2018)
 ## Added:
 * New methods for remote host MACs
+    * Windows: `arp`
     * POSIX: `arpreq` package
 * New methods for interface MACs
     * Windows: `wmic nic`
@@ -24,6 +25,7 @@ this packet is sent to can be configured using the module variable `getmac.PORT`
 * "Fixed" resolution of localhost/127.0.0.1 by hardcoding the response.
 This should resolve a lot of problematic edge cases. I'm ok with this
 for now since I don't know of a case when it isn't all zeroes.
+* Greatly increased the reliability of getting host and interface MACs on Windows
 * Improved debugging output
 * Tightened up the size of `getmac.py`
 * Various minor stability and performance improvements

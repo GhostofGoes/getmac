@@ -315,6 +315,7 @@ def _uuid_convert(mac):
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     """Format of method lists:
     Tuple:  (regex, regex index, command, command args)
+            Command args is a list of strings to attempt to use as arguments
     lambda: Function to call"""
     if not PY2 and isinstance(to_find, bytes):
         to_find = str(to_find, 'utf-8')
@@ -342,11 +343,15 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
     # Windows - Remote Host
     elif IS_WINDOWS and type_of_thing in [IP4, IP6, HOSTNAME]:
-        methods = [_scapy_ip]
+        methods = [
+            # arp -a - Parsing result with a regex
+            (MAC_RE_DASH, 0, 'arp', ['-a %s' % to_find]),
+
+            _scapy_ip]
 
         # Add methods that make network requests
         if net_ok and type_of_thing != IP6:
-            methods.insert(0, _windows_ctypes_host)
+            methods.insert(1, _windows_ctypes_host)
 
     # Non-Windows - Network Interface
     elif type_of_thing == INTERFACE:
