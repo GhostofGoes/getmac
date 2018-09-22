@@ -13,7 +13,7 @@ clean-build: clean
 	@rm -rf build dist *.egg *.egg-info
 
 test:
-	@python -m unittest discover -s ./test
+	@python -m unittest discover -s ./tests
 	@tox
 
 build: clean-build
