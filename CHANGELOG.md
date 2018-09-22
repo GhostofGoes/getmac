@@ -38,6 +38,7 @@ all supported versions except 2.5 and 2.6, which I highly doubt are
 still in use on Windows. It is not in the top 100 platforms for 2.6,
 and there's no reason to use them over 2.7 unless you have truly ugly
 ancient legacy code.
+* Add github.io page
 
 
 # 0.3.0 (08/30/2018)
