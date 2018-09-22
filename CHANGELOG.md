@@ -1,11 +1,13 @@
 # 0.X.X (xx/xx/2018)
 ## Added:
 * New methods for remote MACS
-    * POSIX: using the `arpreq` package
+    * POSIX: `arpreq` package
 * DEBUG levels: DEBUG value is now an integer, and increasing it will
 increase the amount and verbosity of output. On the CLI, it can be
 configured by increasing the amount of characters for the debug argument,
 e.g. '-dd' for DEBUG level 2.
+* Jython support (Note: on Windows Jython currently only works with interfaces)
+* IronPython support
 
 ## Changed
 * **Significant** performance improvement for remote hosts. Previously,
@@ -20,8 +22,7 @@ this packet is sent to can be configured using the module variable `getmac.PORT`
 * "Fixed" resolution of localhost/127.0.0.1 by hardcoding the response.
 This should resolve a lot of problematic edge cases. I'm ok with this
 for now since I don't know of a case when it isn't all zeroes.
-* Tightened up the code base a bit. `getmac.py` should take up
-less space on disk now.
+* Tightened up the size of `getmac.py`
 * Various minor stability and performance improvements
 
 ## Removed
@@ -38,7 +39,7 @@ all supported versions except 2.5 and 2.6, which I highly doubt are
 still in use on Windows. It is not in the top 100 platforms for 2.6,
 and there's no reason to use them over 2.7 unless you have truly ugly
 ancient legacy code.
-* Add github.io page
+* Added github.io page
 
 
 # 0.3.0 (08/30/2018)

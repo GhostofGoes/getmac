@@ -32,7 +32,13 @@ DEBUG = 0
 PORT = 55555
 
 PY2 = sys.version_info[0] == 2
-IS_WINDOWS = platform.system() == 'Windows'
+_SYST = platform.system()
+if _SYST == 'Windows':
+    IS_WINDOWS = True
+elif _SYST == 'Java':
+    IS_WINDOWS = os.sep == '\\'
+else:
+    IS_WINDOWS = False
 
 PATH = os.environ.get('PATH', os.defpath).split(os.pathsep)
 if not IS_WINDOWS:
