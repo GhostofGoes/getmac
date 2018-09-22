@@ -1,4 +1,4 @@
-# 0.4.X (09/21/2018)
+# 0.4.0 (09/21/2018)
 ## Added:
 * New methods for remote host MACs
     * Windows: `arp`
