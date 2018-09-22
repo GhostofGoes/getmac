@@ -1,4 +1,4 @@
-# 0.X.X (xx/xx/2018)
+# 0.4.X (09/21/2018)
 ## Added:
 * New methods for remote host MACs
     * Windows: `arp`
@@ -29,22 +29,21 @@ for now since I don't know of a case when it isn't all zeroes.
 * Improved debugging output
 * Tightened up the size of `getmac.py`
 * Various minor stability and performance improvements
+* Add LICENSE to PyPI package
 
 ## Removed
 * Support for Python 3.2 and 3.3. The total downloads from PyPI with
-those version in August was ~53k and ~407K, respectfully. Most of those
-are likely from automated testing (e.g. TravisCI) and not actual users.
-Therefore, I've decided to drop support to simplify development,
-especially since before 3.4 the 3.x series were still very much
-"works in progress".
+those versions in August was ~53k and ~407K, respectfully. The majority
+of those are likely from automated testing (e.g. TravisCI) and not
+actual users. Therefore, I've decided to drop support to simplify
+development, especially since before 3.4 the 3.x series was still
+very much a  "work in progress".
 
 ## Dev
-* Added automated tests for Windows using Appveyor. This will test
-all supported versions except 2.5 and 2.6, which I highly doubt are
-still in use on Windows. It is not in the top 100 platforms for 2.6,
-and there's no reason to use them over 2.7 unless you have truly ugly
-ancient legacy code.
+* Added automated tests for Windows using Appveyor
+* Tox runner for tests
 * Added github.io page
+* Improved TravisCI testing
 
 
 # 0.3.0 (08/30/2018)
