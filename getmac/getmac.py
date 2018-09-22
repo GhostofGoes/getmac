@@ -465,3 +465,6 @@ def _hunt_default_iface():
             lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
             lambda: list(__import__('netifaces').gateways()['default'].values())[0][1]]
     return _try_methods(methods=methods)
+
+
+__all__ = ['get_mac_address']
