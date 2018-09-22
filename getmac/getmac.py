@@ -186,6 +186,8 @@ def _popen(command, args):
             break
     else:
         executable = command
+    if DEBUG >= 3:
+        print("Running: '%s %s'" % (executable, args))
     return _call_proc(executable, args)
 
 
@@ -331,6 +333,9 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # getmac - Network Adapter (the human-readable name)
             (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
              0, 'getmac', ['/NH /V']),
+
+            # wmic - WMI command line utility
+            lambda x: _popen('wmic', 'nic where "NetConnectionID = \'%s\'" get MACAddress /value' % x).strip().partition('=')[2],
 
             _psutil_iface,
             _scapy_iface]

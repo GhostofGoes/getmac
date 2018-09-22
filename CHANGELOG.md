@@ -1,7 +1,9 @@
 # 0.X.X (xx/xx/2018)
 ## Added:
-* New methods for remote MACS
+* New methods for remote host MACs
     * POSIX: `arpreq` package
+* New methods for interface MACs
+    * Windows: `wmic nic`
 * DEBUG levels: DEBUG value is now an integer, and increasing it will
 increase the amount and verbosity of output. On the CLI, it can be
 configured by increasing the amount of characters for the debug argument,
@@ -22,6 +24,7 @@ this packet is sent to can be configured using the module variable `getmac.PORT`
 * "Fixed" resolution of localhost/127.0.0.1 by hardcoding the response.
 This should resolve a lot of problematic edge cases. I'm ok with this
 for now since I don't know of a case when it isn't all zeroes.
+* Improved debugging output
 * Tightened up the size of `getmac.py`
 * Various minor stability and performance improvements
 
