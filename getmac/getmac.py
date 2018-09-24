@@ -334,32 +334,35 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         methods = [
             # getmac - Connection Name
             (r'\r\n' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
-             0, 'getmac', ['/NH /V']),
+             0, 'getmac.exe', ['/NH /V']),
 
             # ipconfig
             (to_find + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+' + MAC_RE_DASH + r'\r\n',
-             0, 'ipconfig', ['/all']),
+             0, 'ipconfig.exe', ['/all']),
 
             # getmac - Network Adapter (the human-readable name)
             (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
-             0, 'getmac', ['/NH /V']),
+             0, 'getmac.exe', ['/NH /V']),
 
             # wmic - WMI command line utility
-            lambda x: _popen('wmic', 'nic where "NetConnectionID = \'%s\'" get MACAddress /value' % x).strip().partition('=')[2],
+            lambda x: _popen('wmic.exe', 'nic where "NetConnectionID = \'%s\'" get '
+                                         'MACAddress /value' % x).strip().partition('=')[2],
 
             _psutil_iface,
-            _scapy_iface]
+            _scapy_iface,
+        ]
 
     # Windows - Remote Host
-    elif IS_WINDOWS and type_of_thing in [IP4, IP6, HOSTNAME]:
+    elif (IS_WINDOWS or IS_WSL) and type_of_thing in [IP4, IP6, HOSTNAME]:
         methods = [
             # arp -a - Parsing result with a regex
-            (MAC_RE_DASH, 0, 'arp', ['-a %s' % to_find]),
+            (MAC_RE_DASH, 0, 'arp.exe', ['-a %s' % to_find]),
 
-            _scapy_ip]
+            _scapy_ip,
+        ]
 
         # Add methods that make network requests
-        if net_ok and type_of_thing != IP6:
+        if net_ok and type_of_thing != IP6 and not IS_WSL:
             methods.insert(1, _windows_ctypes_host)
 
     # Non-Windows - Network Interface
@@ -404,7 +407,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             _netifaces_iface,
             _psutil_iface,
             _scapy_iface,
-            _uuid_lanscan_iface]
+            _uuid_lanscan_iface,
+        ]
 
     # Non-Windows - Remote Host
     elif type_of_thing in [IP4, IP6, HOSTNAME]:
@@ -429,7 +433,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
             _uuid_ip,
             _scapy_ip,
-            lambda x: __import__('arpreq').arpreq(x)]
+            lambda x: __import__('arpreq').arpreq(x),
+        ]
     else:
         warn("ERROR: reached end of _hunt_for_mac() if-else chain!", RuntimeError)
         return None
@@ -474,10 +479,13 @@ def _hunt_default_iface():
     if IS_WINDOWS:
         methods = []
     else:
+        # NOTE: for now, we check the default interface for WSL using the
+        # same methods as POSIX, since those parts of the net stack work fine.
         methods = [
             lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
             lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
-            lambda: list(__import__('netifaces').gateways()['default'].values())[0][1]]
+            lambda: list(__import__('netifaces').gateways()['default'].values())[0][1],
+        ]
     return _try_methods(methods=methods)
 
 

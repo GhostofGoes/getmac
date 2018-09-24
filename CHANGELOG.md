@@ -1,5 +1,12 @@
+# DEV (xx/xx/2018)
+## Added
+* Full support for Windows Subsystem for Linux (WSL). This is working for
+all features, including default interface selection! The only edge case
+is lookup of remote host IP addresses that are actually  local interfaces
+won't resolve to a MAC (which should be ff-ff-ff-ff-ff-ff).
+
 # 0.4.0 (09/21/2018)
-## Added:
+## Added
 * New methods for remote host MACs
     * Windows: `arp`
     * POSIX: `arpreq` package
