@@ -3,6 +3,7 @@
 * [X] Interface IP on Ubuntu gets loopback, instead of primary interface
 * [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
 * [ ] Are there ever cases where loopback != FF:FF:FF:FF:FF:FF?
+* [ ] Remote host that is actually an interface should resolve to localhost MAC
 
 # Features
 * [X] make_arp_request
@@ -20,21 +21,28 @@
 ## Commands: Windows
 
 ### Remote hosts
-* [ ] `netsh int ipv6 show neigh`
+* [ ] IPv6: `netsh int ipv6 show neigh`
+* [ ] IPv4: `netsh int ipv4 show neigh`
 * [ ] `arping`
-* [ ] _powershell_ip() in code_snippets.txt
 * [ ] Windows API
 
 ### Interface MACs
 * [ ] `netsh int ipv6`
-* [ ] `ipconfig`
-* [ ] `wmic`: `wmic NICCONFIG where IpEnabled=True get Description IPAddress MACAddress`
+* [x] `ipconfig`
+* [x] `wmic`: `wmic NICCONFIG where IpEnabled=True get Description IPAddress MACAddress`
              This will also work for interface indices
 * [ ] Windows API
 
 ### Default Interfaces
+This is going to be a bit more complicated since the highest
+metric routes are going to be IP addresses and not interfaces.
+We'll have to resolve those to an interface, then select that
+interface as the default route.
+* [ ] IPv4: `netsh interface ipv4 show route`
+* [ ] IPv6: `netsh interface ipv6 show route`
 * [ ] `ipconfig`
-* [ ] `route print -4`
+* [ ] IPv4: `route print -4`
+* [ ] IPv6: `route print -6`
 * [ ] Windows API
 
 
@@ -46,11 +54,11 @@
 ## Platforms
 * [x] Linux
 * [x] Windows (modern)
-* [ ] Windows (pre-2000)
 * [x] Darwin (Mac OS)
+* [x] Windows Subsystem for Linux (WSL)
 * [ ] OpenBSD
 * [ ] FreeBSD
-* [ ] Android (Which you could argue [correctly] is Linux)
+* [ ] Android (Which you could argue *correctly* is Linux)
 * [ ] Solaris
 
 ## Other features
@@ -70,7 +78,8 @@
 * [ ] Mocked unit tests for core methods
 * [ ] Run unit tests on all of the samples I've collected thus far
 * [ ] Functional tests using Bats for all Python versions
-* [ ] Appveyor testing
+* [x] Appveyor testing
+* [ ] Unittesting of Python 2.6 (since we have it disabled on CLI tests)
 
 # Documentation
 * [ ] List of related works in README (shoutouts)
@@ -83,10 +92,3 @@
 * [ ] HTML web documentation on ReadTheDocs
 * [ ] Screenshots
 * [ ] ASCII Cinema capture of usage
-
-
-# Misc
-* [ ] Support everything on this [list](https://www.python.org/dev/peps/pep-0011/#no-longer-supported-platforms).
-That is partially in jest, partially insane[ity].
-* [ ] Unittesting of Python 2.6 (since we have it disabled on CLI tests)
-* [ ] Use optparse instead of argparse?
