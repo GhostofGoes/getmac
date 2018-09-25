@@ -4,6 +4,8 @@
 all features, including default interface selection! The only edge case
 is lookup of remote host IP addresses that are actually  local interfaces
 won't resolve to a MAC (which should be ff-ff-ff-ff-ff-ff).
+## Changed
+* Require `argparse` if Python version is 2.6 or older
 
 # 0.4.0 (09/21/2018)
 ## Added
