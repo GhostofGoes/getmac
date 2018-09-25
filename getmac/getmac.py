@@ -27,7 +27,7 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')  # Py2
 
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 DEBUG = 0
 PORT = 55555
 
