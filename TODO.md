@@ -92,3 +92,4 @@ interface as the default route.
 * [ ] HTML web documentation on ReadTheDocs
 * [ ] Screenshots
 * [ ] ASCII Cinema capture of usage
+* [ ] Add documentation and other links to project_urls in setup.py

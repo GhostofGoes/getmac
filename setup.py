@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, find_packages
+import sys
+
 from getmac.getmac import __version__
 
 
@@ -29,6 +31,7 @@ setup(
             'get-mac = getmac.__main__:main',
         ],
     },
+    install_requires=['argparse'] if sys.version_info[:2] < (2, 7) else [],
     platforms=['any'],
     keywords='get-mac getmac macaddress mac-address mac address networking '
              'networks layer2 osi media access control ieee 802 mac-48 '
