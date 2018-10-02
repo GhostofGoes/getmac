@@ -143,6 +143,18 @@ will vary. Please report any problems by opening a issue on GitHub!
 the platform currently attempts to use `Ethernet` as the default,
 not the actual default.
 
+# Contributing
+Contributers are more than welcome!
+See the [contribution guide](CONTRIBUTING.md) to get started,
+and checkout the [todo list](TODO.md) for a full list of tasks and bugs.
+
+The [Python Discord server](https://discord.gg/python) is a good place
+to ask questions or discuss the project (Handle: @KnownError).
+
+## Contributers
+*
+
+
 # Sources
 Many of the methods used to acquire an address and the core logic framework
 are attributed to the CPython project's UUID implementation.
@@ -151,9 +163,6 @@ are attributed to the CPython project's UUID implementation.
 * [_unix_fcntl_by_interface](https://stackoverflow.com/a/4789267/2214380)
 * [_windows_get_remote_mac_ctypes](goo.gl/ymhZ9p)
 * [String joining](https://stackoverflow.com/a/3258612/2214380)
-
-# TODO
-Full list of tasks and bugs can be found in TODO.md
 
 # License
 MIT. Feel free to copy, modify, and use to your heart's content. Have fun!

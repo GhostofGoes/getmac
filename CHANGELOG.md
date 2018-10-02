@@ -1,5 +1,9 @@
 # DEV (xx/xx/2018)
 
+## Dev
+* Added contribution guide
+
+
 # 0.5.0 (09/24/2018)
 ## Added
 * Full support for Windows Subsystem for Linux (WSL). This is working for
@@ -10,6 +14,7 @@ won't resolve to a MAC (which should be ff-ff-ff-ff-ff-ff).
 * Require `argparse` if Python version is 2.6 or older
 ## Dev
 * Updated tox tests: added Jython and IronPython, removed 2.6
+
 
 # 0.4.0 (09/21/2018)
 ## Added

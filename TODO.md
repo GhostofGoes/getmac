@@ -73,6 +73,9 @@ interface as the default route.
 * [ ] Reduce the size on disk of the source code
 * [ ] Improve performance (spend a lot of time on performance tuning with the regexes)
 
+# Dev
+* [ ] Write a script to collect samples for all commands in appropriate sub-directory in `samples/`
+
 # Tests
 * [ ] Unit tests for helper methods
 * [ ] Mocked unit tests for core methods
