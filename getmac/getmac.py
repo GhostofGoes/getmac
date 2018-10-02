@@ -22,6 +22,7 @@ Examples:
 import ctypes, os, re, sys, struct, socket, shlex, traceback, platform
 from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError
+from __future__ import print_statement
 try:
     from subprocess import DEVNULL  # Py3
 except ImportError:
