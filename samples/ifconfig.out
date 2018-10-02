@@ -1,4 +1,3 @@
-    cgoes@Supercomputer-14:~$ ifconfig
     eth0      Link encap:Ethernet  HWaddr 74:d4:35:e9:45:71
             inet addr:10.0.0.104  Bcast:10.0.0.255  Mask:255.255.255.0
             inet6 addr: fe80::30e1:92aa:53e7:7f19/64 Scope:Global
