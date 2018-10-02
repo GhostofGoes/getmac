@@ -12,9 +12,9 @@ It provides a platform-independant interface to get the MAC addresses of:
 
 It provides one function: `get_mac_address()`
 
-[![asciicast](https://asciinema.org/a/lnRZvlAs65jJXethognxWLLA7.png)](https://asciinema.org/a/lnRZvlAs65jJXethognxWLLA7)
+[![asciicast](https://asciinema.org/a/oFmVSvAUZMIwiEPeYv5JEHAYM.png)](https://asciinema.org/a/oFmVSvAUZMIwiEPeYv5JEHAYM)
 
-[![asciicast](https://asciinema.org/a/Gef70lfr9lg0cXzH4ira51siN.png)](https://asciinema.org/a/Gef70lfr9lg0cXzH4ira51siN)
+[![asciicast](https://asciinema.org/a/1oMyENUQvth7GiC7caJKp79qG.png)](https://asciinema.org/a/1oMyENUQvth7GiC7caJKp79qG)
 
 ## Features
 * Pure-Python
