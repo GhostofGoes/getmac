@@ -12,7 +12,7 @@ It provides a platform-independant interface to get the MAC addresses of:
 
 It provides one function: `get_mac_address()`
 
-[![asciicast](https://asciinema.org/a/oFmVSvAUZMIwiEPeYv5JEHAYM.png)](https://asciinema.org/a/oFmVSvAUZMIwiEPeYv5JEHAYM)
+[![asciicast](https://asciinema.org/a/203997.png)](https://asciinema.org/a/203997)
 
 [![asciicast](https://asciinema.org/a/1oMyENUQvth7GiC7caJKp79qG.png)](https://asciinema.org/a/1oMyENUQvth7GiC7caJKp79qG)
 
