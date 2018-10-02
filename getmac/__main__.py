@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from __future__ import print_statement
 from . import getmac
 
 
