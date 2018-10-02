@@ -12,6 +12,7 @@ from unittest import mock
 getmac.DEBUG = True
 
 
+@mock.patch('getmac.getmac.Popen')
 class TestSamples(unittest.TestCase):
     def load_sample(self, filename):
         filename = path.realpath('%s/../samples/%s' % (path.dirname(__file__), filename))
