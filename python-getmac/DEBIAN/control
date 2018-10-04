@@ -1,0 +1,8 @@
+Package: get-mac
+Version: 0.5.0
+Architecture: all
+Maintainer:Christopher Goes <goesc@acm.org>
+Depends: python2.7
+Installed-Size: 20 
+Homepage: https://github.com/GhostofGoes/get-mac
+Description: Get MAC addresses of remote hosts and local interfaces
