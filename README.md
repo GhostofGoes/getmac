@@ -156,8 +156,8 @@ The [Python Discord server](https://discord.gg/python) is a good place
 to ask questions or discuss the project (Handle: @KnownError).
 
 ## Contributers
-* Christopher Goes (ghostofgoes)
-
+* Christopher Goes (@ghostofgoes) - Author and maintainer
+* @fortunate-man - Usage videos
 
 # Sources
 Many of the methods used to acquire an address and the core logic framework
