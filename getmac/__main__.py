@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import sys
 from __future__ import print_statement
+import sys
 from . import getmac
 
 
