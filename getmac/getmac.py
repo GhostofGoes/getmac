@@ -493,14 +493,11 @@ def _hunt_linux_default_iface():
 
 
 def _fetch_ip_using_dns():
-    """ Ping Google DNS to determine IP of default network iface
-
-    :return: ip address
-    """
+    """Use a UDP socket with Cloudflare's DNS to determine
+    the IP of the default network interface"""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('1.1.1.1', 53))
     ip = s.getsockname()[0]
-
     return ip
 
 

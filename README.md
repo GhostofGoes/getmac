@@ -157,7 +157,9 @@ to ask questions or discuss the project (Handle: @KnownError).
 
 ## Contributers
 * Christopher Goes (@ghostofgoes) - Author and maintainer
+* Calvin Tran (@cyberhobbes) - Windows interface detection improvements
 * @fortunate-man - Usage videos
+
 
 # Sources
 Many of the methods used to acquire an address and the core logic framework

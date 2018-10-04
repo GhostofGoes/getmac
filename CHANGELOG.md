@@ -1,7 +1,14 @@
 # DEV (xx/xx/2018)
 
+## Added
+* Windows default interface detection if `network_request` is enabled (Credit: @cyberhobbes)
+
+## Changed
+*
+
 ## Dev
 * Added contribution guide
+* Added example videos demonstrating usage (Credit: @fortunate-man)
 
 
 # 0.5.0 (09/24/2018)
