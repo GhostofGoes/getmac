@@ -19,10 +19,10 @@ Examples:
     host_mac = get_mac_address(hostname="localhost")
     updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)"""
 
+from __future__ import print_statement
 import ctypes, os, re, sys, struct, socket, shlex, traceback, platform
 from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError
-from __future__ import print_statement
 try:
     from subprocess import DEVNULL  # Py3
 except ImportError:
