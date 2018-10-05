@@ -425,7 +425,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'cat', ['/proc/net/arp']),
 
             lambda x: _popen('ip', 'neighbor show %s' % x)
-                .partition(x)[2].partition('lladdr')[2].strip().split()[0],
+            .partition(x)[2].partition('lladdr')[2].strip().split()[0],
 
             # -a: BSD-style format
             # -n: shows numerical addresses

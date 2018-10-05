@@ -105,10 +105,12 @@ install:
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
   - "python -m pip install --upgrade pip"
-  - "python -m pip install --upgrade tox"
+  - "python -m pip install --upgrade tox flake8 codespell"
 
 test_script:
 - tox
+- tox -e flake8
+- tox -e codespell
 
 cache:
 - '%LOCALAPPDATA%\pip\cache'

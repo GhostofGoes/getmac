@@ -35,8 +35,6 @@ jobs:
     env: TOXENV=flake8
   - python: 3.6
     env: TOXENV=spellcheck
-#  - python: 3.7
-#    env: TOXENV=docs
 
 #  - stage: deploy
 #    python: '3.7'
@@ -58,13 +56,11 @@ matrix:
   fast_finish: true
   allow_failures:
   - python: 3.8-dev
-#  - python: pypy
-#  - python: pypy3
   - os: osx
-  - python: 3.6
-    env: TOXENV=flake8
-  - python: 3.6
-    env: TOXENV=spellcheck
+#  - python: 3.6
+#    env: TOXENV=flake8
+#  - python: 3.6
+#    env: TOXENV=spellcheck
 
 before_install:
 - python -c 'import sys; print(sys.version)'
@@ -76,7 +72,6 @@ before_install:
 - ifconfig
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ip a && ip link list && ip neigh; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source .travis-osx; fi
-  #- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y net-tools iproute2; fi
 
 install:
 - pip install -U tox

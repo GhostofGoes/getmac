@@ -167,6 +167,9 @@ Contributers are more than welcome!
 See the [contribution guide](CONTRIBUTING.md) to get started,
 and checkout the [todo list](TODO.md) for a full list of tasks and bugs.
 
+Before submitting a PR, please make sure you've completed the
+[pull request checklist](CONTRIBUTING.md#Code_requirements)!
+
 The [Python Discord server](https://discord.gg/python) is a good place
 to ask questions or discuss the project (Handle: @KnownError).
 

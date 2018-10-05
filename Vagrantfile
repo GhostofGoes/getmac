@@ -5,7 +5,7 @@
 # More boxes at: https://app.vagrantup.com
 
 # Prerequisites: latest versions of Vagrant and VirtualBox
-# If you're on Linux, do NOT use apt/yum to install these. They are severly out of date.
+# If you're on Linux, do NOT use apt/yum to install these. They are severely out of date.
 
 # Usage: Navigate to the folder containing this file in your CLI (Windows CMD, Linux BASH)
 #	Create VM:        "vagrant up"
@@ -61,9 +61,9 @@ Vagrant.configure(2) do |config|
     centos.vm.provider "virtualbox" do |vb|
       # Display the VirtualBox GUI when booting the machine
       vb.gui = false
-      # Customize the amount of memory on the VM. 2GB is reccomended.
+      # Customize the amount of memory on the VM. 2GB is recommended.
       vb.memory = "1024"
-      # Add more cores as neccessary. 1 is reccomended.
+      # Add more cores as necessary. 1 is recommended.
       vb.cpus = 1
       # VM name in VirtualBox
       vb.name = "getmac-CentOS7-Testbox"
