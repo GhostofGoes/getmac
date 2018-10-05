@@ -35,6 +35,16 @@ ip_mac = get_mac_address(ip="192.168.0.1")
 ip6_mac = get_mac_address(ip6="::1")
 host_mac = get_mac_address(hostname="localhost")
 updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
+
+# Enabling debugging
+from getmac import getmac
+getmac.DEBUG = 2  # DEBUG level 2
+print(getmac.get_mac_address(interface="Ethernet 3"))
+
+# Changing the port used for updating ARP table (UDP packet)
+from getmac import getmac
+getmac.PORT = 44444  # Default: 55555
+print(get_mac_address(ip="192.168.0.1", network_request=True))
 ```
 
 ## Terminal examples
@@ -86,7 +96,8 @@ in most circumstances. Disable this if you want to just use what's
 already in the table, or if you have requirements to prevent network
 traffic. The network request is a empty UDP packet sent to a high
 port, 55555 by default. This can be changed by setting `getmac.PORT`
-to the desired integer value.
+to the desired integer value. Additionally, on Windows, this will
+send a UDP packet to 1.1.1.1:53 to attempt to determine the default interface.
 
 ## Notes
 * If none of the arguments are selected, the default
@@ -145,22 +156,27 @@ docker run -it get-mac:latest -n localhost
     * Same as Linux
 
 # Caveats & Known issues
+Please report any problems by opening a issue on GitHub!
 
 ## Caveats
 * Depending on the platform, there could be a performance detriment,
 due to heavy usage of regular expressions.
-* **Platform test coverage is imperfect**. If you're having issues,
-then it might very well be you're using a platform I haven't been
-able to test. If that's the case, keep calm, open a GitHub issue, and
-I'd be more than happy to help. Testing is only on a few platforms
-(Ubuntu 14+, Windows 10, Windows Server 2012R2), so your mileage
-will vary. Please report any problems by opening a issue on GitHub!
+* Platform test coverage is imperfect. If you're having issues,
+then you might be using a platform I haven't been able to test.
+Keep calm, open a GitHub issue, and I'd be more than happy to help.
+* Older Python versions (2.5/3.3 and older) are not officially supported.
+If you're running these, all is not lost! Simply copy/paste `getmac.py`
+into your codebase and make the neccesary edits to be compatible with
+your version and distribution of Python.
 
 ## Known Issues
 * Hostnames for IPv6 devices are not yet supported.
-* Windows: the "default" of selecting the default route interface for
-the platform currently attempts to use `Ethernet` as the default,
-not the actual default.
+* Windows: the "default" of selecting the default route interface only
+works effectively if `network_request` is enabled. Otherwise,
+`Ethernet` as the default.
+* There is are currently no automated tests for Python 2.6, which means
+there is a much higher potential for regressions. Open an issue if you
+encounter any.
 
 # Contributing
 Contributers are more than welcome!
@@ -173,7 +189,7 @@ Before submitting a PR, please make sure you've completed the
 The [Python Discord server](https://discord.gg/python) is a good place
 to ask questions or discuss the project (Handle: @KnownError).
 
-## Contributers
+## Contributors
 * Christopher Goes (@ghostofgoes) - Author and maintainer
 * Calvin Tran (@cyberhobbes) - Windows interface detection improvements
 * Jose Gonzalez (@Komish) - Docker container and Docker testing
@@ -190,4 +206,4 @@ are attributed to the CPython project's UUID implementation.
 * [String joining](https://stackoverflow.com/a/3258612/2214380)
 
 # License
-MIT. Feel free to copy, modify, and use to your heart's content. Have fun!
+MIT. Feel free to copy, modify, and use to your heart's content. Enjoy :)

@@ -7,6 +7,12 @@
 ## Changed
 * Use proper Python 2-compatible print functions (Credit: @martmists)
 
+## Removed
+* Support for Python 2.5. It is not feasible to test, and potentially
+breaks some useful language features, such as `__future__`
+* PORT and DEBUG from package imports (`__init__.py`), since changing
+these would have no actual effect on execution
+
 ## Dev
 * Added contribution guide
 * Added example videos demonstrating usage (Credit: @fortunate-man)
