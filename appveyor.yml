@@ -110,7 +110,7 @@ install:
 test_script:
 - tox
 - tox -e flake8
-- tox -e codespell
+- tox -e spellcheck
 
 cache:
 - '%LOCALAPPDATA%\pip\cache'
