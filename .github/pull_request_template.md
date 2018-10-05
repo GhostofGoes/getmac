@@ -14,3 +14,6 @@
     * [ ] `tox -e spellcheck`
 * [ ] Have you updated the [CHANGELOG](CHANGELOG.md)?
 * [ ] Did you add your name to the contributers list in the [README](README.md)?
+
+### Summary of changes:
+* 
