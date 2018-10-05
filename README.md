@@ -75,6 +75,22 @@ python -m getmac -dd -n home.router
 
 Note: the terminal interface will not work on Python 2.6 and older (Sorry RHEL 6 users!).
 
+## Docker Examples
+
+Build docker image (from repository root directory)
+
+```bash
+docker build . -t get-mac
+```
+
+Run get-mac container and provide flags
+
+```bash
+docker run -it get-mac:latest --help
+docker run -it get-mac:latest --version
+docker run -it get-mac:latest -n localhost
+```
+
 ## get_mac_address()
 * `interface`: Name of a network interface on the system.
 * `ip`: IPv4 address of a remote host.
