@@ -2,9 +2,10 @@
 
 ## Added
 * Windows default interface detection if `network_request` is enabled (Credit: @cyberhobbes)
+* Docker container (Credit: @Komish)
 
 ## Changed
-*
+* Use proper Python 2-compatible print functions (Credit: @martmists)
 
 ## Dev
 * Added contribution guide

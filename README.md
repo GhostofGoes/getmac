@@ -75,22 +75,6 @@ python -m getmac -dd -n home.router
 
 Note: the terminal interface will not work on Python 2.6 and older (Sorry RHEL 6 users!).
 
-## Docker Examples
-
-Build docker image (from repository root directory)
-
-```bash
-docker build . -t get-mac
-```
-
-Run get-mac container and provide flags
-
-```bash
-docker run -it get-mac:latest --help
-docker run -it get-mac:latest --version
-docker run -it get-mac:latest -n localhost
-```
-
 ## get_mac_address()
 * `interface`: Name of a network interface on the system.
 * `ip`: IPv4 address of a remote host.
@@ -128,6 +112,21 @@ or issues related to this, including error reports.
 If you are using logging, they can be captured using logging.captureWarnings().
 Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/3/library/warnings.html
+
+## Docker Examples
+Build docker image (from repository root directory)
+
+```bash
+docker build . -t get-mac
+```
+
+Run get-mac container and provide flags
+
+```bash
+docker run -it get-mac:latest --help
+docker run -it get-mac:latest --version
+docker run -it get-mac:latest -n localhost
+```
 
 # Platforms
 * Windows
@@ -174,8 +173,9 @@ to ask questions or discuss the project (Handle: @KnownError).
 ## Contributers
 * Christopher Goes (@ghostofgoes) - Author and maintainer
 * Calvin Tran (@cyberhobbes) - Windows interface detection improvements
-* @fortunate-man - Usage videos
-
+* Jose Gonzalez (@Komish) - Docker container and Docker testing
+* @fortunate-man - Awesome usage videos
+* @martmists - legacy Python compatibility improvements
 
 # Sources
 Many of the methods used to acquire an address and the core logic framework
