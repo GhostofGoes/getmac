@@ -139,9 +139,8 @@ docker run -it get-mac:latest --version
 docker run -it get-mac:latest -n localhost
 ```
 
-# Platforms
+# Commands and techniques by platform
 * Windows
-    * Versions: 2000, XP, Vista, 7, 8/8.1, 10
     * Commands: `getmac`, `ipconfig`
     * Libraries: `uuid`, `ctypes`
     * Third-party Packages: `netifaces`, `psutil`, `scapy`
@@ -151,9 +150,35 @@ docker run -it get-mac:latest -n localhost
     * Third-party Packages:  `netifaces`, `psutil`, `scapy`, `arping`
     * Default interfaces: `route`, `ip route list`
     * Files: `/sys/class/net/X/address`, `/proc/net/arp`
-* Mac OS X (Darwin)
+* Mac OSX (Darwin)
     * `networksetup`
-    * Same as Linux
+    * Same commands as Linux
+* WSL: Windows commands are used for remote hosts,
+and Unix commands are used for interfaces
+
+# Platforms currently supported
+All or almost all features should work on "supported" platforms (OSes).
+* Windows
+    * Desktop: 7, 8, 8.1, 10
+    * Server: TBD
+    * (Partially supported, untested): 2000, XP, Vista
+* Linux distros
+    * CentOS/RHEL 6+
+    * Ubuntu 16+ (14 and older should work as well)
+    * Fedora
+* MacOSX (Darwin)
+    * The latest two versions probably (TBD)
+* Windows Subsystem for Linux (WSL)
+* Docker
+
+# Python versions
+All sub-versions are the latest available on your platform (with the exception of 2.6).
+* 2.6.6 (CentOS 6/RHEL 6 version)
+* 2.7
+* 3.4
+* 3.5
+* 3.6
+* 3.7
 
 # Caveats & Known issues
 Please report any problems by opening a issue on GitHub!
