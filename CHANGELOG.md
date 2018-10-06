@@ -1,7 +1,21 @@
 # DEV (xx/xx/2018)
 
+## Added
+* Windows default interface detection if `network_request` is enabled (Credit: @cyberhobbes)
+* Docker container (Credit: @Komish)
+
+## Changed
+* Use proper Python 2-compatible print functions (Credit: @martmists)
+
+## Removed
+* Support for Python 2.5. It is not feasible to test, and potentially
+breaks some useful language features, such as `__future__`
+* PORT and DEBUG from package imports (`__init__.py`), since changing
+these would have no actual effect on execution
+
 ## Dev
 * Added contribution guide
+* Added example videos demonstrating usage (Credit: @fortunate-man)
 
 
 # 0.5.0 (09/24/2018)

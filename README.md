@@ -12,6 +12,10 @@ It provides a platform-independant interface to get the MAC addresses of:
 
 It provides one function: `get_mac_address()`
 
+[![asciicast](https://asciinema.org/a/rk6dUACUcZY18taCuIBE5Ssus.png)](https://asciinema.org/a/rk6dUACUcZY18taCuIBE5Ssus)
+
+[![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.png)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
+
 ## Features
 * Pure-Python
 * Supports Python 2.6+, 3.4+, pypy, and pypy3
@@ -31,6 +35,16 @@ ip_mac = get_mac_address(ip="192.168.0.1")
 ip6_mac = get_mac_address(ip6="::1")
 host_mac = get_mac_address(hostname="localhost")
 updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
+
+# Enabling debugging
+from getmac import getmac
+getmac.DEBUG = 2  # DEBUG level 2
+print(getmac.get_mac_address(interface="Ethernet 3"))
+
+# Changing the port used for updating ARP table (UDP packet)
+from getmac import getmac
+getmac.PORT = 44444  # Default: 55555
+print(get_mac_address(ip="192.168.0.1", network_request=True))
 ```
 
 ## Terminal examples
@@ -82,7 +96,8 @@ in most circumstances. Disable this if you want to just use what's
 already in the table, or if you have requirements to prevent network
 traffic. The network request is a empty UDP packet sent to a high
 port, 55555 by default. This can be changed by setting `getmac.PORT`
-to the desired integer value.
+to the desired integer value. Additionally, on Windows, this will
+send a UDP packet to 1.1.1.1:53 to attempt to determine the default interface.
 
 ## Notes
 * If none of the arguments are selected, the default
@@ -109,9 +124,23 @@ If you are using logging, they can be captured using logging.captureWarnings().
 Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/3/library/warnings.html
 
-# Platforms
+## Docker Examples
+Build docker image (from repository root directory)
+
+```bash
+docker build . -t get-mac
+```
+
+Run get-mac container and provide flags
+
+```bash
+docker run -it get-mac:latest --help
+docker run -it get-mac:latest --version
+docker run -it get-mac:latest -n localhost
+```
+
+# Commands and techniques by platform
 * Windows
-    * Versions: 2000, XP, Vista, 7, 8/8.1, 10
     * Commands: `getmac`, `ipconfig`
     * Libraries: `uuid`, `ctypes`
     * Third-party Packages: `netifaces`, `psutil`, `scapy`
@@ -121,39 +150,76 @@ https://docs.python.org/3/library/warnings.html
     * Third-party Packages:  `netifaces`, `psutil`, `scapy`, `arping`
     * Default interfaces: `route`, `ip route list`
     * Files: `/sys/class/net/X/address`, `/proc/net/arp`
-* Mac OS X (Darwin)
+* Mac OSX (Darwin)
     * `networksetup`
-    * Same as Linux
+    * Same commands as Linux
+* WSL: Windows commands are used for remote hosts,
+and Unix commands are used for interfaces
+
+# Platforms currently supported
+All or almost all features should work on "supported" platforms (OSes).
+* Windows
+    * Desktop: 7, 8, 8.1, 10
+    * Server: TBD
+    * (Partially supported, untested): 2000, XP, Vista
+* Linux distros
+    * CentOS/RHEL 6+
+    * Ubuntu 16+ (14 and older should work as well)
+    * Fedora
+* MacOSX (Darwin)
+    * The latest two versions probably (TBD)
+* Windows Subsystem for Linux (WSL)
+* Docker
+
+# Python versions
+All sub-versions are the latest available on your platform (with the exception of 2.6).
+* 2.6.6 (CentOS 6/RHEL 6 version)
+* 2.7
+* 3.4
+* 3.5
+* 3.6
+* 3.7
 
 # Caveats & Known issues
+Please report any problems by opening a issue on GitHub!
 
 ## Caveats
 * Depending on the platform, there could be a performance detriment,
 due to heavy usage of regular expressions.
-* **Platform test coverage is imperfect**. If you're having issues,
-then it might very well be you're using a platform I haven't been
-able to test. If that's the case, keep calm, open a GitHub issue, and
-I'd be more than happy to help. Testing is only on a few platforms
-(Ubuntu 14+, Windows 10, Windows Server 2012R2), so your mileage
-will vary. Please report any problems by opening a issue on GitHub!
+* Platform test coverage is imperfect. If you're having issues,
+then you might be using a platform I haven't been able to test.
+Keep calm, open a GitHub issue, and I'd be more than happy to help.
+* Older Python versions (2.5/3.3 and older) are not officially supported.
+If you're running these, all is not lost! Simply copy/paste `getmac.py`
+into your codebase and make the neccesary edits to be compatible with
+your version and distribution of Python.
 
 ## Known Issues
 * Hostnames for IPv6 devices are not yet supported.
-* Windows: the "default" of selecting the default route interface for
-the platform currently attempts to use `Ethernet` as the default,
-not the actual default.
+* Windows: the "default" of selecting the default route interface only
+works effectively if `network_request` is enabled. Otherwise,
+`Ethernet` as the default.
+* There is are currently no automated tests for Python 2.6, which means
+there is a much higher potential for regressions. Open an issue if you
+encounter any.
 
 # Contributing
 Contributers are more than welcome!
 See the [contribution guide](CONTRIBUTING.md) to get started,
 and checkout the [todo list](TODO.md) for a full list of tasks and bugs.
 
+Before submitting a PR, please make sure you've completed the
+[pull request checklist](CONTRIBUTING.md#Code_requirements)!
+
 The [Python Discord server](https://discord.gg/python) is a good place
 to ask questions or discuss the project (Handle: @KnownError).
 
-## Contributers
-* Christopher Goes (ghostofgoes)
-
+## Contributors
+* Christopher Goes (@ghostofgoes) - Author and maintainer
+* Calvin Tran (@cyberhobbes) - Windows interface detection improvements
+* Jose Gonzalez (@Komish) - Docker container and Docker testing
+* @fortunate-man - Awesome usage videos
+* @martmists - legacy Python compatibility improvements
 
 # Sources
 Many of the methods used to acquire an address and the core logic framework
@@ -165,4 +231,4 @@ are attributed to the CPython project's UUID implementation.
 * [String joining](https://stackoverflow.com/a/3258612/2214380)
 
 # License
-MIT. Feel free to copy, modify, and use to your heart's content. Have fun!
+MIT. Feel free to copy, modify, and use to your heart's content. Enjoy :)

@@ -171,7 +171,6 @@ class TestGetMacAddress(unittest.TestCase):
         self.assertIsNotNone(result)
 
 
-
 class TestFailures(unittest.TestCase):
     def test_iface_ip(self):
         pass

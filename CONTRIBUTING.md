@@ -3,28 +3,48 @@
 Thanks for taking an interest in this awesome little project. We love
 to bring new members into the community, and can always use the help.
 
-## Important resources
-* Bug reports and issues: create an issue on [GitHub](https://github.com/GhostofGoes/get-mac/issues)
+## Resources
+* Task tracking and Bug reports: [GitHub](https://github.com/GhostofGoes/get-mac/issues)
 * Discussion: the [Python Discord server](https://discord.gg/python)
-* [PyPI](https://pypi.org/project/get-mac/)
+
+
+# Code requirements
+* Must work under all supported Python versions (2.6+ and 3.4+)
+* Must work on all supported platforms (if applicable)
+* Try to match the general code style (loosly PEP8)
+* Be respectful. Memes, references, and jokes are ok. Explicit language
+(cursing/swearing), NSFW text/content, or racism are NOT ok.
+
+## Checklist before submitting a pull request
+* [ ] All tests run and pass locally
+    * [ ] `tox`
+    * [ ] `tox -e flake8`
+    * [ ] `tox -e spellcheck`
+* [ ] Update the [CHANGELOG](CHANGELOG.md) (For non-trivial changes, e.g. changing functionality or adding tests)
+* [ ] Add your name to the contributers list in the [README](README.md)
+
+## Checklist before a Pull Request will be merged
+* [ ] *All* TravisCI tests pass
+* [ ] Appveyor tests pass
+* [ ] Code has been reviewed by at least one maintainer
 
 
 # Where to contribute
 
-### Good for beginners
+## Good for beginners
 * Sample collection (see section below)
 * Platform testing (see section below)
 * Bug reports!
 * Documentation (including fixes for grammar and spelling)
 * Improving and adding tests for existing samples
 
-### Main areas of focus
+## Main areas of focus
 * Writing parsers for new commands (Example: `netsh int ipv6`)
 * Addressing missing functionality (Example: default interface detection for IPv6 on Windows)
 * Adding new features (Example: ability to find MAC by interface index integer)
 * Adding tests for internal methods and mocking where neccessary
 
-### Platform testing
+## Platform testing
 Help is dearly needed on testing and rooting out differences in various platforms and configurations.
 At a basic level, this involves just running the tests on any platforms you use.
 Open issues for any bugs or quirks you discover, or if you're feeling adventerous, fix it yourself!
@@ -36,7 +56,7 @@ Any platform is fair game! The following are some highlights or platforms of spe
 * Arch Linux
 * BSD
 
-### Sample collection
+## Sample collection
 Examples of output of various commands is an easy way contribute that is still incredibly helpful.
 1. Run the command
 2. Copy/paste the output (or redirect output of command, `tee` is helpful here) into an appropriatly named `.out` file in `samples/`
@@ -71,25 +91,14 @@ Again, this can be done using the GUI, your favorite editor, or `git checkout -b
 ```bash
 python -m pip install --user -U tox
 tox
+tox -e flake8
+tox -e codespell
 ```
 7. Write some code! Git commit messages should information about what changed,
 and if it's relevant, the rationale (thinking) for the change.
 8. Follow the checklist
 9. Submit a pull request!
 
-## Code requirements
-* Must work under all supported Python versions (2.6+)
-* Must work on all supported platforms, if applicable
-* Try to match the general code style (loosly PEP8)
-* Be respectful.
-Memes, references, and jokes are ok.
-Explicit language (cursing/swearing), NSFW text/content, or racism are NOT ok.
-
-## Checklist before submitting a pull request
-* [ ] Update the [CHANGELOG](CHANGELOG.md) (For non-trivial changes, e.g. changing functionality or adding tests)
-* [ ] Add your name to the contributers list in the [README](README.md)
-* [ ] All tests pass locally
-* [ ] Pylint is happy
 
 # Bug reports
 Filing a bug report:

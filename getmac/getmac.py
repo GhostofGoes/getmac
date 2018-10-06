@@ -19,6 +19,7 @@ Examples:
     host_mac = get_mac_address(hostname="localhost")
     updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)"""
 
+from __future__ import print_function
 import ctypes, os, re, sys, struct, socket, shlex, traceback, platform
 from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError
@@ -131,13 +132,17 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         typ = INTERFACE
         if interface:
             to_find = interface
-        # Default to finding MAC of the interface with the default route
         else:
-            to_find = _hunt_default_iface()
-            if to_find is None:
-                if IS_WINDOWS:
-                    to_find = 'Ethernet'
+            # Default to finding MAC of the interface with the default route
+            if IS_WINDOWS:
+                if network_request:
+                    to_find = _fetch_ip_using_dns()
+                    typ = IP4
                 else:
+                    to_find = 'Ethernet'
+            else:
+                to_find = _hunt_linux_default_iface()
+                if not to_find:
                     to_find = 'en0'
 
     mac = _hunt_for_mac(to_find, typ, net_ok=network_request)
@@ -420,7 +425,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'cat', ['/proc/net/arp']),
 
             lambda x: _popen('ip', 'neighbor show %s' % x)
-                .partition(x)[2].partition('lladdr')[2].strip().split()[0],
+            .partition(x)[2].partition('lladdr')[2].strip().split()[0],
 
             # -a: BSD-style format
             # -n: shows numerical addresses
@@ -475,18 +480,26 @@ def _try_methods(methods, to_find=None):
     return found
 
 
-def _hunt_default_iface():
-    if IS_WINDOWS:
-        methods = []
-    else:
-        # NOTE: for now, we check the default interface for WSL using the
-        # same methods as POSIX, since those parts of the net stack work fine.
-        methods = [
-            lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
-            lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
-            lambda: list(__import__('netifaces').gateways()['default'].values())[0][1],
-        ]
+def _hunt_linux_default_iface():
+    # NOTE: for now, we check the default interface for WSL using the
+    # same methods as POSIX, since those parts of the net stack work fine.
+
+    methods = [
+        lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
+        lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
+        lambda: list(__import__('netifaces').gateways()['default'].values())[0][1],
+    ]
+
     return _try_methods(methods=methods)
+
+
+def _fetch_ip_using_dns():
+    """Use a UDP socket with Cloudflare's DNS to determine
+    the IP of the default network interface"""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(('1.1.1.1', 53))
+    ip = s.getsockname()[0]
+    return ip
 
 
 __all__ = ['get_mac_address']
