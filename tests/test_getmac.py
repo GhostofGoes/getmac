@@ -15,6 +15,7 @@ except ImportError:
 
 getmac.DEBUG = True
 
+
 class MockHelper(object):
     @classmethod
     def load_sample(cls, filename):
@@ -64,8 +65,10 @@ class MockHelper(object):
             func(obj)
         return func_wrapper
 
+
 def mock_helper(platform_name, cmd, sample):
     return MockHelper(platform_name, cmd, sample)
+
 
 @mock.patch('getmac.getmac.socket.socket')
 @mock.patch('getmac.getmac.platform')
@@ -76,7 +79,7 @@ class TestSamples(unittest.TestCase):
     def test_ifconfig(self):
         mac = getmac.get_mac_address(interface='eth0')
         self.assertEqual('74:d4:35:e9:45:71', mac)
-    
+
     @mock_helper('Linux', 'ip link', 'ip_link_list.out')
     def test_ip_link_list(self):
         mac = getmac.get_mac_address(interface='eth0')
@@ -108,12 +111,12 @@ class TestSamples(unittest.TestCase):
     def test_windows_ipconfig_all(self):
         mac = getmac.get_mac_address(interface='Ethernet 3')
         self.assertEqual('74:d4:35:e9:45:71', mac)
-    
+
     @mock_helper('Windows', 'wmic.exe nic', 'windows_10/wmic_nic.out')
     def test_windows_wmic_nic(self):
         mac = getmac.get_mac_address(interface='Ethernet 3')
         self.assertEqual('00:ff:17:15:f8:c8', mac)
-    
+
     # Linux samples
     @mock_helper('Linux', 'arp -a', 'ubuntu_18.04/arp_-a.out')
     def test_linux_arp_a(self):
@@ -150,7 +153,8 @@ class TestSamples(unittest.TestCase):
         mac = getmac.get_mac_address(interface='ens33')
         self.assertEqual('00:0c:29:b5:72:37', mac)
 
-    @mock_helper('Linux', 'ip neighbor show 192.168.16.2', 'ubuntu_18.04/ip_neighbor_show_192-168-16-2.out')
+    @mock_helper('Linux', 'ip neighbor show 192.168.16.2',
+                 'ubuntu_18.04/ip_neighbor_show_192-168-16-2.out')
     def test_linux_ip_neighbor_show_192_168_16_2(self):
         mac = getmac.get_mac_address(ip='192.168.16.2')
         self.assertEqual('00:50:56:f1:4c:50', mac)
@@ -164,6 +168,7 @@ class TestSamples(unittest.TestCase):
     def test_linux_netstat_iae(self):
         mac = getmac.get_mac_address(interface='ens33')
         self.assertEqual('00:0c:29:b5:72:37', mac)
+
 
 class TestGetMacAddress(unittest.TestCase):
     def test_get_mac_address_ip_localhost(self):
