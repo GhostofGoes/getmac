@@ -11,9 +11,9 @@
 * [ ] Do all tests pass locally?
     * [ ] `tox`
     * [ ] `tox -e flake8`
-    * [ ] `tox -e spellcheck`
+    * [ ] `tox -e codespell`
 * [ ] Have you updated the [CHANGELOG](CHANGELOG.md)?
-* [ ] Did you add your name to the contributers list in the [README](README.md)?
+* [ ] Did you add your name to the contributors list in the [README](README.md)?
 
 ### Summary of changes:
 * 

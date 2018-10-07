@@ -5,18 +5,26 @@
 * Docker container (Credit: @Komish)
 
 ## Changed
+* Changed name to `getmac`. This applies to everything, including
+command line tool, PyPI, GitHub, and the documentation.
+This is a breaking change, but needed to happen to remove
+a huge amount of ambiguity that was causing issues with packaging,
+documentation, and several other efforts, not to mention my sanity.
+Long-term, the only downside is a conflict on Windows CLI with `getmac.exe`.
 * Use proper Python 2-compatible print functions (Credit: @martmists)
 
 ## Removed
 * Support for Python 2.5. It is not feasible to test, and potentially
 breaks some useful language features, such as `__future__`
-* PORT and DEBUG from package imports (`__init__.py`), since changing
-these would have no actual effect on execution
+* Variables PORT and DEBUG from top-level package imports, since changing
+them would have no actual effect on execution. Instead, use `getmac.getmac.DEBUG`.
 
 ## Dev
-* Added contribution guide
-* Added example videos demonstrating usage (Credit: @fortunate-man)
 * Added unit tests for the samples
+* Added example videos demonstrating usage (Credit: @fortunate-man)
+* Added contribution guide
+* Added documentation on ReadTheDocs
+* Added a manpage
 
 
 # 0.5.0 (09/24/2018)
@@ -118,7 +126,7 @@ POSIX platforms with `ip` or `route` commands available, or the
 # 0.2.4 (08/26/2018)
 ## Fixed
 * Fixed identification of remote host on OSX
-* Resolved hangs and noticable lag that occured when "network_request"
+* Resolved hangs and noticeable lag that occurred when "network_request"
 was True (the default)
 
 

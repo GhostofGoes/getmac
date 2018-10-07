@@ -73,7 +73,7 @@ interface as the default route.
 * [X] make_arp_request
 * [ ] Add ability to match user-provided arguments case-insensitively
 * [ ] Add ability to get the mac address of a socket's interface
-* [ ] Add support for Unix and Windows interface indices as a seperate
+* [ ] Add support for Unix and Windows interface indices as a separate
       argument to `get_mac_address`. On Windows, we could use `wmic`,
       while on Unix and Python 3 we can use `socket.if_indextoname()`.
 * [ ] Ignore case on regular expressions? (Better matching possibly)
@@ -92,7 +92,7 @@ interface as the default route.
 * [ ] Unittesting of Python 2.6 (since we have it disabled on CLI tests)
 * [ ] Add MyPy checking to required tests
 * [ ] Add profiling to tests. If average of multiple runs goes
- above a certain threashold, the tests fail.
+ above a certain threshold, the tests fail.
 
 # Documentation
 * [x] List of related works in README (shoutouts)
@@ -110,7 +110,7 @@ interface as the default route.
 # Code/Other
 * [ ] Add mypy-style type annotations
 * [ ] Script to collect samples for all relevant commands on a platform
-and save output into the appropriatly named sub-directory in `samples/`.
+and save output into the appropriately named sub-directory in `samples/`.
 * [ ] Vagrant images
     * [ ] Ubuntu
     * [ ] Fedora
