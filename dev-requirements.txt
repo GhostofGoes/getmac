@@ -1,0 +1,8 @@
+setuptools
+twine
+tox
+flake8
+codespell
+pylint
+sphinx
+sphinx-autobuild
