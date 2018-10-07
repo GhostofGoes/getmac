@@ -4,14 +4,14 @@ Thanks for taking an interest in this awesome little project. We love
 to bring new members into the community, and can always use the help.
 
 ## Resources
-* Task tracking and Bug reports: [GitHub](https://github.com/GhostofGoes/get-mac/issues)
+* Task tracking and Bug reports: [GitHub](https://github.com/GhostofGoes/getmac/issues)
 * Discussion: the [Python Discord server](https://discord.gg/python)
 
 
 # Code requirements
 * Must work under all supported Python versions (2.6+ and 3.4+)
 * Must work on all supported platforms (if applicable)
-* Try to match the general code style (loosly PEP8)
+* Try to match the general code style (loosely PEP8)
 * Be respectful. Memes, references, and jokes are ok. Explicit language
 (cursing/swearing), NSFW text/content, or racism are NOT ok.
 
@@ -19,9 +19,9 @@ to bring new members into the community, and can always use the help.
 * [ ] All tests run and pass locally
     * [ ] `tox`
     * [ ] `tox -e flake8`
-    * [ ] `tox -e spellcheck`
+    * [ ] `tox -e codespell`
 * [ ] Update the [CHANGELOG](CHANGELOG.md) (For non-trivial changes, e.g. changing functionality or adding tests)
-* [ ] Add your name to the contributers list in the [README](README.md)
+* [ ] Add your name to the contributors list in the [README](README.md)
 
 ## Checklist before a Pull Request will be merged
 * [ ] *All* TravisCI tests pass
@@ -42,7 +42,7 @@ to bring new members into the community, and can always use the help.
 * Writing parsers for new commands (Example: `netsh int ipv6`)
 * Addressing missing functionality (Example: default interface detection for IPv6 on Windows)
 * Adding new features (Example: ability to find MAC by interface index integer)
-* Adding tests for internal methods and mocking where neccessary
+* Adding tests for internal methods and mocking where necessary
 
 ## Platform testing
 Help is dearly needed on testing and rooting out differences in various platforms and configurations.
@@ -59,7 +59,7 @@ Any platform is fair game! The following are some highlights or platforms of spe
 ## Sample collection
 Examples of output of various commands is an easy way contribute that is still incredibly helpful.
 1. Run the command
-2. Copy/paste the output (or redirect output of command, `tee` is helpful here) into an appropriatly named `.out` file in `samples/`
+2. Copy/paste the output (or redirect output of command, `tee` is helpful here) into an appropriately named `.out` file in `samples/`
 3. That's it!
 
 
@@ -118,4 +118,4 @@ Instead, email: ghostofgoes(at)gmail(dot)com
 
 # Features and ideas
 Ideas for features or other things are welcomed. Open an issue on GitHub
-detailing the idea, and tag it appropriatly (e.g. "Feature" for a new feature).
+detailing the idea, and tag it appropriately (e.g. "Feature" for a new feature).

@@ -1,8 +1,8 @@
 FROM python:3
 
-ADD . /opt/get-mac
-WORKDIR /opt/get-mac
+ADD . /opt/getmac
+WORKDIR /opt/getmac
 
 RUN python setup.py install
 
-ENTRYPOINT ["get-mac"]
+ENTRYPOINT ["getmac"]

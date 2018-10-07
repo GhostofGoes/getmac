@@ -1,7 +1,7 @@
 
-[![Latest version on PyPI](https://badge.fury.io/py/get-mac.svg)](https://pypi.org/project/get-mac/)
-[![Travis CI build status](https://travis-ci.org/GhostofGoes/get-mac.svg?branch=master)](https://travis-ci.org/GhostofGoes/get-mac)
-[![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/get-mac/branch/master)
+[![Latest version on PyPI](https://badge.fury.io/py/getmac.svg)](https://pypi.org/project/getmac/)
+[![Travis CI build status](https://travis-ci.org/GhostofGoes/getmac.svg?branch=master)](https://travis-ci.org/GhostofGoes/getmac)
+[![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/getmac/branch/master)
 
 Get the MAC address of remote hosts or network interfaces using Python.
 
@@ -21,7 +21,7 @@ It provides one function: `get_mac_address()`
 * Supports Python 2.6+, 3.4+, pypy, and pypy3
 * No dependencies
 * Small size
-* Can be used as an independant .py file
+* Can be used as an independent .py file
 * Simple terminal tool (when installed as a package)
 
 # Usage
@@ -49,18 +49,18 @@ print(get_mac_address(ip="192.168.0.1", network_request=True))
 
 ## Terminal examples
 ```bash
-get-mac --help
-get-mac --version
+getmac --help
+getmac --version
 
 # No arguments will return MAC of the default interface.
-get-mac
+getmac
 python -m getmac
 
 # Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
-get-mac --interface ens33
-get-mac --ip 192.168.0.1
-get-mac --ip6 ::1
-get-mac --hostname home.router
+getmac --interface ens33
+getmac --ip 192.168.0.1
+getmac --ip6 ::1
+getmac --hostname home.router
 
 # Running as a Python module with shorthands for the arguments
 python -m getmac -i 'Ethernet 4'
@@ -69,16 +69,16 @@ python -m getmac -6 ::1
 python -m getmac -n home.router
 
 # Getting the MAC address of a remote host obviously requires
-# the ARP table to be populated. By default, get-mac will do
+# the ARP table to be populated. By default, getmac will do
 # this for you by sending a small UDP packet to a high port (55555)
 # If you don't want this to happen, you can disable it.
 # This is useful if you're 100% certain the ARP table will be
 # populated already, or in red team/forensic scenarios.
-get-mac --no-network-request -4 192.168.0.1
+getmac --no-network-request -4 192.168.0.1
 python -m getmac --no-network-request -n home.router
 
 # Debug levels can be specified with '-d'
-get-mac --debug
+getmac --debug
 python -m getmac -d -i enp11s4
 python -m getmac -dd -n home.router
 ```
@@ -125,19 +125,23 @@ Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/3/library/warnings.html
 
 ## Docker Examples
-Build docker image (from repository root directory)
+
+
+Run getmac container and provide flags
 
 ```bash
-docker build . -t get-mac
+docker run -it ghostofgoes/getmac:latest --help
+docker run -it ghostofgoes/getmac:latest --version
+docker run -it ghostofgoes/getmac:latest -n localhost
 ```
 
-Run get-mac container and provide flags
-
+There is a pre-built container located on the
+[Docker hub](https://hub.docker.com/r/ghostofgoes/getmac/).
+Alternatively, you can build the image yourself (from the repository root directory):
 ```bash
-docker run -it get-mac:latest --help
-docker run -it get-mac:latest --version
-docker run -it get-mac:latest -n localhost
+docker build . -t getmac
 ```
+
 
 # Commands and techniques by platform
 * Windows
@@ -191,7 +195,7 @@ then you might be using a platform I haven't been able to test.
 Keep calm, open a GitHub issue, and I'd be more than happy to help.
 * Older Python versions (2.5/3.3 and older) are not officially supported.
 If you're running these, all is not lost! Simply copy/paste `getmac.py`
-into your codebase and make the neccesary edits to be compatible with
+into your codebase and make the necessary edits to be compatible with
 your version and distribution of Python.
 
 ## Known Issues
@@ -204,7 +208,7 @@ there is a much higher potential for regressions. Open an issue if you
 encounter any.
 
 # Contributing
-Contributers are more than welcome!
+Contributors are more than welcome!
 See the [contribution guide](CONTRIBUTING.md) to get started,
 and checkout the [todo list](TODO.md) for a full list of tasks and bugs.
 
@@ -226,6 +230,8 @@ Many of the methods used to acquire an address and the core logic framework
 are attributed to the CPython project's UUID implementation.
 * https://github.com/python/cpython/blob/master/Lib/uuid.py
 * https://github.com/python/cpython/blob/2.7/Lib/uuid.py
+
+## Other notable sources
 * [_unix_fcntl_by_interface](https://stackoverflow.com/a/4789267/2214380)
 * [_windows_get_remote_mac_ctypes](goo.gl/ymhZ9p)
 * [String joining](https://stackoverflow.com/a/3258612/2214380)

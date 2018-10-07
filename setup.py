@@ -12,30 +12,30 @@ with open('README.md') as f:  # Loads in the README for PyPI
 
 
 setup(
-    name='get-mac',
+    name='getmac',
     version=__version__,
     author='Christopher Goes',
-    author_email='goesc@acm.org',
+    author_email='ghostofgoes@gmail.com',
     description='Get MAC addresses of remote hosts and local interfaces',
     long_description=long_description,  # This is what you see on PyPI page
     # PEP 566, PyPI Warehouse, setuptools>=38.6.0 make markdown possible
     long_description_content_type='text/markdown',
-    url='https://github.com/GhostofGoes/get-mac',
-    download_url='https://pypi.org/project/get-mac/',
+    url='https://github.com/GhostofGoes/getmac',
+    download_url='https://pypi.org/project/getmac/',
     # project_urls={},  # TODO
     license='MIT',
     packages=find_packages(exclude=['tests.py']),
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': [
-            'get-mac = getmac.__main__:main',
+            'getmac = getmac.__main__:main',
         ],
     },
     install_requires=['argparse'] if sys.version_info[:2] < (2, 7) else [],
     platforms=['any'],
-    keywords='get-mac getmac macaddress mac-address mac address media access control '
-             'ethernet networking network networks layer2 layer-2 osi ieee 802 mac-48 '
-             'hardware-address tool script python python3',
+    keywords='getmac get-mac macaddress mac-address mac address media access '
+             'control ethernet networking network networks layer2 layer-2 osi '
+             'ieee 802 mac-48 hardware-address tool script python python3',
     classifiers=[  # Used by PyPI to classify the project and make it searchable
         'Development Status :: 4 - Beta',
         'Environment :: Console',

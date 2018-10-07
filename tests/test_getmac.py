@@ -2,7 +2,7 @@
 
 # http://multivax.com/last_question.html
 
-"""Unit and functional tests for get-mac."""
+"""Unit and functional tests for getmac."""
 
 import unittest
 import getmac

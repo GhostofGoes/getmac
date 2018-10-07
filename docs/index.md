@@ -4,7 +4,7 @@ layout: default
 
 # What is getmac?
 
-get-mac provides a cross-platform Pythonic interface to get MAC addresses
+getmac provides a cross-platform Pythonic interface to get MAC addresses
 of remote hosts in a local network or system network interfaces. It has
 no dependencies, supports all currently used versions of Python
 (2.6+/3.4+) and interpreters (CPython, PyPy, IronPython, Jython).
@@ -16,7 +16,7 @@ You can get the MAC address of:
 * Local system network interfaces (by interface name)
 * Remote hosts on the local network (by IPv4/IPv6 address or hostname)
 
-Installation: `python -m pip install --user get-mac`
+Installation: `python -m pip install --user getmac`
 
 ## Python usage
 ```python
@@ -31,18 +31,18 @@ updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
 ## Terminal usage
 ```bash
-get-mac --help
-get-mac --version
+getmac --help
+getmac --version
 
 # No arguments will return MAC of the default interface.
-get-mac
+getmac
 python -m getmac
 
 # Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
-get-mac --interface ens33
-get-mac --ip 192.168.0.1
-get-mac --ip6 ::1
-get-mac --hostname home.router
+getmac --interface ens33
+getmac --ip 192.168.0.1
+getmac --ip6 ::1
+getmac --hostname home.router
 
 # Running as a Python module with shorthands for the arguments
 python -m getmac -i 'Ethernet 4'
@@ -51,16 +51,16 @@ python -m getmac -6 ::1
 python -m getmac -n home.router
 
 # Getting the MAC address of a remote host obviously requires
-# the ARP table to be populated. By default, get-mac will do
+# the ARP table to be populated. By default, getmac will do
 # this for you by sending a small UDP packet to a high port (55555)
 # If you don't want this to happen, you can disable it.
 # This is useful if you're 100% certain the ARP table will be
 # populated already, or in red team/forensic scenarios.
-get-mac --no-network-request -4 192.168.0.1
+getmac --no-network-request -4 192.168.0.1
 python -m getmac --no-network-request -n home.router
 
 # Debug levels can be specified with '-d'
-get-mac --debug
+getmac --debug
 python -m getmac -d -i enp11s4
 python -m getmac -dd -n home.router
 ```
