@@ -5,7 +5,10 @@
 *.py 	    text eol=lf
 *.pkl 	    binary
 *.md        text eol=lf
-*.out       text eol=lf
+
+# Samples
+samples/windows*/*.out   text eol=crlf
+samples/*.out            text eol=lf
 
 # Windows
 *.ps1       text eol=crlf
