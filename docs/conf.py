@@ -13,11 +13,11 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../getmac'))
+sys.path.insert(0, os.path.abspath('../getmac'))
 
-import recommonmark
-from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
+
+import getmac
 
 
 # -- Project information -----------------------------------------------------
@@ -25,9 +25,6 @@ from recommonmark.transform import AutoStructify
 project = 'getmac'
 copyright = '2018, Christopher Goes'
 author = 'Christopher Goes'
-
-
-import getmac
 version = getmac.__version__
 release = getmac.__version__
 
