@@ -22,6 +22,8 @@ them would have no actual effect on execution. Instead, use `getmac.getmac.DEBUG
 ## Dev
 * Added contribution guide
 * Added example videos demonstrating usage (Credit: @fortunate-man)
+* Added documentation on ReadTheDocs
+* Added a manpage
 
 
 # 0.5.0 (09/24/2018)

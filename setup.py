@@ -7,7 +7,7 @@ import sys
 from getmac.getmac import __version__
 
 
-with open('README.md') as f:  # Loads in the README for PyPI
+with open('README.md', encoding='utf-8') as f:  # Loads in the README for PyPI
     long_description = f.read()
 
 
@@ -28,6 +28,7 @@ setup(
         'Docker': 'https://hub.docker.com/r/ghostofgoes/getmac/',
     },
     license='MIT',
+    data_files=[('share/man/man1', ['docs/man/getmac.1'])],
     packages=find_packages(exclude=['tests.py']),
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
@@ -35,6 +36,13 @@ setup(
             'getmac = getmac.__main__:main',
         ],
     },
+    tests_require=[
+        'setuptools>=38.6.0',
+        'tox>=3',
+        'flake8',
+        'codespell',
+        'mock;python_version<=2.7',
+    ],
     install_requires=['argparse'] if sys.version_info[:2] < (2, 7) else [],
     platforms=['any'],
     keywords='getmac get-mac macaddress mac-address mac address media access '

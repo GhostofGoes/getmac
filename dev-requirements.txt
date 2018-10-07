@@ -1,10 +1,11 @@
-setuptools
+setuptools>=38.6.0
 twine
-tox
+tox>=3
 flake8
 codespell
-pylint
+mock;python_version<=2.7
 sphinx
 sphinx-autobuild
 recommonmark
 sphinx_rtd_theme
+pudb;platform_system=="Linux"
