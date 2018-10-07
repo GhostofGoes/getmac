@@ -126,7 +126,7 @@ POSIX platforms with `ip` or `route` commands available, or the
 
 * Sun Aug 26 2018 Christopher Goes <ghostofgoes@gmail.com> 0.2-4
 - Fixed identification of remote host on OSX
-- Resolved hangs and noticable lag that occured when "network_request"
+- Resolved hangs and noticeable lag that occurred when "network_request"
 was True (the default)
 
 
