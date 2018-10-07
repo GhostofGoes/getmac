@@ -35,11 +35,11 @@ setup(
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': [
-            'getmac = getmac.__main__:main',
+            'getmac2 = getmac.__main__:main',
         ],
     } if sys.version_info[:2] <= (2, 7) else {
         'console_scripts': [
-            'getmac3 = getmac.__main__:main',
+            'getmac = getmac.__main__:main',
         ],
     },
     tests_require=[
