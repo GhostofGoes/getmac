@@ -1,5 +1,11 @@
 # DEV (xx/xx/2018)
 
+## Dev
+* Added unit tests for the samples (Credit: @Frizz925)
+
+
+# 0.6.0 (10/06/2018)
+
 ## Added
 * Windows default interface detection if `network_request` is enabled (Credit: @cyberhobbes)
 * Docker container (Credit: @Komish)
@@ -20,7 +26,6 @@ breaks some useful language features, such as `__future__`
 them would have no actual effect on execution. Instead, use `getmac.getmac.DEBUG`.
 
 ## Dev
-* Added unit tests for the samples (Credit: @Frizz925)
 * Added example videos demonstrating usage (Credit: @fortunate-man)
 * Added contribution guide
 * Added documentation on ReadTheDocs
