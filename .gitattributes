@@ -2,43 +2,46 @@
 
 * text=auto
 
-*.py 	text eol=lf
-*.pkl 	binary
-*.md    text eol=lf
-*.out   text eol=lf
+*.py 	    text eol=lf
+*.pkl 	    binary
+*.md        text eol=lf
+*.out       text eol=lf
 
+# Windows
+*.ps1       text eol=crlf
+*.bat       text eol=crlf
 
 # Documents
-*.doc	 diff=astextplain
-*.DOC	 diff=astextplain
-*.docx diff=astextplain
-*.DOCX diff=astextplain
-*.dot  diff=astextplain
-*.DOT  diff=astextplain
-*.pdf  diff=astextplain
-*.PDF	 diff=astextplain
-*.rtf	 diff=astextplain
-*.RTF	 diff=astextplain
+*.doc	    diff=astextplain
+*.DOC	    diff=astextplain
+*.docx      diff=astextplain
+*.DOCX      diff=astextplain
+*.dot       diff=astextplain
+*.DOT       diff=astextplain
+*.pdf       diff=astextplain
+*.PDF	    diff=astextplain
+*.rtf	    diff=astextplain
+*.RTF	    diff=astextplain
 
-*.adoc text
-*.textile text
-*.mustache text
-*.csv text
-*.tab text
-*.tsv text
-*.sql text
+*.adoc      text
+*.textile   text
+*.mustache  text
+*.csv       text
+*.tab       text
+*.tsv       text
+*.sql       text
 
 
 # Graphics
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.gif binary
-*.tif binary
-*.tiff binary
-*.ico binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.tif       binary
+*.tiff      binary
+*.ico       binary
 # SVG treated as an asset (binary) by default. If you want to treat it as text,
 # comment-out the following line and uncomment the line after.
-*.svg binary
+*.svg       binary
 #*.svg text
-*.eps binary
+*.eps       binary
