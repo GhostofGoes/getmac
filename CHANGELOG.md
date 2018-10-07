@@ -16,6 +16,7 @@ these would have no actual effect on execution
 ## Dev
 * Added contribution guide
 * Added example videos demonstrating usage (Credit: @fortunate-man)
+* Added unit tests for the samples
 
 
 # 0.5.0 (09/24/2018)
