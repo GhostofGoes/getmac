@@ -20,8 +20,9 @@ breaks some useful language features, such as `__future__`
 them would have no actual effect on execution. Instead, use `getmac.getmac.DEBUG`.
 
 ## Dev
-* Added contribution guide
+* Added unit tests for the samples (Credit: @Frizz925)
 * Added example videos demonstrating usage (Credit: @fortunate-man)
+* Added contribution guide
 * Added documentation on ReadTheDocs
 * Added a manpage
 
