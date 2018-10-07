@@ -3,6 +3,9 @@
 ## Dev
 * Added unit tests for the samples (Credit: @Frizz925)
 
+## Added
+* scripts for building RPMs in the /scripts directory (Credit: @hargoniX)
+* pip2 will install an executor named getmac2 and pip3 an executor named getmac so they don't conflict when both RPMs are installed on the same system (Credit: @hargoniX)
 
 # 0.6.0 (10/06/2018)
 
