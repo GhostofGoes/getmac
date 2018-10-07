@@ -12,7 +12,7 @@ with open('README.md') as f:  # Loads in the README for PyPI
 
 
 setup(
-    name='get-mac',
+    name='getmac',
     version=__version__,
     author='Christopher Goes',
     author_email='goesc@acm.org',
@@ -28,7 +28,7 @@ setup(
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': [
-            'get-mac = getmac.__main__:main',
+            'getmac = getmac.__main__:main',
         ],
     },
     install_requires=['argparse'] if sys.version_info[:2] < (2, 7) else [],
