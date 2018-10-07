@@ -1,5 +1,6 @@
 
 [![Latest version on PyPI](https://badge.fury.io/py/getmac.svg)](https://pypi.org/project/getmac/)
+[![Documentation status](https://readthedocs.org/projects/getmac/badge/?version=latest)](https://getmac.readthedocs.io/en/latest/?badge=latest)
 [![Travis CI build status](https://travis-ci.org/GhostofGoes/getmac.svg?branch=master)](https://travis-ci.org/GhostofGoes/getmac)
 [![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/getmac/branch/master)
 

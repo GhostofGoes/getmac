@@ -15,6 +15,10 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../../getmac'))
 
+import recommonmark
+from recommonmark.parser import CommonMarkParser
+from recommonmark.transform import AutoStructify
+
 
 # -- Project information -----------------------------------------------------
 
@@ -40,17 +44,17 @@ release = getmac.__version__
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages',
 ]
+
+source_parsers = {
+    '.md': 'recommonmark.parser.CommonMarkParser',
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
 
 # The master toctree document.
 master_doc = 'index'
@@ -76,7 +80,7 @@ pygments_style = 'sphinx'  # None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'classic'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -97,7 +101,20 @@ html_static_path = []  # '_static'
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+html_sidebars = {
+    '**': [
+        'relations.html',  # needs 'show_related': True theme option to display
+        'searchbox.html',
+    ]
+}
+
+html_context = {
+    "display_github": True,  # Integrate GitHub
+    "github_user": "GhostofGoes",  # Username
+    "github_repo": "getmac",  # Repo name
+    "github_version": "master",  # Version
+    "conf_py_path": "/",  # Path in the checkout to the docs root
+}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
@@ -109,7 +126,7 @@ htmlhelp_basename = 'getmacdoc'
 # -- Options for LaTeX output ------------------------------------------------
 
 latex_elements = {
-    'papersize': 'letterpaper',  # The paper size ('letterpaper' or 'a4paper')
+    'papersize': 'a4paper',  # The paper size ('letterpaper' or 'a4paper')
     'pointsize': '12pt',  # The font size ('10pt', '11pt' or '12pt')
 }
 
@@ -127,7 +144,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'getmac', 'Cross-platform tool to get MAC addresses',
+    (master_doc, 'getmac', 'Cross-platform Python package to get MAC addresses',
      [author], 1)
 ]
 
@@ -163,3 +180,11 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+
+def setup(app):
+    app.add_config_value('recommonmark_config', {
+        'auto_toc_tree_section': 'Contents',
+        'enable_eval_rst': True,
+        'enable_auto_doc_ref': True,
+    }, True)
+    app.add_transform(AutoStructify)

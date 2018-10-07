@@ -22,7 +22,11 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/GhostofGoes/getmac',
     download_url='https://pypi.org/project/getmac/',
-    # project_urls={},  # TODO
+    project_urls={
+        'Documentation': 'https://getmac.readthedocs.io/en/latest/',
+        'Discord Server': 'https://discord.gg/python',
+        'Docker': 'https://hub.docker.com/r/ghostofgoes/getmac/',
+    },
     license='MIT',
     packages=find_packages(exclude=['tests.py']),
     zip_safe=True,
