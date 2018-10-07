@@ -222,6 +222,7 @@ to ask questions or discuss the project (Handle: @KnownError).
 ## Contributors
 * Christopher Goes (@ghostofgoes) - Author and maintainer
 * Calvin Tran (@cyberhobbes) - Windows interface detection improvements
+* Izra Faturrahman (@Frizz925) - Unit tests using the platform samples
 * Jose Gonzalez (@Komish) - Docker container and Docker testing
 * @fortunate-man - Awesome usage videos
 * @martmists - legacy Python compatibility improvements
