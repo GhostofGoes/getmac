@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
 import sys
+from io import open  # Python 2 compatibility
+
+from setuptools import setup, find_packages
 
 from getmac.getmac import __version__
 
