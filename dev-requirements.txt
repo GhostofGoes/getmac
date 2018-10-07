@@ -1,0 +1,11 @@
+setuptools>=38.6.0
+twine
+tox>=3
+flake8
+codespell
+mock;python_version<'3'
+sphinx
+sphinx-autobuild
+recommonmark
+sphinx_rtd_theme
+pudb;platform_system=="Linux"

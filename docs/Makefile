@@ -4,8 +4,8 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SOURCEDIR     = source
-BUILDDIR      = build
+SOURCEDIR     = .
+BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -20,10 +20,10 @@ help:
 
 # Generate Unix manual page
 man:
-	mkdir -p ./build/man
-	$(SPHINXBUILD) -b man ./source ./build/man
-	mv ./build/man/adles.1 ./
-	rm -Rf ./build/man
+	mkdir -p ./_build/man
+	$(SPHINXBUILD) -b man . ./_build/man
+	mv ./_build/man/getmac.1 .
+	rm -Rf ./_build/man
 
 clean:
-	rm -Rf ./build/*
+	rm -rf ./_build/*

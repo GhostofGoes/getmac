@@ -18,7 +18,7 @@ sudo easy_install-3.4 pip
 sudo pip3 install virtualenv
 
 # Pull down the codebase
-git clone https://github.com/GhostofGoes/get-mac.git
+git clone https://github.com/GhostofGoes/getmac.git
 
 # Create Python virtual environments
 mkdir -p "$HOME/.virtualenvs/"

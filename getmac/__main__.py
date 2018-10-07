@@ -12,9 +12,9 @@ def main():
 
     description = 'Get the MAC address of system network ' \
                   'interfaces or remote hosts on the LAN'
-    parser = argparse.ArgumentParser('get-mac', description=description)
+    parser = argparse.ArgumentParser('getmac', description=description)
     parser.add_argument('--version', action='version',
-                        version='get-mac %s' % getmac.__version__)
+                        version='getmac %s' % getmac.__version__)
     parser.add_argument('-d', '--debug', action='count',
                         help='Enable debugging output. Add characters to '
                              'increase verbosity of output, e.g. \'-dd\'.')

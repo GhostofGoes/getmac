@@ -1,6 +1,0 @@
-# arp -a - Using PowerShell to parse for us
-lambda x: _popen(
-    'powershell.exe',
-    "arp -a %s | Select-String '([0-9a-f]{2}-){5}[0-9a-f]{2}' "
-    "| Select-Object -Expand Matches | Select-Object -Expand Value" % x
-)

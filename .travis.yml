@@ -3,7 +3,7 @@
 stages:
 - test
 - name: deploy
-  if: repo = "GhostOfGoes/get-mac" AND tag IS present
+  if: repo = "GhostOfGoes/getmac" AND tag IS present
 
 # Details: blog.travis-ci.com/2017-12-01-new-update-schedule-for-linux-build-images
 group: travis_latest
@@ -34,7 +34,7 @@ jobs:
   - python: 3.6
     env: TOXENV=flake8
   - python: 3.6
-    env: TOXENV=spellcheck
+    env: TOXENV=codespell
 
 matrix:
   fast_finish: true
