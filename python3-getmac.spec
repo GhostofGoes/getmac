@@ -1,13 +1,13 @@
 %global srcname getmac
 
 Name:           python3-%{srcname}
-Version:        0.5
-Release:        0%{?dist}
+Version:        0.6
+Release:        0
 Summary:        Python module to get the MAC address of local network interfaces and LAN hosts
 
 License:        MIT
 URL:            https://github.com/GhostofGoes/getmac
-Source0:        https://github.com/GhostofGoes/getmac/releases/download/0.5.0/getmac-0.5.0.tar.gz
+Source0:        https://github.com/GhostofGoes/getmac/releases/download/0.6.0/getmac-0.6.0.tar.gz
 
 BuildArch:      noarch
 BuildRequires:  python3-devel
@@ -33,9 +33,29 @@ network (by IPv4/IPv6 address or host-name).
 %doc README.md
 %{python3_sitelib}/%{srcname}/
 %{python3_sitelib}/%{srcname}-*.egg-info/
-/usr/bin/%{srcname}
+/usr/bin/getmac3
+%{_mandir}/man1/*
 
 %changelog
+* Sat Oct 6 2018 Christopher Goes <ghostofgoes@gmail.com> 0.6-0
+- Windows default interface detection if `network_request` is enabled (Credit: @cyberhobbes)
+- Docker container (Credit: @Komish)
+- Changed name to `getmac`. This applies to everything, including
+command line tool, PyPI, GitHub, and the documentation.
+This is a breaking change, but needed to happen to remove
+a huge amount of ambiguity that was causing issues with packaging,
+documentation, and several other efforts, not to mention my sanity.
+Long-term, the only downside is a conflict on Windows CLI with `getmac.exe`.
+- Use proper Python 2-compatible print functions (Credit: @martmists)
+- Support for Python 2.5. It is not feasible to test, and potentially
+breaks some useful language features, such as `__future__`
+- Variables PORT and DEBUG from top-level package imports, since changing
+them would have no actual effect on execution. Instead, use `getmac.getmac.DEBUG`.
+- Added example videos demonstrating usage (Credit: @fortunate-man)
+- Added contribution guide
+- Added documentation on ReadTheDocs
+- Added a manpage
+
 * Mon Sep 24 2018 Christopher Goes <ghostofgoes@gmail.com> 0.5-0
 - Full support for Windows Subsystem for Linux (WSL). This is working for
 all features, including default interface selection! The only edge case

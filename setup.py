@@ -37,6 +37,10 @@ setup(
         'console_scripts': [
             'getmac = getmac.__main__:main',
         ],
+    } if sys.version_info[:2] <= (2, 7) else {
+        'console_scripts': [
+            'getmac3 = getmac.__main__:main',
+        ],
     },
     tests_require=[
         'setuptools>=38.6.0',
