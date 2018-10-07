@@ -3,7 +3,7 @@ twine
 tox>=3
 flake8
 codespell
-mock;python_version<=2.7
+mock;python_version<'3'
 sphinx
 sphinx-autobuild
 recommonmark

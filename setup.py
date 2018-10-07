@@ -41,7 +41,7 @@ setup(
         'tox>=3',
         'flake8',
         'codespell',
-        'mock;python_version<=2.7',
+        'mock;python_version<"3"',
     ],
     install_requires=['argparse'] if sys.version_info[:2] < (2, 7) else [],
     platforms=['any'],

@@ -99,7 +99,7 @@ install:
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
   - "python -m pip install --upgrade pip"
-  - "python -m pip install --upgrade tox flake8 codespell"
+  - "python -m pip install --upgrade setuptools wheel tox flake8 codespell \"mock;python_version<'3'\""
 
 test_script:
 - tox
