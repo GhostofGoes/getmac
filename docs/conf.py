@@ -51,7 +51,7 @@ source_parsers = {
 templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
-source_suffix = ['.rst', '.md']
+source_suffix = ['.md']  # , '.rst'
 
 # The master toctree document.
 master_doc = 'index'
