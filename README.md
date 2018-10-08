@@ -69,12 +69,9 @@ python -m getmac -4 192.168.0.1
 python -m getmac -6 ::1
 python -m getmac -n home.router
 
-# Getting the MAC address of a remote host obviously requires
-# the ARP table to be populated. By default, getmac will do
-# this for you by sending a small UDP packet to a high port (55555)
-# If you don't want this to happen, you can disable it.
-# This is useful if you're 100% certain the ARP table will be
-# populated already, or in red team/forensic scenarios.
+# Getting the MAC address of a remote host requires the ARP table to be populated.
+# By default, getmac will populate the table by sending a small UDP packet to a high port of the host (by default, 55555).
+# This can be disabled with --no-network-request, as shown here:
 getmac --no-network-request -4 192.168.0.1
 python -m getmac --no-network-request -n home.router
 

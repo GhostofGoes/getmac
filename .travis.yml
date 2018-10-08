@@ -51,7 +51,7 @@ before_install:
 - arp -a
 - ifconfig
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ip a && ip link list && ip neigh; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source .travis-osx; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source ./scripts/.travis-osx; fi
 
 install:
 - pip install -U tox
