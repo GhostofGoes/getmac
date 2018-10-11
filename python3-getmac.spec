@@ -1,7 +1,7 @@
 %global srcname getmac
 
 Name:           python3-%{srcname}
-Version:        0.6
+Version:        0.6.0
 Release:        0
 Summary:        Python module to get the MAC address of local network interfaces and LAN hosts
 
@@ -10,7 +10,7 @@ URL:            https://github.com/GhostofGoes/getmac
 Source0:        https://github.com/GhostofGoes/getmac/releases/download/0.6.0/getmac-0.6.0.tar.gz
 
 BuildArch:      noarch
-BuildRequires:  python3-devel
+BuildRequires:  python3-devel, python3-setuptools
 
 %description
 Pure-python module to get the MAC address of remote hosts or network interfaces.
@@ -33,11 +33,11 @@ network (by IPv4/IPv6 address or host-name).
 %doc README.md
 %{python3_sitelib}/%{srcname}/
 %{python3_sitelib}/%{srcname}-*.egg-info/
-/usr/bin/getmac3
+/usr/bin/getmac
 %{_mandir}/man1/*
 
 %changelog
-* Sat Oct 6 2018 Christopher Goes <ghostofgoes@gmail.com> 0.6-0
+* Sat Oct 6 2018 Christopher Goes <ghostofgoes@gmail.com> 0.6.0-0
 - Windows default interface detection if `network_request` is enabled (Credit: @cyberhobbes)
 - Docker container (Credit: @Komish)
 - Changed name to `getmac`. This applies to everything, including
