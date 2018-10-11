@@ -10,7 +10,7 @@ URL:            https://github.com/GhostofGoes/getmac
 Source0:        https://github.com/GhostofGoes/getmac/releases/download/0.6.0/getmac-0.6.0.tar.gz
 
 BuildArch:      noarch
-BuildRequires:  python2-devel
+BuildRequires:  python2-devel, python2-setuptools
 
 %description
 Pure-python module to get the MAC address of remote hosts or network interfaces.

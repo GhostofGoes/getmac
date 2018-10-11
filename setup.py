@@ -31,7 +31,7 @@ setup(
     },
     license='MIT',
     data_files=[
-        ('share/man/man1', ['docs/man/getmac2.1']) if sys.version_info[:2] <= (2, 7) else 
+        ('share/man/man1', ['docs/man/getmac2.1']) if sys.version_info[:2] <= (2, 7) else
         ('share/man/man1', ['docs/man/getmac.1'])
     ],
     packages=find_packages(exclude=['tests.py']),
