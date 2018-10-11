@@ -1,0 +1,390 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "GETMAC" "1" "Oct 06, 2018" "0.6.0" "getmac"
+.SH NAME
+getmac \- Cross-platform Python package to get MAC addresses
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+\fI\%Latest version on PyPI\fP
+\fI\%Documentation status\fP
+\fI\%Travis CI build status\fP
+\fI\%Appveyor build status\fP
+.sp
+Get the MAC address of remote LAN hosts and system network interfaces using Python.
+.sp
+It provides a platform\-independant interface to get the MAC addresses of:
+.INDENT 0.0
+.IP \(bu 2
+System network interfaces (by interface name)
+.IP \(bu 2
+Remote hosts on the local network (by IPv4/IPv6 address or hostname)
+.UNINDENT
+.sp
+It provides one function: \fBget_mac_address()\fP
+.sp
+\fI\%asciicast\fP
+.sp
+\fI\%asciicast\fP
+.INDENT 0.0
+.IP \(bu 2
+Pure\-Python
+.IP \(bu 2
+Supports Python 2.6+, 3.4+, pypy, and pypy3
+.IP \(bu 2
+No dependencies
+.IP \(bu 2
+Small size
+.IP \(bu 2
+Can be used as an independent .py file
+.IP \(bu 2
+Simple terminal tool (when installed as a package)
+.UNINDENT
+.SH PYTHON EXAMPLES
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+from getmac import get_mac_address
+eth_mac = get_mac_address(interface="eth0")
+win_mac = get_mac_address(interface="Ethernet 3")
+ip_mac = get_mac_address(ip="192.168.0.1")
+ip6_mac = get_mac_address(ip6="::1")
+host_mac = get_mac_address(hostname="localhost")
+updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
+
+# Enabling debugging
+from getmac import getmac
+getmac.DEBUG = 2  # DEBUG level 2
+print(getmac.get_mac_address(interface="Ethernet 3"))
+
+# Changing the port used for updating ARP table (UDP packet)
+from getmac import getmac
+getmac.PORT = 44444  # Default: 55555
+print(get_mac_address(ip="192.168.0.1", network_request=True))
+
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH TERMINAL EXAMPLES
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+getmac \-\-help
+getmac \-\-version
+
+# No arguments will return MAC of the default interface.
+getmac
+python \-m getmac
+
+# Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
+getmac \-\-interface ens33
+getmac \-\-ip 192.168.0.1
+getmac \-\-ip6 ::1
+getmac \-\-hostname home.router
+
+# Running as a Python module with shorthands for the arguments
+python \-m getmac \-i \(aqEthernet 4\(aq
+python \-m getmac \-4 192.168.0.1
+python \-m getmac \-6 ::1
+python \-m getmac \-n home.router
+
+# Getting the MAC address of a remote host obviously requires
+# the ARP table to be populated. By default, getmac will do
+# this for you by sending a small UDP packet to a high port (55555)
+# If you don\(aqt want this to happen, you can disable it.
+# This is useful if you\(aqre 100% certain the ARP table will be
+# populated already, or in red team/forensic scenarios.
+getmac \-\-no\-network\-request \-4 192.168.0.1
+python \-m getmac \-\-no\-network\-request \-n home.router
+
+# Debug levels can be specified with \(aq\-d\(aq
+getmac \-\-debug
+python \-m getmac \-d \-i enp11s4
+python \-m getmac \-dd \-n home.router
+
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Note: the terminal interface will not work on Python 2.6 and older (Sorry RHEL 6 users!).
+.SH GET_MAC_ADDRESS()
+.INDENT 0.0
+.IP \(bu 2
+\fBinterface\fP: Name of a network interface on the system.
+.IP \(bu 2
+\fBip\fP: IPv4 address of a remote host.
+.IP \(bu 2
+\fBip6\fP: IPv6 address of a remote host.
+.IP \(bu 2
+\fBhostname\fP: Hostname of a remote host.
+.IP \(bu 2
+\fBnetwork_request\fP: If an network request should be made to update
+and populate the ARP/NDP table of remote hosts used to lookup MACs
+in most circumstances. Disable this if you want to just use what\(aqs
+already in the table, or if you have requirements to prevent network
+traffic. The network request is a empty UDP packet sent to a high
+port, 55555 by default. This can be changed by setting \fBgetmac.PORT\fP
+to the desired integer value. Additionally, on Windows, this will
+send a UDP packet to 1.1.1.1:53 to attempt to determine the default interface.
+.UNINDENT
+.SH NOTES
+.INDENT 0.0
+.IP \(bu 2
+If none of the arguments are selected, the default
+network interface for the system will be used.
+.IP \(bu 2
+"Remote hosts" refer to hosts in your local layer 2 network, also
+commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far
+as I know, there is not a reliable method to get a MAC address for a
+remote host external to the LAN. If you know any methods otherwise, please
+open a GitHub issue or shoot me an email, I\(aqd love to be wrong about this.
+.IP \(bu 2
+The first four arguments are mutually exclusive. \fBnetwork_request\fP
+does not have any functionality when the \fBinterface\fP argument is
+specified, and can be safely set if using in a script.
+.IP \(bu 2
+The physical transport is assumed to be Ethernet (802.3). Others, such as
+Wi\-Fi (802.11), are currently not tested or considored. I plan to
+address this in the future, and am definitely open to pull requests
+or issues related to this, including error reports.
+.IP \(bu 2
+Exceptions will be handled silently and returned as a None.
+If you run into problems, you can set DEBUG to true and get more
+information about what\(aqs happening. If you\(aqre still having issues,
+please create an issue on GitHub and include the output with DEBUG enabled.
+.IP \(bu 2
+Messages are output using the \fBwarnings\fP module, and \fBprint()\fP if
+\fBgetmac.DEBUG\fP enabled (any value greater than 0).
+If you are using logging, they can be captured using logging.captureWarnings().
+Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
+https://docs.python.org/3/library/warnings.html
+.UNINDENT
+.SH DOCKER EXAMPLES
+.sp
+Run getmac container and provide flags
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+docker run \-it ghostofgoes/getmac:latest \-\-help
+docker run \-it ghostofgoes/getmac:latest \-\-version
+docker run \-it ghostofgoes/getmac:latest \-n localhost
+
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+There is a pre\-built container located on the
+\fI\%Docker hub\fP\&.
+Alternatively, you can build the image yourself (from the repository root directory):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+docker build . \-t getmac
+
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.IP \(bu 2
+Windows
+.INDENT 2.0
+.IP \(bu 2
+Commands: \fBgetmac\fP, \fBipconfig\fP
+.IP \(bu 2
+Libraries: \fBuuid\fP, \fBctypes\fP
+.IP \(bu 2
+Third\-party Packages: \fBnetifaces\fP, \fBpsutil\fP, \fBscapy\fP
+.UNINDENT
+.IP \(bu 2
+Linux/Unix
+.INDENT 2.0
+.IP \(bu 2
+Commands: \fBarp\fP, \fBip\fP, \fBifconfig\fP, \fBnetstat\fP, \fBip link\fP
+.IP \(bu 2
+Libraries: \fBuuid\fP, \fBfcntl\fP
+.IP \(bu 2
+Third\-party Packages:  \fBnetifaces\fP, \fBpsutil\fP, \fBscapy\fP, \fBarping\fP
+.IP \(bu 2
+Default interfaces: \fBroute\fP, \fBip route list\fP
+.IP \(bu 2
+Files: \fB/sys/class/net/X/address\fP, \fB/proc/net/arp\fP
+.UNINDENT
+.IP \(bu 2
+Mac OSX (Darwin)
+.INDENT 2.0
+.IP \(bu 2
+\fBnetworksetup\fP
+.IP \(bu 2
+Same commands as Linux
+.UNINDENT
+.IP \(bu 2
+WSL: Windows commands are used for remote hosts,
+and Unix commands are used for interfaces
+.UNINDENT
+.sp
+All or almost all features should work on "supported" platforms (OSes).
+.INDENT 0.0
+.IP \(bu 2
+Windows
+.INDENT 2.0
+.IP \(bu 2
+Desktop: 7, 8, 8.1, 10
+.IP \(bu 2
+Server: TBD
+.IP \(bu 2
+(Partially supported, untested): 2000, XP, Vista
+.UNINDENT
+.IP \(bu 2
+Linux distros
+.INDENT 2.0
+.IP \(bu 2
+CentOS/RHEL 6+
+.IP \(bu 2
+Ubuntu 16+ (14 and older should work as well)
+.IP \(bu 2
+Fedora
+.UNINDENT
+.IP \(bu 2
+MacOSX (Darwin)
+.INDENT 2.0
+.IP \(bu 2
+The latest two versions probably (TBD)
+.UNINDENT
+.IP \(bu 2
+Windows Subsystem for Linux (WSL)
+.IP \(bu 2
+Docker
+.UNINDENT
+.sp
+All sub\-versions are the latest available on your platform (with the exception of 2.6).
+.INDENT 0.0
+.IP \(bu 2
+2.6.6 (CentOS 6/RHEL 6 version)
+.IP \(bu 2
+2.7
+.IP \(bu 2
+3.4
+.IP \(bu 2
+3.5
+.IP \(bu 2
+3.6
+.IP \(bu 2
+3.7
+.UNINDENT
+.sp
+Please report any problems by opening a issue on GitHub!
+.SH CAVEATS
+.INDENT 0.0
+.IP \(bu 2
+Depending on the platform, there could be a performance detriment,
+due to heavy usage of regular expressions.
+.IP \(bu 2
+Platform test coverage is imperfect. If you\(aqre having issues,
+then you might be using a platform I haven\(aqt been able to test.
+Keep calm, open a GitHub issue, and I\(aqd be more than happy to help.
+.IP \(bu 2
+Older Python versions (2.5/3.3 and older) are not officially supported.
+If you\(aqre running these, all is not lost! Simply copy/paste \fBgetmac.py\fP
+into your codebase and make the necessary edits to be compatible with
+your version and distribution of Python.
+.UNINDENT
+.SH KNOWN ISSUES
+.INDENT 0.0
+.IP \(bu 2
+Hostnames for IPv6 devices are not yet supported.
+.IP \(bu 2
+Windows: the "default" of selecting the default route interface only
+works effectively if \fBnetwork_request\fP is enabled. Otherwise,
+\fBEthernet\fP as the default.
+.IP \(bu 2
+There is are currently no automated tests for Python 2.6, which means
+there is a much higher potential for regressions. Open an issue if you
+encounter any.
+.UNINDENT
+.sp
+Contributors are more than welcome!
+See the \fI\%contribution guide\fP to get started,
+and checkout the \fI\%todo list\fP for a full list of tasks and bugs.
+.sp
+Before submitting a PR, please make sure you\(aqve completed the
+\fI\%pull request checklist\fP!
+.sp
+The \fI\%Python Discord server\fP is a good place
+to ask questions or discuss the project (Handle: @KnownError).
+.SH CONTRIBUTORS
+.INDENT 0.0
+.IP \(bu 2
+Christopher Goes (@ghostofgoes) \- Author and maintainer
+.IP \(bu 2
+Calvin Tran (@cyberhobbes) \- Windows interface detection improvements
+.IP \(bu 2
+Izra Faturrahman (@Frizz925) \- Unit tests using the platform samples
+.IP \(bu 2
+Jose Gonzalez (@Komish) \- Docker container and Docker testing
+.IP \(bu 2
+@fortunate\-man \- Awesome usage videos
+.IP \(bu 2
+@martmists \- legacy Python compatibility improvements
+.UNINDENT
+.sp
+Many of the methods used to acquire an address and the core logic framework
+are attributed to the CPython project\(aqs UUID implementation.
+.INDENT 0.0
+.IP \(bu 2
+https://github.com/python/cpython/blob/master/Lib/uuid.py
+.IP \(bu 2
+https://github.com/python/cpython/blob/2.7/Lib/uuid.py
+.UNINDENT
+.SH OTHER NOTABLE SOURCES
+.INDENT 0.0
+.IP \(bu 2
+\fI\%_unix_fcntl_by_interface\fP
+.IP \(bu 2
+\fI\%_windows_get_remote_mac_ctypes\fP
+.IP \(bu 2
+\fI\%String joining\fP
+.UNINDENT
+.sp
+MIT. Feel free to copy, modify, and use to your heart\(aqs content. Enjoy :)
+.SH AUTHOR
+Christopher Goes
+.SH COPYRIGHT
+2018, Christopher Goes
+.\" Generated by docutils manpage writer.
+.
