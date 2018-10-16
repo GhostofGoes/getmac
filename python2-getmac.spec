@@ -16,7 +16,7 @@ BuildRequires:  python2-devel, python2-setuptools
 Pure-python module to get the MAC address of remote hosts or network interfaces.
 It provides a platform-independent interface to get the MAC addresses of network
 interfaces on the local system(by interface name) and remote hosts on the local
-network (by IPv4/IPv6 address or host name).
+network (by IPv4/IPv6 address or host-name).
 
 %{?python_provide:%python_provide python3-getmac}
 

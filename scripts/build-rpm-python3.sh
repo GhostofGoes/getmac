@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 sudo dnf install gcc rpm-build rpm-devel rpmlint make python bash coreutils diffutils patch rpmdevtools
 rpmdev-setuptree
 mkdir getmac-$1
