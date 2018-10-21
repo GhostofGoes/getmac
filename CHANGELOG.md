@@ -1,11 +1,17 @@
 # DEV (xx/xx/2018)
 
-## Dev
-* Added unit tests for the samples (Credit: @Frizz925)
-
 ## Added
 * scripts for building RPMs in the /scripts directory (Credit: @hargoniX)
 * pip2 will install an executor named getmac2 and pip3 an executor named getmac so they don't conflict when both RPMs are installed on the same system (Credit: @hargoniX)
+
+## Changed
+* Improved system platform detection
+* The `warnings` module will only be imported if a error/warning
+occurs (improve compatibility with some freezers)
+
+## Dev
+* Added unit tests for the samples (Credit: @Frizz925)
+
 
 # 0.6.0 (10/06/2018)
 

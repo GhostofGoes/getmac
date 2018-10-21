@@ -31,7 +31,6 @@ import struct
 import sys
 import traceback
 from subprocess import Popen, PIPE, CalledProcessError
-from warnings import warn
 
 try:
     from subprocess import DEVNULL  # Py3
@@ -133,11 +132,11 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     # Setup the address hunt based on the arguments specified
     if ip6:
         if not socket.has_ipv6:
-            warn("Cannot get the MAC address of a IPv6 host: "
-                 "IPv6 is not supported on this system", RuntimeWarning)
+            _warn("Cannot get the MAC address of a IPv6 host: "
+                  "IPv6 is not supported on this system")
             return None
         elif ':' not in ip6:
-            warn("Invalid IPv6 address: %s" % ip6, RuntimeWarning)
+            _warn("Invalid IPv6 address: %s" % ip6)
             return None
         to_find = ip6
         typ = IP6
@@ -199,6 +198,11 @@ def get_mac_address(interface=None, ip=None, ip6=None,
                 print("ERROR: MAC %s is not 17 characters long!" % mac)
             mac = None
     return mac
+
+
+def _warn(text):
+    import warnings
+    warnings.warn(text, RuntimeWarning)
 
 
 def _search(regex, text, group_index=0):
@@ -308,7 +312,7 @@ def _scapy_iface(iface):
         for i in interfaces:
             if any(iface in i[x] for x in ['name', 'netid', 'description', 'win_index']):
                 return i['mac']
-    # Do not put an 'else' here!
+    # WARNING: Do not put an 'else' here!
     return get_if_hwaddr(iface)
 
 
@@ -383,6 +387,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         ]
 
         # Add methods that make network requests
+        # Insert it *after* arp.exe since that's probably faster.
         if net_ok and type_of_thing != IP6 and not WSL:
             methods.insert(1, _windows_ctypes_host)
 
@@ -457,7 +462,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             lambda x: __import__('arpreq').arpreq(x),
         ]
     else:
-        warn("ERROR: reached end of _hunt_for_mac() if-else chain!", RuntimeError)
+        _warn("ERROR: reached end of _hunt_for_mac() if-else chain!", RuntimeError)
         return None
     return _try_methods(methods, to_find)
 
@@ -499,13 +504,11 @@ def _try_methods(methods, to_find=None):
 def _hunt_linux_default_iface():
     # NOTE: for now, we check the default interface for WSL using the
     # same methods as POSIX, since those parts of the net stack work fine.
-
     methods = [
         lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
         lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
         lambda: list(__import__('netifaces').gateways()['default'].values())[0][1],
     ]
-
     return _try_methods(methods=methods)
 
 
@@ -515,7 +518,5 @@ def _fetch_ip_using_dns():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('1.1.1.1', 53))
     ip = s.getsockname()[0]
+    s.close()
     return ip
-
-
-__all__ = ['get_mac_address']
