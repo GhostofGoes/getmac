@@ -51,7 +51,7 @@ class MockHelper(object):
     def __call__(self, func):
         def func_wrapper(obj, mock_popen, mock_platform, mock_socket, *args):
             if self.platform_name == 'Windows':
-                getmac.getmac.IS_WINDOWS = True
+                getmac.getmac.WINDOWS = True
             getmac.getmac._SYST = self.platform_name
             mock_popen.side_effect = self.create_side_effect(self.cmd, self.sample)
             platform_mock = mock.Mock()

@@ -4,7 +4,8 @@
 * [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
 * [ ] Are there ever cases where loopback != FF:FF:FF:FF:FF:FF?
 * [ ] Remote host that is actually an interface should resolve to localhost MAC
-
+* [ ] Detect if an interface exists before trying to find it's MAC.
+Currently, the call is penalized with a slow run since it tries every method before failing.
 
 # Platform support
 
@@ -98,7 +99,7 @@ interface as the default route.
 * [x] List of related works in README (shoutouts)
 * [x] List of 3rd-party packages that are attempted
 * [ ] List of methods that are attempted
-* [x] Improve docuemntation on what it can and can't do
+* [x] Improve documentation on what it can and can't do
       (and educate the user on what MACs and broadcasts are)
 * [ ] Sphinx documentation
 * [ ] Man page

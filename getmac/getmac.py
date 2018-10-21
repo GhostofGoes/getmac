@@ -2,7 +2,7 @@
 
 """Get the MAC address of remote hosts or network interfaces using Python.
 
-It provides a platform-independant interface to get the MAC addresses of:
+It provides a platform-independent interface to get the MAC addresses of:
 
 * System network interfaces (by interface name)
 * Remote hosts on the local network (by IPv4/IPv6 address or hostname)
@@ -20,9 +20,19 @@ Examples:
     updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)"""
 
 from __future__ import print_function
-import ctypes, os, re, sys, struct, socket, shlex, traceback, platform
-from warnings import warn
+
+import ctypes
+import os
+import platform
+import re
+import shlex
+import socket
+import struct
+import sys
+import traceback
 from subprocess import Popen, PIPE, CalledProcessError
+from warnings import warn
+
 try:
     from subprocess import DEVNULL  # Py3
 except ImportError:
@@ -34,21 +44,27 @@ PORT = 55555
 
 PY2 = sys.version_info[0] == 2
 _SYST = platform.system()
-if _SYST == 'Windows':
-    IS_WINDOWS = True
+WINDOWS = False
+OSX = False
+LINUX = False
+BSD = False
+POSIX = False
+WSL = False
+
+if _SYST == 'Linux':
+    if 'Microsoft' in platform.version():
+        WSL = True
+    else:
+        LINUX = True
+elif _SYST == 'Windows':
+    WINDOWS = True
+elif _SYST == 'Darwin':
+    OSX = True
 elif _SYST == 'Java':
-    IS_WINDOWS = os.sep == '\\'
-else:
-    IS_WINDOWS = False
-
-if not IS_WINDOWS and 'Microsoft' in platform.version():
-    IS_WSL = True
-else:
-    IS_WSL = False
-
+    WINDOWS = os.sep == '\\'
 
 PATH = os.environ.get('PATH', os.defpath).split(os.pathsep)
-if not IS_WINDOWS:
+if not WINDOWS:
     PATH.extend(('/sbin', '/usr/sbin'))
 
 ENV = dict(os.environ)
@@ -93,7 +109,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         return '00:00:00:00:00:00'
 
     if DEBUG >= 2:
-        print("IS_WINDOWS\t%s\nIS_WSL\t\t%s" % (str(IS_WINDOWS), str(IS_WSL)))
+        print("IS_WINDOWS\t%s\nIS_WSL\t\t%s" % (str(WINDOWS), str(WSL)))
 
     # Resolve hostname to an IP address
     if hostname:
@@ -134,7 +150,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
             to_find = interface
         else:
             # Default to finding MAC of the interface with the default route
-            if IS_WINDOWS:
+            if WINDOWS:
                 if network_request:
                     to_find = _fetch_ip_using_dns()
                     typ = IP4
@@ -206,7 +222,7 @@ def _popen(command, args):
 
 
 def _call_proc(executable, args):
-    if IS_WINDOWS:
+    if WINDOWS:
         cmd = executable + ' ' + args
     else:
         cmd = [executable] + shlex.split(args)
@@ -286,7 +302,7 @@ def _scapy_ip(ip):
 
 def _scapy_iface(iface):
     from scapy.layers.l2 import get_if_hwaddr
-    if IS_WINDOWS:
+    if WINDOWS:
         from scapy.arch.windows import get_windows_if_list
         interfaces = get_windows_if_list()
         for i in interfaces:
@@ -335,7 +351,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         to_find = str(to_find, 'utf-8')
 
     # Windows - Network Interface
-    if IS_WINDOWS and type_of_thing == INTERFACE:
+    if WINDOWS and type_of_thing == INTERFACE:
         methods = [
             # getmac - Connection Name
             (r'\r\n' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
@@ -358,7 +374,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         ]
 
     # Windows - Remote Host
-    elif (IS_WINDOWS or IS_WSL) and type_of_thing in [IP4, IP6, HOSTNAME]:
+    elif (WINDOWS or WSL) and type_of_thing in [IP4, IP6, HOSTNAME]:
         methods = [
             # arp -a - Parsing result with a regex
             (MAC_RE_DASH, 0, 'arp.exe', ['-a %s' % to_find]),
@@ -367,7 +383,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         ]
 
         # Add methods that make network requests
-        if net_ok and type_of_thing != IP6 and not IS_WSL:
+        if net_ok and type_of_thing != IP6 and not WSL:
             methods.insert(1, _windows_ctypes_host)
 
     # Non-Windows - Network Interface
