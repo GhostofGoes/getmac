@@ -107,9 +107,6 @@ def get_mac_address(interface=None, ip=None, ip6=None,
     if (hostname and hostname == 'localhost') or (ip and ip == '127.0.0.1'):
         return '00:00:00:00:00:00'
 
-    if DEBUG >= 2:
-        print("IS_WINDOWS\t%s\nIS_WSL\t\t%s" % (str(WINDOWS), str(WSL)))
-
     # Resolve hostname to an IP address
     if hostname:
         ip = socket.gethostbyname(hostname)
@@ -160,7 +157,7 @@ def get_mac_address(interface=None, ip=None, ip6=None,
                 if not to_find:
                     to_find = 'en0'
 
-    mac = _hunt_for_mac(to_find, typ, net_ok=network_request)
+    mac = _hunt_for_mac(to_find, typ, network_request)
     if DEBUG:
         print("Raw MAC found: %s" % mac)
 
@@ -346,6 +343,25 @@ def _uuid_convert(mac):
     return ':'.join(('%012X' % mac)[i:i+2] for i in range(0, 12, 2))
 
 
+def _read_sys_iface_file(iface):
+    with open('/sys/class/net/' + iface + '/address') as f:
+        data = f.read()
+    # Sometimes this can be empty or a single newline character
+    if len(data) < 17:
+        return None
+    else:
+        return data
+
+
+def _read_arp_file(host):
+    with open('/proc/net/arp') as f:
+        data = f.read()
+    if len(data) > 1:
+        # Need a space, otherwise a search for 192.168.16.2
+        # will match 192.168.16.254 if it comes first!
+        return _search(re.escape(host) + r' .+' + MAC_RE_COLON, data)
+
+
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     """Format of method lists:
     Tuple:  (regex, regex index, command, command args)
@@ -393,57 +409,64 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
     # Non-Windows - Network Interface
     elif type_of_thing == INTERFACE:
-        methods = [
-            lambda x: _popen('cat', '/sys/class/net/' + x + '/address'),
+        if OSX:
+            methods = [
+                # ifconfig for OSX
+                (r'ether ' + MAC_RE_COLON,
+                 0, 'ifconfig', [to_find]),
 
-            _fcntl_iface,
+                # Alternative match for ifconfig if it fails
+                (to_find + r'.*(ether) ' + MAC_RE_COLON,
+                 1, 'ifconfig', ['']),
 
-            # Fast ifconfig
-            (r'HWaddr ' + MAC_RE_COLON,
-             0, 'ifconfig', [to_find]),
+                # networksetup
+                (MAC_RE_COLON,
+                 0, 'networksetup', ['-getmacaddress %s' % to_find]),
+            ]
+        else:
+            methods = [
+                # lambda x: _popen('cat', '/sys/class/net/' + x + '/address'),
+                _read_sys_iface_file,
 
-            # Fast Mac OS X
-            (r'ether ' + MAC_RE_COLON,
-             0, 'ifconfig', [to_find]),
+                _fcntl_iface,
 
-            # netstat
-            (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
-             1, 'netstat', ['-iae']),
+                # Fast ifconfig
+                (r'HWaddr ' + MAC_RE_COLON,
+                 0, 'ifconfig', [to_find]),
 
-            # ip link (Don't use 'list' due to SELinux [Android 24+])
-            (to_find + r'.*\n.*link/ether ' + MAC_RE_COLON,
-             0, 'ip', ['link %s' % to_find, 'link']),
+                # ip link (Don't use 'list' due to SELinux [Android 24+])
+                (to_find + r'.*\n.*link/ether ' + MAC_RE_COLON,
+                 0, 'ip', ['link %s' % to_find, 'link']),
 
-            # Quick attempt on Mac OS X
-            (MAC_RE_COLON,
-             0, 'networksetup', ['-getmacaddress %s' % to_find]),
+                # netstat
+                (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
+                 1, 'netstat', ['-iae']),
 
-            # ifconfig
-            (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
-             1, 'ifconfig', ['', '-a', '-v']),
+                # More variations of ifconfig
+                (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
+                 1, 'ifconfig', ['', '-a', '-v']),
 
-            # Mac OS X
-            (to_find + r'.*(ether) ' + MAC_RE_COLON,
-             1, 'ifconfig', ['']),
+                # Tru64 ('-av')
+                (to_find + r'.*(Ether) ' + MAC_RE_COLON,
+                 1, 'ifconfig', ['-av']),
+                _uuid_lanscan_iface,
+            ]
 
-            # Tru64 ('-av')
-            (to_find + r'.*(Ether) ' + MAC_RE_COLON,
-             1, 'ifconfig', ['-av']),
-
+        methods.extend([
             _netifaces_iface,
             _psutil_iface,
             _scapy_iface,
-            _uuid_lanscan_iface,
-        ]
+        ])
 
     # Non-Windows - Remote Host
     elif type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
         methods = [
-            # Need a space, otherwise a search for 192.168.16.2
-            # will match 192.168.16.254 if it comes first!
-            (esc + r' .+' + MAC_RE_COLON,
-             0, 'cat', ['/proc/net/arp']),
+            _read_arp_file,
+            # # Need a space, otherwise a search for 192.168.16.2
+            # # will match 192.168.16.254 if it comes first!
+            # (esc + r' .+' + MAC_RE_COLON,
+            #  0, 'cat', ['/proc/net/arp']),
 
             lambda x: _popen('ip', 'neighbor show %s' % x)
             .partition(x)[2].partition('lladdr')[2].strip().split()[0],
@@ -462,7 +485,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             lambda x: __import__('arpreq').arpreq(x),
         ]
     else:
-        _warn("ERROR: reached end of _hunt_for_mac() if-else chain!", RuntimeError)
+        _warn("ERROR: reached end of _hunt_for_mac() if-else chain!")
         return None
     return _try_methods(methods, to_find)
 
@@ -509,7 +532,7 @@ def _hunt_linux_default_iface():
         lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
         lambda: list(__import__('netifaces').gateways()['default'].values())[0][1],
     ]
-    return _try_methods(methods=methods)
+    return _try_methods(methods)
 
 
 def _fetch_ip_using_dns():

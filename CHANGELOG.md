@@ -1,16 +1,24 @@
 # DEV (xx/xx/2018)
 
 ## Added
-* scripts for building RPMs in the /scripts directory (Credit: @hargoniX)
-* pip2 will install an executor named getmac2 and pip3 an executor named getmac so they don't conflict when both RPMs are installed on the same system (Credit: @hargoniX)
+*
 
 ## Changed
-* Improved system platform detection
+* Improved performance for POSIX platforms for interfaces. Commands
+specific to OSX will be run only on that platform, and vice-versa.
+* Python 2 will install an executor named getmac2 and Python 3 an
+executor named getmac so they don't conflict when both RPMs are
+installed on the same system (Credit: @hargoniX)
+* Improved performance of the common cases on Linux for interfaces and
+remote hosts by reading the files directly instead of invoking `cat`.
 * The `warnings` module will only be imported if a error/warning
 occurs (improve compatibility with some freezers)
+* Improved system platform detection
+* Various other minor performance improvements
 
 ## Dev
 * Added unit tests for the samples (Credit: @Frizz925)
+* Scripts for building RPMs in the /scripts directory (Credit: @hargoniX)
 
 
 # 0.6.0 (10/06/2018)

@@ -43,17 +43,21 @@ interface as the default route.
 * [ ] `fcntl`: IPv6?
 * [ ] `ip addr`
 
+## OSX (Darwin)
+* [ ] Determine best remote host detection methods, split off not-applicable commands
+
+
 ## Platforms
 * [x] Linux
 * [x] Windows (modern)
 * [x] Darwin (Mac OS)
 * [x] Windows Subsystem for Linux (WSL)
 * [x] Docker (inside Docker containers)
-* [ ] Alpine Linux (test + add to tests)
+* [x] Alpine Linux (test + add to tests)
 * [ ] Raspberry Pi (test)
 * [ ] OpenBSD
 * [ ] FreeBSD
-* [ ] Android (Which you could argue *correctly* is Linux)
+* [ ] Android (Yes, this is Linux. But we need to properly *support* it.)
 * [ ] Solaris
 
 
@@ -104,7 +108,7 @@ interface as the default route.
 * [x] Improve documentation on what it can and can't do
       (and educate the user on what MACs and broadcasts are)
 * [ ] Sphinx documentation
-* [ ] Man page
+* [x] Man page
 * [ ] HTML web documentation on ReadTheDocs
 * [ ] Screenshots
 * [x] ASCII Cinema capture of usage
