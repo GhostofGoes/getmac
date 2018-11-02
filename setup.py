@@ -12,6 +12,8 @@ from getmac.getmac import __version__
 with open('README.md', encoding='utf-8') as f:  # Loads in the README for PyPI
     long_description = f.read()
 
+# TODO: append changelog to the long description
+
 
 setup(
     name='getmac',
@@ -19,6 +21,7 @@ setup(
     author='Christopher Goes',
     author_email='ghostofgoes@gmail.com',
     description='Get MAC addresses of remote hosts and local interfaces',
+
     long_description=long_description,  # This is what you see on PyPI page
     # PEP 566, PyPI Warehouse, setuptools>=38.6.0 make markdown possible
     long_description_content_type='text/markdown',

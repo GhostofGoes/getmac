@@ -86,14 +86,19 @@ Again, this can be done using the GUI, your favorite editor, or `git checkout -b
         python -m virtualenv "$Env:USERPROFILE\.virtualenvs\getmac"
         $Env:USERPROFILE\.virtualenvs\getmac\Scripts\Activate.ps1
         ```
-5. Install the package: `python -m pip install -e .`
+5. Install the developer tools and the package:
+    ```bash
+    python -m pip install -U -r dev-requirements.txt
+    python -m pip install -e .
+    ```
 6. Setup and run the tests:
-```bash
-python -m pip install --user -U tox
-tox
-tox -e flake8
-tox -e codespell
-```
+    ```bash
+    # Run code quality checks
+    tox -e check
+
+    # Run the tests
+    tox
+    ```
 7. Write some code! Git commit messages should information about what changed,
 and if it's relevant, the rationale (thinking) for the change.
 8. Follow the checklist
