@@ -55,8 +55,12 @@ setup(
         'flake8',
         'codespell',
         'mock;python_version<"3"',
+        'check-manifest',
+        'pytest',
+        'pytest-cov',
     ],
     install_requires=['argparse'] if sys.version_info[:2] < (2, 7) else [],
+    python_requires='>=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     platforms=['any'],
     keywords='getmac get-mac macaddress mac-address mac address media access '
              'control ethernet networking network networks layer2 layer-2 osi '
