@@ -211,9 +211,9 @@ def _search(regex, text, group_index=0):
 def _popen(command, args):
     for directory in PATH:
         executable = os.path.join(directory, command)
-        if (os.path.exists(executable) and
-                os.access(executable, os.F_OK | os.X_OK) and
-                not os.path.isdir(executable)):
+        if (os.path.exists(executable)
+            and os.access(executable, os.F_OK | os.X_OK)
+                and not os.path.isdir(executable)):
             break
     else:
         executable = command

@@ -4,7 +4,7 @@
 [![Travis CI build status](https://travis-ci.org/GhostofGoes/getmac.svg?branch=master)](https://travis-ci.org/GhostofGoes/getmac)
 [![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/getmac/branch/master)
 
-Get the MAC address of remote LAN hosts and system network interfaces using Python.
+Python package to get the MAC address of network interfaces and hosts on the local network.
 
 It provides a platform-independant interface to get the MAC addresses of:
 
