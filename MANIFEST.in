@@ -1,14 +1,14 @@
 include LICENSE README.md CHANGELOG.md CONTRIBUTING.md
-include docs/man/*.1
+include docs/man/getmac.1
+include docs/man/getmac2.1
 graft getmac
 
 prune .github
-prune docs
 prune samples
 prune scripts
-# prune tests
 
 global-exclude *.py[cod] __pycache__ *.so *.class
 exclude *-getmac.spec *.yml
 exclude Dockerfile Vagrantfile Makefile
 exclude tox.ini dev-requirements.txt
+exclude TODO.md conf.py index.md make.bat
