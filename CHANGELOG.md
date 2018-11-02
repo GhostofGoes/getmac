@@ -1,9 +1,11 @@
-# DEV (xx/xx/2018)
+# Changelog
 
-## Added
+## UNRELEASED (xx/xx/2018)
+
+### Added
 *
 
-## Changed
+### Changed
 * Improved performance for POSIX platforms for interfaces. Commands
 specific to OSX will be run only on that platform, and vice-versa.
 * Python 2 will install an executor named getmac2 and Python 3 an
@@ -16,18 +18,19 @@ occurs (improve compatibility with some freezers)
 * Improved system platform detection
 * Various other minor performance improvements
 
-## Dev
+### Dev
 * Added unit tests for the samples (Credit: @Frizz925)
 * Scripts for building RPMs in the /scripts directory (Credit: @hargoniX)
+* Improve code quality and health checks
+* Include the CHANGELOG on the PyPI project page
 
 
-# 0.6.0 (10/06/2018)
-
-## Added
+## 0.6.0 (10/06/2018)
+### Added
 * Windows default interface detection if `network_request` is enabled (Credit: @cyberhobbes)
 * Docker container (Credit: @Komish)
 
-## Changed
+### Changed
 * Changed name to `getmac`. This applies to everything, including
 command line tool, PyPI, GitHub, and the documentation.
 This is a breaking change, but needed to happen to remove
@@ -36,33 +39,33 @@ documentation, and several other efforts, not to mention my sanity.
 Long-term, the only downside is a conflict on Windows CLI with `getmac.exe`.
 * Use proper Python 2-compatible print functions (Credit: @martmists)
 
-## Removed
+### Removed
 * Support for Python 2.5. It is not feasible to test, and potentially
 breaks some useful language features, such as `__future__`
 * Variables PORT and DEBUG from top-level package imports, since changing
 them would have no actual effect on execution. Instead, use `getmac.getmac.DEBUG`.
 
-## Dev
+### Dev
 * Added example videos demonstrating usage (Credit: @fortunate-man)
 * Added contribution guide
 * Added documentation on ReadTheDocs
 * Added a manpage
 
 
-# 0.5.0 (09/24/2018)
-## Added
+## 0.5.0 (09/24/2018)
+### Added
 * Full support for Windows Subsystem for Linux (WSL). This is working for
 all features, including default interface selection! The only edge case
 is lookup of remote host IP addresses that are actually local interfaces
 won't resolve to a MAC (which should be ff-ff-ff-ff-ff-ff).
-## Changed
+### Changed
 * Require `argparse` if Python version is 2.6 or older
-## Dev
+### Dev
 * Updated tox tests: added Jython and IronPython, removed 2.6
 
 
-# 0.4.0 (09/21/2018)
-## Added
+## 0.4.0 (09/21/2018)
+### Added
 * New methods for remote host MACs
     * Windows: `arp`
     * POSIX: `arpreq` package
@@ -75,7 +78,7 @@ e.g. '-dd' for DEBUG level 2.
 * Jython support (Note: on Windows Jython currently only works with interfaces)
 * IronPython support
 
-## Changed
+### Changed
 * **Significant** performance improvement for remote hosts. Previously,
 the average for `get_mac_address(ip='10.0.0.100')` was 1.71 seconds.
 Now, the average is `12.7 miliseconds`, with the special case of a unpopulated
@@ -94,7 +97,7 @@ for now since I don't know of a case when it isn't all zeroes.
 * Various minor stability and performance improvements
 * Add LICENSE to PyPI package
 
-## Removed
+### Removed
 * Support for Python 3.2 and 3.3. The total downloads from PyPI with
 those versions in August was ~53k and ~407K, respectfully. The majority
 of those are likely from automated testing (e.g. TravisCI) and not
@@ -102,15 +105,15 @@ actual users. Therefore, I've decided to drop support to simplify
 development, especially since before 3.4 the 3.x series was still
 very much a  "work in progress".
 
-## Dev
+### Dev
 * Added automated tests for Windows using Appveyor
 * Tox runner for tests
 * Added github.io page
 * Improved TravisCI testing
 
 
-# 0.3.0 (08/30/2018)
-## Added
+## 0.3.0 (08/30/2018)
+### Added
 * Attempt to use Python modules if they're installed. This is useful
 for larger projects that already have them installed as dependencies,
 as they provide a more reliable means of getting information.
@@ -122,14 +125,14 @@ as they provide a more reliable means of getting information.
 * New methods for Interface MACs
     * POSIX: `lanscan -ai` (HP-UX)
 
-## Changed
+### Changed
 * Certain critical failures that should never happen will now warn
 instead of failing silently.
 * Added a sanity check to the `ip6` argument (IPv6 addresses)
 * Improved performance in some areas
 * Improved debugging output
 
-## Fixed
+### Fixed
 * Major Bugfix: search of `proc/net/arp` would return shorter addresses in the
 same subnet if they came earlier in the sequence. Example: a search for
 `192.168.16.2` on Linux would instead return the MAC address of
@@ -139,95 +142,95 @@ interfaces are now properly detected on Linux and most other
 POSIX platforms with `ip` or `route` commands available, or the
 `netifaces` Python module.
 
-## Dev
+### Dev
 * Makefile
 * Vagrantfile to spin up testing VMs for various platforms using [Vagrant](https://www.vagrantup.com/docs/)
 * Added more samples of command output on platforms (Ubuntu 18.04 LTS)
 
 
-# 0.2.4 (08/26/2018)
-## Fixed
+## 0.2.4 (08/26/2018)
+### Fixed
 * Fixed identification of remote host on OSX
 * Resolved hangs and noticeable lag that occurred when "network_request"
 was True (the default)
 
 
-# 0.2.3 (08/07/2018)
-## Fixed
+## 0.2.3 (08/07/2018)
+### Fixed
 * Remote host for Python 3 on Windows
 
 
-# 0.2.2
-## Added
+## 0.2.2
+### Added
 * Short versions of CLI arguments (e.g. "-i" for "--interface")
 
-## Changed
+### Changed
 * Improved usage of "ping" across platforms and IP versions
 * Various minor tweaks for performance
 * Improved Windows detection
 
-## Fixed
+### Fixed
 * Use of ping command with hostname
 
-## Dev:
+### Dev:
 * Improvements to internal code
 
 
-# 0.2.1
+## 0.2.1
 Nothing changed. PyPI just won't let me push changes without a new version.
 
 
-# 0.2.0 (04/15/2018)
-## Added
+## 0.2.0 (04/15/2018)
+### Added
 * Checks for default interface on Linux systems
 * New methods of hunting for addresses on Windows, Mac OS X, and Linux
 
-## Changed
+### Changed
 * CLI will output nothing if it failed, instead of "None"
 * CLI will return with 1 on failure, 0 on success
 * No CLI arguments now implies the default host network interface
 * Added an argumnent for debugging: `--debug`
 * Removed `-d` option from `--no-network-requests`
 
-## Fixed
+### Fixed
 * Interfaces on Windows and Linux (including Bash for Windows)
 * Many bugs
 
-## Removed
+### Removed
 * Support for Python 2.6 on the CLI
 
-## Dev
+### Dev
 * Overhaul of internals
 
 
-# 0.1.0 (04/15/2018):
-## Added
+## 0.1.0 (04/15/2018):
+### Added
 * Addition of a terminal command: `get-mac`
 * Ability to run as a module from the command line: `python -m getmac`
 
-## Changed
+### Changed
 * `arp_request` argument was renamed to `network_request`
 * Updated docstring
 * Slight reduction in the size of getmac.py
 
-## Dev
+### Dev
 * Overhauled the README
 * Moved tests into their own folder
 * Added Python 3.7 to list of supported snakes
 
 
-# 0.0.4 (11/12/2017):
+## 0.0.4 (11/12/2017):
 * Python 2.6 compatibility
 
 
-# 0.0.3 (11/11/2017):
+## 0.0.3 (11/11/2017):
 * Fixed some addresses returning without colons
 * Added more rigorous checks on addresses before returning them
 
 
-# 0.0.2 (11/11/2017):
+## 0.0.2 (11/11/2017):
 * Remove print statements and other debugging output
 
 
-# 0.0.1 (10/23/2017):
+## 0.0.1 (10/23/2017):
 * Initial pre-alpha

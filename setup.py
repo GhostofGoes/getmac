@@ -9,10 +9,12 @@ from setuptools import setup, find_packages
 from getmac.getmac import __version__
 
 
-with open('README.md', encoding='utf-8') as f:  # Loads in the README for PyPI
+# Build the page that will be displayed on PyPI from the README and CHANGELOG
+with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
-
-# TODO: append changelog to the long description
+long_description += '\n\n'
+with open('CHANGELOG.md', encoding='utf-8') as f:
+    long_description += f.read()
 
 
 setup(
@@ -21,7 +23,6 @@ setup(
     author='Christopher Goes',
     author_email='ghostofgoes@gmail.com',
     description='Get MAC addresses of remote hosts and local interfaces',
-
     long_description=long_description,  # This is what you see on PyPI page
     # PEP 566, PyPI Warehouse, setuptools>=38.6.0 make markdown possible
     long_description_content_type='text/markdown',
