@@ -13,3 +13,4 @@ pytest
 pytest-cov
 check-manifest
 pylint
+snakeviz

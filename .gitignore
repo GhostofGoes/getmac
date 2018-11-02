@@ -109,3 +109,6 @@ ENV/
 # mypy
 .mypy_cache/
 /docs/man/.doctrees/
+
+# Profiling output from cProfile
+*.prof
