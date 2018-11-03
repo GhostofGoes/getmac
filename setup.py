@@ -27,7 +27,6 @@ setup(
     # PEP 566, PyPI Warehouse, setuptools>=38.6.0 make markdown possible
     long_description_content_type='text/markdown',
     url='https://github.com/GhostofGoes/getmac',
-    download_url='https://pypi.org/project/getmac/',
     project_urls={
         'Documentation': 'https://getmac.readthedocs.io/en/latest/',
         'Discord Server': 'https://discord.gg/python',
