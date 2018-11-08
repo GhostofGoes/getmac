@@ -61,9 +61,12 @@ setup(
     install_requires=['argparse'] if sys.version_info[:2] < (2, 7) else [],
     python_requires='>=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     platforms=['any'],
-    keywords='getmac get-mac macaddress mac-address mac address media access '
-             'control ethernet networking network networks layer2 layer-2 osi '
-             'ieee 802 mac-48 hardware-address tool script python python3',
+    keywords=[
+        'getmac', 'get-mac', 'macaddress', 'mac-address', 'mac', 'tool',
+        'address', 'media', 'access', 'control', 'ethernet', 'mac-48',
+        'networking', 'network', 'networks', 'layer2', 'layer-2', 'osi',
+        'ieee', '802',  'hardware-address', 'script', 'python', 'python3',
+    ],
     classifiers=[  # Used by PyPI to classify the project and make it searchable
         'Development Status :: 4 - Beta',
         'Environment :: Console',
