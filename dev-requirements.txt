@@ -8,9 +8,7 @@ sphinx
 sphinx-autobuild
 recommonmark
 sphinx_rtd_theme
-pudb;platform_system=="Linux"
 pytest
 pytest-cov
 check-manifest
 pylint
-snakeviz
