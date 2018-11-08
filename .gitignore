@@ -2,10 +2,7 @@
 .vscode/
 .vagrant/
 
-.bashenv/
-.py2bashenv/
-.pypy3env/
-.pypy2env/
+.pytest_cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
