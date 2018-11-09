@@ -1,6 +1,6 @@
-.PHONY: install clean clean-build test build upload
+.PHONY: install clean clean-build clean-all check test build upload
 
-install: clean
+install: clean clean-build
 	@pip install -e .
 
 clean:
@@ -9,14 +9,25 @@ clean:
 	@find . -name '__pycache__' -delete
 	@find . -name '*~' -delete
 
-clean-build: clean
-	@rm -rf build dist *.egg *.egg-info
+clean-build:
+	@rm -rf build/
+	@rm -rf dist/
+	@rm -rf *.egg
 
-test:
-	@python -m unittest discover -s ./tests
+clean-all: clean clean-build
+	@rm -rf .tox/
+	@rm -rf .pytest_cache/
+	@rm -rf .coverage.py*
+	@rm -rf .mypy_cache/
+	@rm -rf *.egg-info
+
+check: clean
+	@tox -e check
+
+test: clean
 	@tox
 
-build: clean-build
+build: clean clean-build
 	@python setup.py sdist bdist_wheel
 
 upload: build
