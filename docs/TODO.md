@@ -8,6 +8,10 @@
 with a slow run since it tries every method before failing. This is
 aggravated by the relatively costly attempts to import packages (e.g. `netifaces`).
 * [ ] Detect if an interface exists before trying to find it's MAC.
+* [ ] **Security**. Spend some quality time ensuring our sources of
+input (the arguments to `get_mac_address()`) don't result in unexpected
+code execution. A lot of stuff is running system commands, so we should
+focus the most effort on the Popen calls.
 
 # Platform support
 
@@ -100,6 +104,7 @@ interface as the default route.
 * [ ] Add MyPy checking to required tests
 * [ ] Add profiling to tests. If average of multiple runs goes
  above a certain threshold, the tests fail.
+* [ ] Add `bandit` to linters
 
 # Documentation
 * [x] List of related works in README (shoutouts)
