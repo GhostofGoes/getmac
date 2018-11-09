@@ -49,12 +49,7 @@ setup(
         ],
     },
     tests_require=[
-        'setuptools>=38.6.0',
-        'tox>=3',
-        'flake8',
-        'codespell',
         'mock;python_version<"3"',
-        'check-manifest',
         'pytest',
         'pytest-cov',
     ],
@@ -65,7 +60,7 @@ setup(
         'getmac', 'get-mac', 'macaddress', 'mac-address', 'mac', 'tool',
         'address', 'media', 'access', 'control', 'ethernet', 'mac-48',
         'networking', 'network', 'networks', 'layer2', 'layer-2', 'osi',
-        'ieee', '802',  'hardware-address', 'script', 'python', 'python3',
+        'ieee', '802', 'hardware-address', 'script', 'python', 'python3',
     ],
     classifiers=[  # Used by PyPI to classify the project and make it searchable
         'Development Status :: 4 - Beta',
