@@ -3,6 +3,7 @@
 [![Documentation status](https://readthedocs.org/projects/getmac/badge/?version=latest)](https://getmac.readthedocs.io/en/latest/?badge=latest)
 [![Travis CI build status](https://travis-ci.org/GhostofGoes/getmac.svg?branch=master)](https://travis-ci.org/GhostofGoes/getmac)
 [![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/getmac/branch/master)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/getmac.svg)](https://pypistats.org/packages/getmac)
 
 Python package to get the MAC address of network interfaces and hosts on the local network.
 
@@ -18,12 +19,12 @@ It provides one function: `get_mac_address()`
 [![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.png)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
 
 ## Features
-* Pure-Python
-* Supports Python 2.6+, 3.4+, pypy, and pypy3
-* No dependencies
-* Small size
-* Can be used as an independent .py file
-* Simple terminal tool (when installed as a package)
+* Pure-Python (no compiled C-extensions required!)
+* Supports CPython 2.6+ and 3.4+, pypy and pypy3, IronPython, and Jython
+* Lightweight, with no dependencies and a small package size
+* Can be dropped into a project as a standalone .py file
+* Provides a simple command line tool (when installed as a package)
+* MIT licensed!
 
 # Usage
 
@@ -81,8 +82,6 @@ python -m getmac -d -i enp11s4
 python -m getmac -dd -n home.router
 ```
 
-Note: the terminal interface will not work on Python 2.6 and older (Sorry RHEL 6 users!).
-
 ## get_mac_address()
 * `interface`: Name of a network interface on the system.
 * `ip`: IPv4 address of a remote host.
@@ -123,18 +122,14 @@ Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/3/library/warnings.html
 
 ## Docker Examples
-
-
-Run getmac container and provide flags
-
+There is a pre-built container located on the
+[Docker hub](https://hub.docker.com/r/ghostofgoes/getmac/).
 ```bash
 docker run -it ghostofgoes/getmac:latest --help
 docker run -it ghostofgoes/getmac:latest --version
 docker run -it ghostofgoes/getmac:latest -n localhost
 ```
 
-There is a pre-built container located on the
-[Docker hub](https://hub.docker.com/r/ghostofgoes/getmac/).
 Alternatively, you can build the image yourself (from the repository root directory):
 ```bash
 docker build . -t getmac
@@ -204,6 +199,16 @@ works effectively if `network_request` is enabled. Otherwise,
 * There is are currently no automated tests for Python 2.6, which means
 there is a much higher potential for regressions. Open an issue if you
 encounter any.
+
+## Name change
+The package name changed to `getmac` from `get-mac` in Fall 2018. This
+affected the package name, the CLI script, and some of the documentation.
+There were no changes to the core library code. If you or a package you
+are using is still using the old name, please update it's dependencies
+to use the new name. Likely places are a `requirements.txt` file, the
+`install_requires` argument to `setup()` in `setup.py`, or a `Pipfile`.
+The old package will no recieve any further updates, and will eventually
+be removed from PyPI entirely (likely around when 1.0.0 is released).
 
 # Contributing
 Contributors are more than welcome!

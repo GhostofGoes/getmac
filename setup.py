@@ -53,6 +53,7 @@ setup(
         'pytest',
         'pytest-cov',
     ],
+    # Python 2.6 doesn't have argparse, so install a backport if on 2.6
     install_requires=['argparse'] if sys.version_info[:2] < (2, 7) else [],
     python_requires='>=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     platforms=['any'],
