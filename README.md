@@ -210,6 +210,9 @@ to use the new name. Likely places are a `requirements.txt` file, the
 The old package will no recieve any further updates, and will eventually
 be removed from PyPI entirely (likely around when 1.0.0 is released).
 
+Deathwatch for the old name:
+[![Downloads of the old name](https://img.shields.io/pypi/dm/get-mac.svg)](https://pypistats.org/packages/get-mac)
+
 # Contributing
 Contributors are more than welcome!
 See the [contribution guide](CONTRIBUTING.md) to get started,
