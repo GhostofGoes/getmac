@@ -207,7 +207,7 @@ There were no changes to the core library code. If you or a package you
 are using is still using the old name, please update it's dependencies
 to use the new name. Likely places are a `requirements.txt` file, the
 `install_requires` argument to `setup()` in `setup.py`, or a `Pipfile`.
-The old package will no recieve any further updates, and will eventually
+The old package will no receive any further updates, and will eventually
 be removed from PyPI entirely (likely around when 1.0.0 is released).
 
 Deathwatch for the old name:
