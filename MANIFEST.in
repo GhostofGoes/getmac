@@ -6,6 +6,7 @@ graft getmac
 prune .github
 prune samples
 prune scripts
+prune packaging
 
 global-exclude *.py[cod] __pycache__ *.so *.class
 exclude *-getmac.spec *.yml
