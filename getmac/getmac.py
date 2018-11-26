@@ -347,10 +347,7 @@ def _read_sys_iface_file(iface):
     with open('/sys/class/net/' + iface + '/address') as f:
         data = f.read()
     # Sometimes this can be empty or a single newline character
-    if len(data) < 17:
-        return None
-    else:
-        return data
+    return None if len(data) < 17 else data
 
 
 def _read_arp_file(host):
