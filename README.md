@@ -3,7 +3,8 @@
 [![Documentation status](https://readthedocs.org/projects/getmac/badge/?version=latest)](https://getmac.readthedocs.io/en/latest/?badge=latest)
 [![Travis CI build status](https://travis-ci.org/GhostofGoes/getmac.svg?branch=master)](https://travis-ci.org/GhostofGoes/getmac)
 [![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/getmac/branch/master)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/getmac.svg)](https://pypistats.org/packages/getmac)
+[![PyPI - Downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
+[![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
 
 Python package to get the MAC address of network interfaces and hosts on the local network.
 
@@ -211,7 +212,7 @@ The old package will no receive any further updates, and will eventually
 be removed from PyPI entirely (likely around when 1.0.0 is released).
 
 Deathwatch for the old name:
-[![Downloads of the old name](https://img.shields.io/pypi/dm/get-mac.svg)](https://pypistats.org/packages/get-mac)
+[![Downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
 
 # Contributing
 Contributors are more than welcome!
