@@ -24,7 +24,7 @@ clean-all: clean clean-build
 check: clean
 	@tox -e check
 
-test: clean
+test: check
 	@tox
 
 build: clean clean-build
