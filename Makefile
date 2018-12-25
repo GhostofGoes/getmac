@@ -33,3 +33,7 @@ build: clean clean-build
 upload: build
 	pip install 'twine>=1.11.0'
 	twine upload dist/*
+
+gen-stubs: clean
+	stubgen --recursive -o '.\typestubs' getmac
+	cat ./typestubs/getmac/getmac.pyi

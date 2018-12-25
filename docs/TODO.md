@@ -100,11 +100,10 @@ interface as the default route.
 * [ ] Need samples from many more platforms to build effective tests
 * [ ] Functional tests using Bats for all Python versions
 * [x] Appveyor testing
-* [ ] Unittesting of Python 2.6 (since we have it disabled on CLI tests)
 * [ ] Add MyPy checking to required tests
 * [ ] Add profiling to tests. If average of multiple runs goes
  above a certain threshold, the tests fail.
-* [ ] Add `bandit` to linters
+* [x] Add `bandit` to linters
 
 # Documentation
 * [x] List of related works in README (shoutouts)
@@ -120,7 +119,8 @@ interface as the default route.
 * [ ] Add documentation and other links to project_urls in setup.py
 
 # Code/Other
-* [ ] Add mypy-style type annotations
+* [x] Add mypy-style type annotations
+* [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 * [ ] Script to collect samples for all relevant commands on a platform
 and save output into the appropriately named sub-directory in `samples/`.
 * [ ] Vagrant images

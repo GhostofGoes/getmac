@@ -17,7 +17,9 @@ Examples:
     ip_mac = get_mac_address(ip="192.168.0.1")
     ip6_mac = get_mac_address(ip6="::1")
     host_mac = get_mac_address(hostname="localhost")
-    updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)"""
+    updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
+
+"""
 
 from __future__ import print_function
 
@@ -78,9 +80,17 @@ MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
 MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
 MAC_RE_DARWIN = r'([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})'
 
+if not PY2:
+    from typing import TYPE_CHECKING
+    if TYPE_CHECKING:
+        from typing import Optional
 
-def get_mac_address(interface=None, ip=None, ip6=None,
-                    hostname=None, network_request=True):
+
+def get_mac_address(
+        interface=None, ip=None, ip6=None,
+        hostname=None, network_request=True
+):
+    # type: (str, str, str, str, bool) -> Optional[str]
     """Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 
     You must only use one of the first four arguments. If none of the arguments
@@ -103,7 +113,8 @@ def get_mac_address(interface=None, ip=None, ip6=None,
         be configured using the module variable `getmac.PORT`.
     Returns:
         Lowercase colon-separated MAC address, or None if one could not be
-        found or there was an error."""
+        found or there was an error.
+    """
     if (hostname and hostname == 'localhost') or (ip and ip == '127.0.0.1'):
         return '00:00:00:00:00:00'
 
@@ -198,17 +209,20 @@ def get_mac_address(interface=None, ip=None, ip6=None,
 
 
 def _warn(text):
+    # type: (str) -> None
     import warnings
     warnings.warn(text, RuntimeWarning)
 
 
 def _search(regex, text, group_index=0):
+    # type: (str, str, int) -> str
     match = re.search(regex, text)
     if match:
         return match.groups()[group_index]
 
 
 def _popen(command, args):
+    # type: (str, str) -> str
     for directory in PATH:
         executable = os.path.join(directory, command)
         if (os.path.exists(executable)
@@ -223,6 +237,7 @@ def _popen(command, args):
 
 
 def _call_proc(executable, args):
+    # type: (str, str) -> str
     if WINDOWS:
         cmd = executable + ' ' + args
     else:
@@ -242,6 +257,7 @@ def _call_proc(executable, args):
 
 
 def _windows_ctypes_host(host):
+    # type: (str) -> Optional[str]
     if not PY2:  # Convert to bytes on Python 3+ (Fixes #7)
         host = host.encode()
     try:
@@ -271,6 +287,7 @@ def _windows_ctypes_host(host):
 
 
 def _fcntl_iface(iface):
+    # type: (str) -> str
     import fcntl
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 0x8927 = SIOCGIFADDR
@@ -279,6 +296,7 @@ def _fcntl_iface(iface):
 
 
 def _psutil_iface(iface):
+    # type: (str) -> Optional[str]
     import psutil
     nics = psutil.net_if_addrs()
     if iface in nics:
@@ -289,12 +307,14 @@ def _psutil_iface(iface):
 
 
 def _netifaces_iface(iface):
+    # type: (str) -> str
     """This method does not work on Windows."""
     import netifaces
     return netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
 
 
 def _scapy_ip(ip):
+    # type: (str) -> str
     """Requires root permissions on POSIX platforms.
     Windows does not have this limitation."""
     from scapy.layers.l2 import getmacbyip
@@ -302,6 +322,7 @@ def _scapy_ip(ip):
 
 
 def _scapy_iface(iface):
+    # type: (str) -> str
     from scapy.layers.l2 import get_if_hwaddr
     if WINDOWS:
         from scapy.arch.windows import get_windows_if_list
@@ -314,6 +335,7 @@ def _scapy_iface(iface):
 
 
 def _uuid_ip(ip):
+    # type: (str) -> Optional[str]
     from uuid import _arp_getnode
     backup = socket.gethostbyname
     try:
@@ -332,6 +354,7 @@ def _uuid_ip(ip):
 
 
 def _uuid_lanscan_iface(iface):
+    # type: (str) -> Optional[str]
     if not PY2:
         iface = bytes(iface)
     mac = __import__('uuid')._find_mac('lanscan', '-ai', [iface], lambda i: 0)
@@ -340,6 +363,7 @@ def _uuid_lanscan_iface(iface):
 
 
 def _uuid_convert(mac):
+    # type: (str) -> str
     return ':'.join(('%012X' % mac)[i:i+2] for i in range(0, 12, 2))
 
 
@@ -360,10 +384,14 @@ def _read_arp_file(host):
 
 
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
-    """Format of method lists:
+    # type: (str, int, bool) -> Optional[str]
+    """Tries a variety of methods to get a MAC address.
+
+    Format of method lists:
     Tuple:  (regex, regex index, command, command args)
             Command args is a list of strings to attempt to use as arguments
-    lambda: Function to call"""
+    lambda: Function to call
+    """
     if not PY2 and isinstance(to_find, bytes):
         to_find = str(to_find, 'utf-8')
 
@@ -488,8 +516,12 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
 
 def _try_methods(methods, to_find=None):
-    """We try every method and see if it returned a MAC address. If it returns
-    None or raises an exception, we continue and try the next method."""
+    # type: (list, Optional[str]) -> Optional[str]
+    """Runs the methods specified by _hunt_for_mac().
+
+    We try every method and see if it returned a MAC address. If it returns
+    None or raises an exception, we continue and try the next method.
+    """
     found = None
     for m in methods:
         try:
@@ -522,6 +554,7 @@ def _try_methods(methods, to_find=None):
 
 
 def _hunt_linux_default_iface():
+    # type: () -> Optional[str]
     # NOTE: for now, we check the default interface for WSL using the
     # same methods as POSIX, since those parts of the net stack work fine.
     methods = [
@@ -533,8 +566,13 @@ def _hunt_linux_default_iface():
 
 
 def _fetch_ip_using_dns():
-    """Use a UDP socket with Cloudflare's DNS to determine
-    the IP of the default network interface"""
+    # type: () -> str
+    """Determines the IP address of the default network interface.
+
+    Sends a UDP packet to Cloudflare's DNS (1.1.1.1), which should go through
+    the default interface. This populates the source address of the socket,
+    which we then inspect and return.
+    """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('1.1.1.1', 53))
     ip = s.getsockname()[0]
