@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# http://multivax.com/last_question.html
 
 """Get the MAC address of remote hosts or network interfaces using Python.
 
@@ -383,7 +384,7 @@ def _read_file(filepath):
     try:
         with open(filepath) as f:
             return f.read()
-    except FileNotFoundError:
+    except OSError:
         if DEBUG:
             print("Could not find file: '%s'" % filepath)
         return None
