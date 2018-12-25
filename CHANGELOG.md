@@ -8,21 +8,22 @@
 ## UNRELEASED (xx/xx/2018)
 
 ### Added
-*
+* Type annotations (PEP 484)
 
 ### Removed
 * Dropped support for Python 2.6.
 
 ### Changed
+* Significantly improved the performance of the common cases on Linux
+for interfaces and remote hosts by directly reading the relevant files
+instead of invoking `cat`
 * Improved performance for POSIX platforms for interfaces. Commands
 specific to OSX will be run only on that platform, and vice-versa.
 * Python 2 will install an executor named getmac2 and Python 3 an
 executor named getmac so they don't conflict when both RPMs are
 installed on the same system (Credit: @hargoniX)
-* Improved performance of the common cases on Linux for interfaces and
-remote hosts by reading the files directly instead of invoking `cat`.
 * The `warnings` module will only be imported if a error/warning
-occurs (improve compatibility with some freezers)
+occurs (improve compatibility with some freezers, notably PyInstaller)
 * Improved system platform detection
 * Various other minor performance improvements
 
