@@ -1,4 +1,4 @@
-include LICENSE README.md CHANGELOG.md CONTRIBUTING.md
+include LICENSE README.md CHANGELOG.md CONTRIBUTING.md setup.cfg
 include docs/man/getmac.1
 include docs/man/getmac2.1
 graft getmac

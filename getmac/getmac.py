@@ -32,7 +32,7 @@ import socket
 import struct
 import sys
 import traceback
-from subprocess import Popen, PIPE, CalledProcessError
+from subprocess import check_output
 
 try:
     from subprocess import DEVNULL  # Py3
@@ -242,14 +242,7 @@ def _call_proc(executable, args):
         cmd = executable + ' ' + args
     else:
         cmd = [executable] + shlex.split(args)
-
-    # Popen instead of check_output() for Python 2.6 compatibility
-    process = Popen(cmd, stdout=PIPE, stderr=DEVNULL, env=ENV)
-    output, unused_err = process.communicate()
-    retcode = process.poll()
-    if retcode:
-        raise CalledProcessError(retcode, cmd, output=output)
-
+    output = check_output(cmd, stderr=DEVNULL, env=ENV)
     if not PY2 and isinstance(output, bytes):
         return str(output, 'utf-8')
     else:
@@ -258,7 +251,7 @@ def _call_proc(executable, args):
 
 def _windows_ctypes_host(host):
     # type: (str) -> Optional[str]
-    if not PY2:  # Convert to bytes on Python 3+ (Fixes #7)
+    if not PY2:  # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
         host = host.encode()
     try:
         inetaddr = ctypes.windll.wsock32.inet_addr(host)

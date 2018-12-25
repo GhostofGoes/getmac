@@ -1,9 +1,17 @@
 # Changelog
 
+**NOTE**: if any changes significantly impact your project or use case,
+ please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues)
+ or send me an email (see git commit author info for address).
+
+
 ## UNRELEASED (xx/xx/2018)
 
 ### Added
 *
+
+### Removed
+* Dropped support for Python 2.6.
 
 ### Changed
 * Improved performance for POSIX platforms for interfaces. Commands

@@ -1,15 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function
+
+import argparse
 import sys
+
 from . import getmac
 
 
 def main():
-    try:
-        import argparse
-    except ImportError:
-        print("You must install argparse on Python 2.6 and below ('pip install argparse')")
-        sys.exit(1)
-
     description = 'Get the MAC address of system network ' \
                   'interfaces or remote hosts on the LAN'
     parser = argparse.ArgumentParser('getmac', description=description)
@@ -32,7 +32,6 @@ def main():
                        help='Hostname of a remote host')
 
     args = parser.parse_args()
-
     if args.debug:
         getmac.DEBUG = args.debug
 
@@ -43,9 +42,9 @@ def main():
 
     if mac is not None:
         print(mac)
-        sys.exit(0)
+        sys.exit(0)  # Exit success!
     else:
-        sys.exit(1)
+        sys.exit(1)  # Exit with error since it failed to find a MAC
 
 
 if __name__ == '__main__':

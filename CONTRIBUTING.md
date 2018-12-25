@@ -9,7 +9,7 @@ to bring new members into the community, and can always use the help.
 
 
 # Code requirements
-* Must work under all supported Python versions (2.6+ and 3.4+)
+* Must work under all supported Python versions (2.7 and 3.4+)
 * Must work on all supported platforms (if applicable)
 * Try to match the general code style (loosely PEP8)
 * Be respectful. Memes, references, and jokes are ok. Explicit language
