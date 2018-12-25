@@ -80,10 +80,12 @@ MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
 MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
 MAC_RE_DARWIN = r'([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})'
 
-if not PY2:
+try:
     from typing import TYPE_CHECKING
     if TYPE_CHECKING:
         from typing import Optional
+except ImportError:
+    pass
 
 
 def get_mac_address(

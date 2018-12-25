@@ -37,7 +37,7 @@ setup(
         ('share/man/man1', ['docs/man/getmac2.1']) if sys.version_info[:2] <= (2, 7) else
         ('share/man/man1', ['docs/man/getmac.1'])
     ],
-    packages=find_packages(exclude=['tests.py']),
+    packages=find_packages(include=['getmac']),
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': [
