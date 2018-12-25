@@ -368,19 +368,30 @@ def _uuid_convert(mac):
 
 
 def _read_sys_iface_file(iface):
-    with open('/sys/class/net/' + iface + '/address') as f:
-        data = f.read()
+    # type: (str) -> Optional[str]
+    data = _read_file('/sys/class/net/' + iface + '/address')
     # Sometimes this can be empty or a single newline character
-    return None if len(data) < 17 else data
+    return None if data is not None and len(data) < 17 else data
 
 
 def _read_arp_file(host):
-    with open('/proc/net/arp') as f:
-        data = f.read()
-    if len(data) > 1:
+    # type: (str) -> Optional[str]
+    data = _read_file('/proc/net/arp')
+    if data is not None and len(data) > 1:
         # Need a space, otherwise a search for 192.168.16.2
         # will match 192.168.16.254 if it comes first!
         return _search(re.escape(host) + r' .+' + MAC_RE_COLON, data)
+
+
+def _read_file(filepath):
+    # type: (str) -> Optional[str]
+    try:
+        with open(filepath) as f:
+            return f.read()
+    except FileNotFoundError:
+        if DEBUG:
+            print("Could not find file: '%s'" % filepath)
+        return None
 
 
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
