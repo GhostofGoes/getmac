@@ -324,7 +324,8 @@ def _scapy_iface(iface):
         from scapy.arch.windows import get_windows_if_list
         interfaces = get_windows_if_list()
         for i in interfaces:
-            if any(iface in i[x] for x in ['name', 'netid', 'description', 'win_index']):
+            if any(iface in i[x] for x in
+                   ['name', 'netid', 'description', 'win_index']):
                 return i['mac']
     # WARNING: Do not put an 'else' here!
     return get_if_hwaddr(iface)
@@ -457,7 +458,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             ]
         else:
             methods = [
-                # lambda x: _popen('cat', '/sys/class/net/' + x + '/address'),
                 _read_sys_iface_file,
 
                 _fcntl_iface,
@@ -495,10 +495,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         esc = re.escape(to_find)
         methods = [
             _read_arp_file,
-            # # Need a space, otherwise a search for 192.168.16.2
-            # # will match 192.168.16.254 if it comes first!
-            # (esc + r' .+' + MAC_RE_COLON,
-            #  0, 'cat', ['/proc/net/arp']),
 
             lambda x: _popen('ip', 'neighbor show %s' % x)
             .partition(x)[2].partition('lladdr')[2].strip().split()[0],
