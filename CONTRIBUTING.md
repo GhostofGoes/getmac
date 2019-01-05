@@ -86,10 +86,11 @@ Again, this can be done using the GUI, your favorite editor, or `git checkout -b
         python -m virtualenv "$Env:USERPROFILE\.virtualenvs\getmac"
         $Env:USERPROFILE\.virtualenvs\getmac\Scripts\Activate.ps1
         ```
-5. Install the developer tools and the package:
+5. Install the developer tools, package, and pre-commit hooks:
     ```bash
     python -m pip install -U -r dev-requirements.txt
     python -m pip install -e .
+    pre-commit install
     ```
 6. Setup and run the tests:
     ```bash
