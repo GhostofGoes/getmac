@@ -1,14 +1,30 @@
+# Building and distribution
 setuptools>=38.6.0
 twine
-tox>=3
-flake8
-codespell
-mock;python_version<'3'
-sphinx
-sphinx-autobuild
+
+# Documentation
+sphinx>=1.7
 recommonmark
 sphinx_rtd_theme
-pytest
+
+# Testing
+mock;python_version<'3'
+tox>=3
+pytest>=3.4
 pytest-cov
+pytest-random-order
+coverage
+
+# Linting and code quality
+flake8
+codespell
 check-manifest
-pylint
+bandit
+pre-commit
+
+# Flake8 extensions
+flake8-bugbear
+flake8-import-order
+flake8-tidy-imports
+flake8-todo
+flake8-string-format

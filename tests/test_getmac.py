@@ -5,10 +5,12 @@
 
 """Unit and functional tests for getmac."""
 
-import unittest
-import getmac
 import io
+import unittest
 from os import path
+
+import getmac
+
 try:
     from unittest import mock
 except ImportError:

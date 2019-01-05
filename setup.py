@@ -4,7 +4,7 @@
 import sys
 from io import open  # Python 2 compatibility
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 from getmac.getmac import __version__
 
