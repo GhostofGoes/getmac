@@ -4,6 +4,4 @@ repos:
     hooks:
     - id: flake8
     - id: debug-statements
-    - id: check-added-large-files
-    - id: check-symlinks
     - id: check-yaml
