@@ -21,9 +21,10 @@ It provides one function: `get_mac_address()`
 
 ## Features
 * Pure-Python (no compiled C-extensions required!)
-* Supports CPython 2.6+ and 3.4+, pypy and pypy3, IronPython, and Jython
+* Python 2.7 and 3.4+
 * Lightweight, with no dependencies and a small package size
 * Can be dropped into a project as a standalone .py file
+* Supports most interpreters: CPython, pypy, pypy3, IronPython, and Jython
 * Provides a simple command line tool (when installed as a package)
 * MIT licensed!
 
@@ -122,20 +123,6 @@ If you are using logging, they can be captured using logging.captureWarnings().
 Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/3/library/warnings.html
 
-## Docker Examples
-There is a pre-built container located on the
-[Docker hub](https://hub.docker.com/r/ghostofgoes/getmac/).
-```bash
-docker run -it ghostofgoes/getmac:latest --help
-docker run -it ghostofgoes/getmac:latest --version
-docker run -it ghostofgoes/getmac:latest -n localhost
-```
-
-Alternatively, you can build the image yourself (from the repository root directory):
-```bash
-docker build . -t getmac
-```
-
 
 # Commands and techniques by platform
 * Windows
@@ -161,22 +148,21 @@ All or almost all features should work on "supported" platforms (OSes).
     * Server: TBD
     * (Partially supported, untested): 2000, XP, Vista
 * Linux distros
-    * CentOS/RHEL 6+
-    * Ubuntu 16+ (14 and older should work as well)
+    * CentOS/RHEL 6+ (Only with Python 2.7+)
+    * Ubuntu 16.04+ (14.04 and older should work, but are untested)
     * Fedora
 * MacOSX (Darwin)
     * The latest two versions probably (TBD)
 * Windows Subsystem for Linux (WSL)
 * Docker
 
-# Python versions
-All sub-versions are the latest available on your platform (with the exception of 2.6).
-* 2.6.6 (CentOS 6/RHEL 6 version)
-* 2.7
-* 3.4
-* 3.5
-* 3.6
-* 3.7
+# Docker
+```bash
+docker build . -t getmac
+docker run -it getmac:latest --help
+docker run -it getmac:latest --version
+docker run -it getmac:latest -n localhost
+```
 
 # Caveats & Known issues
 Please report any problems by opening a issue on GitHub!
@@ -187,7 +173,7 @@ due to heavy usage of regular expressions.
 * Platform test coverage is imperfect. If you're having issues,
 then you might be using a platform I haven't been able to test.
 Keep calm, open a GitHub issue, and I'd be more than happy to help.
-* Older Python versions (2.5/3.3 and older) are not officially supported.
+* Older Python versions (2.6/3.3 and older) are not officially supported.
 If you're running these, all is not lost! Simply copy/paste `getmac.py`
 into your codebase and make the necessary edits to be compatible with
 your version and distribution of Python.
@@ -197,9 +183,6 @@ your version and distribution of Python.
 * Windows: the "default" of selecting the default route interface only
 works effectively if `network_request` is enabled. Otherwise,
 `Ethernet` as the default.
-* There is are currently no automated tests for Python 2.6, which means
-there is a much higher potential for regressions. Open an issue if you
-encounter any.
 
 ## Name change
 The package name changed to `getmac` from `get-mac` in Fall 2018. This
