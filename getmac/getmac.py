@@ -291,45 +291,6 @@ def _fcntl_iface(iface):
     return ':'.join(['%02x' % ord(char) for char in info[18:24]])
 
 
-def _psutil_iface(iface):
-    # type: (str) -> Optional[str]
-    import psutil
-    nics = psutil.net_if_addrs()
-    if iface in nics:
-        nic = nics[iface]
-        for i in nic:
-            if i.family == psutil.AF_LINK:
-                return i.address
-
-
-def _netifaces_iface(iface):
-    # type: (str) -> str
-    import netifaces
-    return netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
-
-
-def _scapy_ip(ip):
-    # type: (str) -> str
-    """Requires root permissions on POSIX platforms.
-    Windows does not have this limitation."""
-    from scapy.layers.l2 import getmacbyip
-    return getmacbyip(ip)
-
-
-def _scapy_iface(iface):
-    # type: (str) -> str
-    from scapy.layers.l2 import get_if_hwaddr
-    if WINDOWS:
-        from scapy.arch.windows import get_windows_if_list
-        interfaces = get_windows_if_list()
-        for i in interfaces:
-            if any(iface in i[x] for x in
-                   ['name', 'netid', 'description', 'win_index']):
-                return i['mac']
-    # WARNING: Do not put an 'else' here!
-    return get_if_hwaddr(iface)
-
-
 def _uuid_ip(ip):
     # type: (str) -> Optional[str]
     from uuid import _arp_getnode
@@ -420,9 +381,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # wmic - WMI command line utility
             lambda x: _popen('wmic.exe', 'nic where "NetConnectionID = \'%s\'" get '
                                          'MACAddress /value' % x).strip().partition('=')[2],
-
-            _psutil_iface,
-            _scapy_iface,
         ]
 
     # Windows - Remote Host
@@ -430,8 +388,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         methods = [
             # arp -a - Parsing result with a regex
             (MAC_RE_DASH, 0, 'arp.exe', ['-a %s' % to_find]),
-
-            _scapy_ip,
         ]
 
         # Add methods that make network requests
@@ -483,12 +439,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
                 _uuid_lanscan_iface,
             ]
 
-        methods.extend([
-            _netifaces_iface,
-            _psutil_iface,
-            _scapy_iface,
-        ])
-
     # Non-Windows - Remote Host
     elif type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
@@ -508,8 +458,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'arp', [to_find, '-a', '-a %s' % to_find]),
 
             _uuid_ip,
-            _scapy_ip,
-            lambda x: __import__('arpreq').arpreq(x),
         ]
     else:
         _warn("ERROR: reached end of _hunt_for_mac() if-else chain!")
@@ -562,7 +510,6 @@ def _hunt_linux_default_iface():
     methods = [
         lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
         lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
-        lambda: list(__import__('netifaces').gateways()['default'].values())[0][1],
     ]
     return _try_methods(methods)
 

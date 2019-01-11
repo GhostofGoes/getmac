@@ -34,7 +34,7 @@ It can be significantly faster, especially in the case of hosts that
 don't exist (at least currently).
 
 If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to do
-so in a [GitHub gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
+so in a [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
 ## Features
 * Pure-Python (no compiled C-extensions required!)
