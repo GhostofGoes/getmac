@@ -52,6 +52,7 @@ setup(
         'mock;python_version<"3"',
         'pytest',
         'pytest-cov',
+        'pytest-random-order',
     ],
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     platforms=['any'],

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # http://multivax.com/last_question.html
 
-"""Get the MAC address of remote hosts or network interfaces using Python.
+"""Get the MAC address of remote hosts or network interfaces.
 
 It provides a platform-independent interface to get the MAC addresses of:
 
@@ -304,7 +304,6 @@ def _psutil_iface(iface):
 
 def _netifaces_iface(iface):
     # type: (str) -> str
-    """This method does not work on Windows."""
     import netifaces
     return netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
 

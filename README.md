@@ -23,13 +23,18 @@ If you only need the addresses of network interfaces, have a limited set
 of platforms to support, and are able to handle C-extension modules, then
 you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/)
 package by Alastair Houghton. It is significantly faster, well-maintained,
-and has been around much longer than this has.
+and has been around much longer than this has. Another great option that
+fits these requirements is the well-known and battle-hardened
+[psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola.
 
 If the only system you need to run on is Linux, you can run as root,
 and C-extensions modules are fine, then you should instead check out the
 [arpreq](https://pypi.org/project/arpreq/) package by Sebastian Schrader.
 It can be significantly faster, especially in the case of hosts that
 don't exist (at least currently).
+
+If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to do
+so in a [GitHub gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
 ## Features
 * Pure-Python (no compiled C-extensions required!)
