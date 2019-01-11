@@ -29,8 +29,8 @@ setup(
     url='https://github.com/GhostofGoes/getmac',
     project_urls={
         'Documentation': 'https://getmac.readthedocs.io/en/latest/',
-        'Discord Server': 'https://discord.gg/python',
-        'Docker': 'https://hub.docker.com/r/ghostofgoes/getmac/',
+        'Discord server': 'https://discord.gg/python',
+        'Issue tracker': 'https://github.com/GhostofGoes/getmac/issues',
     },
     license='MIT',
     data_files=[
