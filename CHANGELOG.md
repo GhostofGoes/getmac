@@ -24,6 +24,8 @@ for interfaces and remote hosts by directly reading the relevant files
 instead of invoking `cat`
 * Improved performance for POSIX platforms for interfaces. Commands
 specific to OSX will be run only on that platform, and vice-versa.
+* Greatly increased the speed and accuracy of determining
+the default interface on Linux
 * Python 2 will install an executor named getmac2 and Python 3 an
 executor named getmac so they don't conflict when both RPMs are
 installed on the same system (Credit: @hargoniX)
@@ -37,6 +39,7 @@ occurs (improve compatibility with some freezers, notably PyInstaller)
 * Scripts for building RPMs in the /scripts directory (Credit: @hargoniX)
 * Improve code quality and health checks
 * Include the CHANGELOG on the PyPI project page
+* Moving testing to pytest
 
 
 ## 0.6.0 (10/06/2018)

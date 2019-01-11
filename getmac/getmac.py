@@ -503,11 +503,30 @@ def _try_methods(methods, to_find=None):
     return found
 
 
+def _get_default_iface_linux():
+    # type: () -> Optional[str]
+    """Get the default interface by reading /proc/net/route.
+
+    This is the same source as the `route` command, however it's much
+    faster to read this file than to call `route`. If it fails for whatever
+    reason, we can fall back on the system commands (e.g for a platform
+    that has a route command, but maybe doesn't use /proc?).
+    """
+    data = _read_file('/proc/net/route')
+    if data is not None and len(data) > 1:
+        data = data.split('\n')[1:-1]
+        for line in data:
+            iface_name, dest = line.split('\t')[:2]
+            if dest == '00000000':
+                return iface_name
+
+
 def _hunt_linux_default_iface():
     # type: () -> Optional[str]
     # NOTE: for now, we check the default interface for WSL using the
     # same methods as POSIX, since those parts of the net stack work fine.
     methods = [
+        _get_default_iface_linux,
         lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
         lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
     ]
