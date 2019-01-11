@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# http://multivax.com/last_question.html
-
 """Unit and functional tests for getmac."""
 
 import io
@@ -23,10 +21,8 @@ class MockHelper(object):
     @classmethod
     def load_sample(cls, filename):
         filename = path.realpath('%s/../samples/%s' % (path.dirname(__file__), filename))
-        content = ''
-        with io.open(filename, 'rt', newline='') as f:
-            content = f.read()
-        return content
+        with io.open(filename, 'rt', newline='', encoding='utf-8') as f:
+            return f.read()
 
     def __init__(self, platform_name, cmd, sample):
         self.platform_name = platform_name
@@ -42,12 +38,11 @@ class MockHelper(object):
                 output = self.load_sample(sample)
             else:
                 retcode = 1
-            process_mock = mock.Mock()
             process_attrs = {
                 'communicate.return_value': (output, None),
                 'poll.return_value': retcode
             }
-            process_mock.configure_mock(**process_attrs)
+            process_mock = mock.Mock(**process_attrs)
             return process_mock
         return side_effect
 
@@ -57,11 +52,10 @@ class MockHelper(object):
                 getmac.getmac.WINDOWS = True
             getmac.getmac._SYST = self.platform_name
             mock_popen.side_effect = self.create_side_effect(self.cmd, self.sample)
-            platform_mock = mock.Mock()
             platform_attrs = {
                 'system.return_value': self.platform_name
             }
-            platform_mock.configure_mock(**platform_attrs)
+            platform_mock = mock.Mock(**platform_attrs)
             mock_platform.return_value = platform_mock
             socket_mock = mock.Mock()
             mock_socket.return_value = socket_mock
