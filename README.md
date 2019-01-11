@@ -144,13 +144,11 @@ https://docs.python.org/3/library/warnings.html
 * Windows
     * Commands: `getmac`, `ipconfig`
     * Libraries: `uuid`, `ctypes`
-    * Third-party Packages: `netifaces`, `psutil`, `scapy`
 * Linux/Unix
     * Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`
     * Libraries: `uuid`, `fcntl`
-    * Third-party Packages:  `netifaces`, `psutil`, `scapy`, `arping`
-    * Default interfaces: `route`, `ip route list`
-    * Files: `/sys/class/net/X/address`, `/proc/net/arp`
+    * Files: `/sys/class/net/{iface}/address`, `/proc/net/arp`
+    * Default interfaces: `/proc/net/route`, `route`, `ip route list`
 * Mac OSX (Darwin)
     * `networksetup`
     * Same commands as Linux
@@ -158,16 +156,16 @@ https://docs.python.org/3/library/warnings.html
 and Unix commands are used for interfaces
 
 # Platforms currently supported
-All or almost all features should work on "supported" platforms (OSes).
+All or almost all features should work on "supported" platforms.
 * Windows
     * Desktop: 7, 8, 8.1, 10
     * Server: TBD
-    * (Partially supported, untested): 2000, XP, Vista
+    * Partially supported and untested: 2000, XP, Vista
 * Linux distros
     * CentOS/RHEL 6+ (Only with Python 2.7+)
     * Ubuntu 16.04+ (14.04 and older should work, but are untested)
     * Fedora
-* MacOSX (Darwin)
+* Mac OSX (Darwin)
     * The latest two versions probably (TBD)
 * Windows Subsystem for Linux (WSL)
 * Docker
