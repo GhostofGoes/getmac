@@ -6,7 +6,7 @@
 [![PyPI - Downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
 [![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
 
-Python package to get the MAC address of network interfaces and hosts on the local network.
+Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 
 It provides a platform-independant interface to get the MAC addresses of:
 
@@ -18,6 +18,18 @@ It provides one function: `get_mac_address()`
 [![asciicast](https://asciinema.org/a/rk6dUACUcZY18taCuIBE5Ssus.png)](https://asciinema.org/a/rk6dUACUcZY18taCuIBE5Ssus)
 
 [![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.png)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
+
+If you only need the addresses of network interfaces, have a limited set
+of platforms to support, and are able to handle C-extension modules, then
+you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/)
+package by Alastair Houghton. It is significantly faster, well-maintained,
+and has been around much longer than this has.
+
+If the only system you need to run on is Linux, you can run as root,
+and C-extensions modules are fine, then you should instead check out the
+[arpreq](https://pypi.org/project/arpreq/) package by Sebastian Schrader.
+It can be significantly faster, especially in the case of hosts that
+don't exist (at least currently).
 
 ## Features
 * Pure-Python (no compiled C-extensions required!)
@@ -196,6 +208,15 @@ be removed from PyPI entirely (likely around when 1.0.0 is released).
 
 Deathwatch for the old name:
 [![Downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
+
+## Background and history
+The Python standard library has a robust set of networking functionality,
+such as `urllib`, `ipaddress`, `ftplib`, `telnetlib`, `ssl`, and more.
+Imagine my surprise, then, when I discovered there was not a way to get a
+seemingly simple piece of information: a MAC address. This package was born
+out of a need to get the MAC address of hosts on the network without
+needing admin permissions, and a cross-platform way get the addresses
+of local interfaces.
 
 # Contributing
 Contributors are more than welcome!
