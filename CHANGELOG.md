@@ -11,7 +11,7 @@
 * Type annotations (PEP 484)
 
 ### Removed
-* Dropped support for Python 2.6.
+* Dropped support for Python 2.6
 * Removed the usage of third-party packages (`netifaces`, `psutil`, `scapy`, and `arpreq`).
 This should improve the performance of lookups of non-existant interfaces
 or hosts, since feature was punishing that path without providing much value.
@@ -22,9 +22,9 @@ If you want to use these packages directly, I have a guide on how to do so on a
 * Significantly improved the performance of the common cases on Linux
 for interfaces and remote hosts by directly reading the relevant files
 instead of invoking `cat`
-* Improved performance for POSIX platforms for interfaces. Commands
-specific to OSX will be run only on that platform, and vice-versa.
-* Greatly increased the speed and accuracy of determining
+* Improved POSIX interface performance. Commands specific to OSX
+will be run only on that platform, and vice-versa.
+* Significantly improved the speed and accuracy of determining
 the default interface on Linux
 * Python 2 will install an executor named getmac2 and Python 3 an
 executor named getmac so they don't conflict when both RPMs are
