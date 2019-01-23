@@ -312,15 +312,16 @@ def _uuid_ip(ip):
 
 def _uuid_lanscan_iface(iface):
     # type: (str) -> Optional[str]
+    from uuid import _find_mac
     if not PY2:
         iface = bytes(iface)
-    mac = __import__('uuid')._find_mac('lanscan', '-ai', [iface], lambda i: 0)
+    mac = _find_mac('lanscan', '-ai', [iface], lambda i: 0)
     if mac:
         return _uuid_convert(mac)
 
 
 def _uuid_convert(mac):
-    # type: (str) -> str
+    # type: (int) -> str
     return ':'.join(('%012X' % mac)[i:i+2] for i in range(0, 12, 2))
 
 
