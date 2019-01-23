@@ -34,13 +34,15 @@ occurs (improve compatibility with some freezers, notably PyInstaller)
 * Improved system platform detection
 * Various other minor performance improvements
 
-### Dev
+### Development
 * Added unit tests for the samples (Credit: @Frizz925)
 * Scripts for building RPMs in the /scripts directory (Credit: @hargoniX)
 * Improve code quality and health checks
 * Include the CHANGELOG on the PyPI project page
 * Moving testing to pytest
 
+### Documentation
+* Added instructions on how to build a Debian package (Credit: @kofrezo)
 
 ## 0.6.0 (10/06/2018)
 ### Added
