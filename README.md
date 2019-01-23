@@ -72,6 +72,7 @@ print(get_mac_address(ip="192.168.0.1", network_request=True))
 ```
 
 ## Terminal examples
+**Python 2 users**: use `getmac2` or `python -m getmac` instead of `getmac`.
 ```bash
 getmac --help
 getmac --version
