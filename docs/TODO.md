@@ -1,12 +1,10 @@
 
 # Bugs or potential issues
-* [X] Interface IP on Ubuntu gets loopback, instead of primary interface
 * [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
 * [ ] Are there ever cases where loopback != FF:FF:FF:FF:FF:FF?
 * [ ] Remote host that is actually an interface should resolve to localhost MAC
 * [ ] Reduce the cost of failures. Currently, failures are penalized
-with a slow run since it tries every method before failing. This is
-aggravated by the relatively costly attempts to import packages (e.g. `netifaces`).
+with a slow run since it tries every method before failing.
 * [ ] Detect if an interface exists before trying to find it's MAC.
 * [ ] **Security**. Spend some quality time ensuring our sources of
 input (the arguments to `get_mac_address()`) don't result in unexpected
@@ -25,9 +23,6 @@ focus the most effort on the Popen calls.
 
 ### Interface MACs
 * [ ] `netsh int ipv6`
-* [x] `ipconfig`
-* [x] `wmic`: `wmic NICCONFIG where IpEnabled=True get Description IPAddress MACAddress`
-             This will also work for interface indices
 * [ ] Windows API
 
 ### Default Interfaces
@@ -42,16 +37,18 @@ interface as the default route.
 * [ ] IPv6: `route print -6`
 * [ ] Windows API
 
-## Non-Windows (POSIX, etc.)
+
+## POSIX
 * [ ] `arping`: investigate for remote macs
 * [ ] `fcntl`: IPv6?
 * [ ] `ip addr`
+
 
 ## OSX (Darwin)
 * [ ] Determine best remote host detection methods, split off not-applicable commands
 
 
-## Platforms
+## Platform support
 * [x] Linux
 * [x] Windows (modern)
 * [x] Darwin (Mac OS)
@@ -59,9 +56,9 @@ interface as the default route.
 * [x] Docker (inside Docker containers)
 * [x] Alpine Linux (test + add to tests)
 * [ ] Raspberry Pi (test)
-* [ ] OpenBSD
 * [ ] FreeBSD
-* [ ] Android (Yes, this is Linux. But we need to properly *support* it.)
+* [ ] OpenBSD
+* [ ] Android
 * [ ] Solaris
 
 
@@ -81,7 +78,6 @@ interface as the default route.
 * [ ] Improve performance (spend a lot of time on performance tuning with the regexes)
 
 ## Misc.
-* [X] make_arp_request
 * [ ] Use logging instead of print statements for debugging
 * [ ] Add ability to match user-provided arguments case-insensitively
 * [ ] Add ability to get the mac address of a socket's interface
@@ -95,33 +91,23 @@ interface as the default route.
 
 
 # Tests
-* [ ] Unit tests for helper methods
 * [ ] Mocked unit tests for core methods
 * [ ] Run unit tests on all of the samples I've collected thus far
 * [ ] Need samples from many more platforms to build effective tests
-* [ ] Functional tests using Bats for all Python versions
-* [x] Appveyor testing
 * [ ] Add MyPy checking to required tests
 * [ ] Add profiling to tests. If average of multiple runs goes
  above a certain threshold, the tests fail.
-* [x] Add `bandit` to linters
+
 
 # Documentation
-* [x] List of related works in README (shoutouts)
-* [x] List of 3rd-party packages that are attempted
-* [ ] List of methods that are attempted
-* [x] Improve documentation on what it can and can't do
-      (and educate the user on what MACs and broadcasts are)
 * [ ] Sphinx documentation
-* [x] Man page
-* [ ] HTML web documentation on ReadTheDocs
-* [ ] Screenshots
-* [x] ASCII Cinema capture of usage
-* [ ] Add documentation and other links to project_urls in setup.py
+* [ ] Host documentation on ReadTheDocs
+* [ ] Add ReadTheDocs and other links to project_urls in setup.py
+
 
 # Code/Other
-* [x] Add mypy-style type annotations
-* [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
+* [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed)
+once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 * [ ] Script to collect samples for all relevant commands on a platform
 and save output into the appropriately named sub-directory in `samples/`.
 * [ ] Vagrant images
