@@ -251,7 +251,7 @@ to ask questions or discuss the project (Handle: @KnownError).
 * Jose Gonzalez (@Komish) - Docker container and Docker testing
 * @fortunate-man - Awesome usage videos
 * @martmists - legacy Python compatibility improvements
-* @hargoniX - scripts and specfiles for RPM packaging 
+* @hargoniX - scripts and specfiles for RPM packaging
 
 # Sources
 Many of the methods used to acquire an address and the core logic framework
