@@ -32,9 +32,7 @@ jobs:
     language: generic
     env: TOXENV=osx-travis
   - python: 3.6
-    env: TOXENV=flake8
-  - python: 3.6
-    env: TOXENV=codespell
+    env: TOXENV=check
 
 matrix:
   fast_finish: true
@@ -54,8 +52,11 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source ./scripts/.travis-osx; fi
 
 install:
-- pip install -U tox
+- pip install tox coveralls
 - tox --notest
 
 script:
 - tox
+
+after_success:
+  - coveralls
