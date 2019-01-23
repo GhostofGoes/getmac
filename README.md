@@ -18,6 +18,8 @@ It provides one function: `get_mac_address()`
 
 [![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.png)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
 
+
+## Should you use this package?
 If you only need the addresses of network interfaces, have a limited set
 of platforms to support, and are able to handle C-extension modules, then
 you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/)
@@ -35,16 +37,18 @@ don't exist (at least currently).
 If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to do
 so in a [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
-## Features
-* Pure-Python (no compiled C-extensions required!)
-* Python 2.7 and 3.4+
-* Lightweight, with no dependencies and a small package size
-* Can be dropped into a project as a standalone .py file
-* Supports most interpreters: CPython, pypy, pypy3, IronPython, and Jython
-* Provides a simple command line tool (when installed as a package)
-* MIT licensed!
+## Installation
+Stable release from PyPI:
 
-# Usage
+```bash
+pip install getmac
+```
+
+Latest development version:
+
+```bash
+pip install https://github.com/ghostofgoes/getmac/archive/master.tar.gz
+```
 
 ## Python examples
 ```python
@@ -100,7 +104,7 @@ python -m getmac -d -i enp11s4
 python -m getmac -dd -n home.router
 ```
 
-## get_mac_address()
+## Function: get_mac_address()
 * `interface`: Name of a network interface on the system.
 * `ip`: IPv4 address of a remote host.
 * `ip6`: IPv6 address of a remote host.
@@ -113,6 +117,15 @@ traffic. The network request is a empty UDP packet sent to a high
 port, 55555 by default. This can be changed by setting `getmac.PORT`
 to the desired integer value. Additionally, on Windows, this will
 send a UDP packet to 1.1.1.1:53 to attempt to determine the default interface.
+
+## Features
+* Pure-Python (no compiled C-extensions required!)
+* Python 2.7 and 3.4+
+* Lightweight, with no dependencies and a small package size
+* Can be dropped into a project as a standalone .py file
+* Supports most interpreters: CPython, pypy, pypy3, IronPython, and Jython
+* Provides a simple command line tool (when installed as a package)
+* MIT licensed!
 
 ## Notes
 * If none of the arguments are selected, the default

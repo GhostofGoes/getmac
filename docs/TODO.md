@@ -82,6 +82,7 @@ interface as the default route.
 
 ## Misc.
 * [X] make_arp_request
+* [ ] Use logging instead of print statements for debugging
 * [ ] Add ability to match user-provided arguments case-insensitively
 * [ ] Add ability to get the mac address of a socket's interface
 * [ ] Add support for Unix and Windows interface indices as a separate

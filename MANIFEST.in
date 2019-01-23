@@ -10,6 +10,6 @@ prune packaging
 prune tests
 
 global-exclude *.py[cod] __pycache__ *.so *.class
-exclude *-getmac.spec *.yml setup.cfg
+exclude *-getmac.spec *.yml setup.cfg .pre-commit-config.yaml
 exclude tox.ini dev-requirements.txt Dockerfile Vagrantfile Makefile
 exclude conf.py index.md make.bat TODO.md
