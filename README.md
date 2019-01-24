@@ -128,6 +128,22 @@ send a UDP packet to 1.1.1.1:53 to attempt to determine the default interface.
 * Provides a simple command line tool (when installed as a package)
 * MIT licensed!
 
+## Legacy Python versions
+If you are running a old Python (2.6/3.3 and older), then you can
+ install an older verison of `getmac` that supported that version.
+ You can get the wheels in the
+ [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or
+ from PyPI with a current version of `pip` and some special arguments.
+* Python 2.5: get-mac 0.5.0
+* Python 2.6: getmac 0.6.0
+* Python 3.2: get-mac 0.3.0
+* Python 3.3: get-mac 0.3.0
+
+NOTE: these versions do not have many of the performance improvements,
+platform support, and bug fixes that came with later releases.
+They generally work, just not as well. However, if you're using such
+an old Python, you probably don't care about all that :)
+
 ## Notes
 * If none of the arguments are selected, the default
 network interface for the system will be used.
@@ -201,10 +217,6 @@ due to heavy usage of regular expressions.
 * Platform test coverage is imperfect. If you're having issues,
 then you might be using a platform I haven't been able to test.
 Keep calm, open a GitHub issue, and I'd be more than happy to help.
-* Older Python versions (2.6/3.3 and older) are not officially supported.
-If you're running these, all is not lost! Simply copy/paste `getmac.py`
-into your codebase and make the necessary edits to be compatible with
-your version and distribution of Python.
 
 ## Known Issues
 * Hostnames for IPv6 devices are not yet supported.
