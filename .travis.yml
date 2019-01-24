@@ -33,6 +33,8 @@ jobs:
     env: TOXENV=osx-travis
   - python: 3.6
     env: TOXENV=check
+  - python: 3.6
+    env: TOXENV=coverage
 
 matrix:
   fast_finish: true

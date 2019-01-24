@@ -1,0 +1,5 @@
+tox>=3.4
+pytest
+pytest-random-order;python_version>='3.5'
+pytest-mock
+pytest-cov

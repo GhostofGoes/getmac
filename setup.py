@@ -28,39 +28,28 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/GhostofGoes/getmac',
     project_urls={
-        'Documentation': 'https://getmac.readthedocs.io/en/latest/',
         'Discord server': 'https://discord.gg/python',
         'Issue tracker': 'https://github.com/GhostofGoes/getmac/issues',
     },
     license='MIT',
     data_files=[
-        ('share/man/man1', ['docs/man/getmac2.1']) if sys.version_info[:2] <= (2, 7) else
+        ('share/man/man1', ['docs/man/getmac2.1'])
+        if sys.version_info[:2] <= (2, 7) else
         ('share/man/man1', ['docs/man/getmac.1'])
     ],
     packages=find_packages(include=['getmac']),
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
-        'console_scripts': [
-            'getmac2 = getmac.__main__:main',
-        ],
+        'console_scripts': ['getmac2 = getmac.__main__:main']
     } if sys.version_info[:2] <= (2, 7) else {
-        'console_scripts': [
-            'getmac = getmac.__main__:main',
-        ],
+        'console_scripts': ['getmac = getmac.__main__:main']
     },
-    tests_require=[
-        'mock;python_version<"3"',
-        'pytest',
-        'pytest-cov',
-        'pytest-random-order',
-    ],
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
-    platforms=['any'],
     keywords=[
         'getmac', 'get-mac', 'macaddress', 'mac-address', 'mac', 'tool',
         'address', 'media', 'access', 'control', 'ethernet', 'mac-48',
         'networking', 'network', 'networks', 'layer2', 'layer-2', 'osi',
-        'ieee', '802', 'hardware-address', 'script', 'python', 'python3',
+        'ieee', '802', 'hardware-address', 'script', 'python', 'python3'
     ],
     classifiers=[  # Used by PyPI to classify the project and make it searchable
         'Development Status :: 4 - Beta',
@@ -94,6 +83,6 @@ setup(
         'Topic :: Software Development :: Libraries',
         'Topic :: System :: Systems Administration',
         'Topic :: System :: Networking',
-        'Topic :: Utilities',
+        'Topic :: Utilities'
     ]
 )
