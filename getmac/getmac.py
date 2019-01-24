@@ -314,7 +314,7 @@ def _uuid_lanscan_iface(iface):
     # type: (str) -> Optional[str]
     from uuid import _find_mac
     if not PY2:
-        iface = bytes(iface)
+        iface = bytes(iface, 'utf-8')
     mac = _find_mac('lanscan', '-ai', [iface], lambda i: 0)
     if mac:
         return _uuid_convert(mac)
@@ -346,7 +346,7 @@ def _read_file(filepath):
     try:
         with open(filepath) as f:
             return f.read()
-    except OSError:
+    except (OSError, IOError):  # This is IOError on Python 2.7
         if DEBUG:
             print("Could not find file: '%s'" % filepath)
         return None
