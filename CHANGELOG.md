@@ -37,9 +37,9 @@ occurs (improve compatibility with some freezers, notably PyInstaller)
 ### Development
 * Added unit tests for the samples (Credit: @Frizz925)
 * Scripts for building RPMs in the /scripts directory (Credit: @hargoniX)
-* Improve code quality and health checks
+* Improved code quality and health checks
 * Include the CHANGELOG on the PyPI project page
-* Moving testing to pytest
+* Using `pytest` for all tests now instead of `unittest`
 
 ### Documentation
 * Added instructions on how to build a Debian package (Credit: @kofrezo)

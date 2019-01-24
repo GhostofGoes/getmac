@@ -97,6 +97,8 @@ interface as the default route.
 * [ ] Add MyPy checking to required tests
 * [ ] Add profiling to tests. If average of multiple runs goes
  above a certain threshold, the tests fail.
+* [ ] Get coverage reports fully working
+* [ ] Get Coveralls working
 
 
 # Documentation

@@ -130,7 +130,7 @@ send a UDP packet to 1.1.1.1:53 to attempt to determine the default interface.
 
 ## Legacy Python versions
 If you are running a old Python (2.6/3.3 and older), then you can
- install an older verison of `getmac` that supported that version.
+ install an older version of `getmac` that supported that version.
  You can get the wheels in the
  [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or
  from PyPI with a current version of `pip` and some special arguments.
