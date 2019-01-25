@@ -3,7 +3,6 @@
 * text=auto
 
 *.py 	    text eol=lf
-*.pkl 	    binary
 *.md        text eol=lf
 
 # Samples
@@ -13,6 +12,14 @@ samples/*.out            text eol=lf
 # Windows
 *.ps1       text eol=crlf
 *.bat       text eol=crlf
+
+# POSIX
+*.sh        text eol=lf
+*.bash      text eol=lf
+.travis-osx text eol=lf
+*.1         text eol=lf
+packaging/*.spec text eol=lf
+Makefile    text eol=lf
 
 # Documents
 *.doc	    diff=astextplain
@@ -33,7 +40,6 @@ samples/*.out            text eol=lf
 *.tab       text
 *.tsv       text
 *.sql       text
-
 
 # Graphics
 *.png       binary
