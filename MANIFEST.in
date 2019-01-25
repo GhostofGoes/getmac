@@ -8,8 +8,9 @@ prune samples
 prune scripts
 prune packaging
 prune tests
-prune docs
 
 global-exclude *.py[cod] __pycache__ *.so *.class
 exclude *-getmac.spec *.yml setup.cfg .pre-commit-config.yaml
 exclude tox.ini dev-requirements.txt Dockerfile Vagrantfile
+exclude conf.py index.md make.bat Makefile packaging.md
+exclude releasing.md requirements.txt TODO.md

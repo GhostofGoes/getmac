@@ -94,7 +94,7 @@ interface as the default route.
 * [ ] Mocked unit tests for core methods
 * [ ] Run unit tests on all of the samples I've collected thus far
 * [ ] Need samples from many more platforms to build effective tests
-* [ ] Add MyPy checking to required tests
+* [x] Add MyPy checking to required tests
 * [ ] Add profiling to tests. If average of multiple runs goes
  above a certain threshold, the tests fail.
 * [ ] Get coverage reports fully working
@@ -110,7 +110,7 @@ interface as the default route.
 # Code/Other
 * [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed)
 once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
-* [ ] Script to collect samples for all relevant commands on a platform
+* [ ] Create a script to collect samples for all relevant commands on a platform
 and save output into the appropriately named sub-directory in `samples/`.
 * [ ] Vagrant images
     * [ ] Ubuntu

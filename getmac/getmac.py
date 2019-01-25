@@ -35,10 +35,10 @@ import sys
 import traceback
 from subprocess import check_output
 
-try:
-    from subprocess import DEVNULL  # Py3
-except ImportError:
-    DEVNULL = open(os.devnull, 'wb')  # Py2
+try:  # Python 3
+    from subprocess import DEVNULL  # type: ignore
+except ImportError:  # Python 2
+    DEVNULL = open(os.devnull, 'wb')  # type: ignore
 
 __version__ = '0.6.0'
 DEBUG = 0
@@ -167,7 +167,7 @@ def get_mac_address(
                 else:
                     to_find = 'Ethernet'
             else:
-                to_find = _hunt_linux_default_iface()
+                to_find = _hunt_linux_default_iface()  # type: ignore
                 if not to_find:
                     to_find = 'en0'
 
@@ -218,10 +218,11 @@ def _warn(text):
 
 
 def _search(regex, text, group_index=0):
-    # type: (str, str, int) -> str
+    # type: (str, str, int) -> Optional[str]
     match = re.search(regex, text)
     if match:
         return match.groups()[group_index]
+    return None
 
 
 def _popen(command, args):
@@ -242,9 +243,9 @@ def _popen(command, args):
 def _call_proc(executable, args):
     # type: (str, str) -> str
     if WINDOWS:
-        cmd = executable + ' ' + args
+        cmd = executable + ' ' + args  # type: ignore
     else:
-        cmd = [executable] + shlex.split(args)
+        cmd = [executable] + shlex.split(args)  # type: ignore
     output = check_output(cmd, stderr=DEVNULL, env=ENV)
     if not PY2 and isinstance(output, bytes):
         return str(output, 'utf-8')
@@ -255,25 +256,25 @@ def _call_proc(executable, args):
 def _windows_ctypes_host(host):
     # type: (str) -> Optional[str]
     if not PY2:  # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
-        host = host.encode()
+        host = host.encode()  # type: ignore
     try:
-        inetaddr = ctypes.windll.wsock32.inet_addr(host)
+        inetaddr = ctypes.windll.wsock32.inet_addr(host)  # type: ignore
         if inetaddr in (0, -1):
             raise Exception
     except Exception:
         hostip = socket.gethostbyname(host)
-        inetaddr = ctypes.windll.wsock32.inet_addr(hostip)
+        inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
 
     buffer = ctypes.c_buffer(6)
     addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
 
-    send_arp = ctypes.windll.Iphlpapi.SendARP
+    send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
     if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
         return None
 
     # Convert binary data into a string.
     macaddr = ''
-    for intval in struct.unpack('BBBBBB', buffer):
+    for intval in struct.unpack('BBBBBB', buffer):  # type: ignore
         if intval > 15:
             replacestr = '0x'
         else:
@@ -293,7 +294,7 @@ def _fcntl_iface(iface):
 
 def _uuid_ip(ip):
     # type: (str) -> Optional[str]
-    from uuid import _arp_getnode
+    from uuid import _arp_getnode  # type: ignore
     backup = socket.gethostbyname
     try:
         socket.gethostbyname = lambda x: ip
@@ -308,16 +309,18 @@ def _uuid_ip(ip):
         raise
     finally:
         socket.gethostbyname = backup
+    return None
 
 
 def _uuid_lanscan_iface(iface):
     # type: (str) -> Optional[str]
-    from uuid import _find_mac
+    from uuid import _find_mac  # type: ignore
     if not PY2:
-        iface = bytes(iface, 'utf-8')
+        iface = bytes(iface, 'utf-8')  # type: ignore
     mac = _find_mac('lanscan', '-ai', [iface], lambda i: 0)
     if mac:
         return _uuid_convert(mac)
+    return None
 
 
 def _uuid_convert(mac):
@@ -339,6 +342,7 @@ def _read_arp_file(host):
         # Need a space, otherwise a search for 192.168.16.2
         # will match 192.168.16.254 if it comes first!
         return _search(re.escape(host) + r' .+' + MAC_RE_COLON, data)
+    return None
 
 
 def _read_file(filepath):
@@ -353,7 +357,7 @@ def _read_file(filepath):
 
 
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
-    # type: (str, int, bool) -> Optional[str]
+    # type: (Optional[str], int, bool) -> Optional[str]
     """Tries a variety of methods to get a MAC address.
 
     Format of method lists:
@@ -361,6 +365,11 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             Command args is a list of strings to attempt to use as arguments
     lambda: Function to call
     """
+    if to_find is None:
+        if DEBUG:
+            print("_hunt_for_mac() failed: to_find is None")
+        return None
+
     if not PY2 and isinstance(to_find, bytes):
         to_find = str(to_find, 'utf-8')
 
@@ -515,11 +524,11 @@ def _get_default_iface_linux():
     """
     data = _read_file('/proc/net/route')
     if data is not None and len(data) > 1:
-        data = data.split('\n')[1:-1]
-        for line in data:
+        for line in data.split('\n')[1:-1]:
             iface_name, dest = line.split('\t')[:2]
             if dest == '00000000':
                 return iface_name
+    return None
 
 
 def _hunt_linux_default_iface():
