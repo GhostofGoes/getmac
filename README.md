@@ -202,7 +202,7 @@ All or almost all features should work on "supported" platforms.
 
 # Docker
 ```bash
-docker build . -t getmac
+docker build -f packaging/Dockerfile -t getmac .
 docker run -it getmac:latest --help
 docker run -it getmac:latest --version
 docker run -it getmac:latest -n localhost
