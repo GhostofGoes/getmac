@@ -18,8 +18,7 @@ to bring new members into the community, and can always use the help.
 ## Checklist before submitting a pull request
 * [ ] All tests run and pass locally
     * [ ] `tox`
-    * [ ] `tox -e flake8`
-    * [ ] `tox -e codespell`
+    * [ ] `tox -e check`
 * [ ] Update the [CHANGELOG](CHANGELOG.md) (For non-trivial changes, e.g. changing functionality or adding tests)
 * [ ] Add your name to the contributors list in the [README](README.md)
 
@@ -71,28 +70,14 @@ or the Git tools in your favorite editor or IDE.
 3. Create and checkout a new branch in the fork with either your username (e.g. "ghostofgoes"),
 or the name of the feature or issue you're working on (e.g. "openbsd-support").
 Again, this can be done using the GUI, your favorite editor, or `git checkout -b <branch> origin/<branch>`.
-4. Create a virtual environment:
-    * Linux/OSX (Bash)
-        ```bash
-        python -m pip install --user -U virtualenv
-        mkdir -p ~/.virtualenvs/
-        python -m virtualenv ~/.virtualenvs/getmac
-        source ~/.virtualenvs/getmac/bin/activate
-        ```
-    * Windows (PowerShell)
-        ```powershell
-        python -m pip install --user -U virtualenv
-        New-Item -ItemType directory -Path "$Env:USERPROFILE\.virtualenvs"
-        python -m virtualenv "$Env:USERPROFILE\.virtualenvs\getmac"
-        $Env:USERPROFILE\.virtualenvs\getmac\Scripts\Activate.ps1
-        ```
-5. Install the developer tools, package, and pre-commit hooks:
+4. Install the developer tools, package, and pre-commit hooks:
     ```bash
-    python -m pip install -U -r dev-requirements.txt
+    python -m pip install --user -U tox
+    python -m pip install --user -U pre-commit
     python -m pip install -e .
     pre-commit install
     ```
-6. Setup and run the tests:
+5. Setup and run the tests:
     ```bash
     # Run code quality checks
     tox -e check
@@ -100,10 +85,10 @@ Again, this can be done using the GUI, your favorite editor, or `git checkout -b
     # Run the tests
     tox
     ```
-7. Write some code! Git commit messages should information about what changed,
+6. Write some code! Git commit messages should information about what changed,
 and if it's relevant, the rationale (thinking) for the change.
-8. Follow the checklist
-9. Submit a pull request!
+7. Follow the checklist
+8. Submit a pull request!
 
 
 # Bug reports

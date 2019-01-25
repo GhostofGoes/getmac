@@ -1,0 +1,4 @@
+tox>=3.4
+setuptools>=38.6.0
+twine
+pre-commit

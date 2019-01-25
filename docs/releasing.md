@@ -1,3 +1,5 @@
+If `twine` isn't installed, get it: `python -m pip install --user -U twine`
+
 1. Increment version number in `getmac/getmac.py`
 2. Update CHANGELOG header from UNRELEASED to the version and add the date
 3. Run static analysis checks (`tox -e check`)
