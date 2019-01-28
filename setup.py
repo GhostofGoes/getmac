@@ -4,7 +4,7 @@
 import sys
 from io import open  # Python 2 compatibility
 
-from setuptools import find_packages, setup
+from setuptools import setup
 
 from getmac.getmac import __version__
 
@@ -29,7 +29,7 @@ setup(
     url='https://github.com/GhostofGoes/getmac',
     project_urls={
         'Discord server': 'https://discord.gg/python',
-        'Issue tracker': 'https://github.com/GhostofGoes/getmac/issues',
+        'Issue tracker': 'https://github.com/GhostofGoes/getmac/issues'
     },
     license='MIT',
     data_files=[
@@ -37,7 +37,7 @@ setup(
         if sys.version_info[:2] <= (2, 7) else
         ('share/man/man1', ['docs/man/getmac.1'])
     ],
-    packages=find_packages(include=['getmac']),
+    packages=['getmac'],
     zip_safe=True,
     entry_points={  # These enable commandline usage of the tool
         'console_scripts': ['getmac2 = getmac.__main__:main']

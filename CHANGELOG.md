@@ -5,7 +5,10 @@
  or send me an email (see git commit author info for address).
 
 
-## UNRELEASED (xx/xx/2018)
+## UNRELEASED (xx/xx/2019)
+
+
+## 0.7.0 (01/27/2019)
 
 ### Added
 * Type annotations (PEP 484)
@@ -20,8 +23,7 @@ If you want to use these packages directly, I have a guide on how to do so on a
 
 ### Changed
 * Significantly improved the performance of the common cases on Linux
-for interfaces and remote hosts by directly reading the relevant files
-instead of invoking `cat`
+for interfaces and remote hosts
 * Improved POSIX interface performance. Commands specific to OSX
 will be run only on that platform, and vice-versa.
 * Significantly improved the speed and accuracy of determining
@@ -43,6 +45,7 @@ occurs (improve compatibility with some freezers, notably PyInstaller)
 
 ### Documentation
 * Added instructions on how to build a Debian package (Credit: @kofrezo)
+
 
 ## 0.6.0 (10/06/2018)
 ### Added

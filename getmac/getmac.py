@@ -40,7 +40,7 @@ try:  # Python 3
 except ImportError:  # Python 2
     DEVNULL = open(os.devnull, 'wb')  # type: ignore
 
-__version__ = '0.6.0'
+__version__ = '0.7.0'
 DEBUG = 0
 PORT = 55555
 
