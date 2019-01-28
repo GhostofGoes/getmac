@@ -17,7 +17,7 @@ pip install https://github.com/ghostofgoes/getmac/archive/master.tar.gz
     b) Bash: `bash ./scripts/clean.sh`
 7. Build the wheels
 ```bash
-python setup.py sdist bdist_wheel
+python setup.py sdist bdist_wheel --universal
 ```
 8. Upload the wheels
 ```bash
