@@ -170,7 +170,7 @@ Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
 https://docs.python.org/3/library/warnings.html
 
 
-# Commands and techniques by platform
+## Commands and techniques by platform
 * Windows
     * Commands: `getmac`, `ipconfig`
     * Libraries: `uuid`, `ctypes`
@@ -185,7 +185,7 @@ https://docs.python.org/3/library/warnings.html
 * WSL: Windows commands are used for remote hosts,
 and Unix commands are used for interfaces
 
-# Platforms currently supported
+## Platforms currently supported
 All or almost all features should work on "supported" platforms.
 * Windows
     * Desktop: 7, 8, 8.1, 10
@@ -200,16 +200,13 @@ All or almost all features should work on "supported" platforms.
 * Windows Subsystem for Linux (WSL)
 * Docker
 
-# Docker
+## Docker
 ```bash
 docker build -f packaging/Dockerfile -t getmac .
 docker run -it getmac:latest --help
 docker run -it getmac:latest --version
 docker run -it getmac:latest -n localhost
 ```
-
-# Caveats & Known issues
-Please report any problems by opening a issue on GitHub!
 
 ## Caveats
 * Depending on the platform, there could be a performance detriment,
@@ -231,11 +228,6 @@ There were no changes to the core library code. If you or a package you
 are using is still using the old name, please update it's dependencies
 to use the new name. Likely places are a `requirements.txt` file, the
 `install_requires` argument to `setup()` in `setup.py`, or a `Pipfile`.
-The old package will no receive any further updates, and will eventually
-be removed from PyPI entirely (likely around when 1.0.0 is released).
-
-Deathwatch for the old name:
-[![Downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
 
 ## Background and history
 The Python standard library has a robust set of networking functionality,
@@ -246,7 +238,7 @@ out of a need to get the MAC address of hosts on the network without
 needing admin permissions, and a cross-platform way get the addresses
 of local interfaces.
 
-# Contributing
+## Contributing
 Contributors are more than welcome!
 See the [contribution guide](CONTRIBUTING.md) to get started,
 and checkout the [todo list](TODO.md) for a full list of tasks and bugs.
@@ -257,7 +249,7 @@ Before submitting a PR, please make sure you've completed the
 The [Python Discord server](https://discord.gg/python) is a good place
 to ask questions or discuss the project (Handle: @KnownError).
 
-## Contributors
+### Contributors
 * Christopher Goes (@ghostofgoes) - Author and maintainer
 * Calvin Tran (@cyberhobbes) - Windows interface detection improvements
 * Izra Faturrahman (@Frizz925) - Unit tests using the platform samples
@@ -266,16 +258,16 @@ to ask questions or discuss the project (Handle: @KnownError).
 * @martmists - legacy Python compatibility improvements
 * @hargoniX - scripts and specfiles for RPM packaging
 
-# Sources
+## Sources
 Many of the methods used to acquire an address and the core logic framework
 are attributed to the CPython project's UUID implementation.
 * https://github.com/python/cpython/blob/master/Lib/uuid.py
 * https://github.com/python/cpython/blob/2.7/Lib/uuid.py
 
-## Other notable sources
+### Other notable sources
 * [_unix_fcntl_by_interface](https://stackoverflow.com/a/4789267/2214380)
 * [_windows_get_remote_mac_ctypes](goo.gl/ymhZ9p)
 * [String joining](https://stackoverflow.com/a/3258612/2214380)
 
-# License
+## License
 MIT. Feel free to copy, modify, and use to your heart's content. Enjoy :)
