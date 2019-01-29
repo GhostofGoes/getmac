@@ -7,6 +7,9 @@
 
 ## UNRELEASED (xx/xx/2019)
 
+### Added
+* Include tests in the source distribution
+
 
 ## 0.7.0 (01/27/2019)
 
