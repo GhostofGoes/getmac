@@ -69,6 +69,8 @@ PATH = os.environ.get('PATH', os.defpath).split(os.pathsep)
 if not WINDOWS:
     PATH.extend(('/sbin', '/usr/sbin'))
 
+# Use a copy of the environment so we don't
+# modify the process's current environment.
 ENV = dict(os.environ)
 ENV['LC_ALL'] = 'C'  # Ensure ASCII output so we parse correctly
 
@@ -81,6 +83,8 @@ MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
 MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
 MAC_RE_DARWIN = r'([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})'
 
+# Used for mypy (a data type analysis tool)
+# If you're copying the code, this section can be safely removed
 try:
     from typing import TYPE_CHECKING
     if TYPE_CHECKING:

@@ -9,6 +9,7 @@
 
 ### Added
 * Include tests in the source distribution
+* Added aliases for `--no-network-requests`: `-N` and `--no-net`
 
 
 ## 0.7.0 (01/27/2019)
