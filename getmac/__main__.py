@@ -21,7 +21,8 @@ def main():
         help='Enable debugging output. Add characters to '
              'increase verbosity of output, e.g. \'-dd\'.')
     parser.add_argument(
-        '-N', '--no-net', '--no-network-requests', action='store_true',
+        '-N', '--no-net', '--no-network-requests',
+        action='store_true', dest='NO_NET',
         help='Do not send a UDP packet to refresh the ARP table')
 
     group = parser.add_mutually_exclusive_group(required=False)
@@ -45,7 +46,7 @@ def main():
     mac = getmac.get_mac_address(
         interface=args.interface, ip=args.ip,
         ip6=args.ip6, hostname=args.hostname,
-        network_request=not args.no_network_requests)
+        network_request=not args.NO_NET)
 
     if mac is not None:
         print(mac)
