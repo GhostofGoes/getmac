@@ -97,7 +97,7 @@ def get_mac_address(
         interface=None, ip=None, ip6=None,
         hostname=None, network_request=True
 ):
-    # type: (str, str, str, str, bool) -> Optional[str]
+    # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
     """Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 
     You must only use one of the first four arguments. If none of the arguments
