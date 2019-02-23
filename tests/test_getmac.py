@@ -63,16 +63,29 @@ def test_search(get_sample):
     # group_index = 0
     text = get_sample('ifconfig.out')
     regex = r'HWaddr ' + MAC_RE_COLON
-    result = getmac._search(regex, text, 0)
-    assert result == '74:d4:35:e9:45:71'
+    assert getmac._search(regex, text, 0) == '74:d4:35:e9:45:71'
 
 
 def test_popen(mocker):
-    pass
+    mocker.patch('getmac.getmac.PATH', [])
+    m = mocker.patch('getmac.getmac._call_proc', return_value='SUCCESS')
+    assert getmac._popen('TESTCMD', 'ARGS') == 'SUCCESS'
+    m.assert_called_once_with('TESTCMD', 'ARGS')
 
 
-def test_call_proc(mocker):
-    pass
+def test_call_proc_windows(mocker):
+    mocker.patch('getmac.getmac.DEVNULL', 'DEVNULL')
+    mocker.patch('getmac.getmac.ENV', 'ENV')
+    mocker.patch('getmac.getmac.WINDOWS', True)
+
+    m = mocker.patch('getmac.getmac.check_output', return_value='WINSUCCESS')
+    assert getmac._call_proc('CMD', 'arg') == 'WINSUCCESS'
+    m.assert_called_once_with('CMD' + ' ' + 'arg', stderr='DEVNULL', env='ENV')
+
+    mocker.patch('getmac.getmac.WINDOWS', False)
+    m = mocker.patch('getmac.getmac.check_output', return_value='YAY')
+    assert getmac._call_proc('CMD', 'arg1 arg2') == 'YAY'
+    m.assert_called_once_with(['CMD', 'arg1', 'arg2'], stderr='DEVNULL', env='ENV')
 
 
 def test_windows_ctypes_host(mocker):
@@ -96,8 +109,7 @@ def test_uuid_lanscan_iface(mocker):
 
 
 def test_uuid_convert():
-    result = getmac._uuid_convert(2482700837424)
-    assert result == '02:42:0C:80:62:30'
+    assert getmac._uuid_convert(2482700837424) == '02:42:0C:80:62:30'
 
 
 def test_read_sys_iface_file(mocker):
@@ -123,9 +135,8 @@ def test_read_file_return(mocker, get_sample):
         mocker.patch('__builtin__.open', mock_open)
     else:
         mocker.patch('builtins.open', mock_open)
-    result = getmac._read_file('ifconfig.out')
+    assert getmac._read_file('ifconfig.out') == data
     mock_open.assert_called_once_with('ifconfig.out')
-    assert result == data
 
 
 def test_read_file_not_exist():
@@ -135,19 +146,16 @@ def test_read_file_not_exist():
 def test_get_default_iface_linux(mocker, get_sample):
     data = get_sample('ubuntu_18.10/proc_net_route.txt')
     mocker.patch('getmac.getmac._read_file', return_value=data)
-    result = getmac._get_default_iface_linux()
-    assert result == 'ens33'
+    assert getmac._get_default_iface_linux() == 'ens33'
 
 
 def test_hunt_linux_default_iface(mocker, get_sample):
     data = get_sample('ubuntu_18.10/proc_net_route.txt')
     mocker.patch('getmac.getmac._read_file', return_value=data)
-    result = getmac._hunt_linux_default_iface()
-    assert result == 'ens33'
+    assert getmac._hunt_linux_default_iface() == 'ens33'
 
 
 def test_fetch_ip_using_dns(mocker):
     m = mocker.patch('socket.socket')
     m.return_value.getsockname.return_value = ('1.2.3.4', 51327)
-    result = getmac._fetch_ip_using_dns()
-    assert result == '1.2.3.4'
+    assert getmac._fetch_ip_using_dns() == '1.2.3.4'
