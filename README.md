@@ -2,7 +2,7 @@
 [![Latest version on PyPI](https://badge.fury.io/py/getmac.svg)](https://pypi.org/project/getmac/)
 [![Travis CI build status](https://travis-ci.org/GhostofGoes/getmac.svg?branch=master)](https://travis-ci.org/GhostofGoes/getmac)
 [![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/getmac/branch/master)
-[![PyPI - Downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
+[![PyPI download](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
 [![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
@@ -38,13 +38,13 @@ If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to 
 so in a [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
 ## Installation
-Stable release from PyPI:
+Stable release from PyPI
 
 ```bash
 pip install getmac
 ```
 
-Latest development version:
+Latest development version
 
 ```bash
 pip install https://github.com/ghostofgoes/getmac/archive/master.tar.gz
@@ -99,17 +99,20 @@ python -m getmac -n home.router
 getmac --no-network-request -4 192.168.0.1
 python -m getmac --no-network-request -n home.router
 
+# Enable output messages
+getmac --verbose
+
 # Debug levels can be specified with '-d'
-getmac --debug
-python -m getmac -d -i enp11s4
-python -m getmac -dd -n home.router
+getmac -v --debug
+python -m getmac -v -d -i enp11s4
+python -m getmac -v -dd -n home.router
 ```
 
 ## Function: get_mac_address()
-* `interface`: Name of a network interface on the system.
-* `ip`: IPv4 address of a remote host.
-* `ip6`: IPv6 address of a remote host.
-* `hostname`: Hostname of a remote host.
+* `interface`: Name of a network interface on the system
+* `ip`: IPv4 address of a remote host
+* `ip6`: IPv6 address of a remote host
+* `hostname`: Hostname of a remote host
 * `network_request`: If an network request should be made to update
 and populate the ARP/NDP table of remote hosts used to lookup MACs
 in most circumstances. Disable this if you want to just use what's
@@ -123,7 +126,7 @@ send a UDP packet to 1.1.1.1:53 to attempt to determine the default interface.
 * `logging.getLogger('getmac')`: Runtime messages and errors are recorded to the `getmac` logger using the `logging` 
 module. They can be configured by using `logging.basicConfig()` or adding handlers to the `getmac` logger.
 * `getmac.getmac.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get.
-* `getmac.getmac.PORT`: Controls what port is used to populate the ARP/NDP table 
+* `getmac.getmac.PORT`: UDP port used to populate the ARP/NDP table 
 (see the documentation of the `network_request` argument in `get_mac_address()` for details)
 
 ## Features
@@ -222,14 +225,6 @@ Keep calm, open a GitHub issue, and I'd be more than happy to help.
 works effectively if `network_request` is enabled. Otherwise,
 `Ethernet` as the default.
 
-## Name change
-The package name changed to `getmac` from `get-mac` in Fall 2018. This
-affected the package name, the CLI script, and some of the documentation.
-There were no changes to the core library code. If you or a package you
-are using is still using the old name, please update it's dependencies
-to use the new name. Likely places are a `requirements.txt` file, the
-`install_requires` argument to `setup()` in `setup.py`, or a `Pipfile`.
-
 ## Background and history
 The Python standard library has a robust set of networking functionality,
 such as `urllib`, `ipaddress`, `ftplib`, `telnetlib`, `ssl`, and more.
@@ -238,6 +233,11 @@ seemingly simple piece of information: a MAC address. This package was born
 out of a need to get the MAC address of hosts on the network without
 needing admin permissions, and a cross-platform way get the addresses
 of local interfaces.
+
+In Fall 2018 the package name changed to `getmac` from `get-mac`. This
+affected the package name, the CLI script, and some of the documentation.
+There were no changes to the core library code. While both package names 
+will updated on PyPI, the use of `getmac` is preferred.
 
 ## Contributing
 Contributors are more than welcome!
