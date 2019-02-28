@@ -8,8 +8,17 @@
 ## UNRELEASED (xx/xx/2019)
 
 ### Added
+* Logging is used for output messages. The logger is named `getmac`, and can be 
+configured using `logging.getLogger('getmac')`.
 * Include tests in the source distribution
-* Added aliases for `--no-network-requests`: `-N` and `--no-net`
+* (CLI) Added aliases for `--no-network-requests`: `-N` and `--no-net`
+* (CLI) New argument: `-v`/`--verbose`. Enables useful output messages without being in debugging mode. 
+
+### Changed
+* Errors are now logged instead of raising a `RuntimeWarning`
+
+### Development
+* Added unit tests for most of the functions
 
 
 ## 0.7.0 (01/27/2019)

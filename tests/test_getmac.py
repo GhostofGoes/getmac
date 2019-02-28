@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import io
 import sys
-import warnings
 from os import path
 
 import pytest
@@ -29,18 +30,18 @@ def get_sample():
 #     getmac.getmac.WSL = False
 #     getmac.getmac.LINUX = True
 #     # mocker.patch
-#
 #     assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
 
 
 # def test_linux_ip_link(mocker, get_sample):
 #     # content = get_sample('ip_link_list.out')
 #     assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
-#
-#
+
+
 # def test_osx_ifconfig(mocker, get_sample):
 #     # content = get_sample(path.join('OSX', 'ifconfig.out'))
 #     pass
+
 
 def test_get_mac_address_localhost():
     host_res = get_mac_address(hostname='localhost')
@@ -53,14 +54,7 @@ def test_get_mac_address_localhost():
     assert netreq_res == '00:00:00:00:00:00'
 
 
-def test_warn(mocker):
-    mocker.patch('warnings.warn')
-    getmac._warn("testing")
-    warnings.warn.assert_called_once_with("testing", RuntimeWarning)
-
-
 def test_search(get_sample):
-    # group_index = 0
     text = get_sample('ifconfig.out')
     regex = r'HWaddr ' + MAC_RE_COLON
     assert getmac._search(regex, text, 0) == '74:d4:35:e9:45:71'

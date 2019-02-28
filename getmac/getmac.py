@@ -22,9 +22,8 @@ Examples:
 
 """
 
-from __future__ import print_function
-
 import ctypes
+import logging
 import os
 import platform
 import re
@@ -41,18 +40,20 @@ except ImportError:  # Python 2
     DEVNULL = open(os.devnull, 'wb')  # type: ignore
 
 __version__ = '0.7.0'
+PY2 = sys.version_info[0] == 2
+
+# Configurable settings
 DEBUG = 0
 PORT = 55555
 
-PY2 = sys.version_info[0] == 2
+# Platform identifiers
 _SYST = platform.system()
 WINDOWS = False
 OSX = False
 LINUX = False
 BSD = False
 POSIX = False
-WSL = False
-
+WSL = False  # Windows Subsystem for Linux (WSL)
 if _SYST == 'Linux':
     if 'Microsoft' in platform.version():
         WSL = True
@@ -74,6 +75,7 @@ if not WINDOWS:
 ENV = dict(os.environ)
 ENV['LC_ALL'] = 'C'  # Ensure ASCII output so we parse correctly
 
+# Constants
 IP4 = 0
 IP6 = 1
 INTERFACE = 2
@@ -91,6 +93,10 @@ try:
         from typing import Optional
 except ImportError:
     pass
+
+# Configure logging
+log = logging.getLogger('getmac')
+log.addHandler(logging.NullHandler())
 
 
 def get_mac_address(
@@ -139,19 +145,18 @@ def get_mac_address(
                 s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
                 s.sendto(b'', (ip6, PORT))
         except Exception:
+            log.error("Failed to send ARP table population packet")
             if DEBUG:
-                print("ERROR: Failed to send ARP table population packet")
-            if DEBUG >= 2:
-                traceback.print_exc()
+                log.debug(traceback.format_exc())
 
     # Setup the address hunt based on the arguments specified
     if ip6:
         if not socket.has_ipv6:
-            _warn("Cannot get the MAC address of a IPv6 host: "
-                  "IPv6 is not supported on this system")
+            log.error("Cannot get the MAC address of a IPv6 host: "
+                      "IPv6 is not supported on this system")
             return None
         elif ':' not in ip6:
-            _warn("Invalid IPv6 address: %s" % ip6)
+            log.error("Invalid IPv6 address: %s", ip6)
             return None
         to_find = ip6
         typ = IP6
@@ -176,8 +181,7 @@ def get_mac_address(
                     to_find = 'en0'
 
     mac = _hunt_for_mac(to_find, typ, network_request)
-    if DEBUG:
-        print("Raw MAC found: %s" % mac)
+    log.debug("Raw MAC found: %s", mac)
 
     # Check and format the result to be lowercase, colon-separated
     if mac is not None:
@@ -189,15 +193,13 @@ def get_mac_address(
 
         # Fix cases where there are no colons
         if ':' not in mac and len(mac) == 12:
-            if DEBUG:
-                print("Adding colons to MAC %s" % mac)
+            log.debug("Adding colons to MAC %s", mac)
             mac = ':'.join(mac[i:i + 2] for i in range(0, len(mac), 2))
 
         # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
         elif len(mac) < 17:
-            if DEBUG:
-                print("Length of MAC %s is %d, padding single-character "
-                      "octets with zeros" % (mac, len(mac)))
+            log.debug("Length of MAC %s is %d, padding single-character "
+                      "octets with zeros", mac, len(mac))
             parts = mac.split(':')
             new_mac = []
             for part in parts:
@@ -209,16 +211,9 @@ def get_mac_address(
 
         # MAC address should ALWAYS be 17 characters before being returned
         if len(mac) != 17:
-            if DEBUG:
-                print("ERROR: MAC %s is not 17 characters long!" % mac)
+            log.warning("MAC address %s is not 17 characters long!", mac)
             mac = None
     return mac
-
-
-def _warn(text):
-    # type: (str) -> None
-    import warnings
-    warnings.warn(text, RuntimeWarning)
 
 
 def _search(regex, text, group_index=0):
@@ -240,7 +235,7 @@ def _popen(command, args):
     else:
         executable = command
     if DEBUG >= 3:
-        print("Running: '%s %s'" % (executable, args))
+        log.debug("Running: '%s %s'", executable, args)
     return _call_proc(executable, args)
 
 
@@ -355,8 +350,7 @@ def _read_file(filepath):
         with open(filepath) as f:
             return f.read()
     except (OSError, IOError):  # This is IOError on Python 2.7
-        if DEBUG:
-            print("Could not find file: '%s'" % filepath)
+        log.debug("Could not find file: '%s'", filepath)
         return None
 
 
@@ -370,10 +364,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     lambda: Function to call
     """
     if to_find is None:
-        if DEBUG:
-            print("_hunt_for_mac() failed: to_find is None")
+        log.warning("_hunt_for_mac() failed: to_find is None")
         return None
-
     if not PY2 and isinstance(to_find, bytes):
         to_find = str(to_find, 'utf-8')
 
@@ -474,7 +466,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             _uuid_ip,
         ]
     else:
-        _warn("ERROR: reached end of _hunt_for_mac() if-else chain!")
+        log.critical("Reached end of _hunt_for_mac() if-else chain!")
         return None
     return _try_methods(methods, to_find)
 
@@ -492,25 +484,25 @@ def _try_methods(methods, to_find=None):
             if isinstance(m, tuple):
                 for arg in m[3]:  # list(str)
                     if DEBUG:
-                        print("Trying: '%s %s'" % (m[2], arg))
+                        log.debug("Trying: '%s %s'", m[2], arg)
                     # Arguments: (regex, _popen(command, arg), regex index)
                     found = _search(m[0], _popen(m[2], arg), m[1])
                     if DEBUG:
-                        print("Result: %s\n" % found)
+                        log.debug("Result: %s\n", found)
             elif callable(m):
                 if DEBUG:
-                    print("Trying: '%s' (to_find: '%s')" % (m.__name__, str(to_find)))
+                    log.debug("Trying: '%s' (to_find: '%s')", m.__name__, str(to_find))
                 if to_find is not None:
                     found = m(to_find)
                 else:
                     found = m()
                 if DEBUG:
-                    print("Result: %s\n" % found)
+                    log.debug("Result: %s\n", found)
         except Exception as ex:
             if DEBUG:
-                print("Exception: %s" % str(ex))
+                log.debug("Exception: %s", str(ex))
             if DEBUG >= 2:
-                traceback.print_exc()
+                log.debug(traceback.format_exc())
             continue
         if found:
             break

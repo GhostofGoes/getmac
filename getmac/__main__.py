@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import argparse
 import sys
+import logging
 
 from . import getmac
 
@@ -16,6 +17,10 @@ def main():
     parser.add_argument(
         '--version', action='version',
         version='getmac %s' % getmac.__version__)
+    parser.add_argument(
+        '-v', '--verbose', action='store_true',
+        help='Enable output messages'
+    )
     parser.add_argument(
         '-d', '--debug', action='count',
         help='Enable debugging output. Add characters to '
@@ -40,6 +45,10 @@ def main():
         help='Hostname of a remote host')
 
     args = parser.parse_args()
+
+    if args.debug or args.verbose:
+        logging.basicConfig(format='%(levelname)-8s %(message)s',
+                            level=logging.DEBUG, stream=sys.stderr)
     if args.debug:
         getmac.DEBUG = args.debug
 

@@ -7,7 +7,7 @@
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 
-It provides a platform-independant interface to get the MAC addresses of:
+It provides a platform-independent interface to get the MAC addresses of:
 
 * System network interfaces (by interface name)
 * Remote hosts on the local network (by IPv4/IPv6 address or hostname)
@@ -119,6 +119,13 @@ port, 55555 by default. This can be changed by setting `getmac.PORT`
 to the desired integer value. Additionally, on Windows, this will
 send a UDP packet to 1.1.1.1:53 to attempt to determine the default interface.
 
+## Configuration
+* `logging.getLogger('getmac')`: Runtime messages and errors are recorded to the `getmac` logger using the `logging` 
+module. They can be configured by using `logging.basicConfig()` or adding handlers to the `getmac` logger.
+* `getmac.getmac.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get.
+* `getmac.getmac.PORT`: Controls what port is used to populate the ARP/NDP table 
+(see the documentation of the `network_request` argument in `get_mac_address()` for details)
+
 ## Features
 * Pure-Python (no compiled C-extensions required!)
 * Python 2.7 and 3.4+
@@ -156,19 +163,13 @@ open a GitHub issue or shoot me an email, I'd love to be wrong about this.
 does not have any functionality when the `interface` argument is
 specified, and can be safely set if using in a script.
 * The physical transport is assumed to be Ethernet (802.3). Others, such as
-Wi-Fi (802.11), are currently not tested or considored. I plan to
+Wi-Fi (802.11), are currently not tested or considered. I plan to
 address this in the future, and am definitely open to pull requests
 or issues related to this, including error reports.
 * Exceptions will be handled silently and returned as a None.
     If you run into problems, you can set DEBUG to true and get more
     information about what's happening. If you're still having issues,
     please create an issue on GitHub and include the output with DEBUG enabled.
-* Messages are output using the `warnings` module, and `print()` if
-`getmac.DEBUG` enabled (any value greater than 0).
-If you are using logging, they can be captured using logging.captureWarnings().
-Otherwise, they can be suppressed using warnings.filterwarnings("ignore").
-https://docs.python.org/3/library/warnings.html
-
 
 ## Commands and techniques by platform
 * Windows
