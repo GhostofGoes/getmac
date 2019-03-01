@@ -168,7 +168,9 @@ def get_mac_address(
             elif WINDOWS:
                 to_find = 'Ethernet'
             elif OPENBSD:
-                to_find = 'em0'
+                to_find = _get_default_iface_openbsd()  # type: ignore
+                if not to_find:
+                    to_find = 'em0'
             else:
                 to_find = _hunt_linux_default_iface()  # type: ignore
                 if not to_find:
@@ -526,6 +528,15 @@ def _hunt_linux_default_iface():
         _get_default_iface_linux,
         lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
         lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
+    ]
+    return _try_methods(methods)
+
+
+def _get_default_iface_openbsd():
+    # type: () -> Optional[str]
+    methods = [
+        lambda: _popen('route', '-nq show -inet -gateway -priority 1')
+        .partition('127.0.0.1')[0].strip().rpartition(' ')[2],
     ]
     return _try_methods(methods)
 
