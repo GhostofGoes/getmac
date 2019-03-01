@@ -29,7 +29,7 @@ configured using `logging.getLogger('getmac')`.
 ### Removed
 * Dropped support for Python 2.6
 * Removed the usage of third-party packages (`netifaces`, `psutil`, `scapy`, and `arpreq`).
-This should improve the performance of lookups of non-existant interfaces
+This should improve the performance of lookups of non-existent interfaces
 or hosts, since feature was punishing that path without providing much value.
 If you want to use these packages directly, I have a guide on how to do so on a
 [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).

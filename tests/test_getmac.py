@@ -44,14 +44,10 @@ def get_sample():
 
 
 def test_get_mac_address_localhost():
-    host_res = get_mac_address(hostname='localhost')
-    assert host_res == '00:00:00:00:00:00'
-
-    ip_res = get_mac_address(ip='127.0.0.1')
-    assert ip_res == '00:00:00:00:00:00'
-
-    netreq_res = get_mac_address(hostname='localhost', network_request=False)
-    assert netreq_res == '00:00:00:00:00:00'
+    assert get_mac_address(hostname='localhost') == '00:00:00:00:00:00'
+    assert get_mac_address(ip='127.0.0.1') == '00:00:00:00:00:00'
+    assert get_mac_address(
+        hostname='localhost', network_request=False) == '00:00:00:00:00:00'
 
 
 def test_search(get_sample):

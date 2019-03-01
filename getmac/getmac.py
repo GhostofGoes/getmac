@@ -48,21 +48,16 @@ PORT = 55555
 
 # Platform identifiers
 _SYST = platform.system()
-WINDOWS = False
-OSX = False
-LINUX = False
-BSD = False
-POSIX = False
+DARWIN = _SYST == 'Darwin'
+OPENBSD = _SYST == 'OpenBSD'
+WINDOWS = _SYST == 'Windows'
 WSL = False  # Windows Subsystem for Linux (WSL)
+LINUX = False
 if _SYST == 'Linux':
     if 'Microsoft' in platform.version():
         WSL = True
     else:
         LINUX = True
-elif _SYST == 'Windows':
-    WINDOWS = True
-elif _SYST == 'Darwin':
-    OSX = True
 elif _SYST == 'Java':
     WINDOWS = os.sep == '\\'
 
@@ -403,7 +398,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
     # Non-Windows - Network Interface
     elif type_of_thing == INTERFACE:
-        if OSX:
+        if DARWIN:
             methods = [
                 # ifconfig for OSX
                 (r'ether ' + MAC_RE_COLON,
