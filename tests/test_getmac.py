@@ -63,11 +63,11 @@ def test_popen(mocker):
     m.assert_called_once_with('TESTCMD', 'ARGS')
 
 
-def test_call_proc_windows(mocker):
+def test_call_proc(mocker):
     mocker.patch('getmac.getmac.DEVNULL', 'DEVNULL')
     mocker.patch('getmac.getmac.ENV', 'ENV')
-    mocker.patch('getmac.getmac.WINDOWS', True)
 
+    mocker.patch('getmac.getmac.WINDOWS', True)
     m = mocker.patch('getmac.getmac.check_output', return_value='WINSUCCESS')
     assert getmac._call_proc('CMD', 'arg') == 'WINSUCCESS'
     m.assert_called_once_with('CMD' + ' ' + 'arg', stderr='DEVNULL', env='ENV')

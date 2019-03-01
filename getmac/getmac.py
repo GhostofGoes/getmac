@@ -156,18 +156,17 @@ def get_mac_address(
     elif ip:
         to_find = ip
         typ = IP4
-    else:
+    else:  # Default to searching for interface
         typ = INTERFACE
         if interface:
             to_find = interface
         else:
             # Default to finding MAC of the interface with the default route
-            if WINDOWS:
-                if network_request:
-                    to_find = _fetch_ip_using_dns()
-                    typ = IP4
-                else:
-                    to_find = 'Ethernet'
+            if WINDOWS and network_request:
+                to_find = _fetch_ip_using_dns()
+                typ = IP4
+            elif WINDOWS:
+                to_find = 'Ethernet'
             else:
                 to_find = _hunt_linux_default_iface()  # type: ignore
                 if not to_find:
@@ -239,6 +238,8 @@ def _call_proc(executable, args):
     else:
         cmd = [executable] + shlex.split(args)  # type: ignore
     output = check_output(cmd, stderr=DEVNULL, env=ENV)
+    if DEBUG >= 4:
+        log.debug("Output from '%s' command: %s", executable, str(output))
     if not PY2 and isinstance(output, bytes):
         return str(output, 'utf-8')
     else:
@@ -362,7 +363,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     if not PY2 and isinstance(to_find, bytes):
         to_find = str(to_find, 'utf-8')
 
-    # Windows - Network Interface
     if WINDOWS and type_of_thing == INTERFACE:
         methods = [
             # getmac - Connection Name
@@ -381,8 +381,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             lambda x: _popen('wmic.exe', 'nic where "NetConnectionID = \'%s\'" get '
                                          'MACAddress /value' % x).strip().partition('=')[2],
         ]
-
-    # Windows - Remote Host
     elif (WINDOWS or WSL) and type_of_thing in [IP4, IP6, HOSTNAME]:
         methods = [
             # arp -a - Parsing result with a regex
@@ -393,52 +391,46 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         # Insert it *after* arp.exe since that's probably faster.
         if net_ok and type_of_thing != IP6 and not WSL:
             methods.insert(1, _windows_ctypes_host)
+    elif DARWIN and type_of_thing == INTERFACE:
+        methods = [
+            # ifconfig for OSX
+            (r'ether ' + MAC_RE_COLON,
+             0, 'ifconfig', [to_find]),
 
-    # Non-Windows - Network Interface
+            # Alternative match for ifconfig if it fails
+            (to_find + r'.*(ether) ' + MAC_RE_COLON,
+             1, 'ifconfig', ['']),
+
+            # networksetup
+            (MAC_RE_COLON,
+             0, 'networksetup', ['-getmacaddress %s' % to_find]),
+        ]
     elif type_of_thing == INTERFACE:
-        if DARWIN:
-            methods = [
-                # ifconfig for OSX
-                (r'ether ' + MAC_RE_COLON,
-                 0, 'ifconfig', [to_find]),
+        methods = [
+            _read_sys_iface_file,
+            _fcntl_iface,
 
-                # Alternative match for ifconfig if it fails
-                (to_find + r'.*(ether) ' + MAC_RE_COLON,
-                 1, 'ifconfig', ['']),
+            # Fast ifconfig
+            (r'HWaddr ' + MAC_RE_COLON,
+             0, 'ifconfig', [to_find]),
 
-                # networksetup
-                (MAC_RE_COLON,
-                 0, 'networksetup', ['-getmacaddress %s' % to_find]),
-            ]
-        else:
-            methods = [
-                _read_sys_iface_file,
+            # ip link (Don't use 'list' due to SELinux [Android 24+])
+            (to_find + r'.*\n.*link/ether ' + MAC_RE_COLON,
+             0, 'ip', ['link %s' % to_find, 'link']),
 
-                _fcntl_iface,
+            # netstat
+            (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
+             1, 'netstat', ['-iae']),
 
-                # Fast ifconfig
-                (r'HWaddr ' + MAC_RE_COLON,
-                 0, 'ifconfig', [to_find]),
+            # More variations of ifconfig
+            (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
+             1, 'ifconfig', ['', '-a', '-v']),
 
-                # ip link (Don't use 'list' due to SELinux [Android 24+])
-                (to_find + r'.*\n.*link/ether ' + MAC_RE_COLON,
-                 0, 'ip', ['link %s' % to_find, 'link']),
-
-                # netstat
-                (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
-                 1, 'netstat', ['-iae']),
-
-                # More variations of ifconfig
-                (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
-                 1, 'ifconfig', ['', '-a', '-v']),
-
-                # Tru64 ('-av')
-                (to_find + r'.*(Ether) ' + MAC_RE_COLON,
-                 1, 'ifconfig', ['-av']),
-                _uuid_lanscan_iface,
-            ]
-
-    # Non-Windows - Remote Host
+            # Tru64 ('-av')
+            (to_find + r'.*(Ether) ' + MAC_RE_COLON,
+             1, 'ifconfig', ['-av']),
+            _uuid_lanscan_iface,
+        ]
     elif type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
         methods = [
@@ -455,7 +447,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             # Darwin (OSX) oddness
             (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_DARWIN,
              0, 'arp', [to_find, '-a', '-a %s' % to_find]),
-
             _uuid_ip,
         ]
     else:
