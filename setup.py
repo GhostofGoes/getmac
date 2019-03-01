@@ -23,8 +23,7 @@ setup(
     author='Christopher Goes',
     author_email='ghostofgoes@gmail.com',
     description='Get MAC addresses of remote hosts and local interfaces',
-    long_description=long_description,  # This is what you see on PyPI page
-    # PEP 566, PyPI Warehouse, setuptools>=38.6.0 make markdown possible
+    long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/GhostofGoes/getmac',
     project_urls={
@@ -39,19 +38,18 @@ setup(
     ],
     packages=['getmac'],
     zip_safe=True,
-    entry_points={  # These enable commandline usage of the tool
+    entry_points={
         'console_scripts': ['getmac2 = getmac.__main__:main']
     } if sys.version_info[:2] <= (2, 7) else {
         'console_scripts': ['getmac = getmac.__main__:main']
     },
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     keywords=[
-        'getmac', 'get-mac', 'macaddress', 'mac-address', 'mac', 'tool',
-        'address', 'media', 'access', 'control', 'ethernet', 'mac-48',
-        'networking', 'network', 'networks', 'layer2', 'layer-2', 'osi',
-        'ieee', '802', 'hardware-address', 'script', 'python', 'python3'
+        'getmac', 'get-mac', 'macaddress', 'mac-address', 'mac'
+        'ethernet', 'mac-48', 'networking', 'network',
+        'networking', 'layer2', 'layer-2', '802.3'
     ],
-    classifiers=[  # Used by PyPI to classify the project and make it searchable
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
         'License :: OSI Approved :: MIT License',
