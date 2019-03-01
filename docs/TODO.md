@@ -1,4 +1,9 @@
 
+# Etc
+* Split `_hunt_for_mac()` into Remote and Interface
+* Functions per-platform?
+* Darwin hostnames? Does it have arp file? (Do less work)
+
 # Bugs or potential issues
 * [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
 * [ ] Are there ever cases where loopback != FF:FF:FF:FF:FF:FF?
@@ -19,7 +24,7 @@ focus the most effort on the Popen calls.
 * [ ] IPv6: `netsh int ipv6 show neigh`
 * [ ] IPv4: `netsh int ipv4 show neigh`
 * [ ] `arping`
-* [ ] Windows API
+
 
 ### Interface MACs
 * [ ] `netsh int ipv6`
@@ -39,9 +44,9 @@ interface as the default route.
 
 
 ## POSIX
-* [ ] `arping`: investigate for remote macs
-* [ ] `fcntl`: IPv6?
-* [ ] `ip addr`
+* [ ] `arping` (command): investigate for remote macs
+* [ ] `fcntl` (library): IPv6?
+* [ ] `ip addr` (command)
 
 
 ## OSX (Darwin)
@@ -78,7 +83,7 @@ interface as the default route.
 * [ ] Improve performance (spend a lot of time on performance tuning with the regexes)
 
 ## Misc.
-* [ ] Use logging instead of print statements for debugging
+* [x] Use logging instead of print statements for debugging
 * [ ] Add ability to match user-provided arguments case-insensitively
 * [ ] Add ability to get the mac address of a socket's interface
 * [ ] Add support for Unix and Windows interface indices as a separate
@@ -91,7 +96,7 @@ interface as the default route.
 
 
 # Tests
-* [ ] Mocked unit tests for core methods
+* [x] Mocked unit tests for core methods
 * [ ] Run unit tests on all of the samples I've collected thus far
 * [ ] Need samples from many more platforms to build effective tests
 * [x] Add MyPy checking to required tests
@@ -113,10 +118,9 @@ once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/m
 * [ ] Create a script to collect samples for all relevant commands on a platform
 and save output into the appropriately named sub-directory in `samples/`.
 * [ ] Vagrant images
-    * [ ] Ubuntu
     * [ ] Fedora
-    * [ ] FreeBSD
-    * [ ] OpenBSD
+    * [x] FreeBSD
+    * [x] OpenBSD
     * [ ] Android (?)
     * [ ] Windows 7
     * [ ] Windows 10
