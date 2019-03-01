@@ -19,8 +19,7 @@ def main():
         version='getmac %s' % getmac.__version__)
     parser.add_argument(
         '-v', '--verbose', action='store_true',
-        help='Enable output messages'
-    )
+        help='Enable output messages')
     parser.add_argument(
         '-d', '--debug', action='count',
         help='Enable debugging output. Add characters to '
