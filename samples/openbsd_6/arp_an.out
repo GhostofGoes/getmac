@@ -1,0 +1,4 @@
+Host                                 Ethernet Address    Netif Expire    Flags
+10.0.2.2                             52:54:00:12:35:02     em0 2m53s
+10.0.2.3                             52:54:00:12:35:03     em0 expired
+10.0.2.15                            08:00:27:18:64:56     em0 permanent l

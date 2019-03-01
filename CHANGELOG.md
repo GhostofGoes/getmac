@@ -8,6 +8,7 @@
 ## UNRELEASED (xx/xx/2019)
 
 ### Added
+* OpenBSD support
 * Logging is used for output messages. The logger is named `getmac`, and can be 
 configured using `logging.getLogger('getmac')`.
 * Include tests in the source distribution

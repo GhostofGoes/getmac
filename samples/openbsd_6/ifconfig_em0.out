@@ -1,0 +1,7 @@
+em0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+        lladdr 08:00:27:18:64:56
+        index 1 priority 0 llprio 3
+        groups: egress
+        media: Ethernet autoselect (1000baseT full-duplex)
+        status: active
+        inet 10.0.2.15 netmask 0xffffff00 broadcast 10.0.2.255
