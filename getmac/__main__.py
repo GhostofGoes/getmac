@@ -58,7 +58,7 @@ def main():
         network_request=not args.NO_NET)
 
     if mac is not None:
-        print(mac)
+        print(mac)  # noqa: T001
         sys.exit(0)  # Exit success!
     else:
         sys.exit(1)  # Exit with error since it failed to find a MAC
