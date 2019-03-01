@@ -17,6 +17,9 @@ configured using `logging.getLogger('getmac')`.
 ### Changed
 * Errors are now logged instead of raising a `RuntimeWarning`
 
+### Changed
+* Dropped support for Jython
+
 ### Development
 * Added unit tests for most of the functions
 

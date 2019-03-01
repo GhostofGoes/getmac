@@ -134,20 +134,21 @@ module. They can be configured by using `logging.basicConfig()` or adding handle
 * Python 2.7 and 3.4+
 * Lightweight, with no dependencies and a small package size
 * Can be dropped into a project as a standalone .py file
-* Supports most interpreters: CPython, pypy, pypy3, IronPython, and Jython
+* Supports most interpreters: CPython, pypy, pypy3, and IronPython
 * Provides a simple command line tool (when installed as a package)
 * MIT licensed!
 
 ## Legacy Python versions
-If you are running a old Python (2.6/3.3 and older), then you can
- install an older version of `getmac` that supported that version.
- You can get the wheels in the
+If you are running a old Python (2.6/3.3 and older) or interpreter, then you
+can install an older version of `getmac` that supported that version.
+ The wheels are available in the
  [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or
  from PyPI with a current version of `pip` and some special arguments.
 * Python 2.5: get-mac 0.5.0
 * Python 2.6: getmac 0.6.0
 * Python 3.2: get-mac 0.3.0
 * Python 3.3: get-mac 0.3.0
+* Jython 2.7: get-mac 0.7.0
 
 NOTE: these versions do not have many of the performance improvements,
 platform support, and bug fixes that came with later releases.

@@ -58,8 +58,6 @@ if _SYST == 'Linux':
         WSL = True
     else:
         LINUX = True
-elif _SYST == 'Java':
-    WINDOWS = os.sep == '\\'
 
 PATH = os.environ.get('PATH', os.defpath).split(os.pathsep)
 if not WINDOWS:
