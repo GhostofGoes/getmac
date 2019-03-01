@@ -167,6 +167,8 @@ def get_mac_address(
                 typ = IP4
             elif WINDOWS:
                 to_find = 'Ethernet'
+            elif OPENBSD:
+                to_find = 'em0'
             else:
                 to_find = _hunt_linux_default_iface()  # type: ignore
                 if not to_find:
@@ -393,7 +395,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             methods.insert(1, _windows_ctypes_host)
     elif DARWIN and type_of_thing == INTERFACE:
         methods = [
-            # ifconfig for OSX
             (r'ether ' + MAC_RE_COLON,
              0, 'ifconfig', [to_find]),
 
@@ -401,9 +402,18 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (to_find + r'.*(ether) ' + MAC_RE_COLON,
              1, 'ifconfig', ['']),
 
-            # networksetup
             (MAC_RE_COLON,
              0, 'networksetup', ['-getmacaddress %s' % to_find]),
+        ]
+    elif OPENBSD and type_of_thing == INTERFACE:
+        methods = [
+            (r'lladdr ' + MAC_RE_COLON,
+             0, 'ifconfig', [to_find]),
+        ]
+    elif OPENBSD and type_of_thing in [IP4, IP6, HOSTNAME]:
+        methods = [
+            (re.escape(to_find) + r'[ ]+' + MAC_RE_COLON,
+             0, 'arp', ['-an']),
         ]
     elif type_of_thing == INTERFACE:
         methods = [
@@ -435,16 +445,13 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         esc = re.escape(to_find)
         methods = [
             _read_arp_file,
-
             lambda x: _popen('ip', 'neighbor show %s' % x)
             .partition(x)[2].partition('lladdr')[2].strip().split()[0],
 
-            # -a: BSD-style format
-            # -n: shows numerical addresses
             (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_COLON,
              0, 'arp', [to_find, '-an', '-an %s' % to_find]),
 
-            # Darwin (OSX) oddness
+            # Darwin oddness
             (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_DARWIN,
              0, 'arp', [to_find, '-a', '-a %s' % to_find]),
             _uuid_ip,

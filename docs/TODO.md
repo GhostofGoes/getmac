@@ -62,7 +62,7 @@ interface as the default route.
 * [x] Alpine Linux (test + add to tests)
 * [ ] Raspberry Pi (test)
 * [ ] FreeBSD
-* [ ] OpenBSD
+* [x] OpenBSD
 * [ ] Android
 * [ ] Solaris
 
