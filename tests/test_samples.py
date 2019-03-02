@@ -48,6 +48,7 @@ def test_ubuntu_1804_interface(mocker, get_sample):
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '00:0c:29:b5:72:37' == getmac.get_mac_address(interface='ens33')
 
+    # TODO: mock return value so we're hitting the right regex
     content = get_sample('ubuntu_18.04/ip_link.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '00:0c:29:b5:72:37' == getmac.get_mac_address(interface='ens33')
@@ -68,6 +69,7 @@ def test_ubuntu_1804_remote(mocker, get_sample):
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '00:50:56:f1:4c:50' == getmac.get_mac_address(ip='192.168.16.2')
 
+    # TODO: mock return value so we're hitting the right regex
     content = get_sample('ubuntu_18.04/arp_-an.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '00:50:56:f1:4c:50' == getmac.get_mac_address(ip='192.168.16.2')
@@ -80,6 +82,7 @@ def test_ubuntu_1804_remote(mocker, get_sample):
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '00:50:56:f1:4c:50' == getmac.get_mac_address(ip='192.168.16.2')
 
+    # TODO: mock return value so we're hitting the right regex
     content = get_sample('ubuntu_18.04/ip_neighbor_show.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '00:50:56:f1:4c:50' == getmac.get_mac_address(ip='192.168.16.2')
@@ -125,6 +128,36 @@ def test_darwin_remote(mocker, get_sample):
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '58:6d:8f:07:c9:94' == getmac.get_mac_address(ip='192.168.1.1')
 
+    # TODO: mock return value so we're hitting the right regex
     content = get_sample('OSX/arp_-an.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '58:6d:8f:07:c9:94' == getmac.get_mac_address(ip='192.168.1.1')
+
+
+def test_openbsd_interface(mocker, get_sample):
+    mocker.patch('getmac.getmac.WINDOWS', False)
+    mocker.patch('getmac.getmac.DARWIN', False)
+    mocker.patch('getmac.getmac.OPENBSD', True)
+    mocker.patch('getmac.getmac.LINUX', False)
+
+    content = get_sample('openbsd_6/ifconfig.out')
+    mocker.patch('getmac.getmac._call_proc', return_value=content)
+    assert '08:00:27:18:64:56' == getmac.get_mac_address(interface='em0')
+
+    # TODO: mock return value so we're hitting the right regex
+    content = get_sample('openbsd_6/ifconfig_em0.out')
+    mocker.patch('getmac.getmac._call_proc', return_value=content)
+    assert '08:00:27:18:64:56' == getmac.get_mac_address(interface='em0')
+
+
+def test_openbsd_remote(mocker, get_sample):
+    mocker.patch('getmac.getmac.WINDOWS', False)
+    mocker.patch('getmac.getmac.DARWIN', False)
+    mocker.patch('getmac.getmac.OPENBSD', True)
+    mocker.patch('getmac.getmac.LINUX', False)
+
+    content = get_sample('openbsd_6/arp_an.out')
+    mocker.patch('getmac.getmac._call_proc', return_value=content)
+    assert '52:54:00:12:35:02' == getmac.get_mac_address(ip='10.0.2.2')
+    assert '52:54:00:12:35:03' == getmac.get_mac_address(ip='10.0.2.3')
+    assert '08:00:27:18:64:56' == getmac.get_mac_address(ip='10.0.2.15')
