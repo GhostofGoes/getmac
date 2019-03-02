@@ -283,10 +283,15 @@ def _windows_ctypes_host(host):
 def _fcntl_iface(iface):
     # type: (str) -> str
     import fcntl
+    if not PY2:
+        iface = iface.encode()
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 0x8927 = SIOCGIFADDR
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', iface[:15]))
-    return ':'.join(['%02x' % ord(char) for char in info[18:24]])
+    if PY2:
+        return ':'.join(['%02x' % ord(char) for char in info[18:24]])
+    else:
+        return ':'.join(['%02x' % ord(chr(char)) for char in info[18:24]])
 
 
 def _uuid_ip(ip):
