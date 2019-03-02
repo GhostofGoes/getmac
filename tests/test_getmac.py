@@ -23,14 +23,14 @@ def get_sample():
     return _get_sample
 
 
-# def test_linux_ifconfig(mocker, get_sample):
-#     # content = get_sample('ifconfig.out')
-#     getmac.getmac.WINDOWS = False
-#     getmac.getmac.OSX = False
-#     getmac.getmac.WSL = False
-#     getmac.getmac.LINUX = True
-#     # mocker.patch
-#     assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
+def test_linux_ifconfig(mocker, get_sample):
+    mocker.patch('getmac.getmac.WINDOWS', False)
+    mocker.patch('getmac.getmac.DARWIN', False)
+    mocker.patch('getmac.getmac.OPENBSD', False)
+    mocker.patch('getmac.getmac.LINUX', False)
+    content = get_sample('ifconfig.out')
+    mocker.patch('getmac.getmac._call_proc', return_value=content)
+    assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
 
 
 # def test_linux_ip_link(mocker, get_sample):
@@ -84,22 +84,33 @@ def test_windows_ctypes_host(mocker):
 
 
 def test_fcntl_iface(mocker):
-    pass
+    data = b'enp3s0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00t\xd45\xe9' \
+           b'Es\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    mocker.patch('fcntl.ioctl', return_value=data)
+    m = mocker.patch('socket.socket')
+    assert getmac._fcntl_iface('enp3s0') == '74:d4:35:e9:45:73'
+    m.assert_called_once()
 
 
 def test_uuid_ip(mocker):
-    pass
+    mocker.patch('uuid._arp_getnode', return_value=278094213753144)
+    assert getmac._uuid_ip('10.0.0.1') == 'FC:EC:DA:D3:29:38'
+    mocker.patch('uuid._arp_getnode', return_value=None)
+    assert getmac._uuid_ip('10.0.0.1') is None
+    assert getmac._uuid_ip('en0') is None
 
 
 def test_uuid_lanscan_iface(mocker):
     mocker.patch('uuid._find_mac', return_value=2482700837424)
     assert getmac._uuid_lanscan_iface('en1') == '02:42:0C:80:62:30'
     mocker.patch('uuid._find_mac', return_value=None)
+    assert getmac._uuid_lanscan_iface('10.0.0.1') is None
     assert getmac._uuid_lanscan_iface('en0') is None
 
 
 def test_uuid_convert():
     assert getmac._uuid_convert(2482700837424) == '02:42:0C:80:62:30'
+    assert getmac._uuid_convert(278094213753144) == 'FC:EC:DA:D3:29:38'
 
 
 def test_read_sys_iface_file(mocker):
@@ -143,6 +154,12 @@ def test_hunt_linux_default_iface(mocker, get_sample):
     data = get_sample('ubuntu_18.10/proc_net_route.txt')
     mocker.patch('getmac.getmac._read_file', return_value=data)
     assert getmac._hunt_linux_default_iface() == 'ens33'
+
+
+def test_get_default_iface_openbsd(mocker, get_sample):
+    data = get_sample('openbsd_6/route_nq_show_inet_gateway_priority_1.out')
+    mocker.patch('getmac.getmac._call_proc', return_value=data)
+    assert getmac._get_default_iface_openbsd() == 'em0'
 
 
 def test_fetch_ip_using_dns(mocker):
