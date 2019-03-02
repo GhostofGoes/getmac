@@ -1,47 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import io
 import sys
 import socket
-from os import path
-
-import pytest
 
 from getmac import get_mac_address, getmac
 
 PY2 = sys.version_info[0] == 2
 MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
 MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
-
-
-@pytest.fixture
-def get_sample():
-    def _get_sample(sample_path):
-        sdir = path.realpath(path.join(path.dirname(__file__), '..', 'samples'))
-        with io.open(path.join(sdir, sample_path), 'rt',
-                     newline='', encoding='utf-8') as f:
-            return f.read()
-    return _get_sample
-
-
-def test_linux_ifconfig(mocker, get_sample):
-    mocker.patch('getmac.getmac.WINDOWS', False)
-    mocker.patch('getmac.getmac.DARWIN', False)
-    mocker.patch('getmac.getmac.OPENBSD', False)
-    mocker.patch('getmac.getmac.LINUX', False)
-    content = get_sample('ifconfig.out')
-    mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
-
-
-# def test_linux_ip_link(mocker, get_sample):
-#     # content = get_sample('ip_link_list.out')
-#     assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
-
-
-# def test_osx_ifconfig(mocker, get_sample):
-#     # content = get_sample(path.join('OSX', 'ifconfig.out'))
-#     pass
 
 
 def test_get_mac_address_localhost():
