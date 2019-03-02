@@ -373,17 +373,18 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         to_find = str(to_find, 'utf-8')
 
     if WINDOWS and type_of_thing == INTERFACE:
+        esc = re.escape(to_find)
         methods = [
             # getmac - Connection Name
-            (r'\r\n' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
+            (r'\r\n' + esc + r'.*' + MAC_RE_DASH + r'.*\r\n',
              0, 'getmac.exe', ['/NH /V']),
 
             # ipconfig
-            (to_find + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+' + MAC_RE_DASH + r'\r\n',
+            (esc + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+' + MAC_RE_DASH + r'\r\n',
              0, 'ipconfig.exe', ['/all']),
 
             # getmac - Network Adapter (the human-readable name)
-            (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
+            (r'\r\n.*' + esc + r'.*' + MAC_RE_DASH + r'.*\r\n',
              0, 'getmac.exe', ['/NH /V']),
 
             # wmic - WMI command line utility
@@ -406,8 +407,8 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'ifconfig', [to_find]),
 
             # Alternative match for ifconfig if it fails
-            (to_find + r'.*(ether) ' + MAC_RE_COLON,
-             1, 'ifconfig', ['']),
+            (to_find + r'.*ether ' + MAC_RE_COLON,
+             0, 'ifconfig', ['']),
 
             (MAC_RE_COLON,
              0, 'networksetup', ['-getmacaddress %s' % to_find]),
@@ -423,29 +424,36 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'arp', ['-an']),
         ]
     elif type_of_thing == INTERFACE:
+        esc = re.escape(to_find)
         methods = [
             _read_sys_iface_file,
             _fcntl_iface,
+
+            # Fast modern Ubuntu ifconfig
+            (r'ether ' + MAC_RE_COLON,
+             0, 'ifconfig', [to_find]),
 
             # Fast ifconfig
             (r'HWaddr ' + MAC_RE_COLON,
              0, 'ifconfig', [to_find]),
 
             # ip link (Don't use 'list' due to SELinux [Android 24+])
-            (to_find + r'.*\n.*link/ether ' + MAC_RE_COLON,
+            (esc + r'.*\n.*link/ether ' + MAC_RE_COLON,
              0, 'ip', ['link %s' % to_find, 'link']),
 
             # netstat
-            (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
-             1, 'netstat', ['-iae']),
+            (esc + r'.*HWaddr ' + MAC_RE_COLON,
+             0, 'netstat', ['-iae']),
 
             # More variations of ifconfig
-            (to_find + r'.*(HWaddr) ' + MAC_RE_COLON,
-             1, 'ifconfig', ['', '-a', '-v']),
+            (esc + r'.*ether ' + MAC_RE_COLON,
+             0, 'ifconfig', ['']),
+            (esc + r'.*HWaddr ' + MAC_RE_COLON,
+             0, 'ifconfig', ['', '-a', '-v']),
 
             # Tru64 ('-av')
-            (to_find + r'.*(Ether) ' + MAC_RE_COLON,
-             1, 'ifconfig', ['-av']),
+            (esc + r'.*Ether ' + MAC_RE_COLON,
+             0, 'ifconfig', ['-av']),
             _uuid_lanscan_iface,
         ]
     elif type_of_thing in [IP4, IP6, HOSTNAME]:
