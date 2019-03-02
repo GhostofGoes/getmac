@@ -2,6 +2,7 @@
 
 import io
 import sys
+import socket
 from os import path
 
 import pytest
@@ -78,18 +79,13 @@ def test_call_proc(mocker):
     m.assert_called_once_with(['CMD', 'arg1', 'arg2'], stderr='DEVNULL', env='ENV')
 
 
-def test_windows_ctypes_host(mocker):
-    # mocker.patch.object(getmac, 'WINDOWS', True)
-    pass
-
-
 def test_fcntl_iface(mocker):
     data = b'enp3s0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00t\xd45\xe9' \
            b'Es\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
     mocker.patch('fcntl.ioctl', return_value=data)
     m = mocker.patch('socket.socket')
     assert getmac._fcntl_iface('enp3s0') == '74:d4:35:e9:45:73'
-    m.assert_called_once()
+    m.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
 
 
 def test_uuid_ip(mocker):
