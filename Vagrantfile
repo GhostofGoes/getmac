@@ -67,6 +67,7 @@ Vagrant.configure(2) do |config|
       vb.name = "getmac-FreeBSD-12"
     end
     freebsd.vm.synced_folder ".", "/home/vagrant/getmac"
+    freebsd.vm.provision "shell", path: "scripts/freebsd-provision.sh", privileged: false
   end
 
   # OpenSUSE 42
