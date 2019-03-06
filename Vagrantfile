@@ -54,6 +54,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "512"
       vb.name = "getmac-NetBSD-8"
     end
+    netbsd.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # FreeBSD 11 (version currently used by PFSense)
@@ -65,6 +66,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "512"
       vb.name = "getmac-FreeBSD-12"
     end
+    freebsd.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # OpenSUSE 42
@@ -76,6 +78,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "512"
       vb.name = "getmac-OpenSUSE-42"
     end
+    opensuse.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
 end

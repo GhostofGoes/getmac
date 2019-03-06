@@ -18,14 +18,15 @@ configured using `logging.getLogger('getmac')`.
 ### Changed
 * Errors are now logged instead of raising a `RuntimeWarning`
 * Improved Ubuntu support
-* Minor performance improvements
+* Performance improvements
 
-### Changed
+### Removed
 * Dropped support for Jython
 
 ### Development
-* Nearly complete unit test coverage (one untested function)
+* Significant increase in test coverage
 * Fixed the sample tests and migrated them to `pytest`
+
 
 ## 0.7.0 (01/27/2019)
 
