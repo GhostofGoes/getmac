@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import sys
 import socket
+import sys
 
 from getmac import get_mac_address, getmac
 

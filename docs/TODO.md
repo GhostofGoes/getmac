@@ -3,10 +3,12 @@
 * Split `_hunt_for_mac()` into Remote and Interface
 * Functions per-platform?
 * Darwin hostnames? Does it have arp file? (Do less work)
+* Refactor the default interface code. Combine the functions into 
+one, move the default fallback logic into the function.
 
 # Bugs or potential issues
 * [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
-* [ ] Are there ever cases where loopback != FF:FF:FF:FF:FF:FF?
+* [ ] Are there ever cases where loopback != `FF:FF:FF:FF:FF:FF`?
 * [ ] Remote host that is actually an interface should resolve to localhost MAC
 * [ ] Reduce the cost of failures. Currently, failures are penalized
 with a slow run since it tries every method before failing.
@@ -24,7 +26,6 @@ focus the most effort on the Popen calls.
 * [ ] IPv6: `netsh int ipv6 show neigh`
 * [ ] IPv4: `netsh int ipv4 show neigh`
 * [ ] `arping`
-
 
 ### Interface MACs
 * [ ] `netsh int ipv6`
@@ -63,6 +64,8 @@ interface as the default route.
 * [ ] Raspberry Pi (test)
 * [ ] FreeBSD
 * [x] OpenBSD
+* [ ] NetBSD
+* [ ] OpenSUSE
 * [ ] Android
 * [ ] Solaris
 
@@ -75,12 +78,7 @@ interface as the default route.
           to resolve a hostname to an IP address.
 
 ## Performance
-* [ ] Profiling
-    * [ ] CPU usage
-    * [ ] Memory usage
-    * [ ] Run time/load time
-* [ ] Cache results on regex-heavy functions (add a arg to disable this behavior)
-* [ ] Improve performance (spend a lot of time on performance tuning with the regexes)
+* [ ] Profiling: CPU usage, memory usage, run time/load time
 
 ## Misc.
 * [x] Use logging instead of print statements for debugging
@@ -89,16 +87,15 @@ interface as the default route.
 * [ ] Add support for Unix and Windows interface indices as a separate
       argument to `get_mac_address`. On Windows, we could use `wmic`,
       while on Unix and Python 3 we can use `socket.if_indextoname()`.
-* [ ] Ignore case on regular expressions? (Better matching possibly)
 * [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
-* [ ] Threading (spin out all attempts, plus make itself thread-friendly)
+* [ ] Threading (spin out attempts, make thread-friendly)
 * [ ] asyncio-friendly?
 
 
 # Tests
 * [x] Mocked unit tests for core methods
-* [ ] Run unit tests on all of the samples I've collected thus far
-* [ ] Need samples from many more platforms to build effective tests
+* [x] Run unit tests on all of the samples I've collected thus far
+* [x] Need samples from many more platforms to build effective tests
 * [x] Add MyPy checking to required tests
 * [ ] Add profiling to tests. If average of multiple runs goes
  above a certain threshold, the tests fail.

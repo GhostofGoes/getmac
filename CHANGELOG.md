@@ -8,12 +8,13 @@
 ## UNRELEASED (xx/xx/2019)
 
 ### Added
+* Logging is now used for output messages (logger: `getmac`)
 * OpenBSD support
 * Logging is used for output messages. The logger is named `getmac`, and can be 
 configured using `logging.getLogger('getmac')`.
 * Include tests in the source distribution
 * (CLI) Added aliases for `--no-network-requests`: `-N` and `--no-net`
-* (CLI) New argument: `-v`/`--verbose`. Enables useful output messages without being in debugging mode. 
+* (CLI) New argument: `-v`/`--verbose`
 
 ### Changed
 * Errors are now logged instead of raising a `RuntimeWarning`
