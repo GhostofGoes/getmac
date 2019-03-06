@@ -495,6 +495,8 @@ def _try_methods(methods, to_find=None):
                     found = _search(m[0], _popen(m[2], arg), m[1])
                     if DEBUG:
                         log.debug("Result: %s\n", found)
+                    if found:  # Skip remaining args AND remaining methods
+                        break
             elif callable(m):
                 if DEBUG:
                     log.debug("Trying: '%s' (to_find: '%s')", m.__name__, str(to_find))
@@ -510,7 +512,7 @@ def _try_methods(methods, to_find=None):
             if DEBUG >= 2:
                 log.debug(traceback.format_exc())
             continue
-        if found:
+        if found:  # Skip remaining methods
             break
     return found
 
