@@ -106,30 +106,6 @@ def test_read_file_not_exist():
     assert getmac._read_file('DOESNOTEXIST') is None
 
 
-def test_get_default_iface_linux(mocker, get_sample):
-    data = get_sample('ubuntu_18.10/proc_net_route.txt')
-    mocker.patch('getmac.getmac._read_file', return_value=data)
-    assert getmac._get_default_iface_linux() == 'ens33'
-
-
-def test_hunt_linux_default_iface(mocker, get_sample):
-    data = get_sample('ubuntu_18.10/proc_net_route.txt')
-    mocker.patch('getmac.getmac._read_file', return_value=data)
-    assert getmac._hunt_linux_default_iface() == 'ens33'
-
-
-def test_get_default_iface_openbsd(mocker, get_sample):
-    data = get_sample('openbsd_6/route_nq_show_inet_gateway_priority_1.out')
-    mocker.patch('getmac.getmac._call_proc', return_value=data)
-    assert getmac._get_default_iface_openbsd() == 'em0'
-
-
-def test_get_default_iface_freebsd(mocker, get_sample):
-    data = get_sample('freebsd11/netstat_r.out')
-    mocker.patch('getmac.getmac._call_proc', return_value=data)
-    assert getmac._get_default_iface_freebsd() == 'em0'
-
-
 def test_fetch_ip_using_dns(mocker):
     m = mocker.patch('socket.socket')
     m.return_value.getsockname.return_value = ('1.2.3.4', 51327)

@@ -35,6 +35,18 @@ def test_linux_ip_link_list(mocker, get_sample):
     assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
 
 
+def test_get_default_iface_linux(mocker, get_sample):
+    content = get_sample('ubuntu_18.10/proc_net_route.txt')
+    mocker.patch('getmac.getmac._read_file', return_value=content)
+    assert getmac._get_default_iface_linux() == 'ens33'
+
+
+def test_hunt_linux_default_iface(mocker, get_sample):
+    content = get_sample('ubuntu_18.10/proc_net_route.txt')
+    mocker.patch('getmac.getmac._read_file', return_value=content)
+    assert getmac._hunt_linux_default_iface() == 'ens33'
+
+
 def test_ubuntu_1804_interface(mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', False)
     mocker.patch('getmac.getmac.DARWIN', False)
@@ -155,7 +167,7 @@ def test_darwin_remote(mocker, get_sample):
 def test_openbsd_interface(mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', False)
     mocker.patch('getmac.getmac.DARWIN', False)
-    mocker.patch('getmac.getmac.BSD', False)
+    mocker.patch('getmac.getmac.BSD', True)
     mocker.patch('getmac.getmac.OPENBSD', True)
     mocker.patch('getmac.getmac.FREEBSD', False)
     mocker.patch('getmac.getmac.LINUX', False)
@@ -168,6 +180,15 @@ def test_openbsd_interface(mocker, get_sample):
     content = get_sample('openbsd_6/ifconfig_em0.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '08:00:27:18:64:56' == getmac.get_mac_address(interface='em0')
+    # Default route
+    mocker.patch('getmac.getmac._get_default_iface_openbsd', return_value='em0')
+    assert '08:00:27:18:64:56' == getmac.get_mac_address()
+
+
+def test_get_default_iface_openbsd(mocker, get_sample):
+    content = get_sample('openbsd_6/route_nq_show_inet_gateway_priority_1.out')
+    mocker.patch('getmac.getmac._call_proc', return_value=content)
+    assert getmac._get_default_iface_openbsd() == 'em0'
 
 
 def test_openbsd_remote(mocker, get_sample):
@@ -196,6 +217,15 @@ def test_freebsd_interface(mocker, get_sample):
     content = get_sample('freebsd11/ifconfig_em0.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     assert '08:00:27:33:37:26' == getmac.get_mac_address(interface='em0')
+    # Default route
+    mocker.patch('getmac.getmac._get_default_iface_freebsd', return_value='em0')
+    assert '08:00:27:33:37:26' == getmac.get_mac_address()
+
+
+def test_get_default_iface_freebsd(mocker, get_sample):
+    content = get_sample('freebsd11/netstat_r.out')
+    mocker.patch('getmac.getmac._call_proc', return_value=content)
+    assert getmac._get_default_iface_freebsd() == 'em0'
 
 
 def test_freebsd_remote(mocker, get_sample):
