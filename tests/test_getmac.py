@@ -124,6 +124,12 @@ def test_get_default_iface_openbsd(mocker, get_sample):
     assert getmac._get_default_iface_openbsd() == 'em0'
 
 
+def test_get_default_iface_freebsd(mocker, get_sample):
+    data = get_sample('freebsd11/netstat_r.out')
+    mocker.patch('getmac.getmac._call_proc', return_value=data)
+    assert getmac._get_default_iface_freebsd() == 'em0'
+
+
 def test_fetch_ip_using_dns(mocker):
     m = mocker.patch('socket.socket')
     m.return_value.getsockname.return_value = ('1.2.3.4', 51327)

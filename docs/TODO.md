@@ -62,7 +62,7 @@ interface as the default route.
 * [x] Docker (inside Docker containers)
 * [x] Alpine Linux (test + add to tests)
 * [ ] Raspberry Pi (test)
-* [ ] FreeBSD
+* [x] FreeBSD
 * [x] OpenBSD
 * [ ] NetBSD
 * [ ] OpenSUSE

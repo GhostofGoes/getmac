@@ -48,9 +48,11 @@ PORT = 55555
 
 # Platform identifiers
 _SYST = platform.system()
+WINDOWS = _SYST == 'Windows'
 DARWIN = _SYST == 'Darwin'
 OPENBSD = _SYST == 'OpenBSD'
-WINDOWS = _SYST == 'Windows'
+FREEBSD = _SYST == 'FreeBSD'
+BSD = OPENBSD or FREEBSD  # Not including Darwin for now
 WSL = False  # Windows Subsystem for Linux (WSL)
 LINUX = False
 if _SYST == 'Linux':
@@ -167,8 +169,11 @@ def get_mac_address(
                 typ = IP4
             elif WINDOWS:
                 to_find = 'Ethernet'
-            elif OPENBSD:
-                to_find = _get_default_iface_openbsd()  # type: ignore
+            elif BSD:
+                if OPENBSD:
+                    to_find = _get_default_iface_openbsd()  # type: ignore
+                else:
+                    to_find = _get_default_iface_freebsd()  # type: ignore
                 if not to_find:
                     to_find = 'em0'
             else:
@@ -401,7 +406,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         # Insert it *after* arp.exe since that's probably faster.
         if net_ok and type_of_thing != IP6 and not WSL:
             methods.insert(1, _windows_ctypes_host)
-    elif DARWIN and type_of_thing == INTERFACE:
+    elif (DARWIN or FREEBSD) and type_of_thing == INTERFACE:
         methods = [
             (r'ether ' + MAC_RE_COLON,
              0, 'ifconfig', [to_find]),
@@ -412,6 +417,11 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
             (MAC_RE_COLON,
              0, 'networksetup', ['-getmacaddress %s' % to_find]),
+        ]
+    elif FREEBSD and type_of_thing in [IP4, IP6, HOSTNAME]:
+        methods = [
+            (r'\(' + re.escape(to_find) + r'\)\s+at\s+' + MAC_RE_COLON,
+             0, 'arp', [to_find])
         ]
     elif OPENBSD and type_of_thing == INTERFACE:
         methods = [
@@ -556,6 +566,15 @@ def _get_default_iface_openbsd():
     return _try_methods(methods)
 
 
+def _get_default_iface_freebsd():
+    # type: () -> Optional[str]
+    methods = [
+        (r'default[ ]+\S+[ ]+\S+[ ]+(\S+)\n',
+         0, 'netstat', ['-r']),
+    ]
+    return _try_methods(methods)
+
+
 def _fetch_ip_using_dns():
     # type: () -> str
     """Determines the IP address of the default network interface.
@@ -567,5 +586,5 @@ def _fetch_ip_using_dns():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('1.1.1.1', 53))
     ip = s.getsockname()[0]
-    s.close()
+    s.close()  # NOTE: sockets don't have context manager in 2.7 :(
     return ip
