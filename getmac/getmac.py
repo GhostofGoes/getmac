@@ -39,6 +39,10 @@ try:  # Python 3
 except ImportError:  # Python 2
     DEVNULL = open(os.devnull, 'wb')  # type: ignore
 
+# Configure logging
+log = logging.getLogger('getmac')
+log.addHandler(logging.NullHandler())
+
 __version__ = '0.7.0'
 PY2 = sys.version_info[0] == 2
 
@@ -48,6 +52,12 @@ PORT = 55555
 
 # Platform identifiers
 _SYST = platform.system()
+if _SYST == 'Java':
+    try:
+        import java.lang
+        _SYST = str(java.lang.System.getProperty("os.name"))
+    except ImportError:
+        log.critical("Can't determine OS: couldn't import java.lang on Jython")
 WINDOWS = _SYST == 'Windows'
 DARWIN = _SYST == 'Darwin'
 OPENBSD = _SYST == 'OpenBSD'
@@ -88,10 +98,6 @@ try:
         from typing import Optional
 except ImportError:
     pass
-
-# Configure logging
-log = logging.getLogger('getmac')
-log.addHandler(logging.NullHandler())
 
 
 def get_mac_address(

@@ -21,7 +21,7 @@
 * Performance improvements
 
 ### Removed
-* Dropped support for Jython
+* TODO
 
 ### Development
 * Significant increase in test coverage

@@ -148,7 +148,6 @@ can install an older version of `getmac` that supported that version.
 * Python 2.6: getmac 0.6.0
 * Python 3.2: get-mac 0.3.0
 * Python 3.3: get-mac 0.3.0
-* Jython 2.7: get-mac 0.7.0
 
 NOTE: these versions do not have many of the performance improvements,
 platform support, and bug fixes that came with later releases.
