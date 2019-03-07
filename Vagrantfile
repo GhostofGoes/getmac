@@ -82,4 +82,17 @@ Vagrant.configure(2) do |config|
     opensuse.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
+  # Solaris 10
+  config.vm.define "solaris" do |solaris|
+    solaris.vm.box = "tnarik/solaris10-minimal"
+    solaris.vm.host_name = "getmac-solaris"
+    solaris.vm.provider "virtualbox" do |vb|
+      vb.gui = false
+      vb.memory = "512"
+      vb.name = "getmac-Solaris-10"
+    end
+    solaris.vm.synced_folder ".", "/home/vagrant/getmac"
+    solaris.vm.provision "shell", path: "scripts/solaris-provision.sh", privileged: false
+  end
+
 end
