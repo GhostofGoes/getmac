@@ -95,4 +95,16 @@ Vagrant.configure(2) do |config|
     solaris.vm.provision "shell", path: "scripts/solaris-provision.sh", privileged: false
   end
 
+  # Android
+  config.vm.define "android" do |android|
+    android.vm.box = "lgromb/androidx86-kk"
+    android.vm.host_name = "getmac-android"
+    android.vm.provider "virtualbox" do |vb|
+      vb.gui = true
+      vb.memory = "1024"
+      vb.name = "getmac-Android-KitKat"
+    end
+    android.vm.synced_folder ".", "/home/vagrant/getmac"
+  end
+
 end
