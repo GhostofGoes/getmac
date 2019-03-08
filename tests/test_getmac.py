@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import platform
 import socket
 import sys
+
+import pytest
 
 from getmac import get_mac_address, getmac
 
@@ -45,6 +48,8 @@ def test_call_proc(mocker):
     m.assert_called_once_with(['CMD', 'arg1', 'arg2'], stderr='DEVNULL', env='ENV')
 
 
+@pytest.mark.skipif(platform.system() != 'Linux',
+                    reason="Can't reliably mock fcntl on non-Linux platforms")
 def test_fcntl_iface(mocker):
     data = b'enp3s0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00t\xd45\xe9' \
            b'Es\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
