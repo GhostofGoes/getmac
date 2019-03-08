@@ -9,7 +9,7 @@ MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
 MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
 
 
-def test_linux_ifconfig(mocker, get_sample):
+def test_linux_ifconfig(benchmark, mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', False)
     mocker.patch('getmac.getmac.DARWIN', False)
     mocker.patch('getmac.getmac.BSD', False)
@@ -21,10 +21,11 @@ def test_linux_ifconfig(mocker, get_sample):
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     mocker.patch('getmac.getmac._read_sys_iface_file', return_value=None)
     mocker.patch('getmac.getmac._fcntl_iface', return_value=None)
-    assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
+    result = benchmark(getmac.get_mac_address, interface='eth0')
+    assert '74:d4:35:e9:45:71' == result
 
 
-def test_linux_ip_link_list(mocker, get_sample):
+def test_linux_ip_link_list(benchmark, mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', False)
     mocker.patch('getmac.getmac.DARWIN', False)
     mocker.patch('getmac.getmac.BSD', False)
@@ -36,22 +37,23 @@ def test_linux_ip_link_list(mocker, get_sample):
     mocker.patch('getmac.getmac._call_proc', return_value=content)
     mocker.patch('getmac.getmac._read_sys_iface_file', return_value=None)
     mocker.patch('getmac.getmac._fcntl_iface', return_value=None)
-    assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
+    result = benchmark(getmac.get_mac_address, interface='eth0')
+    assert '74:d4:35:e9:45:71' == result
 
 
-def test_get_default_iface_linux(mocker, get_sample):
+def test_get_default_iface_linux(benchmark, mocker, get_sample):
     content = get_sample('ubuntu_18.10/proc_net_route.txt')
     mocker.patch('getmac.getmac._read_file', return_value=content)
-    assert getmac._get_default_iface_linux() == 'ens33'
+    assert benchmark(getmac._get_default_iface_linux) == 'ens33'
 
 
-def test_hunt_linux_default_iface(mocker, get_sample):
+def test_hunt_linux_default_iface(benchmark, mocker, get_sample):
     content = get_sample('ubuntu_18.10/proc_net_route.txt')
     mocker.patch('getmac.getmac._read_file', return_value=content)
-    assert getmac._hunt_linux_default_iface() == 'ens33'
+    assert benchmark(getmac._hunt_linux_default_iface) == 'ens33'
 
 
-def test_ubuntu_1804_interface(mocker, get_sample):
+def test_ubuntu_1804_interface(benchmark, mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', False)
     mocker.patch('getmac.getmac.DARWIN', False)
     mocker.patch('getmac.getmac.BSD', False)
@@ -62,7 +64,8 @@ def test_ubuntu_1804_interface(mocker, get_sample):
 
     content = get_sample('ubuntu_18.04/ifconfig_ens33.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '00:0c:29:b5:72:37' == getmac.get_mac_address(interface='ens33')
+    result = benchmark(getmac.get_mac_address, interface='ens33')
+    assert '00:0c:29:b5:72:37' == result
 
     # TODO: going to need to do some mock.side_effect hacking here
     # content = get_sample('ubuntu_18.04/ifconfig.out')
@@ -71,12 +74,14 @@ def test_ubuntu_1804_interface(mocker, get_sample):
 
     content = get_sample('ubuntu_18.04/ip_link_list.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '00:0c:29:b5:72:37' == getmac.get_mac_address(interface='ens33')
+    result = getmac.get_mac_address(interface='ens33')
+    assert '00:0c:29:b5:72:37' == result
 
     # TODO: mock return value so we're hitting the right regex
     content = get_sample('ubuntu_18.04/ip_link.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '00:0c:29:b5:72:37' == getmac.get_mac_address(interface='ens33')
+    result = getmac.get_mac_address(interface='ens33')
+    assert '00:0c:29:b5:72:37' == result
 
     # TODO: going to need to do some mock.side_effect hacking here
     # content = get_sample('ubuntu_18.04/netstat_iae.out')
@@ -84,7 +89,7 @@ def test_ubuntu_1804_interface(mocker, get_sample):
     # assert '00:0c:29:b5:72:37' == getmac.get_mac_address(interface='ens33')
 
 
-def test_ubuntu_1804_remote(mocker, get_sample):
+def test_ubuntu_1804_remote(benchmark, mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', False)
     mocker.patch('getmac.getmac.DARWIN', False)
     mocker.patch('getmac.getmac.OPENBSD', False)
@@ -94,28 +99,33 @@ def test_ubuntu_1804_remote(mocker, get_sample):
 
     content = get_sample('ubuntu_18.04/arp_-a.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '00:50:56:f1:4c:50' == getmac.get_mac_address(ip='192.168.16.2')
+    result = benchmark(getmac.get_mac_address, ip='192.168.16.2')
+    assert '00:50:56:f1:4c:50' == result
 
     # TODO: mock return value so we're hitting the right regex
     content = get_sample('ubuntu_18.04/arp_-an.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '00:50:56:f1:4c:50' == getmac.get_mac_address(ip='192.168.16.2')
+    result = getmac.get_mac_address(ip='192.168.16.2')
+    assert '00:50:56:f1:4c:50' == result
 
     content = get_sample('ubuntu_18.04/cat_proc-net-arp.out')
     mocker.patch('getmac.getmac._read_file', return_value=content)
-    assert '00:50:56:f1:4c:50' == getmac.get_mac_address(ip='192.168.16.2')
+    result = getmac.get_mac_address(ip='192.168.16.2')
+    assert '00:50:56:f1:4c:50' == result
 
     content = get_sample('ubuntu_18.04/ip_neighbor_show_192-168-16-2.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '00:50:56:f1:4c:50' == getmac.get_mac_address(ip='192.168.16.2')
+    result = getmac.get_mac_address(ip='192.168.16.2')
+    assert '00:50:56:f1:4c:50' == result
 
     # TODO: mock return value so we're hitting the right regex
     content = get_sample('ubuntu_18.04/ip_neighbor_show.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '00:50:56:f1:4c:50' == getmac.get_mac_address(ip='192.168.16.2')
+    result = getmac.get_mac_address(ip='192.168.16.2')
+    assert '00:50:56:f1:4c:50' == result
 
 
-def test_windows_10_interface(mocker, get_sample):
+def test_windows_10_interface(benchmark, mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', True)
     mocker.patch('getmac.getmac.DARWIN', False)
     mocker.patch('getmac.getmac.BSD', False)
@@ -126,15 +136,18 @@ def test_windows_10_interface(mocker, get_sample):
 
     content = get_sample('windows_10/getmac.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='Ethernet 2')
+    result = benchmark(getmac.get_mac_address, interface='Ethernet 2')
+    assert '74:d4:35:e9:45:71' == result
 
     content = get_sample('windows_10/ipconfig-all.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='Ethernet 3')
+    result = getmac.get_mac_address(interface='Ethernet 3')
+    assert '74:d4:35:e9:45:71' == result
 
     content = get_sample('windows_10/wmic_nic.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '00:ff:17:15:f8:c8' == getmac.get_mac_address(interface='Ethernet 3')
+    result = getmac.get_mac_address(interface='Ethernet 3')
+    assert '00:ff:17:15:f8:c8' == result
 
 
 def test_darwin_interface(mocker, get_sample):
@@ -189,13 +202,13 @@ def test_openbsd_interface(mocker, get_sample):
     assert '08:00:27:18:64:56' == getmac.get_mac_address()
 
 
-def test_get_default_iface_openbsd(mocker, get_sample):
+def test_get_default_iface_openbsd(benchmark, mocker, get_sample):
     content = get_sample('openbsd_6/route_nq_show_inet_gateway_priority_1.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert getmac._get_default_iface_openbsd() == 'em0'
+    assert 'em0' == benchmark(getmac._get_default_iface_openbsd)
 
 
-def test_openbsd_remote(mocker, get_sample):
+def test_openbsd_remote(benchmark, mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', False)
     mocker.patch('getmac.getmac.DARWIN', False)
     mocker.patch('getmac.getmac.BSD', True)
@@ -205,12 +218,12 @@ def test_openbsd_remote(mocker, get_sample):
 
     content = get_sample('openbsd_6/arp_an.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '52:54:00:12:35:02' == getmac.get_mac_address(ip='10.0.2.2')
+    assert '52:54:00:12:35:02' == benchmark(getmac.get_mac_address, ip='10.0.2.2')
     assert '52:54:00:12:35:03' == getmac.get_mac_address(ip='10.0.2.3')
     assert '08:00:27:18:64:56' == getmac.get_mac_address(ip='10.0.2.15')
 
 
-def test_freebsd_interface(mocker, get_sample):
+def test_freebsd_interface(benchmark, mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', False)
     mocker.patch('getmac.getmac.DARWIN', False)
     mocker.patch('getmac.getmac.BSD', True)
@@ -223,16 +236,16 @@ def test_freebsd_interface(mocker, get_sample):
     assert '08:00:27:33:37:26' == getmac.get_mac_address(interface='em0')
     # Default route
     mocker.patch('getmac.getmac._get_default_iface_freebsd', return_value='em0')
-    assert '08:00:27:33:37:26' == getmac.get_mac_address()
+    assert '08:00:27:33:37:26' == benchmark(getmac.get_mac_address)
 
 
-def test_get_default_iface_freebsd(mocker, get_sample):
+def test_get_default_iface_freebsd(benchmark, mocker, get_sample):
     content = get_sample('freebsd11/netstat_r.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert getmac._get_default_iface_freebsd() == 'em0'
+    assert 'em0' == benchmark(getmac._get_default_iface_freebsd)
 
 
-def test_freebsd_remote(mocker, get_sample):
+def test_freebsd_remote(benchmark, mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', False)
     mocker.patch('getmac.getmac.DARWIN', False)
     mocker.patch('getmac.getmac.BSD', True)
@@ -242,4 +255,4 @@ def test_freebsd_remote(mocker, get_sample):
 
     content = get_sample('freebsd11/arp_10-0-2-2.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
-    assert '52:54:00:12:35:02' == getmac.get_mac_address(ip='10.0.2.2')
+    assert '52:54:00:12:35:02' == benchmark(getmac.get_mac_address, ip='10.0.2.2')
