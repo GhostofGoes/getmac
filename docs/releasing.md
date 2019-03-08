@@ -12,9 +12,7 @@ If `twine` isn't installed, get it: `python -m pip install --user -U twine`
 ```bash
 pip install https://github.com/ghostofgoes/getmac/archive/master.tar.gz
 ```
-6. Clean the environment
-    a) Windows: `scripts\clean.ps1`
-    b) Bash: `bash ./scripts/clean.sh`
+6. Clean the environment: `bash ./scripts/clean.sh`
 7. Build the wheels
 ```bash
 python setup.py sdist bdist_wheel --universal
