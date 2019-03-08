@@ -6,7 +6,6 @@ graft tests
 
 prune .github
 prune packaging
-prune samples
 prune scripts
 
 global-exclude *.py[cod] __pycache__ *.so *.class
