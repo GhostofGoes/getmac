@@ -19,6 +19,8 @@ def test_linux_ifconfig(mocker, get_sample):
     mocker.patch('getmac.getmac.WSL', False)
     content = get_sample('ifconfig.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
+    mocker.patch('getmac.getmac._read_sys_iface_file', return_value=None)
+    mocker.patch('getmac.getmac._fcntl_iface', return_value=None)
     assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
 
 
@@ -32,6 +34,8 @@ def test_linux_ip_link_list(mocker, get_sample):
     mocker.patch('getmac.getmac.WSL', False)
     content = get_sample('ip_link_list.out')
     mocker.patch('getmac.getmac._call_proc', return_value=content)
+    mocker.patch('getmac.getmac._read_sys_iface_file', return_value=None)
+    mocker.patch('getmac.getmac._fcntl_iface', return_value=None)
     assert '74:d4:35:e9:45:71' == getmac.get_mac_address(interface='eth0')
 
 
