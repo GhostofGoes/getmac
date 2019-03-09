@@ -1,10 +1,3 @@
-# Source: github.com/tox-dev/.travis.yml
-
-stages:
-- test
-- name: deploy
-  if: repo = "GhostOfGoes/getmac" AND tag IS present
-
 # Details: blog.travis-ci.com/2017-12-01-new-update-schedule-for-linux-build-images
 group: travis_latest
 language: python
@@ -46,6 +39,7 @@ before_install:
 - python -c 'import sys; print(sys.version)'
 - python -c 'import sys; print(sys.platform)'
 - python -c 'import os; print(os.name)'
+- python -c 'import platform; print(platform.system())'
 - python -c 'import platform; print(platform.version())'
 - python -c 'import platform; print(platform.uname())'
 - arp -a
@@ -61,4 +55,4 @@ script:
 - tox
 
 after_success:
-  - coveralls
+- coveralls

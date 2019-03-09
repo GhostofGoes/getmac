@@ -71,13 +71,11 @@ install:
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - "SET PIP_DISABLE_PIP_VERSION_CHECK=1"
 
   # Check that we have the expected version and architecture for Python
-  - "python --version"
-  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-  - "python -c \"import sys; print(sys.platform)\""
   - "python -c \"import sys; print(sys.version)\""
-  - "python -c \"import os; print(os.name)\""
+  - "python -c \"import platform; print(platform.system())\""
   - "python -c \"import platform; print(platform.version())\""
   - "python -c \"import platform; print(platform.uname())\""
 
@@ -88,13 +86,10 @@ install:
 
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
-  - "python -m pip install --upgrade pip"
-  - "python -m pip install --upgrade setuptools wheel tox flake8 codespell \"mock;python_version<'3'\""
+  - "python -m pip install -U setuptools wheel tox"
 
 test_script:
 - tox
-- tox -e flake8
-- tox -e codespell
 
 cache:
 - '%LOCALAPPDATA%\pip\cache'
