@@ -106,10 +106,4 @@ Vagrant.configure(2) do |config|
     end
     android.vm.synced_folder ".", "/home/vagrant/getmac"
   end
-
-  # VyOS
-  config.vm.define "vyos" do |vyos|
-    vyos.vm.box = "vyos/current"
-    vyos.vm.host_name = "getmac-vyos"
-  end
 end

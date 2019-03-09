@@ -2,7 +2,7 @@
 group: travis_latest
 language: python
 dist: xenial
-sudo: true  # TODO: would false work fine?
+sudo: false
 cache: pip
 
 env:
