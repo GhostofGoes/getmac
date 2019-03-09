@@ -384,18 +384,17 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         to_find = str(to_find, 'utf-8')
 
     if WINDOWS and type_of_thing == INTERFACE:
-        esc = re.escape(to_find)
         methods = [
             # getmac - Connection Name
-            (r'\r\n' + esc + r'.*' + MAC_RE_DASH + r'.*\r\n',
+            (r'\r\n' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
              0, 'getmac.exe', ['/NH /V']),
 
             # ipconfig
-            (esc + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+' + MAC_RE_DASH + r'\r\n',
+            (to_find + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+' + MAC_RE_DASH + r'\r\n',
              0, 'ipconfig.exe', ['/all']),
 
             # getmac - Network Adapter (the human-readable name)
-            (r'\r\n.*' + esc + r'.*' + MAC_RE_DASH + r'.*\r\n',
+            (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
              0, 'getmac.exe', ['/NH /V']),
 
             # wmic - WMI command line utility
@@ -440,7 +439,6 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'arp', ['-an']),
         ]
     elif type_of_thing == INTERFACE:
-        esc = re.escape(to_find)
         methods = [
             _read_sys_iface_file,
             _fcntl_iface,
@@ -454,21 +452,21 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
              0, 'ifconfig', [to_find]),
 
             # ip link (Don't use 'list' due to SELinux [Android 24+])
-            (esc + r'.*\n.*link/ether ' + MAC_RE_COLON,
+            (to_find + r'.*\n.*link/ether ' + MAC_RE_COLON,
              0, 'ip', ['link %s' % to_find, 'link']),
 
             # netstat
-            (esc + r'.*HWaddr ' + MAC_RE_COLON,
+            (to_find + r'.*HWaddr ' + MAC_RE_COLON,
              0, 'netstat', ['-iae']),
 
             # More variations of ifconfig
-            (esc + r'.*ether ' + MAC_RE_COLON,
+            (to_find + r'.*ether ' + MAC_RE_COLON,
              0, 'ifconfig', ['']),
-            (esc + r'.*HWaddr ' + MAC_RE_COLON,
+            (to_find + r'.*HWaddr ' + MAC_RE_COLON,
              0, 'ifconfig', ['', '-a', '-v']),
 
             # Tru64 ('-av')
-            (esc + r'.*Ether ' + MAC_RE_COLON,
+            (to_find + r'.*Ether ' + MAC_RE_COLON,
              0, 'ifconfig', ['-av']),
             _uuid_lanscan_iface,
         ]
