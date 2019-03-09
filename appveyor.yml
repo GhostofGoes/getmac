@@ -93,4 +93,3 @@ test_script:
 
 cache:
 - '%LOCALAPPDATA%\pip\cache'
-- '%USERPROFILE%\.cache\pre-commit'

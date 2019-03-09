@@ -23,7 +23,7 @@ jobs:
     dist: trusty
   - os: osx
     language: generic
-    env: TOXENV=osx-travis
+    env: TOXENV=py
   - python: 3.6
     env: TOXENV=check
   - python: 3.6
