@@ -3,6 +3,7 @@
 import platform
 import socket
 import sys
+import uuid
 
 import pytest
 
@@ -16,8 +17,8 @@ MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
 def test_get_mac_address_localhost():
     assert get_mac_address(hostname='localhost') == '00:00:00:00:00:00'
     assert get_mac_address(ip='127.0.0.1') == '00:00:00:00:00:00'
-    assert get_mac_address(
-        hostname='localhost', network_request=False) == '00:00:00:00:00:00'
+    result = get_mac_address(hostname='localhost', network_request=False)
+    assert result == '00:00:00:00:00:00'
 
 
 def test_search(get_sample):
@@ -59,6 +60,10 @@ def test_fcntl_iface(mocker):
     m.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
 
 
+# Python 2.7.5 (CentOS 7) doesn't have this...
+# The commit adding it: https://bit.ly/2Hnd7bN (no idea what release it was in)
+@pytest.mark.skipif(not hasattr(uuid, '_arp_getnode'),
+                    reason="This version of Python doesn't have _arp_getnode")
 def test_uuid_ip(mocker):
     mocker.patch('uuid._arp_getnode', return_value=278094213753144)
     assert getmac._uuid_ip('10.0.0.1') == 'FC:EC:DA:D3:29:38'
