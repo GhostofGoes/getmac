@@ -520,6 +520,8 @@ def _try_methods(methods, to_find=None):
                     found = m()
                 if DEBUG:
                     log.debug("Result: %s\n", found)
+            else:
+                log.critical("Invalid type '%s' for method '%s'", type(m), str(m))
         except Exception as ex:
             if DEBUG:
                 log.debug("Exception: %s", str(ex))
