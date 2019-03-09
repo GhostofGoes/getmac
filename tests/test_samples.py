@@ -125,7 +125,7 @@ def test_ubuntu_1804_remote(benchmark, mocker, get_sample):
     assert '00:50:56:f1:4c:50' == result
 
 
-def test_windows_10_interface(benchmark, mocker, get_sample):
+def test_windows_10_interface(mocker, get_sample):
     mocker.patch('getmac.getmac.WINDOWS', True)
     mocker.patch('getmac.getmac.DARWIN', False)
     mocker.patch('getmac.getmac.BSD', False)
@@ -136,7 +136,8 @@ def test_windows_10_interface(benchmark, mocker, get_sample):
 
     content = get_sample('windows_10/getmac.out')
     mocker.patch('getmac.getmac._popen', return_value=content)
-    result = benchmark(getmac.get_mac_address, interface='Ethernet 2')
+    # result = benchmark(getmac.get_mac_address, interface='Ethernet 2')
+    result = getmac.get_mac_address(interface='Ethernet 3')
     assert '74:d4:35:e9:45:71' == result
 
     content = get_sample('windows_10/ipconfig-all.out')
