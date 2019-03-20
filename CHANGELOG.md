@@ -37,7 +37,7 @@
 * Dropped support for Python 2.6
 * Removed the usage of third-party packages (`netifaces`, `psutil`, `scapy`, and `arpreq`).
 This should improve the performance of lookups of non-existent interfaces
-or hosts, since feature was punishing that path without providing much value.
+or hosts, since this feature was punishing that path without providing much value.
 If you want to use these packages directly, I have a guide on how to do so on a
 [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
@@ -49,7 +49,7 @@ will be run only on that platform, and vice-versa.
 * Significantly improved the speed and accuracy of determining
 the default interface on Linux
 * Python 2 will install an executor named getmac2 and Python 3 an
-executor named getmac so they don't conflict when both RPMs are
+executor named getmac so they do not conflict when both RPMs are
 installed on the same system (Credit: @hargoniX)
 * The `warnings` module will only be imported if a error/warning
 occurs (improve compatibility with some freezers, notably PyInstaller)
@@ -73,12 +73,8 @@ occurs (improve compatibility with some freezers, notably PyInstaller)
 * Docker container (Credit: @Komish)
 
 ### Changed
-* Changed name to `getmac`. This applies to everything, including
-command line tool, PyPI, GitHub, and the documentation.
-This is a breaking change, but needed to happen to remove
-a huge amount of ambiguity that was causing issues with packaging,
-documentation, and several other efforts, not to mention my sanity.
-Long-term, the only downside is a conflict on Windows CLI with `getmac.exe`.
+* Changed project name to `getmac`. This applies to the
+command line tool, GitHub, and the documentation.
 * Use proper Python 2-compatible print functions (Credit: @martmists)
 
 ### Removed
@@ -99,7 +95,7 @@ them would have no actual effect on execution. Instead, use `getmac.getmac.DEBUG
 * Full support for Windows Subsystem for Linux (WSL). This is working for
 all features, including default interface selection! The only edge case
 is lookup of remote host IP addresses that are actually local interfaces
-won't resolve to a MAC (which should be ff-ff-ff-ff-ff-ff).
+will not resolve to a MAC (which should be ff-ff-ff-ff-ff-ff).
 ### Changed
 * Require `argparse` if Python version is 2.6 or older
 ### Dev
