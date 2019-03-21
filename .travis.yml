@@ -10,24 +10,25 @@ env:
 
 jobs:
   include:
-  - python: 2.7    # 2.7.14 pip  9.0.1
-  - python: 3.4    # 3.4.6  pip  9.0.1
+  - python: "2.7"    # 2.7.14 pip  9.0.1
+  - python: "3.4"    # 3.4.6  pip  9.0.1
     dist: trusty
-  - python: 3.5    # 3.5.5  pip  9.0.1
-  - python: 3.6    # 3.6.3  pip  9.0.1
-  - python: 3.7    # 3.7.0  pip 10.0.1
-  - python: 3.8-dev
-  - python: pypy   # 2.7.13 pip  9.0.1
+  - python: "3.5"    # 3.5.5  pip  9.0.1
+  - python: "3.6"    # 3.6.3  pip  9.0.1
+  - python: "3.7"    # 3.7.0  pip 10.0.1
+  - python: "3.8-dev"
+  - python: "pypy"   # 2.7.13 pip  9.0.1
     dist: trusty
-  - python: pypy3  # 3.5.3  pip  9.0.1
+  - python: "pypy3"  # 3.5.3  pip  9.0.1
     dist: trusty
   - os: osx
     language: generic
     env: TOXENV=py
-  - python: 3.6
+  - python: "3.6"
     env: TOXENV=check
-  - python: 3.6
+  - python: "3.6"
     env: TOXENV=coverage
+    after_success: coveralls
 
 matrix:
   fast_finish: true
@@ -48,11 +49,7 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source ./scripts/.travis-osx; fi
 
 install:
-- pip install tox coveralls
+- pip install -U tox coveralls
 - tox --notest
 
-script:
-- tox
-
-after_success:
-- coveralls
+script: tox
