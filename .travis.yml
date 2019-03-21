@@ -29,6 +29,10 @@ jobs:
   - python: "3.6"
     env: TOXENV=coverage
     after_success: coveralls
+  - python: "2.7"
+    env: TOXENV=benchmark
+  - python: "3.6"
+    env: TOXENV=benchmark
 
 matrix:
   fast_finish: true
