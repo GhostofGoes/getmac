@@ -93,7 +93,7 @@ def test_read_sys_iface_file(mocker):
 
 
 def test_read_arp_file(mocker, get_sample):
-    data = get_sample('ubuntu_18.10/proc_net_arp.txt')
+    data = get_sample('ubuntu_18.10/proc_net_arp.out')
     mocker.patch('getmac.getmac._read_file', return_value=data)
     assert getmac._read_arp_file('192.168.16.2') == '00:50:56:e1:a8:4a'
     assert getmac._read_arp_file('192.168.16.254') == '00:50:56:e8:32:3c'

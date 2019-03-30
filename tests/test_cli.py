@@ -3,9 +3,9 @@
 import sys
 from subprocess import PIPE, Popen
 
-from getmac import __version__, get_mac_address
-
 import pytest
+
+from getmac import __version__, get_mac_address
 
 PY2 = sys.version_info[0] == 2
 BASE_CMD = [sys.executable, '-m', 'getmac']

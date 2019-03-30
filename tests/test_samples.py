@@ -42,13 +42,13 @@ def test_linux_ip_link_list(benchmark, mocker, get_sample):
 
 
 def test_get_default_iface_linux(benchmark, mocker, get_sample):
-    content = get_sample('ubuntu_18.10/proc_net_route.txt')
+    content = get_sample('ubuntu_18.10/proc_net_route.out')
     mocker.patch('getmac.getmac._read_file', return_value=content)
     assert benchmark(getmac._get_default_iface_linux) == 'ens33'
 
 
 def test_hunt_linux_default_iface(benchmark, mocker, get_sample):
-    content = get_sample('ubuntu_18.10/proc_net_route.txt')
+    content = get_sample('ubuntu_18.10/proc_net_route.out')
     mocker.patch('getmac.getmac._read_file', return_value=content)
     assert benchmark(getmac._hunt_linux_default_iface) == 'ens33'
 
