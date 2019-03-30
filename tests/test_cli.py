@@ -13,7 +13,6 @@ BASE_CMD = [sys.executable, '-m', 'getmac']
 
 def run_cmd(command):
     stdout, _ = Popen(command, stdout=PIPE, stderr=PIPE).communicate()
-    print(stdout)
     return stdout.decode('utf-8').strip()
 
 
@@ -51,7 +50,8 @@ def test_cli_multiple_debug_levels():
 
 
 def test_cli_no_net():
-    assert get_mac_address() in run_cmd(BASE_CMD + ['--no-network-requests'])
+    assert get_mac_address(hostname='localhost') in run_cmd(
+        BASE_CMD + ['-n', 'localhost', '--no-network-requests'])
 
 
 def test_cli_localhost():
