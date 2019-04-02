@@ -106,4 +106,40 @@ Vagrant.configure(2) do |config|
     end
     android.vm.synced_folder ".", "/home/vagrant/getmac"
   end
+
+  # Windows Server 2012 R2
+  config.vm.define "winserver" do |winserver|
+    winserver.vm.box = "opentable/win-2012r2-standard-amd64-nocm"
+    winserver.vm.host_name = "getmac-winserver"
+    winserver.vm.provider "virtualbox" do |vb|
+      vb.gui = true
+      vb.memory = "2048"
+      vb.name = "getmac-Windows-Server-2012R2"
+    end
+    winserver.vm.synced_folder ".", "/home/vagrant/getmac"
+  end
+
+  # Windows 10
+  config.vm.define "win10" do |win10|
+    win10.vm.box = "Microsoft/EdgeOnWindows10"
+    win10.vm.host_name = "getmac-win10"
+    win10.vm.provider "virtualbox" do |vb|
+      vb.gui = true
+      vb.memory = "2048"
+      vb.name = "getmac-Windows-10"
+    end
+    win10.vm.synced_folder ".", "/home/vagrant/getmac"
+  end
+
+  # Windows 7
+  config.vm.define "win7" do |win7|
+    win7.vm.box = "opentable/win-7-professional-amd64-nocm"
+    win7.vm.host_name = "getmac-win7"
+    win7.vm.provider "virtualbox" do |vb|
+      vb.gui = true
+      vb.memory = "2048"
+      vb.name = "getmac-Windows-7"
+    end
+    win7.vm.synced_folder ".", "/home/vagrant/getmac"
+  end
 end
