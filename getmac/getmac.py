@@ -220,6 +220,9 @@ def get_mac_address(
         if len(mac) != 17:
             log.warning("MAC address %s is not 17 characters long!", mac)
             mac = None
+        elif mac.count(':') != 5:
+            log.warning("MAC address %s is missing ':' characters", mac)
+            mac = None
     return mac
 
 

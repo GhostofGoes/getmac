@@ -133,7 +133,7 @@ Vagrant.configure(2) do |config|
 
   # Windows 7
   config.vm.define "win7" do |win7|
-    win7.vm.box = "opentable/win-7-professional-amd64-nocm"
+    win7.vm.box = "datacastle/windows7"
     win7.vm.host_name = "getmac-win7"
     win7.vm.provider "virtualbox" do |vb|
       vb.gui = true
