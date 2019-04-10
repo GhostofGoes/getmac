@@ -15,6 +15,7 @@ jobs:
     dist: trusty
   - python: "3.5"    # 3.5.5  pip  9.0.1
   - python: "3.6"    # 3.6.3  pip  9.0.1
+    after_success: coveralls
   - python: "3.7"    # 3.7.0  pip 10.0.1
   - python: "3.8-dev"
   - python: "pypy"   # 2.7.13 pip  9.0.1
@@ -26,9 +27,6 @@ jobs:
     env: TOXENV=py
   - python: "3.6"
     env: TOXENV=check
-  - python: "3.6"
-    env: TOXENV=coverage
-    after_success: coveralls
   - python: "2.7"
     env: TOXENV=benchmark
   - python: "3.6"
