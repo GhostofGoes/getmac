@@ -43,7 +43,7 @@ except ImportError:  # Python 2
 log = logging.getLogger('getmac')
 log.addHandler(logging.NullHandler())
 
-__version__ = '0.7.0'
+__version__ = '0.8.0'
 PY2 = sys.version_info[0] == 2
 
 # Configurable settings

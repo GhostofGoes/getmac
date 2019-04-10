@@ -5,12 +5,12 @@
  or send me an email (see git commit author info for address).
 
 
-## UNRELEASED (xx/xx/2019)
+## 0.8.0 (04/09/2019)
 
 ### Added
-* Logging is now used for output messages (logger: `getmac`)
 * OpenBSD support
 * FreeBSD support
+* Python logging is now used instead of `print` (logger: `getmac`)
 * Include tests in the source distribution
 * (CLI) Added aliases for `--no-network-requests`: `-N` and `--no-net`
 * (CLI) New argument: `-v`/`--verbose`
@@ -20,12 +20,10 @@
 * Improved Ubuntu support
 * Performance improvements
 
-### Removed
-* TODO
-
 ### Development
-* Significant increase in test coverage
-* Fixed the sample tests and migrated them to `pytest`
+* Significant increase in overall test coverage
+* Fixed and migrated the sample tests to `pytest`
+* Added tests for the CLI
 
 
 ## 0.7.0 (01/27/2019)
