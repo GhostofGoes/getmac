@@ -138,17 +138,21 @@ def get_mac_address(
 
     # Populate the ARP table by sending a empty UDP packet to a high port
     if network_request and (ip or ip6):
+        if ip:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        else:
+            s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         try:
             if ip:
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 s.sendto(b'', (ip, PORT))
             else:
-                s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
                 s.sendto(b'', (ip6, PORT))
         except Exception:
             log.error("Failed to send ARP table population packet")
             if DEBUG:
                 log.debug(traceback.format_exc())
+        finally:
+            s.close()
 
     # Setup the address hunt based on the arguments specified
     if ip6:
