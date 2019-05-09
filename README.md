@@ -135,7 +135,7 @@ module. They can be configured by using `logging.basicConfig()` or adding handle
 * Python 2.7 and 3.4+
 * Lightweight, with no dependencies and a small package size
 * Can be dropped into a project as a standalone .py file
-* Supports most interpreters: CPython, pypy, pypy3, and IronPython
+* Supports most interpreters: CPython, pypy, pypy3, IronPython 2.7, and Jython 2.7
 * Provides a simple command line tool (when installed as a package)
 * MIT licensed!
 
@@ -177,32 +177,43 @@ or issues related to this, including error reports.
 
 ## Commands and techniques by platform
 * Windows
-    * Commands: `getmac`, `ipconfig`
-    * Libraries: `uuid`, `ctypes`
+    * Commands: `getmac.exe`, `ipconfig.exe`, `arp.exe`, `wmic.exe`
+    * Libraries: `uuid`, `ctypes`, `socket`
 * Linux/Unix
-    * Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`
-    * Libraries: `uuid`, `fcntl`
+    * Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`, `lanscan`
+    * Libraries: `uuid`, `fcntl`, `socket`
     * Files: `/sys/class/net/{iface}/address`, `/proc/net/arp`
     * Default interfaces: `/proc/net/route`, `route`, `ip route list`
 * Mac OSX (Darwin)
     * `networksetup`
     * Same commands as Linux
-* WSL: Windows commands are used for remote hosts,
-and Unix commands are used for interfaces
+* WSL
+    * Windows commands are used for remote hosts
+    * Unix commands are used for interfaces
+* OpenBSD
+    * Commands: `ifconfig`, `arp`
+    * Default interfaces: `route`
+* FreeBSD
+    * Commands: `ifconfig`, `arp`
+    * Default interfaces: `netstat`
 
 ## Platforms currently supported
-All or almost all features should work on "supported" platforms.
+All or almost all features should work on "supported" platforms. 
+While other versions of the same family or distro may work, they
+are untested and may have bugs or missing features.
 * Windows
     * Desktop: 7, 8, 8.1, 10
     * Server: TBD
-    * Partially supported and untested: 2000, XP, Vista
+    * Partially supported (untested): 2000, XP, Vista
 * Linux distros
     * CentOS/RHEL 6+ (Only with Python 2.7+)
-    * Ubuntu 16.04+ (14.04 and older should work, but are untested)
-    * Fedora
+    * Ubuntu 16.04+ (15.10 and older should work, but are untested)
+    * Fedora (24+)
 * Mac OSX (Darwin)
     * The latest two versions probably (TBD)
 * Windows Subsystem for Linux (WSL)
+* FreeBSD (11+)
+* OpenBSD
 * Docker
 
 ## Docker
@@ -222,9 +233,11 @@ Keep calm, open a GitHub issue, and I'd be more than happy to help.
 
 ## Known Issues
 * Hostnames for IPv6 devices are not yet supported.
-* Windows: the "default" of selecting the default route interface only
-works effectively if `network_request` is enabled. Otherwise,
-`Ethernet` as the default.
+* Windows: the "default" (used when no arguments set or specified) 
+of selecting the default route interface only works effectively 
+if `network_request` is enabled. If not, `Ethernet` is used as the default.
+* IPv6 support is good but lags behind IPv4 in some places
+and isn't as well-tested across the supported platform set.
 
 ## Background and history
 The Python standard library has a robust set of networking functionality,
