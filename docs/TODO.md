@@ -1,9 +1,6 @@
 
 # Etc
-* Split `_hunt_for_mac()` into Remote and Interface
-* Functions per-platform?
-* Darwin hostnames? Does it have arp file? (Do less work)
-* Refactor the default interface code. Combine the functions into 
+* [ ] Refactor the default interface code. Combine the functions into 
 one, move the default fallback logic into the function.
 
 # Bugs or potential issues
@@ -25,11 +22,10 @@ focus the most effort on the Popen calls.
 ### Remote hosts
 * [ ] IPv6: `netsh int ipv6 show neigh`
 * [ ] IPv4: `netsh int ipv4 show neigh`
-* [ ] `arping`
 
 ### Interface MACs
 * [ ] `netsh int ipv6`
-* [ ] Windows API
+* [ ] win32 API (`ctypes`)
 
 ### Default Interfaces
 This is going to be a bit more complicated since the highest
@@ -51,37 +47,15 @@ interface as the default route.
 
 
 ## OSX (Darwin)
-* [ ] Determine best remote host detection methods, split off not-applicable commands
+* [ ] Determine best remote host detection methods, 
+      split off not-applicable commands.
+* [ ] Darwin hostnames? Does it have arp file? (Do less work)
 
-
-## Platform support
-* [x] Linux
-* [x] Windows (modern)
-* [x] Darwin (Mac OS)
-* [x] Windows Subsystem for Linux (WSL)
-* [x] Docker (inside Docker containers)
-* [x] Alpine Linux (test + add to tests)
-* [ ] Raspberry Pi (test)
-* [x] FreeBSD
-* [x] OpenBSD
-* [ ] NetBSD
-* [ ] OpenSUSE
-* [ ] Android
-* [ ] Solaris
-
-
-# Features
-
-## IPv6
-* [ ] Support for IPv6 hostname resolution
-    * [ ] Use `socket.getaddrinfo` instead of `socket.gethostbyname`
-          to resolve a hostname to an IP address.
 
 ## Performance
 * [ ] Profiling: CPU usage, memory usage, run time/load time
 
 ## Misc.
-* [x] Use logging instead of print statements for debugging
 * [ ] Add ability to match user-provided arguments case-insensitively
 * [ ] Add ability to get the mac address of a socket's interface
 * [ ] Add support for Unix and Windows interface indices as a separate
@@ -92,32 +66,8 @@ interface as the default route.
 * [ ] asyncio-friendly?
 
 
-# Tests
-* [x] Mocked unit tests for core methods
-* [x] Run unit tests on all of the samples I've collected thus far
-* [x] Need samples from many more platforms to build effective tests
-* [x] Add MyPy checking to required tests
-* [ ] Add profiling to tests. If average of multiple runs goes
- above a certain threshold, the tests fail.
-* [ ] Get coverage reports fully working
-* [ ] Get Coveralls working
-
-
-# Documentation
-* [ ] Sphinx documentation
-* [ ] Host documentation on ReadTheDocs
-* [ ] Add ReadTheDocs and other links to project_urls in setup.py
-
-
 # Code/Other
 * [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed)
 once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 * [ ] Create a script to collect samples for all relevant commands on a platform
 and save output into the appropriately named sub-directory in `samples/`.
-* [ ] Vagrant images
-    * [ ] Fedora
-    * [x] FreeBSD
-    * [x] OpenBSD
-    * [ ] Android (?)
-    * [ ] Windows 7
-    * [ ] Windows 10
