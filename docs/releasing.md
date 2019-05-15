@@ -1,4 +1,5 @@
-If `twine` isn't installed, get it: `python -m pip install --user -U twine`
+Dependencies: `pip install twine wheel stdeb`
+
 
 1. Increment version number in `getmac/getmac.py`
 2. Update CHANGELOG header from UNRELEASED to the version and add the date
@@ -21,10 +22,15 @@ python setup.py sdist bdist_wheel --universal
 ```bash
 twine upload dist/*
 ```
-9. Create a tagged release on GitHub including:
+9. Build the Debian package
+```bash
+python setup.py --command-packages=stdeb.command bdist_deb
+```
+10. Create a tagged release on GitHub including:
     a) The relevant section of the CHANGELOG in the body
     b) The source and binary wheels
-10. Edit the package name in setup.py to `get-mac`, and re-run
+    c) The .deb package (which will be in `./deb_dist`)
+11. Edit the package name in setup.py to `get-mac`, and re-run
 steps 7 and 8 (build and upload), since people apparently don't check
 their dependencies and ignore runtime warnings.
-11. Announce the release in the normal places
+12. Announce the release in the normal places
