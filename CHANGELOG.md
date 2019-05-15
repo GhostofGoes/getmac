@@ -5,6 +5,13 @@
  or send me an email (see git commit author info for address).
 
 
+## 0.8.1 (05/14/2019)
+
+### Changed
+* Fixed sockets being opened and not closed when `ip` or `ip6` were used,
+which could lead to a `ResourceWarning` (GH-42)
+
+
 ## 0.8.0 (04/09/2019)
 
 ### Added
