@@ -61,15 +61,15 @@ ip6_mac = get_mac_address(ip6="::1")
 host_mac = get_mac_address(hostname="localhost")
 updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
+# Changing the port used for updating ARP table (UDP packet)
+from getmac import getmac
+getmac.PORT = 44444  # Default: 55555
+print(getmac.get_mac_address(ip="192.168.0.1", network_request=True))
+
 # Enabling debugging
 from getmac import getmac
 getmac.DEBUG = 2  # DEBUG level 2
 print(getmac.get_mac_address(interface="Ethernet 3"))
-
-# Changing the port used for updating ARP table (UDP packet)
-from getmac import getmac
-getmac.PORT = 44444  # Default: 55555
-print(get_mac_address(ip="192.168.0.1", network_request=True))
 ```
 
 ## Terminal examples
@@ -78,9 +78,11 @@ print(get_mac_address(ip="192.168.0.1", network_request=True))
 getmac --help
 getmac --version
 
-# No arguments will return MAC of the default interface.
+# Invoking with no arguments will return MAC of the default interface
 getmac
-python -m getmac
+
+# Usage as a module
+python3 -m getmac
 
 # Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
 getmac --interface ens33
@@ -95,7 +97,7 @@ python -m getmac -6 ::1
 python -m getmac -n home.router
 
 # Getting the MAC address of a remote host requires the ARP table to be populated.
-# By default, getmac will populate the table by sending a small UDP packet to a high port of the host (by default, 55555).
+# By default, getmac will populate the table by sending a UDP packet to a high port on the host (defaults to 55555).
 # This can be disabled with --no-network-request, as shown here:
 getmac --no-network-request -4 192.168.0.1
 python -m getmac --no-network-request -n home.router
