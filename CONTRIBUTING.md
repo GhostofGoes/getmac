@@ -70,12 +70,10 @@ or the Git tools in your favorite editor or IDE.
 3. Create and checkout a new branch in the fork with either your username (e.g. "ghostofgoes"),
 or the name of the feature or issue you're working on (e.g. "openbsd-support").
 Again, this can be done using the GUI, your favorite editor, or `git checkout -b <branch> origin/<branch>`.
-4. Install the developer tools, package, and pre-commit hooks:
+4. Install the developer tools and getmac as an "editable" package:
     ```bash
     python -m pip install --user -U tox
-    python -m pip install --user -U pre-commit
     python -m pip install -e .
-    pre-commit install
     ```
 5. Setup and run the tests:
     ```bash
