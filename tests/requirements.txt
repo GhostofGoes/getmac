@@ -1,6 +1,5 @@
-tox>=3.4
-pytest
-pytest-randomly
-pytest-mock
-pytest-benchmark
-pytest-cov
+pytest<5
+pytest-randomly==3.0.0
+pytest-mock==1.10.4
+pytest-benchmark==3.2.2
+pytest-cov==2.7.1
