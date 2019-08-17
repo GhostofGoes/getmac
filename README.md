@@ -234,6 +234,9 @@ then you might be using a platform I haven't been able to test.
 Keep calm, open a GitHub issue, and I'd be more than happy to help.
 
 ## Known Issues
+* Linux, WSL: Getting the mac of a local interface IP does not currently work
+(`getmac -4 10.0.0.4` will fail if `10.0.0.4` is the IP address of a local interface).
+This issue may be present on other POSIX systems as well.
 * Hostnames for IPv6 devices are not yet supported.
 * Windows: the "default" (used when no arguments set or specified) 
 of selecting the default route interface only works effectively 
