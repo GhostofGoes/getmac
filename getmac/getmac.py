@@ -23,7 +23,6 @@ Examples:
 """
 
 import ctypes
-import inspect
 import logging
 import os
 import platform
@@ -100,79 +99,79 @@ try:
 except ImportError:
     pass
 
+# notes:
+#   make sure this is all testable
+#   Selection of utils for common patterns, e.g. cmd, file read
+#   Define all methods in a separate file, "methods.py"
+#   Lookup using a nested dict:
+#       methods[TYPE] = {'method_name': method_instance()}
 
-# TODO: class name
-class GetMac:
-    def __init__(self):
-        # This gets run on first import
-        # Initialize what commands to use
-        # TODO: generalize interface/ip/ip6
-        # If there is no way to check if it's
-        # valid/working, then True by default.
-        self.int_meths = [x for x in inspect.getmembers(self)
-                          if x[0].startswith('_interface')]
-        self.ip_meths = [x for x in inspect.getmembers(self)
-                         if x[0].startswith('_ip')]
-        self.ip6_meths = [x for x in inspect.getmembers(self)
-                          if x[0].startswith('_ip6')]
+# at runtime, build a dynamic lookup table?
+#   e.g.: methods[TYPE] = <just the stuff for the current platform>
+# how do we handle marking available?
 
-        self.interface_methods = {x[0]: (x[1], True) for x in self.int_meths}
-        self.ip_methods = {x[0]: (x[1], True) for x in self.ip_meths}
-        self.ip6_methods = {x[0]: (x[1], True) for x in self.ip6_meths}
+# ** Flows **
+#   First run: try all methods for platform and type, mark which ones are available
+#   Subsequent runs: only use methods that work
+#   ==> TODO pick just one working method? ranking? (e.g. reading arp file > calling arp command)
+#          ...Maybe only choose a "hero" after there's a positive match of a MAC?
 
-        # considorations:
-        #   how to test a given approach/method is available
-        #   what methods to use for a platform
-        #   testing the code works properly e.g. sample tests
+# * Each method provides:
+#     Data retrieval function
+#       Returns:
+#           String (Convert bytes if needed, basic cleanup)
+#           '' (Failed to get the data, e.g. remote not in arp table)
+#           None (critical fail e.g. arp command doesn't exist, mark unavailable)
+#     Parsing function pointer
+#       Returns:
+#           String (Canonicalized using a util)
+#           '' (Failed to find a MAC)
+#           None (Critical parsing failure)
+# * Use self to track state between calls e.g. caching
+class Method:
+    PLATFORMS = []
+    TYPE = ''  # int_mac | remote_mac | default_int |
+    AVAILABLE = True
+    # __slots__?
 
-        self.imeths = {
-            'openbsd': {
-                'ifconfig_lladdr': (
-                    self._interface_ifconfig_lladdr,
-                    True,
-                    self._test_ifconfig_lladdr)
-            }
-        }
-
-
-        """
-        meths = 
-            'method': (method, available, testing_method),
-            ...
-        }
-        
-        """
-
-
-
-        # Check what commands work on the current platform
-        # TODO
-
-    def _interface_ifconfig_lladdr(self, iface):
+    def retrieve_data(self):
         pass
 
-    def _test_ifconfig_lladdr(self):
+    def parse_data(self):
         pass
 
-    # different class method for each argument to command
-    def _interface_ifconfig(self, iface):
 
-        pass
-        # cmd = (r'ether ' + MAC_RE_COLON,
-        #      0, 'ifconfig', [to_find])
-
-    def _interface_read_iface_file(self):
-        pass
-
-    def _ip6_read_arp_file(self):
-        return self._method_ip_read_arp_file()
-
-    def _method_ip_read_arp_file(self):
-        pass
-
-# TODO: singleton name
-mac_api = GetMac()
-
+# import inspect
+# class GetMac:
+#     def __init__(self):
+#         # This gets run on first import
+#         # Initialize what commands to use
+#         # If there is no way to check if it's
+#         # valid/working, then True by default.
+#         self.int_meths = [x for x in inspect.getmembers(self)
+#                           if x[0].startswith('_interface')]
+#         self.ip_meths = [x for x in inspect.getmembers(self)
+#                          if x[0].startswith('_ip')]
+#         self.ip6_meths = [x for x in inspect.getmembers(self)
+#                           if x[0].startswith('_ip6')]
+#
+#         self.interface_methods = {x[0]: (x[1], True) for x in self.int_meths}
+#         self.ip_methods = {x[0]: (x[1], True) for x in self.ip_meths}
+#         self.ip6_methods = {x[0]: (x[1], True) for x in self.ip6_meths}
+#
+#         # considorations:
+#         #   how to test a given approach/method is available
+#         #   what methods to use for a platform
+#         #   testing the code works properly e.g. sample tests
+#
+#         self.imeths = {
+#             'openbsd': {
+#                 'ifconfig_lladdr': (
+#                     self._interface_ifconfig_lladdr,
+#                     True,
+#                     self._test_ifconfig_lladdr)
+#             }
+#         }
 
 
 def get_mac_address(
