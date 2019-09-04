@@ -10,8 +10,7 @@
 
 * [ ] Do all tests pass locally?
     * [ ] `tox`
-    * [ ] `tox -e flake8`
-    * [ ] `tox -e codespell`
+    * [ ] `tox -e check`
 * [ ] Have you updated the [CHANGELOG](CHANGELOG.md)?
 * [ ] Did you add your name to the contributors list in the [README](README.md)?
 
