@@ -4,6 +4,7 @@
 one, move the default fallback logic into the function.
 
 # Bugs or potential issues
+* [ ] Fix lookup of a IPv4 address of a local interface on Linux
 * [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
 * [ ] Are there ever cases where loopback != `FF:FF:FF:FF:FF:FF`?
 * [ ] Remote host that is actually an interface should resolve to localhost MAC

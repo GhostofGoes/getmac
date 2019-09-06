@@ -90,7 +90,7 @@ install:
   - "python -c \"import platform; print(platform.uname())\""
 
   # System network information
-  - "getmac /fo table /v"
+  - "getmac /v"
   - "ipconfig /all"
   - "arp -a"
 

@@ -5,6 +5,7 @@
 [![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/get-mac)
 [![PyPI download](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
 [![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 
@@ -61,15 +62,15 @@ ip6_mac = get_mac_address(ip6="::1")
 host_mac = get_mac_address(hostname="localhost")
 updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
+# Changing the port used for updating ARP table (UDP packet)
+from getmac import getmac
+getmac.PORT = 44444  # Default: 55555
+print(getmac.get_mac_address(ip="192.168.0.1", network_request=True))
+
 # Enabling debugging
 from getmac import getmac
 getmac.DEBUG = 2  # DEBUG level 2
 print(getmac.get_mac_address(interface="Ethernet 3"))
-
-# Changing the port used for updating ARP table (UDP packet)
-from getmac import getmac
-getmac.PORT = 44444  # Default: 55555
-print(get_mac_address(ip="192.168.0.1", network_request=True))
 ```
 
 ## Terminal examples
@@ -78,9 +79,11 @@ print(get_mac_address(ip="192.168.0.1", network_request=True))
 getmac --help
 getmac --version
 
-# No arguments will return MAC of the default interface.
+# Invoking with no arguments will return MAC of the default interface
 getmac
-python -m getmac
+
+# Usage as a module
+python3 -m getmac
 
 # Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
 getmac --interface ens33
@@ -95,7 +98,7 @@ python -m getmac -6 ::1
 python -m getmac -n home.router
 
 # Getting the MAC address of a remote host requires the ARP table to be populated.
-# By default, getmac will populate the table by sending a small UDP packet to a high port of the host (by default, 55555).
+# By default, getmac will populate the table by sending a UDP packet to a high port on the host (defaults to 55555).
 # This can be disabled with --no-network-request, as shown here:
 getmac --no-network-request -4 192.168.0.1
 python -m getmac --no-network-request -n home.router
@@ -232,6 +235,9 @@ then you might be using a platform I haven't been able to test.
 Keep calm, open a GitHub issue, and I'd be more than happy to help.
 
 ## Known Issues
+* Linux, WSL: Getting the mac of a local interface IP does not currently work
+(`getmac -4 10.0.0.4` will fail if `10.0.0.4` is the IP address of a local interface).
+This issue may be present on other POSIX systems as well.
 * Hostnames for IPv6 devices are not yet supported.
 * Windows: the "default" (used when no arguments set or specified) 
 of selecting the default route interface only works effectively 
