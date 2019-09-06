@@ -198,8 +198,8 @@ def get_mac_address(
     if mac is not None:
         mac = str(mac)
         if not PY2:  # Strip bytestring conversion artifacts
-            mac = mac.replace("b'", '').replace("'", '')\
-                     .replace('\\n', '').replace('\\r', '')
+            for garbage_string in ["b'", "'", "\\n", "\\r"]:
+                mac = mac.replace(garbage_string, "")
         mac = mac.strip().lower().replace(' ', '').replace('-', ':')
 
         # Fix cases where there are no colons

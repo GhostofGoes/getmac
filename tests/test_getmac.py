@@ -52,8 +52,8 @@ def test_call_proc(mocker):
 @pytest.mark.skipif(platform.system() != 'Linux',
                     reason="Can't reliably mock fcntl on non-Linux platforms")
 def test_fcntl_iface(mocker):
-    data = b'enp3s0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00t\xd45\xe9' \
-           b'Es\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    data = (b'enp3s0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00t\xd45\xe9'
+            b'Es\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
     mocker.patch('fcntl.ioctl', return_value=data)
     m = mocker.patch('socket.socket')
     assert getmac._fcntl_iface('enp3s0') == '74:d4:35:e9:45:73'
