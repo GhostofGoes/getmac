@@ -37,13 +37,13 @@ from subprocess import check_output
 try:  # Python 3
     from subprocess import DEVNULL  # type: ignore
 except ImportError:  # Python 2
-    DEVNULL = open(os.devnull, 'wb')  # type: ignore
+    DEVNULL = open(os.devnull, "wb")  # type: ignore
 
 # Configure logging
-log = logging.getLogger('getmac')
+log = logging.getLogger("getmac")
 log.addHandler(logging.NullHandler())
 
-__version__ = '0.8.1'
+__version__ = "0.8.1"
 PY2 = sys.version_info[0] == 2
 
 # Configurable settings
@@ -52,33 +52,34 @@ PORT = 55555
 
 # Platform identifiers
 _SYST = platform.system()
-if _SYST == 'Java':
+if _SYST == "Java":
     try:
         import java.lang
+
         _SYST = str(java.lang.System.getProperty("os.name"))
     except ImportError:
         log.critical("Can't determine OS: couldn't import java.lang on Jython")
-WINDOWS = _SYST == 'Windows'
-DARWIN = _SYST == 'Darwin'
-OPENBSD = _SYST == 'OpenBSD'
-FREEBSD = _SYST == 'FreeBSD'
+WINDOWS = _SYST == "Windows"
+DARWIN = _SYST == "Darwin"
+OPENBSD = _SYST == "OpenBSD"
+FREEBSD = _SYST == "FreeBSD"
 BSD = OPENBSD or FREEBSD  # Not including Darwin for now
 WSL = False  # Windows Subsystem for Linux (WSL)
 LINUX = False
-if _SYST == 'Linux':
-    if 'Microsoft' in platform.version():
+if _SYST == "Linux":
+    if "Microsoft" in platform.version():
         WSL = True
     else:
         LINUX = True
 
-PATH = os.environ.get('PATH', os.defpath).split(os.pathsep)
+PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)
 if not WINDOWS:
-    PATH.extend(('/sbin', '/usr/sbin'))
+    PATH.extend(("/sbin", "/usr/sbin"))
 
 # Use a copy of the environment so we don't
 # modify the process's current environment.
 ENV = dict(os.environ)
-ENV['LC_ALL'] = 'C'  # Ensure ASCII output so we parse correctly
+ENV["LC_ALL"] = "C"  # Ensure ASCII output so we parse correctly
 
 # Constants
 IP4 = 0
@@ -86,14 +87,15 @@ IP6 = 1
 INTERFACE = 2
 HOSTNAME = 3
 
-MAC_RE_COLON = r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})'
-MAC_RE_DASH = r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})'
-MAC_RE_DARWIN = r'([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})'
+MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
+MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
+MAC_RE_DARWIN = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 
 # Used for mypy (a data type analysis tool)
 # If you're copying the code, this section can be safely removed
 try:
     from typing import TYPE_CHECKING
+
     if TYPE_CHECKING:
         from typing import Optional
 except ImportError:
@@ -101,8 +103,7 @@ except ImportError:
 
 
 def get_mac_address(
-        interface=None, ip=None, ip6=None,
-        hostname=None, network_request=True
+    interface=None, ip=None, ip6=None, hostname=None, network_request=True
 ):
     # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
     """Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
@@ -129,8 +130,8 @@ def get_mac_address(
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error.
     """
-    if (hostname and hostname == 'localhost') or (ip and ip == '127.0.0.1'):
-        return '00:00:00:00:00:00'
+    if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
+        return "00:00:00:00:00:00"
 
     # Resolve hostname to an IP address
     if hostname:
@@ -144,9 +145,9 @@ def get_mac_address(
             s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         try:
             if ip:
-                s.sendto(b'', (ip, PORT))
+                s.sendto(b"", (ip, PORT))
             else:
-                s.sendto(b'', (ip6, PORT))
+                s.sendto(b"", (ip6, PORT))
         except Exception:
             log.error("Failed to send ARP table population packet")
             if DEBUG:
@@ -157,10 +158,12 @@ def get_mac_address(
     # Setup the address hunt based on the arguments specified
     if ip6:
         if not socket.has_ipv6:
-            log.error("Cannot get the MAC address of a IPv6 host: "
-                      "IPv6 is not supported on this system")
+            log.error(
+                "Cannot get the MAC address of a IPv6 host: "
+                "IPv6 is not supported on this system"
+            )
             return None
-        elif ':' not in ip6:
+        elif ":" not in ip6:
             log.error("Invalid IPv6 address: %s", ip6)
             return None
         to_find = ip6
@@ -178,18 +181,18 @@ def get_mac_address(
                 to_find = _fetch_ip_using_dns()
                 typ = IP4
             elif WINDOWS:
-                to_find = 'Ethernet'
+                to_find = "Ethernet"
             elif BSD:
                 if OPENBSD:
                     to_find = _get_default_iface_openbsd()  # type: ignore
                 else:
                     to_find = _get_default_iface_freebsd()  # type: ignore
                 if not to_find:
-                    to_find = 'em0'
+                    to_find = "em0"
             else:
                 to_find = _hunt_linux_default_iface()  # type: ignore
                 if not to_find:
-                    to_find = 'en0'
+                    to_find = "en0"
 
     mac = _hunt_for_mac(to_find, typ, network_request)
     log.debug("Raw MAC found: %s", mac)
@@ -200,31 +203,34 @@ def get_mac_address(
         if not PY2:  # Strip bytestring conversion artifacts
             for garbage_string in ["b'", "'", "\\n", "\\r"]:
                 mac = mac.replace(garbage_string, "")
-        mac = mac.strip().lower().replace(' ', '').replace('-', ':')
+        mac = mac.strip().lower().replace(" ", "").replace("-", ":")
 
         # Fix cases where there are no colons
-        if ':' not in mac and len(mac) == 12:
+        if ":" not in mac and len(mac) == 12:
             log.debug("Adding colons to MAC %s", mac)
-            mac = ':'.join(mac[i:i + 2] for i in range(0, len(mac), 2))
+            mac = ":".join(mac[i : i + 2] for i in range(0, len(mac), 2))
 
         # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
         elif len(mac) < 17:
-            log.debug("Length of MAC %s is %d, padding single-character "
-                      "octets with zeros", mac, len(mac))
-            parts = mac.split(':')
+            log.debug(
+                "Length of MAC %s is %d, padding single-character " "octets with zeros",
+                mac,
+                len(mac),
+            )
+            parts = mac.split(":")
             new_mac = []
             for part in parts:
                 if len(part) == 1:
-                    new_mac.append('0' + part)
+                    new_mac.append("0" + part)
                 else:
                     new_mac.append(part)
-            mac = ':'.join(new_mac)
+            mac = ":".join(new_mac)
 
         # MAC address should ALWAYS be 17 characters before being returned
         if len(mac) != 17:
             log.warning("MAC address %s is not 17 characters long!", mac)
             mac = None
-        elif mac.count(':') != 5:
+        elif mac.count(":") != 5:
             log.warning("MAC address %s is missing ':' characters", mac)
             mac = None
     return mac
@@ -242,9 +248,11 @@ def _popen(command, args):
     # type: (str, str) -> str
     for directory in PATH:
         executable = os.path.join(directory, command)
-        if (os.path.exists(executable)
+        if (
+            os.path.exists(executable)
             and os.access(executable, os.F_OK | os.X_OK)
-                and not os.path.isdir(executable)):
+            and not os.path.isdir(executable)
+        ):
             break
     else:
         executable = command
@@ -256,14 +264,14 @@ def _popen(command, args):
 def _call_proc(executable, args):
     # type: (str, str) -> str
     if WINDOWS:
-        cmd = executable + ' ' + args  # type: ignore
+        cmd = executable + " " + args  # type: ignore
     else:
         cmd = [executable] + shlex.split(args)  # type: ignore
     output = check_output(cmd, stderr=DEVNULL, env=ENV)
     if DEBUG >= 4:
         log.debug("Output from '%s' command: %s", executable, str(output))
     if not PY2 and isinstance(output, bytes):
-        return str(output, 'utf-8')
+        return str(output, "utf-8")
     else:
         return str(output)
 
@@ -288,33 +296,35 @@ def _windows_ctypes_host(host):
         return None
 
     # Convert binary data into a string.
-    macaddr = ''
-    for intval in struct.unpack('BBBBBB', buffer):  # type: ignore
+    macaddr = ""
+    for intval in struct.unpack("BBBBBB", buffer):  # type: ignore
         if intval > 15:
-            replacestr = '0x'
+            replacestr = "0x"
         else:
-            replacestr = 'x'
-        macaddr = ''.join([macaddr, hex(intval).replace(replacestr, '')])
+            replacestr = "x"
+        macaddr = "".join([macaddr, hex(intval).replace(replacestr, "")])
     return macaddr
 
 
 def _fcntl_iface(iface):
     # type: (str) -> str
     import fcntl
+
     if not PY2:
         iface = iface.encode()  # type: ignore
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 0x8927 = SIOCGIFADDR
-    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack('256s', iface[:15]))
+    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", iface[:15]))
     if PY2:
-        return ':'.join(['%02x' % ord(char) for char in info[18:24]])
+        return ":".join(["%02x" % ord(char) for char in info[18:24]])
     else:
-        return ':'.join(['%02x' % ord(chr(char)) for char in info[18:24]])
+        return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
 
 def _uuid_ip(ip):
     # type: (str) -> Optional[str]
     from uuid import _arp_getnode  # type: ignore
+
     backup = socket.gethostbyname
     try:
         socket.gethostbyname = lambda x: ip
@@ -335,9 +345,10 @@ def _uuid_ip(ip):
 def _uuid_lanscan_iface(iface):
     # type: (str) -> Optional[str]
     from uuid import _find_mac  # type: ignore
+
     if not PY2:
-        iface = bytes(iface, 'utf-8')  # type: ignore
-    mac = _find_mac('lanscan', '-ai', [iface], lambda i: 0)
+        iface = bytes(iface, "utf-8")  # type: ignore
+    mac = _find_mac("lanscan", "-ai", [iface], lambda i: 0)
     if mac:
         return _uuid_convert(mac)
     return None
@@ -345,23 +356,23 @@ def _uuid_lanscan_iface(iface):
 
 def _uuid_convert(mac):
     # type: (int) -> str
-    return ':'.join(('%012X' % mac)[i:i+2] for i in range(0, 12, 2))
+    return ":".join(("%012X" % mac)[i : i + 2] for i in range(0, 12, 2))
 
 
 def _read_sys_iface_file(iface):
     # type: (str) -> Optional[str]
-    data = _read_file('/sys/class/net/' + iface + '/address')
+    data = _read_file("/sys/class/net/" + iface + "/address")
     # Sometimes this can be empty or a single newline character
     return None if data is not None and len(data) < 17 else data
 
 
 def _read_arp_file(host):
     # type: (str) -> Optional[str]
-    data = _read_file('/proc/net/arp')
+    data = _read_file("/proc/net/arp")
     if data is not None and len(data) > 1:
         # Need a space, otherwise a search for 192.168.16.2
         # will match 192.168.16.254 if it comes first!
-        return _search(re.escape(host) + r' .+' + MAC_RE_COLON, data)
+        return _search(re.escape(host) + r" .+" + MAC_RE_COLON, data)
     return None
 
 
@@ -388,30 +399,46 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         log.warning("_hunt_for_mac() failed: to_find is None")
         return None
     if not PY2 and isinstance(to_find, bytes):
-        to_find = str(to_find, 'utf-8')
+        to_find = str(to_find, "utf-8")
 
     if WINDOWS and type_of_thing == INTERFACE:
         methods = [
             # getmac - Connection Name
-            (r'\r\n' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
-             0, 'getmac.exe', ['/NH /V']),
-
+            (
+                r"\r\n" + to_find + r".*" + MAC_RE_DASH + r".*\r\n",
+                0,
+                "getmac.exe",
+                ["/NH /V"],
+            ),
             # ipconfig
-            (to_find + r'(?:\n?[^\n]*){1,8}Physical Address[ .:]+' + MAC_RE_DASH + r'\r\n',
-             0, 'ipconfig.exe', ['/all']),
-
+            (
+                to_find
+                + r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+"
+                + MAC_RE_DASH
+                + r"\r\n",
+                0,
+                "ipconfig.exe",
+                ["/all"],
+            ),
             # getmac - Network Adapter (the human-readable name)
-            (r'\r\n.*' + to_find + r'.*' + MAC_RE_DASH + r'.*\r\n',
-             0, 'getmac.exe', ['/NH /V']),
-
+            (
+                r"\r\n.*" + to_find + r".*" + MAC_RE_DASH + r".*\r\n",
+                0,
+                "getmac.exe",
+                ["/NH /V"],
+            ),
             # wmic - WMI command line utility
-            lambda x: _popen('wmic.exe', 'nic where "NetConnectionID = \'%s\'" get '
-                                         'MACAddress /value' % x).strip().partition('=')[2],
+            lambda x: _popen(
+                "wmic.exe",
+                "nic where \"NetConnectionID = '%s'\" get " "MACAddress /value" % x,
+            )
+            .strip()
+            .partition("=")[2],
         ]
     elif (WINDOWS or WSL) and type_of_thing in [IP4, IP6, HOSTNAME]:
         methods = [
             # arp -a - Parsing result with a regex
-            (MAC_RE_DASH, 0, 'arp.exe', ['-a %s' % to_find]),
+            (MAC_RE_DASH, 0, "arp.exe", ["-a %s" % to_find])
         ]
 
         # Add methods that make network requests
@@ -420,76 +447,70 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             methods.insert(1, _windows_ctypes_host)
     elif (DARWIN or FREEBSD) and type_of_thing == INTERFACE:
         methods = [
-            (r'ether ' + MAC_RE_COLON,
-             0, 'ifconfig', [to_find]),
-
+            (r"ether " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
             # Alternative match for ifconfig if it fails
-            (to_find + r'.*ether ' + MAC_RE_COLON,
-             0, 'ifconfig', ['']),
-
-            (MAC_RE_COLON,
-             0, 'networksetup', ['-getmacaddress %s' % to_find]),
+            (to_find + r".*ether " + MAC_RE_COLON, 0, "ifconfig", [""]),
+            (MAC_RE_COLON, 0, "networksetup", ["-getmacaddress %s" % to_find]),
         ]
     elif FREEBSD and type_of_thing in [IP4, IP6, HOSTNAME]:
         methods = [
-            (r'\(' + re.escape(to_find) + r'\)\s+at\s+' + MAC_RE_COLON,
-             0, 'arp', [to_find])
+            (
+                r"\(" + re.escape(to_find) + r"\)\s+at\s+" + MAC_RE_COLON,
+                0,
+                "arp",
+                [to_find],
+            )
         ]
     elif OPENBSD and type_of_thing == INTERFACE:
-        methods = [
-            (r'lladdr ' + MAC_RE_COLON,
-             0, 'ifconfig', [to_find]),
-        ]
+        methods = [(r"lladdr " + MAC_RE_COLON, 0, "ifconfig", [to_find])]
     elif OPENBSD and type_of_thing in [IP4, IP6, HOSTNAME]:
-        methods = [
-            (re.escape(to_find) + r'[ ]+' + MAC_RE_COLON,
-             0, 'arp', ['-an']),
-        ]
+        methods = [(re.escape(to_find) + r"[ ]+" + MAC_RE_COLON, 0, "arp", ["-an"])]
     elif type_of_thing == INTERFACE:
         methods = [
             _read_sys_iface_file,
             _fcntl_iface,
-
             # Fast modern Ubuntu ifconfig
-            (r'ether ' + MAC_RE_COLON,
-             0, 'ifconfig', [to_find]),
-
+            (r"ether " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
             # Fast ifconfig
-            (r'HWaddr ' + MAC_RE_COLON,
-             0, 'ifconfig', [to_find]),
-
+            (r"HWaddr " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
             # ip link (Don't use 'list' due to SELinux [Android 24+])
-            (to_find + r'.*\n.*link/ether ' + MAC_RE_COLON,
-             0, 'ip', ['link %s' % to_find, 'link']),
-
+            (
+                to_find + r".*\n.*link/ether " + MAC_RE_COLON,
+                0,
+                "ip",
+                ["link %s" % to_find, "link"],
+            ),
             # netstat
-            (to_find + r'.*HWaddr ' + MAC_RE_COLON,
-             0, 'netstat', ['-iae']),
-
+            (to_find + r".*HWaddr " + MAC_RE_COLON, 0, "netstat", ["-iae"]),
             # More variations of ifconfig
-            (to_find + r'.*ether ' + MAC_RE_COLON,
-             0, 'ifconfig', ['']),
-            (to_find + r'.*HWaddr ' + MAC_RE_COLON,
-             0, 'ifconfig', ['', '-a', '-v']),
-
+            (to_find + r".*ether " + MAC_RE_COLON, 0, "ifconfig", [""]),
+            (to_find + r".*HWaddr " + MAC_RE_COLON, 0, "ifconfig", ["", "-a", "-v"]),
             # Tru64 ('-av')
-            (to_find + r'.*Ether ' + MAC_RE_COLON,
-             0, 'ifconfig', ['-av']),
+            (to_find + r".*Ether " + MAC_RE_COLON, 0, "ifconfig", ["-av"]),
             _uuid_lanscan_iface,
         ]
     elif type_of_thing in [IP4, IP6, HOSTNAME]:
         esc = re.escape(to_find)
         methods = [
             _read_arp_file,
-            lambda x: _popen('ip', 'neighbor show %s' % x)
-            .partition(x)[2].partition('lladdr')[2].strip().split()[0],
-
-            (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_COLON,
-             0, 'arp', [to_find, '-an', '-an %s' % to_find]),
-
+            lambda x: _popen("ip", "neighbor show %s" % x)
+            .partition(x)[2]
+            .partition("lladdr")[2]
+            .strip()
+            .split()[0],
+            (
+                r"\(" + esc + r"\)\s+at\s+" + MAC_RE_COLON,
+                0,
+                "arp",
+                [to_find, "-an", "-an %s" % to_find],
+            ),
             # Darwin oddness
-            (r'\(' + esc + r'\)\s+at\s+' + MAC_RE_DARWIN,
-             0, 'arp', [to_find, '-a', '-a %s' % to_find]),
+            (
+                r"\(" + esc + r"\)\s+at\s+" + MAC_RE_DARWIN,
+                0,
+                "arp",
+                [to_find, "-a", "-a %s" % to_find],
+            ),
             _uuid_ip,
         ]
     else:
@@ -549,11 +570,11 @@ def _get_default_iface_linux():
     reason, we can fall back on the system commands (e.g for a platform
     that has a route command, but maybe doesn't use /proc?).
     """
-    data = _read_file('/proc/net/route')
+    data = _read_file("/proc/net/route")
     if data is not None and len(data) > 1:
-        for line in data.split('\n')[1:-1]:
-            iface_name, dest = line.split('\t')[:2]
-            if dest == '00000000':
+        for line in data.split("\n")[1:-1]:
+            iface_name, dest = line.split("\t")[:2]
+            if dest == "00000000":
                 return iface_name
     return None
 
@@ -564,8 +585,14 @@ def _hunt_linux_default_iface():
     # same methods as POSIX, since those parts of the net stack work fine.
     methods = [
         _get_default_iface_linux,
-        lambda: _popen('route', '-n').partition('0.0.0.0')[2].partition('\n')[0].split()[-1],
-        lambda: _popen('ip', 'route list 0/0').partition('dev')[2].partition('proto')[0].strip(),
+        lambda: _popen("route", "-n")
+        .partition("0.0.0.0")[2]
+        .partition("\n")[0]
+        .split()[-1],
+        lambda: _popen("ip", "route list 0/0")
+        .partition("dev")[2]
+        .partition("proto")[0]
+        .strip(),
     ]
     return _try_methods(methods)
 
@@ -573,18 +600,17 @@ def _hunt_linux_default_iface():
 def _get_default_iface_openbsd():
     # type: () -> Optional[str]
     methods = [
-        lambda: _popen('route', '-nq show -inet -gateway -priority 1')
-        .partition('127.0.0.1')[0].strip().rpartition(' ')[2],
+        lambda: _popen("route", "-nq show -inet -gateway -priority 1")
+        .partition("127.0.0.1")[0]
+        .strip()
+        .rpartition(" ")[2]
     ]
     return _try_methods(methods)
 
 
 def _get_default_iface_freebsd():
     # type: () -> Optional[str]
-    methods = [
-        (r'default[ ]+\S+[ ]+\S+[ ]+(\S+)\n',
-         0, 'netstat', ['-r']),
-    ]
+    methods = [(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)\n", 0, "netstat", ["-r"])]
     return _try_methods(methods)
 
 
@@ -597,7 +623,7 @@ def _fetch_ip_using_dns():
     which we then inspect and return.
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(('1.1.1.1', 53))
+    s.connect(("1.1.1.1", 53))
     ip = s.getsockname()[0]
     s.close()  # NOTE: sockets don't have context manager in 2.7 :(
     return ip
