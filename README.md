@@ -5,6 +5,7 @@
 [![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/get-mac)
 [![PyPI download](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
 [![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 

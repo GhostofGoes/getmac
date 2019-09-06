@@ -8,10 +8,13 @@
 
 ### Code changes:
 
+* [ ] Did you format your code with Black? 
+    * [ ] `black getmac tests`
+* [ ] Are the linting checks passing?
+    * [ ] `tox -e check`
 * [ ] Do all tests pass locally?
     * [ ] `tox`
-    * [ ] `tox -e check`
-* [ ] Have you updated the [CHANGELOG](CHANGELOG.md)?
+* [ ] Have you updated the [CHANGELOG](CHANGELOG.md) with a summary of your change?
 * [ ] Did you add your name to the contributors list in the [README](README.md)?
 
 ### Summary of changes:

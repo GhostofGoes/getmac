@@ -46,7 +46,7 @@ to bring new members into the community, and can always use the help.
 ## Platform testing
 Help is dearly needed on testing and rooting out differences in various platforms and configurations.
 At a basic level, this involves just running the tests on any platforms you use.
-Open issues for any bugs or quirks you discover, or if you're feeling adventerous, fix it yourself!
+Open issues for any bugs or quirks you discover, or if you're feeling adventurous, fix it yourself!
 
 Any platform is fair game! The following are some highlights or platforms of special interest:
 * MacOS/OSX (This requires owning a Mac, and is the area most sorely in need of testing)
@@ -85,7 +85,7 @@ Again, this can be done using the GUI, your favorite editor, or `git checkout -b
     ```
 6. Write some code! Git commit messages should information about what changed,
 and if it's relevant, the rationale (thinking) for the change.
-7. Follow the checklist
+7. Follow the checklist in the pull request template
 8. Submit a pull request!
 
 
