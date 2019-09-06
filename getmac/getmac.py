@@ -101,6 +101,9 @@ try:
 except ImportError:
     pass
 
+# Ensure we only log the Python 2 warning once
+WARNED_PY2 = False
+
 
 def get_mac_address(
     interface=None, ip=None, ip6=None, hostname=None, network_request=True
@@ -130,6 +133,15 @@ def get_mac_address(
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error.
     """
+    if PY2:
+        global WARNED_PY2
+        if not WARNED_PY2:
+            log.warning(
+                "Python 2 compatibility will be dropped in getmac 1.0.0. If you are "
+                'stuck on Python 2, consider loosely pinning the version e.g. "getmac<1".'
+            )
+            WARNED_PY2 = True
+
     if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
         return "00:00:00:00:00:00"
 
