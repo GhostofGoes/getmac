@@ -278,6 +278,7 @@ to ask questions or discuss the project (Handle: @KnownError).
 * @fortunate-man - Awesome usage videos
 * @martmists - legacy Python compatibility improvements
 * @hargoniX - scripts and specfiles for RPM packaging
+* Ville Skyttä (@scop) - arping lookup support
 
 ## Sources
 Many of the methods used to acquire an address and the core logic framework
