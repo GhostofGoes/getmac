@@ -12,6 +12,7 @@
 * Added warning about Python 2 compatibility being dropped in 1.0.0
 * Officially support Python 3.8
 * Documented a known issue with looking up IP of a local interface on Linux/WSL (See the "Known Issues" section in the README)
+* Added lookup using `arping` as last resort
 
 ### Dev
 * Standardized formatting on [Black](https://github.com/psf/black)
