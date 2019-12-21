@@ -388,8 +388,15 @@ def _read_arp_file(host):
     return None
 
 
-def _arping(host):
+def _arping_habets(host):
     # type: (str) -> Optional[str]
+    """Parse https://github.com/ThomasHabets/arping output."""
+    return _search(r"^%s$" % MAC_RE_COLON, _popen("arping", "-r -C 1 -c 1 %s" % host),)
+
+
+def _arping_iputils(host):
+    # type: (str) -> Optional[str]
+    """Parse iputils arping output."""
     return _search(
         r" from %s \[(%s)\]" % (re.escape(host), MAC_RE_COLON),
         _popen("arping", "-f -c 1 %s" % host),
@@ -535,7 +542,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
         ]
         # Add methods that make network requests
         if net_ok and type_of_thing != IP6:
-            methods.append(_arping)
+            methods.extend((_arping_iputils, _arping_habets))
     else:
         log.critical("Reached end of _hunt_for_mac() if-else chain!")
         return None
