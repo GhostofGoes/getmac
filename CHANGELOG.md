@@ -7,6 +7,8 @@
 ## NEXT (XX/XX/XXXX)
 * TBD
 
+### Changed
+* Added support for Thomas Habets' version of `arping` in addition to the existing iputils one
 
 ## 0.8.2 (12/07/2019)
 
