@@ -101,79 +101,83 @@ try:
 except ImportError:
     pass
 
-# notes:
-#   make sure this is all testable
-#   Selection of utils for common patterns, e.g. cmd, file read
-#   Define all methods in a separate file, "methods.py"
-#   Lookup using a nested dict:
-#       methods[TYPE] = {'method_name': method_instance()}
 
-# at runtime, build a dynamic lookup table?
-#   e.g.: methods[TYPE] = <just the stuff for the current platform>
-# how do we handle marking available?
+# TODO: move more logic out of get_mac_address into individual methods
+#   interface
+#   remote host
+#   return data cleanup and validation
 
-# ** Flows **
-#   First run: try all methods for platform and type, mark which ones are available
-#   Subsequent runs: only use methods that work
-#   ==> TODO pick just one working method? ranking? (e.g. reading arp file > calling arp command)
-#          ...Maybe only choose a "hero" after there's a positive match of a MAC?
+# TODO: move utils into separate file
+# TODO: move interface methods into separate file
+# TODO: move host methods into separate file
 
-# * Each method provides:
-#     Data retrieval function
-#       Returns:
-#           String (Convert bytes if needed, basic cleanup)
-#           '' (Failed to get the data, e.g. remote not in arp table)
-#           None (critical fail e.g. arp command doesn't exist, mark unavailable)
-#     Parsing function pointer
-#       Returns:
-#           String (Canonicalized using a util)
-#           '' (Failed to find a MAC)
-#           None (Critical parsing failure)
-# * Use self to track state between calls e.g. caching
-class Method:
-    PLATFORMS = []
-    TYPE = ''  # int_mac | remote_mac | default_int |
-    AVAILABLE = True
-    # __slots__?
+# TODO: GitHub issue requesting security analysis. Hacktoberfest?
+#   They don't need to fix the issues, just find them
+#   Merge PR adding themselves as a contributor
 
-    def retrieve_data(self):
-        pass
-
-    def parse_data(self):
-        pass
+# TODO: WSL vs WSL2 (WSL2 is full linux so just need to tweak platform ID check)
 
 
-# import inspect
-# class GetMac:
-#     def __init__(self):
-#         # This gets run on first import
-#         # Initialize what commands to use
-#         # If there is no way to check if it's
-#         # valid/working, then True by default.
-#         self.int_meths = [x for x in inspect.getmembers(self)
-#                           if x[0].startswith('_interface')]
-#         self.ip_meths = [x for x in inspect.getmembers(self)
-#                          if x[0].startswith('_ip')]
-#         self.ip6_meths = [x for x in inspect.getmembers(self)
-#                           if x[0].startswith('_ip6')]
-#
-#         self.interface_methods = {x[0]: (x[1], True) for x in self.int_meths}
-#         self.ip_methods = {x[0]: (x[1], True) for x in self.ip_meths}
-#         self.ip6_methods = {x[0]: (x[1], True) for x in self.ip6_meths}
-#
-#         # considorations:
-#         #   how to test a given approach/method is available
-#         #   what methods to use for a platform
-#         #   testing the code works properly e.g. sample tests
-#
-#         self.imeths = {
-#             'openbsd': {
-#                 'ifconfig_lladdr': (
-#                     self._interface_ifconfig_lladdr,
-#                     True,
-#                     self._test_ifconfig_lladdr)
-#             }
-#         }
+"""
+SECURITY CONCERNS:
+  Cache file is untrusted
+  Results from command invocations are untrusted
+  Double-check validation of results before returning
+  Validate arguments to get_mac_address() to avoid command injection
+      Data types
+      IPv4/IPv6 addresses
+      Interface names
+  Notes from GitHub issue
+  Better document security concerns/boundaries
+      Ability to make network requests in (document instances)
+      Commands that are executed
+      File reads
+  Environment being passed to subprocesses + env variables used
+  Modifying PATH with /sbin and /usr/sbin
+
+Strategy
+  Order of methods is determined by:
+      Platform + version
+      Performance (file read > command)
+      Reliability (how well I know/understand the command to work)
+  Methods have basic criteria that must pass before execution,
+      e.g. "system must be NT" for NetBIOS method
+
+
+How do we handle the first call potentially being incorrect, e.g.
+  for a host that doesn't exist or interface that doesn't exist?
+
+What is fallback if all tests fail during initialization?
+
+Make a future TODO to handle cases where the command/file/etc exists,
+but isn't actually returning what we want. Maybe an argument like
+"high_accuracy=True" when calling get_mac_address?
+
+things to try...
+  Test if file exists and is readable (e.g. arp cache)
+  Does command exist (shutil.which)
+  "negative" test: run with bogus input, if it returns a certain result
+      we know it's a valid command.
+
+ok so
+  Try a bunch of methods
+  If we get a VERIFIED POSITIVE result (yay good input), then:
+    Use that for the rest of eternity
+  Else:
+    Here are the ones that seem to work
+    Continue looking for VERIFIED POSITIVE result
+
+On each call, check if the "method cache" for the requested info is populated
+(e.g. remote host, interface mac, etc.)
+  First call it will not be and result in cache population.
+      OPTIONAL: check for a cache file
+      Generate a list of methods to try
+      First method to succeed with a VALID MAC gets cached. Stricter verification
+          of the result using a regex or string parser than normal returns.
+      Once verified, select as the method to use ALWAYS
+      OPTIONAL: write success to a file so future loads
+"""
+
 
 # Ensure we only log the Python 2 warning once
 WARNED_PY2 = False
