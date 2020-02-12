@@ -13,6 +13,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
+from datetime import datetime
 DOCDIR = os.path.pardir(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.pardir(DOCDIR), 'getmac'))
 
@@ -24,7 +25,7 @@ import getmac  # noqa: E402
 # -- Project information -----------------------------------------------------
 
 project = 'getmac'
-copyright = '2019, Christopher Goes'
+copyright = '2017 - %i, Christopher Goes' % datetime.today().year
 author = 'Christopher Goes'
 version = getmac.__version__
 release = getmac.__version__
