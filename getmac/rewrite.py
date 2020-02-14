@@ -113,12 +113,10 @@ class Method:
     net_request = False
     # TODO: __slots__?
 
-    def test(self):
-        # type: () -> bool
+    def test(self):  # type: () -> bool
         pass
 
-    def get(self, arg):
-        # type: (str) -> Optional[str]
+    def get(self, arg):  # type: (str) -> Optional[str]
         pass
 
 
@@ -127,10 +125,10 @@ class ArpFile(Method):
     method_type = "ip"
     _path = "/proc/net/arp"
 
-    def test(self):
+    def test(self):  # type: () -> bool
         return os.path.exists(self._path) and os.access(self._path, os.R_OK)
 
-    def get(self, arg):
+    def get(self, arg):  # type: (str) -> Optional[str]
         data = _read_file(self._path)
         if data is not None and len(data) > 1:
             # Need a space, otherwise a search for 192.168.16.2
@@ -144,11 +142,11 @@ class SysIfaceFile(Method):
     method_type = "iface"
     _path = "/sys/class/net/"
 
-    def test(self):
+    def test(self):  # type: () -> bool
         # TODO: imperfect, but should work well enough
         return os.path.exists(self._path) and os.access(self._path, os.R_OK)
 
-    def get(self, arg):
+    def get(self, arg):  # type: (str) -> Optional[str]
         data = _read_file(self._path + arg + "/address")
         # Sometimes this can be empty or a single newline character
         return None if data is not None and len(data) < 17 else data
@@ -158,14 +156,14 @@ class UuidLanscan(Method):
     platforms = ["other"]  # TODO: "other" platform?
     method_type = "iface"
 
-    def test(self):
+    def test(self):  # type: () -> bool
         try:
             from uuid import _find_mac
             return exists("lanscan")
         except Exception:
             return False
 
-    def get(self, arg):
+    def get(self, arg):  # type: (str) -> Optional[str]
         from uuid import _find_mac  # type: ignore
 
         if not PY2:
@@ -178,7 +176,8 @@ class UuidLanscan(Method):
 
 class CtypesHost(Method):
     platforms = ["windows"]
-    method_type = "ip"
+    method_type = "ip4"  # TODO: can this be made to work with IPv6?
+    net_request = True
 
     def test(self):  # type: () -> bool
         try:
@@ -293,7 +292,7 @@ class GetmacExe(Method):
         net_regex = r"\r\n.*" + arg + r".*" + MAC_RE_DASH + r".*\r\n"
 
         for regex in [conn_regex, net_regex]:
-            found = _search(regex, command_output, 0)
+            found = _search(regex, command_output)
             if found:
                 return found
         return None
@@ -308,9 +307,7 @@ class IpconfigExe(Method):
         return exists("ipconfig.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        command_output = _popen("ipconfig.exe", "/all")
-        regex = arg + self._regex
-        return _search(regex, command_output, 0)
+        return _search(arg + self._regex, _popen("ipconfig.exe", "/all"))
 
 
 class WimcExe(Method):
@@ -329,6 +326,79 @@ class WimcExe(Method):
         return command_output.strip().partition("=")[2]
 
 
+class ArpExe(Method):
+    platforms = ["windows", "wsl"]
+    method_type = "ip"
+
+    def test(self):  # type: () -> bool
+        return exists("arp.exe")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        return _search(MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
+
+
+class IfconfigEther(Method):
+    platforms = ["darwin", "freebsd"]
+    method_type = "iface"
+
+    def test(self):  # type: () -> bool
+        return exists("ifconfig")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        # TODO: check which works, with interface arg or without
+        # (r"ether " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
+        # # Alternative match for ifconfig if it fails
+        # (to_find + r".*ether " + MAC_RE_COLON, 0, "ifconfig", [""]),
+        pass
+
+
+class DarwinNetworksetup(Method):
+    platforms = ["darwin"]
+    method_type = "iface"
+
+    def test(self):  # type: () -> bool
+        return exists("networksetup")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        command_output = _popen("networksetup", "-getmacaddress %s" % arg)
+        return _search(MAC_RE_COLON, command_output)
+
+
+class ArpFreebsd(Method):
+    platforms = ["freebsd"]
+    method_type = "ip"
+
+    def test(self):  # type: () -> bool
+        return exists("arp")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + MAC_RE_COLON
+        return _search(regex, _popen("arp", arg))
+
+
+class IfconfigOpenbsd(Method):
+    platforms = ["openbsd"]
+    method_type = "iface"
+
+    def test(self):  # type: () -> bool
+        return exists("ifconfig")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        return _search(r"lladdr " + MAC_RE_COLON, _popen("ifconfig", arg))
+
+
+class ArpOpenbsd(Method):
+    platforms = ["openbsd"]
+    method_type = "ip"
+    _regex = r"[ ]+" + MAC_RE_COLON
+
+    def test(self):  # type: () -> bool
+        return exists("arp")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
+
+
 # TODO: ordering of methods by effectiveness/reliability
 METHODS = [
     ArpFile,
@@ -340,6 +410,12 @@ METHODS = [
     GetmacExe,
     IpconfigExe,
     WimcExe,
+    ArpExe,
+    IfconfigEther,
+    DarwinNetworksetup,
+    ArpFreebsd,
+    IfconfigOpenbsd,
+    ArpOpenbsd,
 ]
 
 
