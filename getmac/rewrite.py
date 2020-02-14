@@ -4,12 +4,12 @@ import os
 import platform
 import re
 import shlex
+import shutil
 import socket
 import struct
 import sys
 import traceback
 from subprocess import check_output
-from shutil import which
 
 try:  # Python 3
     from subprocess import DEVNULL  # type: ignore
@@ -82,10 +82,16 @@ except ImportError:
 from .getmac import _read_file, _search, _uuid_convert
 
 
+# TODO: log test() failures when DEBUG is enabled
+# TODO: log get() failures
+# TODO: exception handling when calling get(), log all exceptions
+# TODO: document quirks/notes about each method in class docstring
 # TODO: use self/instance to track state between calls e.g. caching
 class Method:
     # linux windows bsd darwin freebsd openbsd
     # TODO: how to handle wsl
+    # TODO: "other" platform (e.g. for lanscan, etc.)
+    # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
     platforms = []
     method_type = ""  # ip, ip4, ip6, iface, default_iface
     net_request = False
@@ -124,7 +130,7 @@ class ArpFile(Method):
         return None
 
 
-class SysFile(Method):
+class SysIfaceFile(Method):
     platforms = ["linux"]
     method_type = "iface"
     _path = "/sys/class/net/"
@@ -140,13 +146,13 @@ class SysFile(Method):
 
 
 class UuidLanscan(Method):
-    platforms = ["other"]  # TODO
+    platforms = ["other"]  # TODO: "other" platform?
     method_type = "iface"
 
     def test(self):
         try:
             from uuid import _find_mac
-            return bool(which("lanscan", path=PATH))
+            return bool(shutil.which("lanscan", path=PATH))
         except Exception:
             return False
 
@@ -154,17 +160,121 @@ class UuidLanscan(Method):
         from uuid import _find_mac  # type: ignore
 
         if not PY2:
-            iface = bytes(arg, "utf-8")  # type: ignore
+            arg = bytes(arg, "utf-8")  # type: ignore
         mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)
         if mac:
             return _uuid_convert(mac)
         return None
 
 
+class CtypesHost(Method):
+    platforms = ["windows"]
+    method_type = "ip"
+
+    def test(self):  # type: () -> bool
+        try:
+            return ctypes.windll.wsock32.inet_addr(b'127.0.0.1') > 0
+        except Exception:
+            return False
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        if not PY2:  # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
+            arg = arg.encode()  # type: ignore
+        try:
+            inetaddr = ctypes.windll.wsock32.inet_addr(arg)  # type: ignore
+            if inetaddr in (0, -1):
+                raise Exception
+        except Exception:
+            # TODO: this assumes failure is due to arg being a hostname
+            #   We should be explict about only accepting ipv4/ipv6 addresses
+            #   and handle any hostname resolution in calling code
+            hostip = socket.gethostbyname(arg)
+            inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
+
+        buffer = ctypes.c_buffer(6)
+        addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
+
+        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
+        if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
+            return None
+
+        # Convert binary data into a string.
+        macaddr = ""
+        for intval in struct.unpack("BBBBBB", buffer):  # type: ignore
+            if intval > 15:
+                replacestr = "0x"
+            else:
+                replacestr = "x"
+            macaddr = "".join([macaddr, hex(intval).replace(replacestr, "")])
+        return macaddr
+
+
+class FcntlIface(Method):
+    platforms = ["linux"]
+    method_type = "iface"
+
+    def test(self):  # type: () -> bool
+        try:
+            import fcntl
+            return True
+        except Exception:  # Broad except to handle unknown effects
+            return False
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        import fcntl
+
+        if not PY2:
+            arg = arg.encode()  # type: ignore
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # 0x8927 = SIOCGIFADDR
+        info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", arg[:15]))
+        if PY2:
+            return ":".join(["%02x" % ord(char) for char in info[18:24]])
+        else:
+            return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
+
+
+# TODO: do we want to keep this around? It calls 3 command and is
+#   quite inefficient. We should just take the methods and use directly.
+class UuidArpGetNode(Method):
+    platforms = ["linux", "darwin"]
+    method_type = "ip"
+
+    def test(self):  # type: () -> bool
+        try:
+            from uuid import _arp_getnode  # type: ignore
+            return True
+        except Exception:
+            return False
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        from uuid import _arp_getnode  # type: ignore
+
+        backup = socket.gethostbyname
+        try:
+            socket.gethostbyname = lambda x: arg
+            mac1 = _arp_getnode()
+            if mac1 is not None:
+                mac1 = _uuid_convert(mac1)
+                mac2 = _arp_getnode()
+                mac2 = _uuid_convert(mac2)
+                if mac1 == mac2:
+                    return mac1
+        except Exception:
+            raise
+        finally:
+            socket.gethostbyname = backup
+        return None
+
+
+# TODO: ordering of methods by effectiveness/reliability
 METHODS = [
     ArpFile,
-    SysFile,
-    UuidLanscan
+    SysIfaceFile,
+    CtypesHost,
+    FcntlIface,
+    UuidArpGetNode,
+    UuidLanscan,
 ]
 
 
