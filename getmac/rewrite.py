@@ -106,11 +106,14 @@ def exists(command):
 class Method:
     # linux windows bsd darwin freebsd openbsd
     # TODO: how to handle wsl
-    # TODO: "other" platform (e.g. for lanscan, etc.)
+    # TODO: "other" platform (e.g. for Android, lanscan/HPUX, etc.)
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
     platforms = []
     method_type = ""  # ip, ip4, ip6, iface, default_iface
     net_request = False
+    # If current system supports. Dynamically set at runtime?
+    # This would let each method do more fine-grained version checking
+    supported = False
     # TODO: __slots__?
 
     def test(self):  # type: () -> bool
@@ -346,6 +349,7 @@ class IfconfigEther(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         # TODO: check which works, with interface arg or without
+        #   Former is also used on Ubuntu...
         # (r"ether " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
         # # Alternative match for ifconfig if it fails
         # (to_find + r".*ether " + MAC_RE_COLON, 0, "ifconfig", [""]),
@@ -399,6 +403,40 @@ class ArpOpenbsd(Method):
         return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
 
 
+
+# TODO: all the garbage in "type_of_thing == INTERFACE" if-else in the OG code ugh
+
+
+class IpNeighShow(Method):
+    platforms = ["linux", "other"]
+    method_type = "ip"
+
+    def test(self):  # type: () -> bool
+        return exists("ip")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        command_output = _popen("ip", "neighbor show %s" % arg)
+        # TODO: check if returned anything before exception on index failure
+        return command_output.partition(arg)[2].partition("lladdr")[2].strip().split()[0]
+
+
+class ArpVariousArgs(Method):
+    platforms = ["linux", "darwin", "other"]
+    method_type = "ip"
+    _regex_std = r"\)\s+at\s+" + MAC_RE_COLON
+    _regex_darwin = r"\)\s+at\s+" + MAC_RE_DARWIN
+
+    def test(self):  # type: () -> bool
+        return exists("arp")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        # TODO: linux => also try "-an", "-an %s" % arg
+        # TODO: darwin => also try "-a", "-a %s" % arg
+        command_output = _popen("arp", arg)
+        found = _search(r"\(" + re.escape(arg) + self._regex_std, command_output)
+        found = _search(r"\(" + re.escape(arg) + self._regex_darwin, command_output)
+
+
 # TODO: ordering of methods by effectiveness/reliability
 METHODS = [
     ArpFile,
@@ -416,6 +454,8 @@ METHODS = [
     ArpFreebsd,
     IfconfigOpenbsd,
     ArpOpenbsd,
+    IpNeighShow,
+    ArpVariousArgs,
 ]
 
 
