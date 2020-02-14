@@ -79,14 +79,29 @@ except ImportError:
     pass
 
 
-from .getmac import _read_file, _search, _uuid_convert
+from .getmac import _read_file, _search, _uuid_convert, _popen
 
 
+PLATFORM = _SYST.lower()
+if PLATFORM == "linux" and "Microsoft" in platform.version():
+    PLATFORM = "wsl"
+
+
+def exists(command):
+    # type: (str) -> bool
+    return bool(shutil.which(command, path=PATH))
+
+
+# TODO: API to add custom methods at runtime (also to remove methods)
 # TODO: log test() failures when DEBUG is enabled
 # TODO: log get() failures
 # TODO: exception handling when calling get(), log all exceptions
+#   When exception occurs, remove from cache and reinitialize with next candidate
+#   For example, if get() call to getmac.exe returns 1 then it's not valid
 # TODO: document quirks/notes about each method in class docstring
 # TODO: use self/instance to track state between calls e.g. caching
+# TODO: cache imports done during test for use during get(), reuse
+#   Use __import__() or importlib?
 class Method:
     # linux windows bsd darwin freebsd openbsd
     # TODO: how to handle wsl
@@ -104,13 +119,6 @@ class Method:
     def get(self, arg):
         # type: (str) -> Optional[str]
         pass
-
-# TODO: API to add custom methods at runtime (also to remove methods)
-
-
-PLATFORM = _SYST.lower()
-if PLATFORM == "linux" and "Microsoft" in platform.version():
-    PLATFORM = "wsl"
 
 
 class ArpFile(Method):
@@ -152,7 +160,7 @@ class UuidLanscan(Method):
     def test(self):
         try:
             from uuid import _find_mac
-            return bool(shutil.which("lanscan", path=PATH))
+            return exists("lanscan")
         except Exception:
             return False
 
@@ -264,6 +272,33 @@ class UuidArpGetNode(Method):
             raise
         finally:
             socket.gethostbyname = backup
+        return None
+
+
+class GetmacExe(Method):
+    platforms = ["windows"]
+    method_type = "iface"
+    # TODO: parameterize regexes? (any faster?)
+
+    def test(self):  # type: () -> bool
+        # TODO: parse output of "getmac.exe /?"?
+        return exists("getmac.exe")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        # TODO: if return code is 1 then remove from valid list (_popen raises exception i think)
+        # Invoke command
+        table = _popen("getmac.exe", "/NH /V")
+
+        # Connection Name
+        conn_regex = r"\r\n" + arg + r".*" + MAC_RE_DASH + r".*\r\n"
+
+        # Network Adapter (the human-readable name)
+        net_regex = r"\r\n.*" + arg + r".*" + MAC_RE_DASH + r".*\r\n"
+
+        for regex in [conn_regex, net_regex]:
+            found = _search(regex, table, 0)
+            if found:
+                return found
         return None
 
 
