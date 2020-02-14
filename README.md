@@ -62,15 +62,15 @@ ip6_mac = get_mac_address(ip6="::1")
 host_mac = get_mac_address(hostname="localhost")
 updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
-# Changing the port used for updating ARP table (UDP packet)
-from getmac import getmac
-getmac.PORT = 44444  # Default: 55555
-print(getmac.get_mac_address(ip="192.168.0.1", network_request=True))
-
-# Enabling debugging
+# Enable debugging
 from getmac import getmac
 getmac.DEBUG = 2  # DEBUG level 2
 print(getmac.get_mac_address(interface="Ethernet 3"))
+
+# Change the UDP port used for updating the ARP table (UDP packet)
+from getmac import getmac
+getmac.PORT = 44444  # Default is 55555
+print(getmac.get_mac_address(ip="192.168.0.1", network_request=True))
 ```
 
 ## Terminal examples
@@ -122,9 +122,9 @@ and populate the ARP/NDP table of remote hosts used to lookup MACs
 in most circumstances. Disable this if you want to just use what's
 already in the table, or if you have requirements to prevent network
 traffic. The network request is a empty UDP packet sent to a high
-port, 55555 by default. This can be changed by setting `getmac.PORT`
+port, `55555` by default. This can be changed by setting `getmac.PORT`
 to the desired integer value. Additionally, on Windows, this will
-send a UDP packet to 1.1.1.1:53 to attempt to determine the default interface.
+send a UDP packet to `1.1.1.1:53` to attempt to determine the default interface (Note: the IP is [CloudFlare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/)).
 
 ## Configuration
 * `logging.getLogger('getmac')`: Runtime messages and errors are recorded to the `getmac` logger using the `logging` 
