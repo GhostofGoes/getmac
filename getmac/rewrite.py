@@ -102,6 +102,7 @@ def exists(command):
 # TODO: use self/instance to track state between calls e.g. caching
 # TODO: cache imports done during test for use during get(), reuse
 #   Use __import__() or importlib?
+# TODO: parameterize regexes? (any faster?)
 class Method:
     # linux windows bsd darwin freebsd openbsd
     # TODO: how to handle wsl
@@ -278,16 +279,12 @@ class UuidArpGetNode(Method):
 class GetmacExe(Method):
     platforms = ["windows"]
     method_type = "iface"
-    # TODO: parameterize regexes? (any faster?)
 
     def test(self):  # type: () -> bool
-        # TODO: parse output of "getmac.exe /?"?
         return exists("getmac.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        # TODO: if return code is 1 then remove from valid list (_popen raises exception i think)
-        # Invoke command
-        table = _popen("getmac.exe", "/NH /V")
+        command_output = _popen("getmac.exe", "/NH /V")
 
         # Connection Name
         conn_regex = r"\r\n" + arg + r".*" + MAC_RE_DASH + r".*\r\n"
@@ -296,10 +293,40 @@ class GetmacExe(Method):
         net_regex = r"\r\n.*" + arg + r".*" + MAC_RE_DASH + r".*\r\n"
 
         for regex in [conn_regex, net_regex]:
-            found = _search(regex, table, 0)
+            found = _search(regex, command_output, 0)
             if found:
                 return found
         return None
+
+
+class IpconfigExe(Method):
+    platforms = ["windows"]
+    method_type = "iface"
+    _regex = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"
+
+    def test(self):  # type: () -> bool
+        return exists("ipconfig.exe")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        command_output = _popen("ipconfig.exe", "/all")
+        regex = arg + self._regex
+        return _search(regex, command_output, 0)
+
+
+class WimcExe(Method):
+    platforms = ["windows"]
+    method_type = "iface"
+
+    def test(self):  # type: () -> bool
+        return exists("wmic.exe")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        command_output = _popen(
+            "wmic.exe",
+            "nic where \"NetConnectionID = '%s'\" get " "MACAddress /value" % arg,
+        )
+        # TODO: check if returned anything before exception on index failure
+        return command_output.strip().partition("=")[2]
 
 
 # TODO: ordering of methods by effectiveness/reliability
@@ -310,6 +337,9 @@ METHODS = [
     FcntlIface,
     UuidArpGetNode,
     UuidLanscan,
+    GetmacExe,
+    IpconfigExe,
+    WimcExe,
 ]
 
 
