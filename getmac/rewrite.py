@@ -86,10 +86,13 @@ PLATFORM = _SYST.lower()
 if PLATFORM == "linux" and "Microsoft" in platform.version():
     PLATFORM = "wsl"
 
+CMD_STATUS_CACHE = {}  # type: Dict[str, bool]
 
-def exists(command):
-    # type: (str) -> bool
-    return bool(shutil.which(command, path=PATH))
+
+def command_exists(command):  # type: (str) -> bool
+    if command not in CMD_STATUS_CACHE:
+        CMD_STATUS_CACHE[command] = bool(shutil.which(command, path=PATH))
+    return CMD_STATUS_CACHE[command]
 
 
 # TODO: API to add custom methods at runtime (also to remove methods)
@@ -162,7 +165,7 @@ class UuidLanscan(Method):
     def test(self):  # type: () -> bool
         try:
             from uuid import _find_mac
-            return exists("lanscan")
+            return command_exists("lanscan")
         except Exception:
             return False
 
@@ -283,7 +286,7 @@ class GetmacExe(Method):
     method_type = "iface"
 
     def test(self):  # type: () -> bool
-        return exists("getmac.exe")
+        return command_exists("getmac.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         command_output = _popen("getmac.exe", "/NH /V")
@@ -307,7 +310,7 @@ class IpconfigExe(Method):
     _regex = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"
 
     def test(self):  # type: () -> bool
-        return exists("ipconfig.exe")
+        return command_exists("ipconfig.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         return _search(arg + self._regex, _popen("ipconfig.exe", "/all"))
@@ -318,7 +321,7 @@ class WimcExe(Method):
     method_type = "iface"
 
     def test(self):  # type: () -> bool
-        return exists("wmic.exe")
+        return command_exists("wmic.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         command_output = _popen(
@@ -334,7 +337,7 @@ class ArpExe(Method):
     method_type = "ip"
 
     def test(self):  # type: () -> bool
-        return exists("arp.exe")
+        return command_exists("arp.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         return _search(MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
@@ -345,7 +348,7 @@ class IfconfigEther(Method):
     method_type = "iface"
 
     def test(self):  # type: () -> bool
-        return exists("ifconfig")
+        return command_exists("ifconfig")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         # TODO: check which works, with interface arg or without
@@ -361,7 +364,7 @@ class DarwinNetworksetup(Method):
     method_type = "iface"
 
     def test(self):  # type: () -> bool
-        return exists("networksetup")
+        return command_exists("networksetup")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         command_output = _popen("networksetup", "-getmacaddress %s" % arg)
@@ -373,7 +376,7 @@ class ArpFreebsd(Method):
     method_type = "ip"
 
     def test(self):  # type: () -> bool
-        return exists("arp")
+        return command_exists("arp")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + MAC_RE_COLON
@@ -385,7 +388,7 @@ class IfconfigOpenbsd(Method):
     method_type = "iface"
 
     def test(self):  # type: () -> bool
-        return exists("ifconfig")
+        return command_exists("ifconfig")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         return _search(r"lladdr " + MAC_RE_COLON, _popen("ifconfig", arg))
@@ -397,7 +400,7 @@ class ArpOpenbsd(Method):
     _regex = r"[ ]+" + MAC_RE_COLON
 
     def test(self):  # type: () -> bool
-        return exists("arp")
+        return command_exists("arp")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
@@ -412,7 +415,7 @@ class IpNeighShow(Method):
     method_type = "ip"
 
     def test(self):  # type: () -> bool
-        return exists("ip")
+        return command_exists("ip")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         command_output = _popen("ip", "neighbor show %s" % arg)
@@ -427,7 +430,7 @@ class ArpVariousArgs(Method):
     _regex_darwin = r"\)\s+at\s+" + MAC_RE_DARWIN
 
     def test(self):  # type: () -> bool
-        return exists("arp")
+        return command_exists("arp")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         # TODO: linux => also try "-an", "-an %s" % arg
