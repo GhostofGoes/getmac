@@ -347,22 +347,6 @@ class ArpExe(Method):
         return _search(MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
 
 
-class IfconfigEther(Method):
-    platforms = ["darwin", "freebsd"]
-    method_type = "iface"
-
-    def test(self):  # type: () -> bool
-        return command_exists("ifconfig")
-
-    def get(self, arg):  # type: (str) -> Optional[str]
-        # TODO: check which works, with interface arg or without
-        #   Former is also used on Ubuntu...
-        # (r"ether " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
-        # # Alternative match for ifconfig if it fails
-        # (to_find + r".*ether " + MAC_RE_COLON, 0, "ifconfig", [""]),
-        pass
-
-
 class DarwinNetworksetup(Method):
     platforms = ["darwin"]
     method_type = "iface"
@@ -387,17 +371,6 @@ class ArpFreebsd(Method):
         return _search(regex, _popen("arp", arg))
 
 
-class IfconfigOpenbsd(Method):
-    platforms = ["openbsd"]
-    method_type = "iface"
-
-    def test(self):  # type: () -> bool
-        return command_exists("ifconfig")
-
-    def get(self, arg):  # type: (str) -> Optional[str]
-        return _search(r"lladdr " + MAC_RE_COLON, _popen("ifconfig", arg))
-
-
 class ArpOpenbsd(Method):
     platforms = ["openbsd"]
     method_type = "ip"
@@ -409,6 +382,33 @@ class ArpOpenbsd(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
 
+
+class IfconfigOpenbsd(Method):
+    platforms = ["openbsd"]
+    method_type = "iface"
+    _regex = r"lladdr " + MAC_RE_COLON
+
+    def test(self):  # type: () -> bool
+        return command_exists("ifconfig")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        return _search(self._regex, _popen("ifconfig", arg))
+
+
+class IfconfigEther(Method):
+    platforms = ["darwin", "freebsd"]
+    method_type = "iface"
+
+    def test(self):  # type: () -> bool
+        return command_exists("ifconfig")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        # TODO: check which works, with interface arg or without
+        #   Former is also used on Ubuntu...
+        # (r"ether " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
+        # # Alternative match for ifconfig if it fails
+        # (to_find + r".*ether " + MAC_RE_COLON, 0, "ifconfig", [""]),
+        pass
 
 
 # TODO: all the garbage in "type_of_thing == INTERFACE" if-else in the OG code ugh
