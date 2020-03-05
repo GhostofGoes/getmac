@@ -121,7 +121,6 @@ class Method:
     # If current system supports. Dynamically set at runtime?
     # This would let each method do more fine-grained version checking
     supported = False
-    # TODO: __slots__?
 
     def test(self):  # type: () -> bool
         pass
@@ -148,7 +147,7 @@ class ArpFile(Method):
 
 
 class SysIfaceFile(Method):
-    platforms = ["linux"]
+    platforms = ["linux", "wsl"]
     method_type = "iface"
     _path = "/sys/class/net/"
 
@@ -228,7 +227,7 @@ class CtypesHost(Method):
 
 
 class FcntlIface(Method):
-    platforms = ["linux"]
+    platforms = ["linux", "wsl"]
     method_type = "iface"
 
     def test(self):  # type: () -> bool
