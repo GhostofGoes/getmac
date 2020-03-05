@@ -89,6 +89,7 @@ if PLATFORM == "linux" and "Microsoft" in platform.version():
 CMD_STATUS_CACHE = {}  # type: Dict[str, bool]
 
 
+# TODO: find alternative to shutil.which() on Python 2
 def command_exists(command):  # type: (str) -> bool
     if command not in CMD_STATUS_CACHE:
         CMD_STATUS_CACHE[command] = bool(shutil.which(command, path=PATH))
