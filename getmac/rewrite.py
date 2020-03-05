@@ -412,6 +412,86 @@ class IfconfigEther(Method):
 
 
 # TODO: all the garbage in "type_of_thing == INTERFACE" if-else in the OG code ugh
+#   Need to rectify it with the darwin/bsd ifconfig method as well...
+#   probably just separate parsing based on platform
+
+# TODO: sample of ifconfig on WSL (it uses "ether")
+class IfconfigLinux(Method):
+    platforms = ["linux", "wsl"]
+    method_type = "iface"
+    # "ether " : modern Ubuntu
+    # "HWaddr" : others
+    _regexes = [r"ether " + MAC_RE_COLON, r"HWaddr " + MAC_RE_COLON]
+    _champ = ""  # winner winner chicken dinner
+
+    def test(self):  # type: () -> bool
+        return command_exists("ifconfig")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        # TODO: return code of 1 means interface doesn't exist
+        command_output = _popen("ifconfig", arg)
+        if self._champ:
+            # Use regex that worked previously. This can still return None in
+            # the case of interface not existing, but at least it's a bit faster.
+            return _search(self._champ, command_output)
+        for regex in self._regexes:  # See if either regex matches
+            result = _search(regex, command_output)
+            if result:
+                self._champ = regex  # We have our Apex champion
+                return result
+
+
+class IfconfigOther(Method):
+    """Wild 'Shot in the Dark' attempt at ifconfig for unknown platforms."""
+    platforms = ["other"]
+    method_type = "iface"
+
+    def test(self):  # type: () -> bool
+        return command_exists("ifconfig")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        # TODO: implement
+        # ifconfig
+        #   ether
+        #   HWaddr
+
+        # ifconfig -a
+        #   HWaddr
+
+        # ifconfig -v
+        #   HWaddr
+
+        # ifconfig -av (Tru64?)
+        #   Ether
+        pass
+
+
+# TODO: sample of "ip link" on WSL
+# TODO: sample of "ip link" on Android
+class IpLinkIface(Method):
+    platforms = ["linux", "wsl", "other"]
+    method_type = "iface"
+
+    def test(self):  # type: () -> bool
+        return command_exists("ip")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        # "ip link" => WORKS ON WSL
+        # "ip link IFACE" => think this works on traditional ubuntu
+        # TODO: implement
+        pass
+
+
+class NetstatIface(Method):
+    platforms = ["linux", "wsl", "other"]
+    method_type = "iface"
+    _regex = r".*HWaddr " + MAC_RE_COLON
+
+    def test(self):  # type: () -> bool
+        return command_exists("netstat")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        return _search(arg + self._regex, _popen("netstat", "-iae"))
 
 
 class IpNeighShow(Method):
@@ -422,9 +502,9 @@ class IpNeighShow(Method):
         return command_exists("ip")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        command_output = _popen("ip", "neighbor show %s" % arg)
+        output = _popen("ip", "neighbor show %s" % arg)
         # TODO: check if returned anything before exception on index failure
-        return command_output.partition(arg)[2].partition("lladdr")[2].strip().split()[0]
+        return output.partition(arg)[2].partition("lladdr")[2].strip().split()[0]
 
 
 class ArpVariousArgs(Method):
@@ -509,6 +589,17 @@ def initialize_method_cache(mac_type):
     if not tested:
         # CRITICAL FAIL
         print("All methods failed to test")
+
+    # TODO: handle method throwing exception, use to mark as non-usable
+    #   Do NOT mark return code 1 on a process as non-usable though!
+
+    # Example from WSL:
+    """
+    Blake:goesc$ ifconfig eth8
+    eth8: error fetching interface information: Device not found
+    Blake:goesc$ echo $?
+    1
+    """
 
 
 
