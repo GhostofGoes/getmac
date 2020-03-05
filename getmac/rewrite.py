@@ -95,6 +95,10 @@ def command_exists(command):  # type: (str) -> bool
     return CMD_STATUS_CACHE[command]
 
 
+def check_file(filepath):  # type: (str) -> bool
+    return os.path.exists(filepath) and os.access(filepath, os.R_OK)
+
+
 # TODO: API to add custom methods at runtime (also to remove methods)
 # TODO: log test() failures when DEBUG is enabled
 # TODO: log get() failures
@@ -132,7 +136,7 @@ class ArpFile(Method):
     _path = "/proc/net/arp"
 
     def test(self):  # type: () -> bool
-        return os.path.exists(self._path) and os.access(self._path, os.R_OK)
+        return check_file(self._path)
 
     def get(self, arg):  # type: (str) -> Optional[str]
         data = _read_file(self._path)
@@ -150,7 +154,7 @@ class SysIfaceFile(Method):
 
     def test(self):  # type: () -> bool
         # TODO: imperfect, but should work well enough
-        return os.path.exists(self._path) and os.access(self._path, os.R_OK)
+        return check_file(self._path)
 
     def get(self, arg):  # type: (str) -> Optional[str]
         data = _read_file(self._path + arg + "/address")
