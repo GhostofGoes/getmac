@@ -107,6 +107,7 @@ def check_path(filepath):  # type: (str) -> bool
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
+
     platforms = set()  # type: Set[str]
     # VALUES: {ip, ip4, ip6, iface, default_iface}
     method_type = ""  # type: str
@@ -120,9 +121,11 @@ class Method:
     unusable = False  # type: bool
 
     def test(self):  # type: () -> bool
+        """Low-impact test that the method is feasible, e.g. command exists."""
         pass
 
     def get(self, arg):  # type: (str) -> Optional[str]
+        """Core logic of the method that performs the lookup."""
         pass
 
 
@@ -159,7 +162,7 @@ class SysIfaceFile(Method):
 
 
 class UuidLanscan(Method):
-    platforms = {"other"}  # TODO: "other" platform?
+    platforms = {"other"}
     method_type = "iface"
 
     def test(self):  # type: () -> bool
@@ -443,7 +446,7 @@ class IfconfigLinux(Method):
 
 class IfconfigOther(Method):
     """Wild 'Shot in the Dark' attempt at ifconfig for unknown platforms."""
-    platforms = {"other"}
+    platforms = {"linux", "other"}
     method_type = "iface"
     # "-av": Tru64 system?
     _args = (("", ("ether", r"HWaddr")), ("-a", (r"HWaddr",)),
@@ -675,6 +678,7 @@ def initialize_method_cache(mac_type):
     """
     platform_methods = [x for x in METHODS if PLATFORM in x.platforms]
     if not platform_methods:
+        # TODO: fallback to the "other" platform
         print("No valid methods for platform ", PLATFORM)
 
     # TODO: log platform checking/filtering when DEBUG is enabled

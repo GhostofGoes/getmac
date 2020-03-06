@@ -140,24 +140,12 @@ Strategy
       Platform + version
       Performance (file read > command)
       Reliability (how well I know/understand the command to work)
-  Methods have basic criteria that must pass before execution,
-      e.g. "system must be NT" for NetBIOS method
-
-
-How do we handle the first call potentially being incorrect, e.g.
-  for a host that doesn't exist or interface that doesn't exist?
 
 What is fallback if all tests fail during initialization?
 
 Make a future TODO to handle cases where the command/file/etc exists,
 but isn't actually returning what we want. Maybe an argument like
 "high_accuracy=True" when calling get_mac_address?
-
-things to try...
-  Test if file exists and is readable (e.g. arp cache)
-  Does command exist (shutil.which)
-  "negative" test: run with bogus input, if it returns a certain result
-      we know it's a valid command.
 
 ok so
   Try a bunch of methods
