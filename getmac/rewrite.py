@@ -3,12 +3,10 @@ import logging
 import os
 import platform
 import re
-import shlex
 import shutil
 import socket
 import struct
 import sys
-import traceback
 from subprocess import CalledProcessError
 
 try:  # Python 3
@@ -101,27 +99,21 @@ def check_file(filepath):  # type: (str) -> bool
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
-# TODO: API to add custom methods at runtime (also to remove methods)
-# TODO: log test() failures when DEBUG is enabled
-# TODO: log get() failures
-# TODO: exception handling when calling get(), log all exceptions
-#   When exception occurs, remove from cache and reinitialize with next candidate
-#   For example, if get() call to getmac.exe returns 1 then it's not valid
+# TODO: API to add/remove methods at runtime (including new, custom methods)
 # TODO: document quirks/notes about each method in class docstring
-# TODO: use self/instance to track state between calls e.g. caching
 # TODO: cache imports done during test for use during get(), reuse
 #   Use __import__() or importlib?
 # TODO: parameterize regexes? (any faster?)
 class Method:
-    # linux windows bsd darwin freebsd openbsd
-    # TODO: how to handle wsl
-    # TODO: "other" platform (e.g. for Android, lanscan/HPUX, etc.)
+    # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
     platforms = []
-    method_type = ""  # ip, ip4, ip6, iface, default_iface
+    # VALUES: {ip, ip4, ip6, iface, default_iface}
+    method_type = ""
+    # If the method makes a network request as part of the check
     net_request = False
-    # If current system supports. Dynamically set at runtime?
-    # This would let each method do more fine-grained version checking
+    # (TODO) If current system supports. Dynamically set at runtime?
+    #   This would let each method do more fine-grained version checking
     supported = False
 
     def test(self):  # type: () -> bool
@@ -547,27 +539,10 @@ class ArpVariousArgs(Method):
 
 # TODO: ordering of methods by effectiveness/reliability
 METHODS = [
-    ArpFile,
-    SysIfaceFile,
-    CtypesHost,
-    FcntlIface,
-    UuidArpGetNode,
-    UuidLanscan,
-    GetmacExe,
-    IpconfigExe,
-    WimcExe,
-    ArpExe,
-    DarwinNetworksetup,
-    ArpFreebsd,
-    ArpOpenbsd,
-    IfconfigOpenbsd,
-    IfconfigEther,
-    IfconfigLinux,
-    IfconfigOther,
-    IpLinkIface,
-    NetstatIface,
-    IpNeighShow,
-    ArpVariousArgs,
+    ArpFile, SysIfaceFile, CtypesHost, FcntlIface, UuidArpGetNode, UuidLanscan,
+    GetmacExe, IpconfigExe, WimcExe, ArpExe, DarwinNetworksetup, ArpFreebsd,
+    ArpOpenbsd, IfconfigOpenbsd, IfconfigEther, IfconfigLinux, IfconfigOther,
+    IpLinkIface, NetstatIface, IpNeighShow, ArpVariousArgs,
 ]
 
 
@@ -597,12 +572,14 @@ def initialize_method_cache(mac_type):
     if not platform_methods:
         print("No valid methods for platform ", PLATFORM)
 
+    # TODO: log platform checking/filtering when DEBUG is enabled
     type_methods = [m for m in platform_methods
                     if m.method_type == mac_type
                     or (m.method_type == "ip" and mac_type in ["ip4", "ip6"])]
     if not type_methods:
         print("No valid methods for type ", mac_type)
 
+    # TODO: log test() failures when DEBUG is enabled
     tested = []
     for method in type_methods:
         if method.test():
@@ -626,10 +603,7 @@ def initialize_method_cache(mac_type):
     1
     """
 
-
-
-
-
-
-
-
+    # TODO: log get() failures
+    # TODO: exception handling when calling get(), log all exceptions
+    #   When exception occurs, remove from cache and reinitialize with next candidate
+    #   For example, if get() call to getmac.exe returns 1 then it's not valid
