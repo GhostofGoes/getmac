@@ -419,8 +419,14 @@ class IfconfigLinux(Method):
         return command_exists("ifconfig")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        # TODO: return code of 1 means interface doesn't exist
-        command_output = _popen("ifconfig", arg)
+        try:
+            command_output = _popen("ifconfig", arg)
+        except CalledProcessError as err:
+            # Return code of 1 means interface doesn't exist
+            if err.returncode == 1:
+                return None
+            else:
+                raise err
         if self._champ:
             # Use regex that worked previously. This can still return None in
             # the case of interface not existing, but at least it's a bit faster.
@@ -480,7 +486,7 @@ class IpLinkIface(Method):
                 self._iface_arg = True
             except CalledProcessError as err:
                 # Output: 'Command "eth0" is unknown, try "ip link help"'
-                if int(err.returncode) != 255:
+                if err.returncode != 255:
                     raise err
             self._tested_arg = True
 
