@@ -72,7 +72,7 @@ try:
     from typing import TYPE_CHECKING
 
     if TYPE_CHECKING:
-        from typing import Dict, Optional
+        from typing import Dict, Optional, Set
 except ImportError:
     pass
 
@@ -107,14 +107,14 @@ def check_file(filepath):  # type: (str) -> bool
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
-    platforms = []
+    platforms = set()  # type: Set[str]
     # VALUES: {ip, ip4, ip6, iface, default_iface}
-    method_type = ""
+    method_type = ""  # type: str
     # If the method makes a network request as part of the check
-    net_request = False
+    net_request = False  # type: bool
     # (TODO) If current system supports. Dynamically set at runtime?
     #   This would let each method do more fine-grained version checking
-    supported = False
+    supported = False  # type: bool
 
     def test(self):  # type: () -> bool
         pass
@@ -124,7 +124,7 @@ class Method:
 
 
 class ArpFile(Method):
-    platforms = ["linux"]
+    platforms = {"linux"}
     method_type = "ip"
     _path = "/proc/net/arp"
 
@@ -141,7 +141,7 @@ class ArpFile(Method):
 
 
 class SysIfaceFile(Method):
-    platforms = ["linux", "wsl"]
+    platforms = {"linux", "wsl"}
     method_type = "iface"
     _path = "/sys/class/net/"
 
@@ -156,7 +156,7 @@ class SysIfaceFile(Method):
 
 
 class UuidLanscan(Method):
-    platforms = ["other"]  # TODO: "other" platform?
+    platforms = {"other"}  # TODO: "other" platform?
     method_type = "iface"
 
     def test(self):  # type: () -> bool
@@ -178,7 +178,7 @@ class UuidLanscan(Method):
 
 
 class CtypesHost(Method):
-    platforms = ["windows"]
+    platforms = {"windows"}
     method_type = "ip4"  # TODO: can this be made to work with IPv6?
     net_request = True
 
@@ -221,7 +221,7 @@ class CtypesHost(Method):
 
 
 class FcntlIface(Method):
-    platforms = ["linux", "wsl"]
+    platforms = {"linux", "wsl"}
     method_type = "iface"
 
     def test(self):  # type: () -> bool
@@ -248,7 +248,7 @@ class FcntlIface(Method):
 # TODO: do we want to keep this around? It calls 3 command and is
 #   quite inefficient. We should just take the methods and use directly.
 class UuidArpGetNode(Method):
-    platforms = ["linux", "darwin"]
+    platforms = {"linux", "darwin"}
     method_type = "ip"
 
     def test(self):  # type: () -> bool
@@ -279,7 +279,7 @@ class UuidArpGetNode(Method):
 
 
 class GetmacExe(Method):
-    platforms = ["windows"]
+    platforms = {"windows"}
     method_type = "iface"
     _regexes = [
         # Connection Name
@@ -304,7 +304,7 @@ class GetmacExe(Method):
 
 
 class IpconfigExe(Method):
-    platforms = ["windows"]
+    platforms = {"windows"}
     method_type = "iface"
     _regex = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"
 
@@ -316,7 +316,7 @@ class IpconfigExe(Method):
 
 
 class WimcExe(Method):
-    platforms = ["windows"]
+    platforms = {"windows"}
     method_type = "iface"
 
     def test(self):  # type: () -> bool
@@ -332,7 +332,7 @@ class WimcExe(Method):
 
 
 class ArpExe(Method):
-    platforms = ["windows", "wsl"]
+    platforms = {"windows", "wsl"}
     method_type = "ip"
 
     def test(self):  # type: () -> bool
@@ -343,7 +343,7 @@ class ArpExe(Method):
 
 
 class DarwinNetworksetup(Method):
-    platforms = ["darwin"]
+    platforms = {"darwin"}
     method_type = "iface"
 
     def test(self):  # type: () -> bool
@@ -355,7 +355,7 @@ class DarwinNetworksetup(Method):
 
 
 class ArpFreebsd(Method):
-    platforms = ["freebsd"]
+    platforms = {"freebsd"}
     method_type = "ip"
 
     def test(self):  # type: () -> bool
@@ -367,7 +367,7 @@ class ArpFreebsd(Method):
 
 
 class ArpOpenbsd(Method):
-    platforms = ["openbsd"]
+    platforms = {"openbsd"}
     method_type = "ip"
     _regex = r"[ ]+" + MAC_RE_COLON
 
@@ -379,7 +379,7 @@ class ArpOpenbsd(Method):
 
 
 class IfconfigOpenbsd(Method):
-    platforms = ["openbsd"]
+    platforms = {"openbsd"}
     method_type = "iface"
     _regex = r"lladdr " + MAC_RE_COLON
 
@@ -391,7 +391,7 @@ class IfconfigOpenbsd(Method):
 
 
 class IfconfigEther(Method):
-    platforms = ["darwin", "freebsd"]
+    platforms = {"darwin", "freebsd"}
     method_type = "iface"
 
     def test(self):  # type: () -> bool
@@ -406,13 +406,9 @@ class IfconfigEther(Method):
         pass
 
 
-# TODO: all the garbage in "type_of_thing == INTERFACE" if-else in the OG code ugh
-#   Need to rectify it with the darwin/bsd ifconfig method as well...
-#   probably just separate parsing based on platform
-
 # TODO: sample of ifconfig on WSL (it uses "ether")
 class IfconfigLinux(Method):
-    platforms = ["linux", "wsl"]
+    platforms = {"linux", "wsl"}
     method_type = "iface"
     # "ether " : modern Ubuntu
     # "HWaddr" : others
@@ -438,7 +434,7 @@ class IfconfigLinux(Method):
 
 class IfconfigOther(Method):
     """Wild 'Shot in the Dark' attempt at ifconfig for unknown platforms."""
-    platforms = ["other"]
+    platforms = {"other"}
     method_type = "iface"
 
     def test(self):  # type: () -> bool
@@ -465,7 +461,7 @@ class IfconfigOther(Method):
 # TODO: sample of "ip link" on Android
 # TODO: sample of "ip link eth0" on Ubuntu
 class IpLinkIface(Method):
-    platforms = ["linux", "wsl", "other"]
+    platforms = {"linux", "wsl", "other"}
     method_type = "iface"
     _regex = r".*\n.*link/ether " + MAC_RE_COLON
     _tested_arg = False
@@ -497,7 +493,7 @@ class IpLinkIface(Method):
 
 
 class NetstatIface(Method):
-    platforms = ["linux", "wsl", "other"]
+    platforms = {"linux", "wsl", "other"}
     method_type = "iface"
     _regex = r".*HWaddr " + MAC_RE_COLON
 
@@ -509,7 +505,7 @@ class NetstatIface(Method):
 
 
 class IpNeighShow(Method):
-    platforms = ["linux", "other"]
+    platforms = {"linux", "other"}
     method_type = "ip"
 
     def test(self):  # type: () -> bool
@@ -522,7 +518,7 @@ class IpNeighShow(Method):
 
 
 class ArpVariousArgs(Method):
-    platforms = ["linux", "darwin", "other"]
+    platforms = {"linux", "darwin", "other"}
     method_type = "ip"
     _regex_std = r"\)\s+at\s+" + MAC_RE_COLON
     _regex_darwin = r"\)\s+at\s+" + MAC_RE_DARWIN
