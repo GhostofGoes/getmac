@@ -399,18 +399,31 @@ class IfconfigOpenbsd(Method):
 class IfconfigEther(Method):
     platforms = {"darwin", "freebsd"}
     method_type = "iface"
+    _tested_arg = False
+    _iface_arg = False
+    _arg_regex = r".*ether " + MAC_RE_COLON
+    _blank_regex = r"ether " + MAC_RE_COLON
 
     def test(self):  # type: () -> bool
         return check_command("ifconfig")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        # TODO: implement
-        # TODO: check which works, with interface arg or without
-        #   Former is also used on Ubuntu...
-        # (r"ether " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
-        # # Alternative match for ifconfig if it fails
-        # (to_find + r".*ether " + MAC_RE_COLON, 0, "ifconfig", [""]),
-        pass
+        # Check if this version of "ifconfig" accepts an interface argument
+        command_output = ""
+        if not self._tested_arg:
+            try:
+                command_output = _popen("ifconfig", arg)
+                self._iface_arg = True
+            except CalledProcessError:
+                self._iface_arg = False
+            self._tested_arg = True
+
+        if self._iface_arg:
+            if not command_output:  # Don't repeat work on first run
+                command_output = _popen("ifconfig", arg)
+            return _search(arg + self._arg_regex, command_output)
+        else:
+            return _search(self._blank_regex, _popen("ifconfig", ""))
 
 
 # TODO: sample of ifconfig on WSL (it uses "ether")
