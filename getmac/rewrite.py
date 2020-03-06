@@ -84,18 +84,18 @@ PLATFORM = _SYST.lower()
 if PLATFORM == "linux" and "Microsoft" in platform.version():
     PLATFORM = "wsl"
 
-CMD_STATUS_CACHE = {}  # type: Dict[str, bool]
+CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
 
 
 # TODO: find alternative to shutil.which() on Python 2
 #   https://github.com/mbr/shutilwhich/blob/master/shutilwhich/lib.py
 def check_command(command):  # type: (str) -> bool
-    if command not in CMD_STATUS_CACHE:
-        CMD_STATUS_CACHE[command] = bool(shutil.which(command, path=PATH))
-    return CMD_STATUS_CACHE[command]
+    if command not in CHECK_COMMAND_CACHE:
+        CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=PATH))
+    return CHECK_COMMAND_CACHE[command]
 
 
-def check_file(filepath):  # type: (str) -> bool
+def check_path(filepath):  # type: (str) -> bool
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
@@ -132,7 +132,7 @@ class ArpFile(Method):
     _path = "/proc/net/arp"
 
     def test(self):  # type: () -> bool
-        return check_file(self._path)
+        return check_path(self._path)
 
     def get(self, arg):  # type: (str) -> Optional[str]
         data = _read_file(self._path)
@@ -150,7 +150,7 @@ class SysIfaceFile(Method):
 
     def test(self):  # type: () -> bool
         # TODO: imperfect, but should work well enough
-        return check_file(self._path)
+        return check_path(self._path)
 
     def get(self, arg):  # type: (str) -> Optional[str]
         data = _read_file(self._path + arg + "/address")
@@ -574,7 +574,7 @@ class DefaultIfaceLinuxRouteFile(Method):
     method_type = "default_iface"
 
     def test(self):  # type: () -> bool
-        return check_file("/proc/net/route")
+        return check_path("/proc/net/route")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         data = _read_file("/proc/net/route")
@@ -585,6 +585,8 @@ class DefaultIfaceLinuxRouteFile(Method):
                     return iface_name
 
 
+# TODO: WSL ip route sample (compare to ubuntu)
+# TODO: Android ip route sample
 class DefaultIfaceRouteCommand(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "default_iface"
@@ -598,6 +600,8 @@ class DefaultIfaceRouteCommand(Method):
         return output.partition("0.0.0.0")[2].partition("\n")[0].split()[-1]
 
 
+# TODO: WSL ip route list sample (compare to ubuntu)
+# TODO: Android ip route list sample
 class DefaultIfaceIpRoute(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "default_iface"
