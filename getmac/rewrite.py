@@ -115,6 +115,9 @@ class Method:
     # (TODO) If current system supports. Dynamically set at runtime?
     #   This would let each method do more fine-grained version checking
     supported = False  # type: bool
+    # Marks the method as unable to be used, e.g. if there was a runtime
+    # error indicating the method won't work on the current platform.
+    unusable = False  # type: bool
 
     def test(self):  # type: () -> bool
         pass
@@ -398,6 +401,7 @@ class IfconfigEther(Method):
         return check_command("ifconfig")
 
     def get(self, arg):  # type: (str) -> Optional[str]
+        # TODO: implement
         # TODO: check which works, with interface arg or without
         #   Former is also used on Ubuntu...
         # (r"ether " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
@@ -410,8 +414,7 @@ class IfconfigEther(Method):
 class IfconfigLinux(Method):
     platforms = {"linux", "wsl"}
     method_type = "iface"
-    # "ether " : modern Ubuntu
-    # "HWaddr" : others
+    # "ether ": modern Ubuntu, "HWaddr": others
     _regexes = [r"ether " + MAC_RE_COLON, r"HWaddr " + MAC_RE_COLON]
     _champ = ""  # winner winner chicken dinner
 
@@ -442,25 +445,43 @@ class IfconfigOther(Method):
     """Wild 'Shot in the Dark' attempt at ifconfig for unknown platforms."""
     platforms = {"other"}
     method_type = "iface"
+    # "-av": Tru64 system?
+    _args = (("", ("ether", r"HWaddr")), ("-a", (r"HWaddr",)),
+             ("-v", (r"HWaddr",)), ("-av", (r"Ether",)))
+    _args_tested = False
+    _good_pair = []
 
     def test(self):  # type: () -> bool
         return check_command("ifconfig")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        # TODO: implement
-        # ifconfig
-        #   ether
-        #   HWaddr
-
-        # ifconfig -a
-        #   HWaddr
-
-        # ifconfig -v
-        #   HWaddr
-
-        # ifconfig -av (Tru64?)
-        #   Ether
-        pass
+        output = ""
+        if not self._args_tested:
+            for pair in self._args:
+                try:
+                    output = _popen("ifconfig", pair[0])
+                    self._good_pair = list(pair)
+                    if isinstance(self._good_pair[1], str):
+                        self._good_pair[1] = self._good_pair[1] + MAC_RE_COLON
+                    break
+                except CalledProcessError:
+                    pass  # TODO: log when debugging
+            if not self._good_pair:
+                self.unusable = True
+                return None
+            self._args_tested = True
+        if not output:
+            output = _popen("ifconfig", self._good_pair[0])
+        # Handle the two possible search terms
+        if isinstance(self._good_pair[1], tuple):
+            for term in self._good_pair[1]:
+                regex = term + MAC_RE_COLON
+                result = _search(regex, output)
+                if result:
+                    self._good_pair[1] = regex
+                    return result
+        else:
+            _search(self._good_pair[1], output)
 
 
 # TODO: sample of "ip link" on WSL
