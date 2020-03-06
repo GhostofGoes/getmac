@@ -541,12 +541,88 @@ class ArpVariousArgs(Method):
         found = _search(r"\(" + re.escape(arg) + self._regex_darwin, command_output)
 
 
+class DefaultIfaceLinuxRouteFile(Method):
+    """Get the default interface by reading /proc/net/route.
+
+    This is the same source as the `route` command, however it's much
+    faster to read this file than to call `route`. If it fails for whatever
+    reason, we can fall back on the system commands (e.g for a platform
+    that has a route command, but maybe doesn't use /proc?).
+    """
+    platforms = {"linux", "wsl"}
+    method_type = "default_iface"
+
+    def test(self):  # type: () -> bool
+        return check_file("/proc/net/route")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        data = _read_file("/proc/net/route")
+        if data is not None and len(data) > 1:
+            for line in data.split("\n")[1:-1]:
+                iface_name, dest = line.split("\t")[:2]
+                if dest == "00000000":
+                    return iface_name
+
+
+class DefaultIfaceRouteCommand(Method):
+    platforms = {"linux", "wsl", "other"}
+    method_type = "default_iface"
+
+    def test(self):  # type: () -> bool
+        return check_command("route")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        output = _popen("route", "-n")
+        # TODO: handle index errors
+        return output.partition("0.0.0.0")[2].partition("\n")[0].split()[-1]
+
+
+class DefaultIfaceIpRoute(Method):
+    platforms = {"linux", "wsl", "other"}
+    method_type = "default_iface"
+
+    def test(self):  # type: () -> bool
+        return check_command("ip")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        output = _popen("ip", "route list 0/0")
+        # TODO: handle index errors
+        return output.partition("dev")[2].partition("proto")[0].strip()
+
+
+class DefaultIfaceOpenBsd(Method):
+    platforms = {"openbsd"}
+    method_type = "default_iface"
+
+    def test(self):  # type: () -> bool
+        return check_command("route")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        output = _popen("route", "-nq show -inet -gateway -priority 1")
+        # TODO: handle index errors
+        return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
+
+
+class DefaultIfaceFreeBsd(Method):
+    platforms = {"freebsd"}
+    method_type = "default_iface"
+
+    def test(self):  # type: () -> bool
+        return check_command("netstat")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        output = _popen("netstat", "-r")
+        return _search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)\n", output)
+
+
 # TODO: ordering of methods by effectiveness/reliability
 METHODS = [
     ArpFile, SysIfaceFile, CtypesHost, FcntlIface, UuidArpGetNode, UuidLanscan,
     GetmacExe, IpconfigExe, WimcExe, ArpExe, DarwinNetworksetup, ArpFreebsd,
     ArpOpenbsd, IfconfigOpenbsd, IfconfigEther, IfconfigLinux, IfconfigOther,
     IpLinkIface, NetstatIface, IpNeighShow, ArpVariousArgs,
+    DefaultIfaceLinuxRouteFile, DefaultIfaceRouteCommand, DefaultIfaceOpenBsd,
+    DefaultIfaceFreeBsd,
 ]
 
 
