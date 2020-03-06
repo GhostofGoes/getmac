@@ -281,24 +281,26 @@ class UuidArpGetNode(Method):
 class GetmacExe(Method):
     platforms = ["windows"]
     method_type = "iface"
+    _regexes = [
+        # Connection Name
+        (r"\r\n", r".*" + MAC_RE_DASH + r".*\r\n"),
+        # Network Adapter (the human-readable name)
+        (r"\r\n.*", r".*" + MAC_RE_DASH + r".*\r\n")
+    ]
+    _champ = ()
 
     def test(self):  # type: () -> bool
         return command_exists("getmac.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         command_output = _popen("getmac.exe", "/NH /V")
-
-        # Connection Name
-        conn_regex = r"\r\n" + arg + r".*" + MAC_RE_DASH + r".*\r\n"
-
-        # Network Adapter (the human-readable name)
-        net_regex = r"\r\n.*" + arg + r".*" + MAC_RE_DASH + r".*\r\n"
-
-        for regex in [conn_regex, net_regex]:
-            found = _search(regex, command_output)
-            if found:
-                return found
-        return None
+        if self._champ:
+            return _search(self._champ[0] + arg + self._champ[1], command_output)
+        for pair in self._regexes:
+            result = _search(pair[0] + arg + pair[1], command_output)
+            if result:
+                self._champ = pair
+                return result
 
 
 class IpconfigExe(Method):
