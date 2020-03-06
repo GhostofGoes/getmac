@@ -9,7 +9,7 @@ import socket
 import struct
 import sys
 import traceback
-from subprocess import check_output
+from subprocess import CalledProcessError
 
 try:  # Python 3
     from subprocess import DEVNULL  # type: ignore
@@ -90,6 +90,7 @@ CMD_STATUS_CACHE = {}  # type: Dict[str, bool]
 
 
 # TODO: find alternative to shutil.which() on Python 2
+#   https://github.com/mbr/shutilwhich/blob/master/shutilwhich/lib.py
 def command_exists(command):  # type: (str) -> bool
     if command not in CMD_STATUS_CACHE:
         CMD_STATUS_CACHE[command] = bool(shutil.which(command, path=PATH))
@@ -468,18 +469,37 @@ class IfconfigOther(Method):
 
 # TODO: sample of "ip link" on WSL
 # TODO: sample of "ip link" on Android
+# TODO: sample of "ip link eth0" on Ubuntu
 class IpLinkIface(Method):
     platforms = ["linux", "wsl", "other"]
     method_type = "iface"
+    _regex = r".*\n.*link/ether " + MAC_RE_COLON
+    _tested_arg = False
+    _iface_arg = False
 
     def test(self):  # type: () -> bool
         return command_exists("ip")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        # "ip link" => WORKS ON WSL
-        # "ip link IFACE" => think this works on traditional ubuntu
-        # TODO: implement
-        pass
+        # Check if this version of "ip link" accepts an interface argument
+        # Not accepting one is a quirk of older versions of 'iproute2'
+        command_output = ""
+        if not self._tested_arg:
+            try:
+                command_output = _popen("ip", "link " + arg)
+                self._iface_arg = True
+            except CalledProcessError as err:
+                # Output: 'Command "eth0" is unknown, try "ip link help"'
+                if int(err.returncode) != 255:
+                    raise err
+            self._tested_arg = True
+
+        if self._iface_arg:
+            if not command_output:  # Don't repeat work on first run
+                command_output = _popen("ip", "link " + arg)
+            return _search(arg + self._regex, command_output)
+        else:
+            return _search(arg + self._regex, _popen("ip", "link"))
 
 
 class NetstatIface(Method):
@@ -519,6 +539,7 @@ class ArpVariousArgs(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         # TODO: linux => also try "-an", "-an %s" % arg
         # TODO: darwin => also try "-a", "-a %s" % arg
+        # TODO: finish implementing
         command_output = _popen("arp", arg)
         found = _search(r"\(" + re.escape(arg) + self._regex_std, command_output)
         found = _search(r"\(" + re.escape(arg) + self._regex_darwin, command_output)
@@ -536,11 +557,15 @@ METHODS = [
     IpconfigExe,
     WimcExe,
     ArpExe,
-    IfconfigEther,
     DarwinNetworksetup,
     ArpFreebsd,
-    IfconfigOpenbsd,
     ArpOpenbsd,
+    IfconfigOpenbsd,
+    IfconfigEther,
+    IfconfigLinux,
+    IfconfigOther,
+    IpLinkIface,
+    NetstatIface,
     IpNeighShow,
     ArpVariousArgs,
 ]
