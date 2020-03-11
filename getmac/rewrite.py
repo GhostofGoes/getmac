@@ -87,6 +87,7 @@ if PLATFORM == "linux" and "Microsoft" in platform.version():
 CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
 
 
+# TODO (python3): use shutil.which() instead?
 # TODO: find alternative to shutil.which() on Python 2
 #   https://github.com/mbr/shutilwhich/blob/master/shutilwhich/lib.py
 def check_command(command):  # type: (str) -> bool
@@ -99,6 +100,7 @@ def check_path(filepath):  # type: (str) -> bool
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
+# TODO(python3): Enums for platforms + method types
 # TODO: API to add/remove methods at runtime (including new, custom methods)
 # TODO: document quirks/notes about each method in class docstring
 # TODO: cache imports done during test for use during get(), reuse
@@ -107,7 +109,6 @@ def check_path(filepath):  # type: (str) -> bool
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
-
     platforms = set()  # type: Set[str]
     # VALUES: {ip, ip4, ip6, iface, default_iface}
     method_type = ""  # type: str
@@ -675,9 +676,9 @@ CACHE = {  # type: Dict[str, Optional[Method]]
 }
 
 
-# Find methods that work
 def initialize_method_cache(mac_type):
-    """
+    """Find methods that work.
+
     mac_type: ip | ip4 | ip6 | iface | default_iface
 
     # Filter methods by platform
@@ -692,7 +693,8 @@ def initialize_method_cache(mac_type):
     platform_methods = [x for x in METHODS if PLATFORM in x.platforms]
     if not platform_methods:
         # TODO: fallback to the "other" platform
-        print("No valid methods for platform ", PLATFORM)
+        print("Unknown platform %s, falling back to 'other' platform" % PLATFORM)
+        platform_methods = [x for x in METHODS if "other" in x.platforms]
 
     # TODO: log platform checking/filtering when DEBUG is enabled
     type_methods = [m for m in platform_methods
