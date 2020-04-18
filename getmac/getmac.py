@@ -81,6 +81,8 @@ if not WINDOWS:
 ENV = dict(os.environ)
 ENV["LC_ALL"] = "C"  # Ensure ASCII output so we parse correctly
 
+ARP_PATH = os.environ.get("ARP_PATH", "/proc/net/arp")
+
 # Constants
 IP4 = 0
 IP6 = 1
@@ -380,7 +382,7 @@ def _read_sys_iface_file(iface):
 
 def _read_arp_file(host):
     # type: (str) -> Optional[str]
-    data = _read_file("/proc/net/arp")
+    data = _read_file(ARP_PATH)
     if data is not None and len(data) > 1:
         # Need a space, otherwise a search for 192.168.16.2
         # will match 192.168.16.254 if it comes first!
