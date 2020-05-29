@@ -29,6 +29,7 @@ setup(
     project_urls={
         "Discord server": "https://discord.gg/python",
         "Issue tracker": "https://github.com/GhostofGoes/getmac/issues",
+        "Changelog": "https://github.com/GhostofGoes/getmac/blob/master/CHANGELOG.md",
     },
     license="MIT",
     data_files=[

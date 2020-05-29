@@ -43,7 +43,7 @@ except ImportError:  # Python 2
 log = logging.getLogger("getmac")
 log.addHandler(logging.NullHandler())
 
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 PY2 = sys.version_info[0] == 2
 
 # Configurable settings
@@ -80,6 +80,8 @@ if not WINDOWS:
 # modify the process's current environment.
 ENV = dict(os.environ)
 ENV["LC_ALL"] = "C"  # Ensure ASCII output so we parse correctly
+
+ARP_PATH = os.environ.get("ARP_PATH", "/proc/net/arp")
 
 # Constants
 IP4 = 0
@@ -446,12 +448,27 @@ def _read_sys_iface_file(iface):
 
 def _read_arp_file(host):
     # type: (str) -> Optional[str]
-    data = _read_file("/proc/net/arp")
+    data = _read_file(ARP_PATH)
     if data is not None and len(data) > 1:
         # Need a space, otherwise a search for 192.168.16.2
         # will match 192.168.16.254 if it comes first!
         return _search(re.escape(host) + r" .+" + MAC_RE_COLON, data)
     return None
+
+
+def _arping_habets(host):
+    # type: (str) -> Optional[str]
+    """Parse https://github.com/ThomasHabets/arping output."""
+    return _search(r"^%s$" % MAC_RE_COLON, _popen("arping", "-r -C 1 -c 1 %s" % host),)
+
+
+def _arping_iputils(host):
+    # type: (str) -> Optional[str]
+    """Parse iputils arping output."""
+    return _search(
+        r" from %s \[(%s)\]" % (re.escape(host), MAC_RE_COLON),
+        _popen("arping", "-f -c 1 %s" % host),
+    )
 
 
 def _read_file(filepath):
@@ -591,6 +608,9 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             ),
             _uuid_ip,
         ]
+        # Add methods that make network requests
+        if net_ok and type_of_thing != IP6:
+            methods.extend((_arping_iputils, _arping_habets))
     else:
         log.critical("Reached end of _hunt_for_mac() if-else chain!")
         return None

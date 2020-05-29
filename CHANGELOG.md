@@ -5,6 +5,13 @@
  or send me an email (see git commit author info for address).
 
 ## NEXT (XX/XX/XXXX)
+* TBD
+
+### Changed
+* Added support for Thomas Habets' version of `arping` in addition to the existing iputils one
+* Added support for docker in network bridge mode
+
+## 0.8.2 (12/07/2019)
 
 **Announcement**: Python 2 compatibility will be dropped in getmac 1.0.0, which will be finished sometime in 2020. If you are stuck on Python 2, consider loosely pinning the version in your dependencies list, e.g. `getmac<1`. I will continue to fix reported bugs and accept patches for the last release before 1.0.0, however active development will cease and new features will not be backported.
 
@@ -12,6 +19,7 @@
 * Added warning about Python 2 compatibility being dropped in 1.0.0
 * Officially support Python 3.8
 * Documented a known issue with looking up IP of a local interface on Linux/WSL (See the "Known Issues" section in the README)
+* Added remote host lookup using `arping` as last resort
 
 ### Dev
 * Standardized formatting on [Black](https://github.com/psf/black)

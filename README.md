@@ -220,11 +220,13 @@ are untested and may have bugs or missing features.
 * Docker
 
 ## Docker
+Add `-v /proc/1/net/arp:/host/arp -e ARP_PATH=/host/arp` to access arp table of host inside container in bridge network mode.
 ```bash
 docker build -f packaging/Dockerfile -t getmac .
 docker run -it getmac:latest --help
 docker run -it getmac:latest --version
 docker run -it getmac:latest -n localhost
+docker run --rm -it -v /proc/1/net/arp:/host/arp -e ARP_PATH=/host/arp getmac:latest -n 192.168.0.1
 ```
 
 ## Caveats
@@ -278,6 +280,8 @@ to ask questions or discuss the project (Handle: @KnownError).
 * @fortunate-man - Awesome usage videos
 * @martmists - legacy Python compatibility improvements
 * @hargoniX - scripts and specfiles for RPM packaging
+* Ville Skyttä (@scop) - arping lookup support
+* Tomasz Duda - support for docker in network bridge mode
 
 ## Sources
 Many of the methods used to acquire an address and the core logic framework

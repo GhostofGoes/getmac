@@ -53,6 +53,22 @@ def test_hunt_linux_default_iface(benchmark, mocker, get_sample):
     assert benchmark(getmac._hunt_linux_default_iface) == "ens33"
 
 
+def test_arping_habets(benchmark, mocker, get_sample):
+    content = get_sample("ubuntu_18.04/arping-habets.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert (
+        benchmark(getmac._arping_habets, host="192.168.16.254") == "00:50:56:e8:32:3c"
+    )
+
+
+def test_arping_iputils(benchmark, mocker, get_sample):
+    content = get_sample("ubuntu_18.04/arping-iputils.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert (
+        benchmark(getmac._arping_iputils, host="192.168.16.254") == "00:50:56:E8:32:3C"
+    )
+
+
 def test_ubuntu_1804_interface(benchmark, mocker, get_sample):
     mocker.patch("getmac.getmac.WINDOWS", False)
     mocker.patch("getmac.getmac.DARWIN", False)
