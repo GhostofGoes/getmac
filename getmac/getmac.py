@@ -104,71 +104,6 @@ except ImportError:
     pass
 
 
-# TODO: move more logic out of get_mac_address into individual methods
-#   interface
-#   remote host
-#   return data cleanup and validation
-
-# TODO: move utils into separate file
-# TODO: move interface methods into separate file
-# TODO: move host methods into separate file
-
-# TODO: GitHub issue requesting security analysis. Hacktoberfest?
-#   They don't need to fix the issues, just find them
-#   Merge PR adding themselves as a contributor
-
-# TODO: WSL vs WSL2 (WSL2 is full linux so just need to tweak platform ID check)
-
-
-"""
-SECURITY CONCERNS:
-  Cache file is untrusted
-  Results from command invocations are untrusted
-  Double-check validation of results before returning
-  Validate arguments to get_mac_address() to avoid command injection
-      Data types
-      IPv4/IPv6 addresses
-      Interface names
-  Notes from GitHub issue
-  Better document security concerns/boundaries
-      Ability to make network requests in (document instances)
-      Commands that are executed
-      File reads
-  Environment being passed to subprocesses + env variables used
-  Modifying PATH with /sbin and /usr/sbin
-
-Strategy
-  Order of methods is determined by:
-      Platform + version
-      Performance (file read > command)
-      Reliability (how well I know/understand the command to work)
-
-What is fallback if all tests fail during initialization?
-
-Make a future TODO to handle cases where the command/file/etc exists,
-but isn't actually returning what we want. Maybe an argument like
-"high_accuracy=True" when calling get_mac_address?
-
-ok so
-  Try a bunch of methods
-  If we get a VERIFIED POSITIVE result (yay good input), then:
-    Use that for the rest of eternity
-  Else:
-    Here are the ones that seem to work
-    Continue looking for VERIFIED POSITIVE result
-
-On each call, check if the "method cache" for the requested info is populated
-(e.g. remote host, interface mac, etc.)
-  First call it will not be and result in cache population.
-      OPTIONAL: check for a cache file
-      Generate a list of methods to try
-      First method to succeed with a VALID MAC gets cached. Stricter verification
-          of the result using a regex or string parser than normal returns.
-      Once verified, select as the method to use ALWAYS
-      OPTIONAL: write success to a file so future loads
-"""
-
-
 # Ensure we only log the Python 2 warning once
 WARNED_PY2 = False
 
@@ -179,15 +114,23 @@ def get_mac_address(
     # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
     """Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 
-    You must only use one of the first four arguments. If none of the arguments
-    are selected, the default network interface for the system will be used.
+    You must only use ONE of the first four arguments (interface, ip, ip6, hostname).
+    If none of the arguments are selected, the default network interface for
+    the system will be used.
 
-    Exceptions will be handled silently and returned as a None.
-    For the time being, it assumes you are using Ethernet.
+    Exceptions are handled silently and returned as a `None`.
 
-    NOTES:
-    * You MUST provide str-typed arguments, REGARDLESS of Python version.
-    * localhost/127.0.0.1 will always return '00:00:00:00:00:00'
+    .. warning::
+       You MUST provide str-typed arguments, REGARDLESS of Python version.
+
+    .. note::
+       ``localhost`` or ``127.0.0.1`` will always return ``"00:00:00:00:00:00"``
+
+    .. note::
+       It is assumed that you are using Ethernet or Wi-Fi. While other protocols
+       such as Bluetooth may work, this has not been tested and should not be
+       relied upon. If you need this funcitonality, please open an issue!
+       (or better yet, a Pull Request ;)
 
     Args:
         interface (str): Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
@@ -195,8 +138,8 @@ def get_mac_address(
         ip6 (str): Canonical shortened IPv6 address of a remote host (e.g ff02::1:ffe7:7f19)
         hostname (str): DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
         network_request (bool): Send a UDP packet to a remote host to populate
-        the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
-        be configured using the module variable `getmac.PORT`.
+            the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
+            be configured using the module variable `getmac.PORT`.
     Returns:
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error.

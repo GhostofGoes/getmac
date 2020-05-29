@@ -91,24 +91,51 @@ except ImportError:
     pass
 
 
-# Cache of commands that have been checked for existence by check_command()
-CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
+# TODO: move utils into separate file
+# TODO: move interface methods into separate file
+# TODO: move host methods into separate file
+
+# TODO: automatically clean MAC on return
+def _clean_mac(mac):
+    # Check and format the result to be lowercase, colon-separated
+    if mac is not None:
+        mac = str(mac)
+        if not PY2:  # Strip bytestring conversion artifacts
+            for garbage_string in ["b'", "'", "\\n", "\\r"]:
+                mac = mac.replace(garbage_string, "")
+        mac = mac.strip().lower().replace(" ", "").replace("-", ":")
+
+        # Fix cases where there are no colons
+        if ":" not in mac and len(mac) == 12:
+            log.debug("Adding colons to MAC %s", mac)
+            mac = ":".join(mac[i: i + 2] for i in range(0, len(mac), 2))
+
+        # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
+        elif len(mac) < 17:
+            log.debug(
+                "Length of MAC %s is %d, padding single-character " "octets with zeros",
+                mac,
+                len(mac),
+            )
+            parts = mac.split(":")
+            new_mac = []
+            for part in parts:
+                if len(part) == 1:
+                    new_mac.append("0" + part)
+                else:
+                    new_mac.append(part)
+            mac = ":".join(new_mac)
+
+        # MAC address should ALWAYS be 17 characters before being returned
+        if len(mac) != 17:
+            log.warning("MAC address %s is not 17 characters long!", mac)
+            mac = None
+        elif mac.count(":") != 5:
+            log.warning("MAC address %s is missing ':' characters", mac)
+            mac = None
+    return mac
 
 
-# TODO (python3): use shutil.which() instead?
-# TODO: find alternative to shutil.which() on Python 2
-#   https://github.com/mbr/shutilwhich/blob/master/shutilwhich/lib.py
-def check_command(command):  # type: (str) -> bool
-    if command not in CHECK_COMMAND_CACHE:
-        CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=PATH_STR))
-    return CHECK_COMMAND_CACHE[command]
-
-
-def check_path(filepath):  # type: (str) -> bool
-    return os.path.exists(filepath) and os.access(filepath, os.R_OK)
-
-
-# TODO: move these functions to a separate "utils" file?
 def _read_file(filepath):
     # type: (str) -> Optional[str]
     try:
@@ -164,9 +191,26 @@ def _uuid_convert(mac):
     return ":".join(("%012X" % mac)[i : i + 2] for i in range(0, 12, 2))
 
 
-# TODO(python3): Enums for platforms + method types
+# Cache of commands that have been checked for existence by check_command()
+CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
+
+
+# TODO (python3): use shutil.which() instead?
+# TODO: find alternative to shutil.which() on Python 2
+#   https://github.com/mbr/shutilwhich/blob/master/shutilwhich/lib.py
+def check_command(command):  # type: (str) -> bool
+    if command not in CHECK_COMMAND_CACHE:
+        CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=PATH_STR))
+    return CHECK_COMMAND_CACHE[command]
+
+
+def check_path(filepath):  # type: (str) -> bool
+    return os.path.exists(filepath) and os.access(filepath, os.R_OK)
+
+
+# TODO(python3): Use Enums for platforms and method types instead of strings
 # TODO: API to add/remove methods at runtime (including new, custom methods)
-# TODO: document quirks/notes about each method in class docstring
+# TODO: write a short guide on how to add and test a new method
 # TODO: cache imports done during test for use during get(), reuse
 #   Use __import__() or importlib?
 # TODO: parameterize regexes? (any faster?)
@@ -191,7 +235,22 @@ class Method:
         pass
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        """Core logic of the method that performs the lookup."""
+        """Core logic of the method that performs the lookup.
+
+        .. warning::
+           If the method itself fails to function an exception will be raised!
+           (for instance, if some command arguments are invalid, or there's an
+           internal error with the command, or a bug in the code).
+
+        Args:
+            arg (str): What the method should get, such as an IP address
+                or interface name. In the case of default_iface methods,
+                this is not used and defaults to an empty string.
+
+        Returns:
+            Lowercase colon-separated MAC address, or None if one could
+            not be found.
+        """
         pass
 
     @classmethod
@@ -643,6 +702,7 @@ class ArpVariousArgs(Method):
         found = _search(r"\(" + re.escape(arg) + self._regex_std, command_output)
         found = _search(r"\(" + re.escape(arg) + self._regex_darwin, command_output)
         # TODO: finish implementing
+        raise NotImplementedError
 
 
 class DefaultIfaceLinuxRouteFile(Method):
@@ -659,7 +719,7 @@ class DefaultIfaceLinuxRouteFile(Method):
     def test(self):  # type: () -> bool
         return check_path("/proc/net/route")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg=""):  # type: (str) -> Optional[str]
         data = _read_file("/proc/net/route")
         if data is not None and len(data) > 1:
             for line in data.split("\n")[1:-1]:
@@ -677,7 +737,7 @@ class DefaultIfaceRouteCommand(Method):
     def test(self):  # type: () -> bool
         return check_command("route")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("route", "-n")
         # TODO: handle index errors
         return output.partition("0.0.0.0")[2].partition("\n")[0].split()[-1]
@@ -692,7 +752,7 @@ class DefaultIfaceIpRoute(Method):
     def test(self):  # type: () -> bool
         return check_command("ip")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("ip", "route list 0/0")
         # TODO: handle index errors
         return output.partition("dev")[2].partition("proto")[0].strip()
@@ -705,7 +765,7 @@ class DefaultIfaceOpenBsd(Method):
     def test(self):  # type: () -> bool
         return check_command("route")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("route", "-nq show -inet -gateway -priority 1")
         # TODO: handle index errors
         return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
@@ -718,7 +778,7 @@ class DefaultIfaceFreeBsd(Method):
     def test(self):  # type: () -> bool
         return check_command("netstat")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("netstat", "-r")
         return _search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)\n", output)
 
@@ -743,6 +803,18 @@ CACHE = {  # type: Dict[str, Optional[Method]]
 }
 
 
+# Order of methods is determined by:
+#   Platform + version
+#   Performance (file read > command)
+#   Reliability (how well I know/understand the command to work)
+FALLBACK_CACHE = {  # type: Dict[str, List[Method]]
+    "ip4": [],
+    "ip6": [],
+    "iface": [],
+    "default_iface": [],
+}
+
+
 def initialize_method_cache(mac_type):  # type: (str) -> bool
     """Find methods that work.
 
@@ -751,6 +823,13 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
             Allowed values are: ip | ip4 | ip6 | iface | default_iface
     """
     log.debug("Initializing '%s' method cache (platform: '%s')", mac_type, PLATFORM)
+    if CACHE.get(mac_type) or (
+            mac_type == "ip" and (CACHE.get("ip4") and CACHE.get("ip6"))):
+        if DEBUG:
+            log.debug("Cache already initialized for '%s'", mac_type)
+        return True
+    # TODO: check for and load from a cache file on disk or in the environment
+    #   This file simply has the names of methods
 
     # Filter methods by the platform we're running on
     platform_methods = [m for m in METHODS  # type: List[type(Method)]
@@ -803,6 +882,23 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
         log.debug("'%s' tested_methods: %s", mac_type, tested_strs)
         log.debug("Current method cache: %s", str({k: str(v) for k, v in CACHE.items()}))
 
+    # TODO: raise exceptions on critical failures during cache initialization
+    #  such as a lack of valid methods or all tests failing can raise exceptions
+    #   also make sure to document in get_mac_address
+    #   (this is a major API change defer this change to 1.0.0)
+
+    # TODO: save cache results to disk and load on future runs
+    #   Add a flag to control this behavior and location of the cache
+    #   Document
+
+    log.debug("Finished initializing '%s' method cache", mac_type)
+    return True
+
+
+# TODO:
+    #  add tested_methods to global fallback cache
+    #  function to query methods out of cache, if they throw exception, pick one out of fallback
+
     # TODO: handle method throwing exception, use to mark as non-usable
     #   Do NOT mark return code 1 on a process as non-usable though!
     #   Example of return code 1 on ifconfig from WSL:
@@ -816,8 +912,7 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
     #   When exception occurs, remove from cache and reinitialize with next candidate
     #   For example, if get() call to getmac.exe returns 1 then it's not valid
 
-    log.debug("Finished initializing '%s' method cache", mac_type)
-    return True
-
-
-# TODO: __all__
+# TODO: move more logic out of get_mac_address into individual methods
+#   interface
+#   remote host
+#   return data cleanup and validation
