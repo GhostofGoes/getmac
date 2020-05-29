@@ -48,7 +48,6 @@ if _SYST == "Linux":
         LINUX = True
 
 # Generic platform identifier used for filtering methods
-# TODO: document possible values
 PLATFORM = _SYST.lower()
 if PLATFORM == "linux" and "Microsoft" in platform.version():
     PLATFORM = "wsl"
@@ -56,7 +55,6 @@ if PLATFORM == "linux" and "Microsoft" in platform.version():
 # Get and cache the configured system PATH on import
 # The process environment does not change after a process is started
 PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)
-# TODO: remove all Python "Scripts" from the path? Document this!
 if not WINDOWS:
     PATH.extend(("/sbin", "/usr/sbin"))
 else:
@@ -91,48 +89,53 @@ except ImportError:
     pass
 
 
-# TODO: move utils into separate file
-# TODO: move interface methods into separate file
-# TODO: move host methods into separate file
-
-# TODO: automatically clean MAC on return
+# TODO: move utils into separate file?
+# TODO: document utils
 def _clean_mac(mac):
-    # Check and format the result to be lowercase, colon-separated
-    if mac is not None:
-        mac = str(mac)
-        if not PY2:  # Strip bytestring conversion artifacts
-            for garbage_string in ["b'", "'", "\\n", "\\r"]:
-                mac = mac.replace(garbage_string, "")
-        mac = mac.strip().lower().replace(" ", "").replace("-", ":")
+    # type: (Optional[str]) -> Optional[str]
+    """Check and format a string result to be lowercase colon-separated MAC."""
+    if mac is None:
+        return None
 
-        # Fix cases where there are no colons
-        if ":" not in mac and len(mac) == 12:
-            log.debug("Adding colons to MAC %s", mac)
-            mac = ":".join(mac[i: i + 2] for i in range(0, len(mac), 2))
+    # Handle cases where it's bytes (which are the same as str in PY2)
+    mac = str(mac)
+    if not PY2:  # Strip bytestring conversion artifacts
+        # TODO(python3): check for bytes and decode instead of this weird hack
+        for garbage_string in ["b'", "'", "\\n", "\\r"]:
+            mac = mac.replace(garbage_string, "")
 
-        # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
-        elif len(mac) < 17:
-            log.debug(
-                "Length of MAC %s is %d, padding single-character " "octets with zeros",
-                mac,
-                len(mac),
-            )
-            parts = mac.split(":")
-            new_mac = []
-            for part in parts:
-                if len(part) == 1:
-                    new_mac.append("0" + part)
-                else:
-                    new_mac.append(part)
-            mac = ":".join(new_mac)
+    # Remove trailing whitespace, make lowercase, remove spaces,
+    # and replace dashes '-' with colons ':'.
+    mac = mac.strip().lower().replace(" ", "").replace("-", ":")
 
-        # MAC address should ALWAYS be 17 characters before being returned
-        if len(mac) != 17:
-            log.warning("MAC address %s is not 17 characters long!", mac)
-            mac = None
-        elif mac.count(":") != 5:
-            log.warning("MAC address %s is missing ':' characters", mac)
-            mac = None
+    # Fix cases where there are no colons
+    if ":" not in mac and len(mac) == 12:
+        log.debug("Adding colons to MAC %s", mac)
+        mac = ":".join(mac[i: i + 2] for i in range(0, len(mac), 2))
+
+    # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
+    elif len(mac) < 17:
+        log.debug(
+            "Length of MAC %s is %d, padding single-character " "octets with zeros",
+            mac,
+            len(mac),
+        )
+        parts = mac.split(":")
+        new_mac = []
+        for part in parts:
+            if len(part) == 1:
+                new_mac.append("0" + part)
+            else:
+                new_mac.append(part)
+        mac = ":".join(new_mac)
+
+    # MAC address should ALWAYS be 17 characters before being returned
+    if len(mac) != 17:
+        log.warning("MAC address %s is not 17 characters long!", mac)
+        mac = None
+    elif mac.count(":") != 5:
+        log.warning("MAC address %s is missing colon (':') characters", mac)
+        mac = None
     return mac
 
 
@@ -208,13 +211,24 @@ def check_path(filepath):  # type: (str) -> bool
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
-# TODO(python3): Use Enums for platforms and method types instead of strings
-# TODO: API to add/remove methods at runtime (including new, custom methods)
-# TODO: write a short guide on how to add and test a new method
-# TODO: cache imports done during test for use during get(), reuse
-#   Use __import__() or importlib?
-# TODO: parameterize regexes? (any faster?)
-# TODO: document attributes (using Sphinx "#:" comments)
+# TODO: 1.0.0 release
+#   * API to add/remove methods at runtime (including new, custom methods)
+#   * Write a short guide on how to add and test a new method
+#   * Parameterize regexes? (any faster?)
+#   * Raise exceptions on critical failures during cache initialization
+#       such as a lack of valid methods or all tests failing can raise exceptions
+#       also make sure to document in get_mac_address
+#       (this is a major API change defer this change to 1.0.0)
+#   * Remove all Python "Scripts" from the path? Document this!
+#   * Document possible values for PLATFORM
+#   * python3: Use Enums for platforms and method types instead of strings
+#   * python3: cache imports done during test for use during get(), reuse
+#       Use __import__() or importlib?
+
+
+# TODO: rewrite
+#   * Document Method (and subclass) attributes (use Sphinx "#:" comments)
+#   * find alternative to shutil.which() on Python 2
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
@@ -234,6 +248,7 @@ class Method:
         """Low-impact test that the method is feasible, e.g. command exists."""
         pass
 
+    # TODO: automatically clean MAC on return
     def get(self, arg):  # type: (str) -> Optional[str]
         """Core logic of the method that performs the lookup.
 
@@ -828,6 +843,7 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
         if DEBUG:
             log.debug("Cache already initialized for '%s'", mac_type)
         return True
+
     # TODO: check for and load from a cache file on disk or in the environment
     #   This file simply has the names of methods
 
@@ -851,7 +867,7 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
                     or (pm.method_type == "ip" and mac_type in ["ip4", "ip6"])]
     if not type_methods:
         log.critical("No valid methods found for MAC type '%s'", mac_type)
-        return False  # TODO: raise exception?
+        return False
     if DEBUG:
         type_strs = ", ".join(str(tm) for tm in type_methods)  # type: str
         log.debug("'%s' type_methods: %s", mac_type, type_strs)
@@ -876,16 +892,11 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
                 log.debug("Test failed for method '%s'", str(method_instance))
     if not tested_methods:
         log.critical("All %d '%s' methods failed to test!", len(type_methods), mac_type)
-        return False  # TODO: raise exception?
+        return False
     if DEBUG:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)  # type: str
         log.debug("'%s' tested_methods: %s", mac_type, tested_strs)
         log.debug("Current method cache: %s", str({k: str(v) for k, v in CACHE.items()}))
-
-    # TODO: raise exceptions on critical failures during cache initialization
-    #  such as a lack of valid methods or all tests failing can raise exceptions
-    #   also make sure to document in get_mac_address
-    #   (this is a major API change defer this change to 1.0.0)
 
     # TODO: save cache results to disk and load on future runs
     #   Add a flag to control this behavior and location of the cache
@@ -896,21 +907,21 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
 
 
 # TODO:
-    #  add tested_methods to global fallback cache
-    #  function to query methods out of cache, if they throw exception, pick one out of fallback
+#  add tested_methods to global fallback cache
+#  function to query methods out of cache, if they throw exception, pick one out of fallback
 
-    # TODO: handle method throwing exception, use to mark as non-usable
-    #   Do NOT mark return code 1 on a process as non-usable though!
-    #   Example of return code 1 on ifconfig from WSL:
-    #     Blake:goesc$ ifconfig eth8
-    #     eth8: error fetching interface information: Device not found
-    #     Blake:goesc$ echo $?
-    #     1
+# TODO: handle method throwing exception, use to mark as non-usable
+#   Do NOT mark return code 1 on a process as non-usable though!
+#   Example of return code 1 on ifconfig from WSL:
+#     Blake:goesc$ ifconfig eth8
+#     eth8: error fetching interface information: Device not found
+#     Blake:goesc$ echo $?
+#     1
 
-    # TODO: log get() failures
-    # TODO: exception handling when calling get(), log all exceptions
-    #   When exception occurs, remove from cache and reinitialize with next candidate
-    #   For example, if get() call to getmac.exe returns 1 then it's not valid
+# TODO: log get() failures
+# TODO: exception handling when calling get(), log all exceptions
+#   When exception occurs, remove from cache and reinitialize with next candidate
+#   For example, if get() call to getmac.exe returns 1 then it's not valid
 
 # TODO: move more logic out of get_mac_address into individual methods
 #   interface
