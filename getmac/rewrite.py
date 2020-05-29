@@ -47,16 +47,24 @@ if _SYST == "Linux":
     else:
         LINUX = True
 
+# Generic platform identifier used for filtering methods
+# TODO: document possible values
+PLATFORM = _SYST.lower()
+if PLATFORM == "linux" and "Microsoft" in platform.version():
+    PLATFORM = "wsl"
+
+# Get and cache the configured system PATH on import
+# The process environment does not change after a process is started
 PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)
+# TODO: remove all Python "Scripts" from the path? Document this!
 if not WINDOWS:
     PATH.extend(("/sbin", "/usr/sbin"))
 else:
     # TODO: Prevent edge case on Windows where our script "getmac.exe"
     #   gets added to the path ahead of the actual Windows getmac.exe
     #   This just handles case where it's in a virtualenv, won't work /w global scripts
-    # TODO: remove all Python "scripts" from path? Document this!
     PATH = [p for p in PATH if "\\getmac\\Scripts" not in p]
-PATH_STR = os.pathsep.join(PATH)
+PATH_STR = os.pathsep.join(PATH)  # Build the str after modifications are made
 
 # Use a copy of the environment so we don't
 # modify the process's current environment.
@@ -82,10 +90,8 @@ try:
 except ImportError:
     pass
 
-PLATFORM = _SYST.lower()
-if PLATFORM == "linux" and "Microsoft" in platform.version():
-    PLATFORM = "wsl"
 
+# Cache of commands that have been checked for existence by check_command()
 CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
 
 
@@ -234,7 +240,6 @@ class UuidLanscan(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         from uuid import _find_mac  # type: ignore
-
         if not PY2:
             arg = bytes(arg, "utf-8")  # type: ignore
         mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)
@@ -806,3 +811,6 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
 
     log.debug("Finished initializing '%s' method cache", mac_type)
     return True
+
+
+# TODO: __all__
