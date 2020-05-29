@@ -30,7 +30,6 @@ _SYST = platform.system()
 if _SYST == "Java":
     try:
         import java.lang
-
         _SYST = str(java.lang.System.getProperty("os.name"))
     except ImportError:
         log.critical("Can't determine OS: couldn't import java.lang on Jython")
@@ -70,14 +69,13 @@ MAC_RE_DARWIN = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 # If you're copying the code, this section can be safely removed
 try:
     from typing import TYPE_CHECKING
-
     if TYPE_CHECKING:
-        from typing import Dict, Optional, Set
+        from typing import Dict, List, Optional, Set
 except ImportError:
     pass
 
 
-from .getmac import _read_file, _search, _uuid_convert, _popen
+from .getmac import _read_file, _search, _uuid_convert, _popen  # TODO
 
 
 PLATFORM = _SYST.lower()
@@ -657,7 +655,8 @@ class DefaultIfaceFreeBsd(Method):
         return _search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)\n", output)
 
 
-# TODO: ordering of methods by effectiveness/reliability
+# TODO: order methods by effectiveness/reliability
+#   Use a class attribute maybe? e.g. "score", then sort by score in cache
 METHODS = [
     ArpFile, SysIfaceFile, CtypesHost, FcntlIface, UuidArpGetNode, UuidLanscan,
     GetmacExe, IpconfigExe, WimcExe, ArpExe, DarwinNetworksetup, ArpFreebsd,
@@ -676,58 +675,74 @@ CACHE = {  # type: Dict[str, Optional[Method]]
 }
 
 
-def initialize_method_cache(mac_type):
+def initialize_method_cache(mac_type):  # type: (str) -> bool
     """Find methods that work.
 
-    mac_type: ip | ip4 | ip6 | iface | default_iface
-
-    # Filter methods by platform
-    methods = filter(methods)
-
-    # Filter methods by feasibility
-
-
-    for method in methods:
-        method.test()
+    Args:
+        mac_type: MAC type to initialize the cache for
+            Allowed values are: ip | ip4 | ip6 | iface | default_iface
     """
-    platform_methods = [x for x in METHODS if PLATFORM in x.platforms]
+    log.debug("Initializing '%s' method cache (platform: '%s')", mac_type, PLATFORM)
+
+    # Filter methods by the platform we're running on
+    platform_methods = [m for m in METHODS  # type: List[type(Method)]
+                        if PLATFORM in m.platforms]
     if not platform_methods:
-        # TODO: fallback to the "other" platform
-        print("Unknown platform %s, falling back to 'other' platform" % PLATFORM)
-        platform_methods = [x for x in METHODS if "other" in x.platforms]
+        # If there isn't a method for the current platform,
+        # then fallback to the generic platform "other".
+        log.warning("No methods for platform '%s'! Your system may not be supported. "
+                    "Falling back to platform 'other'", PLATFORM)
+        platform_methods = [m for m in METHODS if "other" in m.platforms]
+    if DEBUG:
+        meth_strs = ", ".join(pm.__name__ for pm in platform_methods)
+        log.debug("%d filtered '%s' platform_methods: %s",
+                  len(platform_methods), mac_type, meth_strs)
 
-    # TODO: log platform checking/filtering when DEBUG is enabled
-    type_methods = [m for m in platform_methods
-                    if m.method_type == mac_type
-                    or (m.method_type == "ip" and mac_type in ["ip4", "ip6"])]
+    # Filter methods by the type of MAC we're looking for, such as "ip"
+    # for remote host methods or "iface" for local interface methods.
+    type_methods = [pm for pm in platform_methods  # type: List[type(Method)]
+                    if pm.method_type == mac_type
+                    or (pm.method_type == "ip" and mac_type in ["ip4", "ip6"])]
     if not type_methods:
-        print("No valid methods for type ", mac_type)
+        log.critical("No valid methods found for MAC type '%s'", mac_type)
+        return False  # TODO: raise exception?
+    if DEBUG:
+        type_strs = ", ".join(tm.__name__ for tm in type_methods)
+        log.debug("%d filtered '%s' type_methods: %s",
+                  len(type_methods), mac_type, type_strs)
 
-    # TODO: log test() failures when DEBUG is enabled
-    tested = []
-    for method in type_methods:
-        if method.test():
-            tested.append(method)
-            if not CACHE[mac_type]:
-                CACHE[mac_type] = method
+    # Determine which methods work on the current system
+    tested_methods = []  # type: List[Method]
+    for method_class in type_methods:
+        method_instance = method_class()  # type: Method
+        if method_instance.test():
+            tested_methods.append(method_instance)
+            # First successful test goes in the cache
+            if not CACHE[mac_type]:  # TODO: will mac_type of "ip" break this?
+                CACHE[mac_type] = method_instance
         else:
-            print("Failed to test method ", method.__name__)
-    if not tested:
-        # CRITICAL FAIL
-        print("All methods failed to test")
+            if DEBUG:
+                log.debug("Test failed for method '%s'", method_instance.__class__.__name__)
+    if not tested_methods:
+        log.critical("All %d '%s' methods failed to test!", len(type_methods), mac_type)
+        return False  # TODO: raise exception?
+    if DEBUG:
+        tested_strs = ", ".join(ts.__class__.__name__ for ts in tested_methods)
+        log.debug("%d tested '%s' methods: %s",
+                  len(tested_methods), mac_type, tested_strs)
 
     # TODO: handle method throwing exception, use to mark as non-usable
     #   Do NOT mark return code 1 on a process as non-usable though!
-
-    # Example from WSL:
-    """
-    Blake:goesc$ ifconfig eth8
-    eth8: error fetching interface information: Device not found
-    Blake:goesc$ echo $?
-    1
-    """
+    #   Example of return code 1 on ifconfig from WSL:
+    #     Blake:goesc$ ifconfig eth8
+    #     eth8: error fetching interface information: Device not found
+    #     Blake:goesc$ echo $?
+    #     1
 
     # TODO: log get() failures
     # TODO: exception handling when calling get(), log all exceptions
     #   When exception occurs, remove from cache and reinitialize with next candidate
     #   For example, if get() call to getmac.exe returns 1 then it's not valid
+
+    log.debug("Finished initializing '%s' method cache", mac_type)
+    return True
