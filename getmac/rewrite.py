@@ -194,6 +194,10 @@ class Method:
         """Core logic of the method that performs the lookup."""
         pass
 
+    @classmethod
+    def __str__(cls):  # type: () -> str
+        return cls.__name__
+
 
 class ArpFile(Method):
     platforms = {"linux"}
@@ -758,9 +762,8 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
                     "Falling back to platform 'other'", PLATFORM)
         platform_methods = [m for m in METHODS if "other" in m.platforms]
     if DEBUG:
-        meth_strs = ", ".join(pm.__name__ for pm in platform_methods)
-        log.debug("%d filtered '%s' platform_methods: %s",
-                  len(platform_methods), mac_type, meth_strs)
+        meth_strs = ", ".join(str(pm) for pm in platform_methods)  # type: str
+        log.debug("'%s' platform_methods: %s", mac_type, meth_strs)
 
     # Filter methods by the type of MAC we're looking for, such as "ip"
     # for remote host methods or "iface" for local interface methods.
@@ -771,9 +774,8 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
         log.critical("No valid methods found for MAC type '%s'", mac_type)
         return False  # TODO: raise exception?
     if DEBUG:
-        type_strs = ", ".join(tm.__name__ for tm in type_methods)
-        log.debug("%d filtered '%s' type_methods: %s",
-                  len(type_methods), mac_type, type_strs)
+        type_strs = ", ".join(str(tm) for tm in type_methods)  # type: str
+        log.debug("'%s' type_methods: %s", mac_type, type_strs)
 
     # Determine which methods work on the current system
     tested_methods = []  # type: List[Method]
@@ -782,19 +784,24 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
         if method_instance.test():
             tested_methods.append(method_instance)
             # First successful test goes in the cache
-            if not CACHE[mac_type]:  # TODO: will mac_type of "ip" break this?
-                CACHE[mac_type] = method_instance
+            if mac_type == "ip":
+                if not CACHE["ip4"]:
+                    CACHE["ip4"] = method_instance
+                if not CACHE["ip6"]:
+                    CACHE["ip6"] = method_instance
+            else:
+                if not CACHE[mac_type]:
+                    CACHE[mac_type] = method_instance
         else:
             if DEBUG:
-                log.debug("Test failed for method '%s'", method_instance.__class__.__name__)
+                log.debug("Test failed for method '%s'", str(method_instance))
     if not tested_methods:
         log.critical("All %d '%s' methods failed to test!", len(type_methods), mac_type)
         return False  # TODO: raise exception?
     if DEBUG:
-        tested_strs = ", ".join(ts.__class__.__name__ for ts in tested_methods)
-        log.debug("%d tested '%s' methods: %s",
-                  len(tested_methods), mac_type, tested_strs)
-        log.debug("Cached method: %s", CACHE[mac_type].__class__.__name__)
+        tested_strs = ", ".join(str(ts) for ts in tested_methods)  # type: str
+        log.debug("'%s' tested_methods: %s", mac_type, tested_strs)
+        log.debug("Current method cache: %s", str({k: str(v) for k, v in CACHE.items()}))
 
     # TODO: handle method throwing exception, use to mark as non-usable
     #   Do NOT mark return code 1 on a process as non-usable though!
