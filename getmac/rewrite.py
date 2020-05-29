@@ -3,11 +3,12 @@ import logging
 import os
 import platform
 import re
+import shlex
 import shutil
 import socket
 import struct
 import sys
-from subprocess import CalledProcessError
+from subprocess import CalledProcessError, check_output
 
 try:  # Python 3
     from subprocess import DEVNULL  # type: ignore
@@ -49,6 +50,13 @@ if _SYST == "Linux":
 PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)
 if not WINDOWS:
     PATH.extend(("/sbin", "/usr/sbin"))
+else:
+    # TODO: Prevent edge case on Windows where our script "getmac.exe"
+    #   gets added to the path ahead of the actual Windows getmac.exe
+    #   This just handles case where it's in a virtualenv, won't work /w global scripts
+    # TODO: remove all Python "scripts" from path? Document this!
+    PATH = [p for p in PATH if "\\getmac\\Scripts" not in p]
+PATH_STR = os.pathsep.join(PATH)
 
 # Use a copy of the environment so we don't
 # modify the process's current environment.
@@ -74,10 +82,6 @@ try:
 except ImportError:
     pass
 
-
-from .getmac import _read_file, _search, _uuid_convert, _popen  # TODO
-
-
 PLATFORM = _SYST.lower()
 if PLATFORM == "linux" and "Microsoft" in platform.version():
     PLATFORM = "wsl"
@@ -90,12 +94,68 @@ CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
 #   https://github.com/mbr/shutilwhich/blob/master/shutilwhich/lib.py
 def check_command(command):  # type: (str) -> bool
     if command not in CHECK_COMMAND_CACHE:
-        CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=PATH))
+        CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=PATH_STR))
     return CHECK_COMMAND_CACHE[command]
 
 
 def check_path(filepath):  # type: (str) -> bool
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
+
+
+# TODO: move these functions to a separate "utils" file?
+def _read_file(filepath):
+    # type: (str) -> Optional[str]
+    try:
+        with open(filepath) as f:
+            return f.read()
+    except (OSError, IOError):  # This is IOError on Python 2.7
+        log.debug("Could not find file: '%s'", filepath)
+        return None
+
+
+def _search(regex, text, group_index=0):
+    # type: (str, str, int) -> Optional[str]
+    match = re.search(regex, text)
+    if match:
+        return match.groups()[group_index]
+    return None
+
+
+def _popen(command, args):
+    # type: (str, str) -> str
+    for directory in PATH:
+        executable = os.path.join(directory, command)
+        if (
+            os.path.exists(executable)
+            and os.access(executable, os.F_OK | os.X_OK)
+            and not os.path.isdir(executable)
+        ):
+            break
+    else:
+        executable = command
+    if DEBUG >= 3:
+        log.debug("Running: '%s %s'", executable, args)
+    return _call_proc(executable, args)
+
+
+def _call_proc(executable, args):
+    # type: (str, str) -> str
+    if WINDOWS:
+        cmd = executable + " " + args  # type: ignore
+    else:
+        cmd = [executable] + shlex.split(args)  # type: ignore
+    output = check_output(cmd, stderr=DEVNULL, env=ENV)
+    if DEBUG >= 4:
+        log.debug("Output from '%s' command: %s", executable, str(output))
+    if not PY2 and isinstance(output, bytes):
+        return str(output, "utf-8")
+    else:
+        return str(output)
+
+
+def _uuid_convert(mac):
+    # type: (int) -> str
+    return ":".join(("%012X" % mac)[i : i + 2] for i in range(0, 12, 2))
 
 
 # TODO(python3): Enums for platforms + method types
@@ -104,6 +164,7 @@ def check_path(filepath):  # type: (str) -> bool
 # TODO: cache imports done during test for use during get(), reuse
 #   Use __import__() or importlib?
 # TODO: parameterize regexes? (any faster?)
+# TODO: document attributes (using Sphinx "#:" comments)
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
@@ -238,7 +299,6 @@ class FcntlIface(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         import fcntl
-
         if not PY2:
             arg = arg.encode()  # type: ignore
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -265,7 +325,6 @@ class UuidArpGetNode(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         from uuid import _arp_getnode  # type: ignore
-
         backup = socket.gethostbyname
         try:
             socket.gethostbyname = lambda x: arg
@@ -571,10 +630,10 @@ class ArpVariousArgs(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         # TODO: linux => also try "-an", "-an %s" % arg
         # TODO: darwin => also try "-a", "-a %s" % arg
-        # TODO: finish implementing
         command_output = _popen("arp", arg)
         found = _search(r"\(" + re.escape(arg) + self._regex_std, command_output)
         found = _search(r"\(" + re.escape(arg) + self._regex_darwin, command_output)
+        # TODO: finish implementing
 
 
 class DefaultIfaceLinuxRouteFile(Method):
@@ -730,6 +789,7 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
         tested_strs = ", ".join(ts.__class__.__name__ for ts in tested_methods)
         log.debug("%d tested '%s' methods: %s",
                   len(tested_methods), mac_type, tested_strs)
+        log.debug("Cached method: %s", CACHE[mac_type].__class__.__name__)
 
     # TODO: handle method throwing exception, use to mark as non-usable
     #   Do NOT mark return code 1 on a process as non-usable though!
