@@ -15,33 +15,44 @@ try:  # Python 3
 except ImportError:  # Python 2
     DEVNULL = open(os.devnull, "wb")  # type: ignore
 
+# Used for mypy (a data type analysis tool)
+# If you're copying the code, this section can be safely removed
+try:
+    from typing import TYPE_CHECKING
+    if TYPE_CHECKING:
+        from typing import Dict, List, Optional, Set, Tuple, Union
+except ImportError:
+    pass
+
 # Configure logging
-log = logging.getLogger("getmac")
+log = logging.getLogger("getmac")  # type: logging.Logger
 if not log.handlers:
     log.addHandler(logging.NullHandler())
 
 __version__ = "0.8.1"
-PY2 = sys.version_info[0] == 2
+PY2 = sys.version_info[0] == 2  # type: bool
 
 # Configurable settings
-DEBUG = 0
-PORT = 55555
+DEBUG = 0  # type: int
+PORT = 55555  # type: int
 
 # Platform identifiers
-_SYST = platform.system()
+_SYST = platform.system()  # type: str
 if _SYST == "Java":
     try:
         import java.lang
         _SYST = str(java.lang.System.getProperty("os.name"))
     except ImportError:
         log.critical("Can't determine OS: couldn't import java.lang on Jython")
-WINDOWS = _SYST == "Windows"
-DARWIN = _SYST == "Darwin"
-OPENBSD = _SYST == "OpenBSD"
-FREEBSD = _SYST == "FreeBSD"
-BSD = OPENBSD or FREEBSD  # Not including Darwin for now
-WSL = False  # Windows Subsystem for Linux (WSL)
-LINUX = False
+WINDOWS = _SYST == "Windows"  # type: bool
+DARWIN = _SYST == "Darwin"  # type: bool
+OPENBSD = _SYST == "OpenBSD"  # type: bool
+FREEBSD = _SYST == "FreeBSD"  # type: bool
+# Not including Darwin for now
+BSD = OPENBSD or FREEBSD  # type: bool
+# Windows Subsystem for Linux (WSL)
+WSL = False  # type: bool
+LINUX = False  # type: bool
 if _SYST == "Linux":
     if "Microsoft" in platform.version():
         WSL = True
@@ -49,13 +60,13 @@ if _SYST == "Linux":
         LINUX = True
 
 # Generic platform identifier used for filtering methods
-PLATFORM = _SYST.lower()
+PLATFORM = _SYST.lower()  # type: str
 if PLATFORM == "linux" and "Microsoft" in platform.version():
     PLATFORM = "wsl"
 
 # Get and cache the configured system PATH on import
 # The process environment does not change after a process is started
-PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)
+PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)  # type: List[str]
 if not WINDOWS:
     PATH.extend(("/sbin", "/usr/sbin"))
 else:
@@ -63,11 +74,12 @@ else:
     #   gets added to the path ahead of the actual Windows getmac.exe
     #   This just handles case where it's in a virtualenv, won't work /w global scripts
     PATH = [p for p in PATH if "\\getmac\\Scripts" not in p]
-PATH_STR = os.pathsep.join(PATH)  # Build the str after modifications are made
+# Build the str after modifications are made
+PATH_STR = os.pathsep.join(PATH)  # type: str
 
 # Use a copy of the environment so we don't
 # modify the process's current environment.
-ENV = dict(os.environ)
+ENV = dict(os.environ)  # type: Dict[str, str]
 ENV["LC_ALL"] = "C"  # Ensure ASCII output so we parse correctly
 
 # Constants
@@ -79,15 +91,6 @@ HOSTNAME = 3
 MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
 MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
 MAC_RE_DARWIN = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
-
-# Used for mypy (a data type analysis tool)
-# If you're copying the code, this section can be safely removed
-try:
-    from typing import TYPE_CHECKING
-    if TYPE_CHECKING:
-        from typing import Dict, List, Optional, Set
-except ImportError:
-    pass
 
 
 # TODO: document utils
@@ -201,13 +204,15 @@ CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
 # TODO (python3): use shutil.which() instead?
 # TODO: find alternative to shutil.which() on Python 2
 #   https://github.com/mbr/shutilwhich/blob/master/shutilwhich/lib.py
-def check_command(command):  # type: (str) -> bool
+def check_command(command):
+    # type: (str) -> bool
     if command not in CHECK_COMMAND_CACHE:
         CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=PATH_STR))
     return CHECK_COMMAND_CACHE[command]
 
 
-def check_path(filepath):  # type: (str) -> bool
+def check_path(filepath):
+    # type: (str) -> bool
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
@@ -229,6 +234,9 @@ def check_path(filepath):  # type: (str) -> bool
 # TODO: rewrite
 #   * Document Method (and subclass) attributes (use Sphinx "#:" comments)
 #   * find alternative to shutil.which() on Python 2
+#   * _arping_habets
+#   * _arping_iputils
+#   * _fetch_ip_using_dns
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
@@ -276,7 +284,7 @@ class Method:
 class ArpFile(Method):
     platforms = {"linux"}
     method_type = "ip"
-    _path = "/proc/net/arp"
+    _path = "/proc/net/arp"  # type: str
 
     def test(self):  # type: () -> bool
         return check_path(self._path)
@@ -293,7 +301,7 @@ class ArpFile(Method):
 class SysIfaceFile(Method):
     platforms = {"linux", "wsl"}
     method_type = "iface"
-    _path = "/sys/class/net/"
+    _path = "/sys/class/net/"  # type: str
 
     def test(self):  # type: () -> bool
         # TODO: imperfect, but should work well enough
@@ -428,13 +436,13 @@ class UuidArpGetNode(Method):
 class GetmacExe(Method):
     platforms = {"windows"}
     method_type = "iface"
-    _regexes = [
+    _regexes = [  # type: List[Tuple[str, str]]
         # Connection Name
         (r"\r\n", r".*" + MAC_RE_DASH + r".*\r\n"),
         # Network Adapter (the human-readable name)
         (r"\r\n.*", r".*" + MAC_RE_DASH + r".*\r\n")
     ]
-    _champ = ()
+    _champ = ()  # type: Tuple[str, str]
 
     def test(self):  # type: () -> bool
         return check_command("getmac.exe")
@@ -453,7 +461,7 @@ class GetmacExe(Method):
 class IpconfigExe(Method):
     platforms = {"windows"}
     method_type = "iface"
-    _regex = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"
+    _regex = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("ipconfig.exe")
@@ -516,7 +524,7 @@ class ArpFreebsd(Method):
 class ArpOpenbsd(Method):
     platforms = {"openbsd"}
     method_type = "ip"
-    _regex = r"[ ]+" + MAC_RE_COLON
+    _regex = r"[ ]+" + MAC_RE_COLON  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("arp")
@@ -528,7 +536,7 @@ class ArpOpenbsd(Method):
 class IfconfigOpenbsd(Method):
     platforms = {"openbsd"}
     method_type = "iface"
-    _regex = r"lladdr " + MAC_RE_COLON
+    _regex = r"lladdr " + MAC_RE_COLON  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("ifconfig")
@@ -540,10 +548,10 @@ class IfconfigOpenbsd(Method):
 class IfconfigEther(Method):
     platforms = {"darwin", "freebsd"}
     method_type = "iface"
-    _tested_arg = False
-    _iface_arg = False
-    _arg_regex = r".*ether " + MAC_RE_COLON
-    _blank_regex = r"ether " + MAC_RE_COLON
+    _tested_arg = False  # type: bool
+    _iface_arg = False  # type: bool
+    _arg_regex = r".*ether " + MAC_RE_COLON  # type: str
+    _blank_regex = r"ether " + MAC_RE_COLON  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("ifconfig")
@@ -572,8 +580,9 @@ class IfconfigLinux(Method):
     platforms = {"linux", "wsl"}
     method_type = "iface"
     # "ether ": modern Ubuntu, "HWaddr": others
-    _regexes = [r"ether " + MAC_RE_COLON, r"HWaddr " + MAC_RE_COLON]
-    _champ = ""  # winner winner chicken dinner
+    _regexes = [r"ether " + MAC_RE_COLON, r"HWaddr " + MAC_RE_COLON]  # type: List[str]
+    # winner winner chicken dinner
+    _champ = ""  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("ifconfig")
@@ -603,10 +612,12 @@ class IfconfigOther(Method):
     platforms = {"linux", "other"}
     method_type = "iface"
     # "-av": Tru64 system?
-    _args = (("", ("ether", r"HWaddr")), ("-a", (r"HWaddr",)),
-             ("-v", (r"HWaddr",)), ("-av", (r"Ether",)))
-    _args_tested = False
-    _good_pair = []
+    _args = (  # type: Tuple[Tuple[str, Union[str, tuple]]]
+        ("", ("ether", r"HWaddr")), ("-a", (r"HWaddr",)),
+        ("-v", (r"HWaddr",)), ("-av", (r"Ether",))
+    )
+    _args_tested = False  # type: bool
+    _good_pair = []  # type: List[Union[str, Tuple[str, str]]]
 
     def test(self):  # type: () -> bool
         return check_command("ifconfig")
@@ -647,9 +658,9 @@ class IfconfigOther(Method):
 class IpLinkIface(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "iface"
-    _regex = r".*\n.*link/ether " + MAC_RE_COLON
-    _tested_arg = False
-    _iface_arg = False
+    _regex = r".*\n.*link/ether " + MAC_RE_COLON  # type: str
+    _tested_arg = False  # type: bool
+    _iface_arg = False  # type: bool
 
     def test(self):  # type: () -> bool
         return check_command("ip")
@@ -679,7 +690,7 @@ class IpLinkIface(Method):
 class NetstatIface(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "iface"
-    _regex = r".*HWaddr " + MAC_RE_COLON
+    _regex = r".*HWaddr " + MAC_RE_COLON  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("netstat")
@@ -704,8 +715,8 @@ class IpNeighShow(Method):
 class ArpVariousArgs(Method):
     platforms = {"linux", "darwin", "other"}
     method_type = "ip"
-    _regex_std = r"\)\s+at\s+" + MAC_RE_COLON
-    _regex_darwin = r"\)\s+at\s+" + MAC_RE_DARWIN
+    _regex_std = r"\)\s+at\s+" + MAC_RE_COLON  # type: str
+    _regex_darwin = r"\)\s+at\s+" + MAC_RE_DARWIN  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("arp")
