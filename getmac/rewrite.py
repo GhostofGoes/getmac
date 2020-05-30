@@ -15,8 +15,6 @@ try:  # Python 3
 except ImportError:  # Python 2
     DEVNULL = open(os.devnull, "wb")  # type: ignore
 
-from . import config as cfg
-
 # Configure logging
 log = logging.getLogger("getmac")
 if not log.handlers:
@@ -24,6 +22,10 @@ if not log.handlers:
 
 __version__ = "0.8.1"
 PY2 = sys.version_info[0] == 2
+
+# Configurable settings
+DEBUG = 0
+PORT = 55555
 
 # Platform identifiers
 _SYST = platform.system()
@@ -167,7 +169,7 @@ def _popen(command, args):
             break
     else:
         executable = command
-    if cfg.DEBUG >= 3:
+    if DEBUG >= 3:
         log.debug("Running: '%s %s'", executable, args)
     return _call_proc(executable, args)
 
@@ -179,7 +181,7 @@ def _call_proc(executable, args):
     else:
         cmd = [executable] + shlex.split(args)  # type: ignore
     output = check_output(cmd, stderr=DEVNULL, env=ENV)
-    if cfg.DEBUG >= 4:
+    if DEBUG >= 4:
         log.debug("Output from '%s' command: %s", executable, str(output))
     if not PY2 and isinstance(output, bytes):
         return str(output, "utf-8")
@@ -227,7 +229,6 @@ def check_path(filepath):  # type: (str) -> bool
 # TODO: rewrite
 #   * Document Method (and subclass) attributes (use Sphinx "#:" comments)
 #   * find alternative to shutil.which() on Python 2
-#   * Document new method of configuring getmac via getmac.config
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
@@ -839,7 +840,7 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
     log.debug("Initializing '%s' method cache (platform: '%s')", mac_type, PLATFORM)
     if CACHE.get(mac_type) or (
             mac_type == "ip" and (CACHE.get("ip4") and CACHE.get("ip6"))):
-        if cfg.DEBUG:
+        if DEBUG:
             log.debug("Cache already initialized for '%s'", mac_type)
         return True
 
@@ -855,7 +856,7 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
         log.warning("No methods for platform '%s'! Your system may not be supported. "
                     "Falling back to platform 'other'", PLATFORM)
         platform_methods = [m for m in METHODS if "other" in m.platforms]
-    if cfg.DEBUG:
+    if DEBUG:
         meth_strs = ", ".join(str(pm) for pm in platform_methods)  # type: str
         log.debug("'%s' platform_methods: %s", mac_type, meth_strs)
 
@@ -867,7 +868,7 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
     if not type_methods:
         log.critical("No valid methods found for MAC type '%s'", mac_type)
         return False
-    if cfg.DEBUG:
+    if DEBUG:
         type_strs = ", ".join(str(tm) for tm in type_methods)  # type: str
         log.debug("'%s' type_methods: %s", mac_type, type_strs)
 
@@ -887,12 +888,12 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
                 if not CACHE[mac_type]:
                     CACHE[mac_type] = method_instance
         else:
-            if cfg.DEBUG:
+            if DEBUG:
                 log.debug("Test failed for method '%s'", str(method_instance))
     if not tested_methods:
         log.critical("All %d '%s' methods failed to test!", len(type_methods), mac_type)
         return False
-    if cfg.DEBUG:
+    if DEBUG:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)  # type: str
         log.debug("'%s' tested_methods: %s", mac_type, tested_strs)
         log.debug("Current method cache: %s", str({k: str(v) for k, v in CACHE.items()}))
