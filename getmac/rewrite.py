@@ -8,6 +8,7 @@ import shutil
 import socket
 import struct
 import sys
+import traceback
 from subprocess import CalledProcessError, check_output
 
 try:  # Python 3
@@ -216,7 +217,7 @@ def check_path(filepath):
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
-# TODO: 1.0.0 release
+# TODO: 1.0.0 release and py3
 #   * API to add/remove methods at runtime (including new, custom methods)
 #   * Write a short guide on how to add and test a new method
 #   * Parameterize regexes? (any faster?)
@@ -227,8 +228,14 @@ def check_path(filepath):
 #   * Remove all Python "Scripts" from the path? Document this!
 #   * Document possible values for PLATFORM
 #   * python3: Use Enums for platforms and method types instead of strings
-#   * python3: cache imports done during test for use during get(), reuse
+#   * python3: cache package imports done during test for use during get(), reuse
 #       Use __import__() or importlib?
+
+
+
+# TODO: add "Method.parse()" that handles the parsing of command outout.
+#   this would make it *much* easier to test methods
+
 
 
 # TODO: rewrite
@@ -336,7 +343,7 @@ class UuidLanscan(Method):
 
 class CtypesHost(Method):
     platforms = {"windows"}
-    method_type = "ip4"  # TODO: can this be made to work with IPv6?
+    method_type = "ip4"  # TODO: can CtypesHost be made to work with IPv6?
     net_request = True
 
     def test(self):  # type: () -> bool
@@ -375,6 +382,58 @@ class CtypesHost(Method):
                 replacestr = "x"
             macaddr = "".join([macaddr, hex(intval).replace(replacestr, "")])
         return macaddr
+
+
+class ArpingHost(Method):
+    """Use ``arping`` command to determine the MAC of a host.
+
+    Supports two variants of ``arping``
+
+    - "habets" arping by Thomas Habets
+        (`GitHub <https://github.com/ThomasHabets/arping>`__)
+    - "iputils" arping, from the ``iputils-arping``
+        `package <https://packages.debian.org/sid/iputils-arping>`__
+    """
+    platforms = {"linux", "darwin"}
+    method_type = "ip4"
+    net_request = True
+    _checked_type = False  # type: bool
+    _is_iputils = False  # type: bool
+    _habets = "-r -C 1 -c 1 %s"
+    _iputils = "-f -c 1 %s"
+
+    def test(self):  # type: () -> bool
+        return check_command("arping")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        # First execution we check which command it is. Adds a bit of time.
+        # TODO: more efficient way to do this
+        # TODO: cache the result for subsequent runs
+        if not self._checked_type:
+            try:
+                _popen("arping", "--ridiculous-garbage-string")
+            except CalledProcessError as ex:
+                # iputils-arping returns 2 on invalid syntax (and other errors)
+                if ex.returncode == 2:
+                    self._is_iputils = True
+                # habets returns 1 on invalid syntax. no need to check,
+                # we already threw an exception so mark as checked.
+                self._checked_type = True
+        try:
+            # Output examples:
+            #   tests/samples/ubuntu_18.04/arping-iputils.out
+            #   tests/samples/ubuntu_18.04/arping-habets.out
+            if self._is_iputils:
+                # return _search(
+                #     r" from %s \[(%s)\]" % (re.escape(host), MAC_RE_COLON),
+                #     _popen("arping", "-f -c 1 %s" % host),
+                # )
+                pass
+            else:
+                return _search(r"^%s$" % MAC_RE_COLON, _popen("arping", "-r -C 1 -c 1 %s" % host), )
+                pass
+        except CalledProcessError as ex:
+            pass
 
 
 class FcntlIface(Method):
@@ -608,7 +667,7 @@ class IfconfigLinux(Method):
 
 
 class IfconfigOther(Method):
-    """Wild 'Shot in the Dark' attempt at ifconfig for unknown platforms."""
+    """Wild 'Shot in the Dark' attempt at ``ifconfig`` for unknown platforms."""
     platforms = {"linux", "other"}
     method_type = "iface"
     # "-av": Tru64 system?
@@ -630,7 +689,7 @@ class IfconfigOther(Method):
                     output = _popen("ifconfig", pair[0])
                     self._good_pair = list(pair)
                     if isinstance(self._good_pair[1], str):
-                        self._good_pair[1] = self._good_pair[1] + MAC_RE_COLON
+                        self._good_pair[1] += MAC_RE_COLON
                     break
                 except CalledProcessError:
                     pass  # TODO: log when debugging
@@ -821,6 +880,7 @@ METHODS = [
 ]
 
 
+# Primary method to use for a given method type
 CACHE = {  # type: Dict[str, Optional[Method]]
     "ip4": None,
     "ip6": None,
@@ -841,18 +901,18 @@ FALLBACK_CACHE = {  # type: Dict[str, List[Method]]
 }
 
 
-def initialize_method_cache(mac_type):  # type: (str) -> bool
+def initialize_method_cache(method_type):  # type: (str) -> bool
     """Find methods that work.
 
     Args:
-        mac_type: MAC type to initialize the cache for
+        method_type: method type to initialize the cache for.
             Allowed values are: ip | ip4 | ip6 | iface | default_iface
     """
-    log.debug("Initializing '%s' method cache (platform: '%s')", mac_type, PLATFORM)
-    if CACHE.get(mac_type) or (
-            mac_type == "ip" and (CACHE.get("ip4") and CACHE.get("ip6"))):
+    log.debug("Initializing '%s' method cache (platform: '%s')", method_type, PLATFORM)
+    if CACHE.get(method_type) or (
+        method_type == "ip" and (CACHE.get("ip4") and CACHE.get("ip6"))):
         if DEBUG:
-            log.debug("Cache already initialized for '%s'", mac_type)
+            log.debug("Cache already initialized for '%s'", method_type)
         return True
 
     # TODO: check for and load from a cache file on disk or in the environment
@@ -869,19 +929,19 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
         platform_methods = [m for m in METHODS if "other" in m.platforms]
     if DEBUG:
         meth_strs = ", ".join(str(pm) for pm in platform_methods)  # type: str
-        log.debug("'%s' platform_methods: %s", mac_type, meth_strs)
+        log.debug("'%s' platform_methods: %s", method_type, meth_strs)
 
     # Filter methods by the type of MAC we're looking for, such as "ip"
     # for remote host methods or "iface" for local interface methods.
     type_methods = [pm for pm in platform_methods  # type: List[type(Method)]
-                    if pm.method_type == mac_type
-                    or (pm.method_type == "ip" and mac_type in ["ip4", "ip6"])]
+                    if pm.method_type == method_type
+                    or (pm.method_type == "ip" and method_type in ["ip4", "ip6"])]
     if not type_methods:
-        log.critical("No valid methods found for MAC type '%s'", mac_type)
+        log.critical("No valid methods found for MAC type '%s'", method_type)
         return False
     if DEBUG:
         type_strs = ", ".join(str(tm) for tm in type_methods)  # type: str
-        log.debug("'%s' type_methods: %s", mac_type, type_strs)
+        log.debug("'%s' type_methods: %s", method_type, type_strs)
 
     # Determine which methods work on the current system
     tested_methods = []  # type: List[Method]
@@ -890,30 +950,30 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
         if method_instance.test():
             tested_methods.append(method_instance)
             # First successful test goes in the cache
-            if mac_type == "ip":
+            if method_type == "ip":
                 if not CACHE["ip4"]:
                     CACHE["ip4"] = method_instance
                 if not CACHE["ip6"]:
                     CACHE["ip6"] = method_instance
             else:
-                if not CACHE[mac_type]:
-                    CACHE[mac_type] = method_instance
+                if not CACHE[method_type]:
+                    CACHE[method_type] = method_instance
         else:
             if DEBUG:
                 log.debug("Test failed for method '%s'", str(method_instance))
     if not tested_methods:
-        log.critical("All %d '%s' methods failed to test!", len(type_methods), mac_type)
+        log.critical("All %d '%s' methods failed to test!", len(type_methods), method_type)
         return False
     if DEBUG:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)  # type: str
-        log.debug("'%s' tested_methods: %s", mac_type, tested_strs)
+        log.debug("'%s' tested_methods: %s", method_type, tested_strs)
         log.debug("Current method cache: %s", str({k: str(v) for k, v in CACHE.items()}))
 
     # TODO: save cache results to disk and load on future runs
     #   Add a flag to control this behavior and location of the cache
     #   Document
 
-    log.debug("Finished initializing '%s' method cache", mac_type)
+    log.debug("Finished initializing '%s' method cache", method_type)
     return True
 
 
@@ -929,12 +989,49 @@ def initialize_method_cache(mac_type):  # type: (str) -> bool
 #     Blake:goesc$ echo $?
 #     1
 
-# TODO: log get() failures
-# TODO: exception handling when calling get(), log all exceptions
-#   When exception occurs, remove from cache and reinitialize with next candidate
-#   For example, if get() call to getmac.exe returns 1 then it's not valid
+
+def get(method_type, arg=""):  # type: (str, str) -> Optional[str]
+    # ip4 | ip6 | iface | default_iface
+
+    # Initialize the cache if it hasn't been already
+    if not CACHE.get(method_type):
+        initialize_method_cache(method_type)
+
+    if not CACHE.get(method_type):
+        log.error("Initialization failed for method %s. It may not be supported "
+                  "on this platform or another issue occured.", method_type)
+        return None
+
+    method = CACHE[method_type]
+    try:
+        result = method.get(arg)
+    except Exception as ex:
+        log.warning("Cached Method '%s' failed for '%s' lookup: %s",
+                    str(method), method_type, str(ex))
+        result = None
+        # TODO: When exception occurs, remove from cache
+        #  and reinitialize with next candidate
+        #  For example, if get() call to getmac.exe
+        #  returns 1 then it's not valid
+
+    # Log normal get() failures if debugging is enabled
+    if DEBUG and not result:
+        log.debug("Method '%s' failed for '%s' lookup",
+                  str(method), method_type)
+
+    # TODO: cleanup result (what is line between this and get_mac_address)
+    return result
+
+
 
 # TODO: move more logic out of get_mac_address into individual methods
 #   interface
 #   remote host
 #   return data cleanup and validation
+
+# TODO: update get_mac_address to use new implementations
+# TODO: move methods into a separate.py file
+
+
+# IDEA: (create GitHub issue?)
+# MAC -> IP. "to_find='mac'"?
