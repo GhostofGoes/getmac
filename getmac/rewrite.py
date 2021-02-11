@@ -1,3 +1,26 @@
+# -*- coding: utf-8 -*-
+# http://multivax.com/last_question.html
+
+"""Get the MAC address of remote hosts or network interfaces.
+
+It provides a platform-independent interface to get the MAC addresses of:
+
+* System network interfaces (by interface name)
+* Remote hosts on the local network (by IPv4/IPv6 address or hostname)
+
+It provides one function: `get_mac_address()`
+
+Examples:
+
+    from getmac import get_mac_address
+    eth_mac = get_mac_address(interface="eth0")
+    win_mac = get_mac_address(interface="Ethernet 3")
+    ip_mac = get_mac_address(ip="192.168.0.1")
+    ip6_mac = get_mac_address(ip6="::1")
+    host_mac = get_mac_address(hostname="localhost")
+    updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
+
+"""
 import ctypes
 import logging
 import os
@@ -7,6 +30,7 @@ import shlex
 import socket
 import struct
 import sys
+import traceback
 from subprocess import CalledProcessError, check_output
 
 try:  # Python 3
@@ -28,18 +52,18 @@ log = logging.getLogger("getmac")  # type: logging.Logger
 if not log.handlers:
     log.addHandler(logging.NullHandler())
 
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 PY2 = sys.version_info[0] == 2  # type: bool
+
+# Configurable settings
+DEBUG = 0  # type: int
+PORT = 55555  # type: int
 
 # Monkeypatch shutil.which for python 2.7 (TODO(python3): remove this hack)
 if PY2:
     from shutilwhich import which
 else:
     from shutil import which
-
-# Configurable settings
-DEBUG = 0  # type: int
-PORT = 55555  # type: int
 
 # Platform identifiers
 _SYST = platform.system()  # type: str
@@ -97,8 +121,25 @@ MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
 MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
 MAC_RE_DARWIN = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 
+# Ensure we only log the Python 2 warning once
+WARNED_PY2 = False
 
-# TODO: document utils
+# Cache of commands that have been checked for existence by check_command()
+CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
+
+
+def check_command(command):
+    # type: (str) -> bool
+    if command not in CHECK_COMMAND_CACHE:
+        CHECK_COMMAND_CACHE[command] = bool(which(command, path=PATH_STR))
+    return CHECK_COMMAND_CACHE[command]
+
+
+def check_path(filepath):
+    # type: (str) -> bool
+    return os.path.exists(filepath) and os.access(filepath, os.R_OK)
+
+
 def _clean_mac(mac):
     # type: (Optional[str]) -> Optional[str]
     """Check and format a string result to be lowercase colon-separated MAC."""
@@ -202,23 +243,30 @@ def _uuid_convert(mac):
     return ":".join(("%012X" % mac)[i : i + 2] for i in range(0, 12, 2))
 
 
-# Cache of commands that have been checked for existence by check_command()
-CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
+def _fetch_ip_using_dns():
+    # type: () -> str
+    """Determines the IP address of the default network interface.
 
-
-def check_command(command):
-    # type: (str) -> bool
-    if command not in CHECK_COMMAND_CACHE:
-        CHECK_COMMAND_CACHE[command] = bool(which(command, path=PATH_STR))
-    return CHECK_COMMAND_CACHE[command]
-
-
-def check_path(filepath):
-    # type: (str) -> bool
-    return os.path.exists(filepath) and os.access(filepath, os.R_OK)
+    Sends a UDP packet to Cloudflare's DNS (1.1.1.1), which should go through
+    the default interface. This populates the source address of the socket,
+    which we then inspect and return.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("1.1.1.1", 53))
+    ip = s.getsockname()[0]
+    s.close()  # NOTE: sockets don't have context manager in 2.7 :(
+    return ip
 
 
 # TODO: 1.0.0 release and py3
+#   * Drop support for python 2.7, 3.4, and 3.5
+#   * Move method classes into a separate file
+#   * Split utils into a separate file
+#   * move more logic out of get_mac_address into individual methods
+#       interface
+#       remote host
+#       return data cleanup and validation
+#   * Add docstrings to all util methods
 #   * API to add/remove methods at runtime (including new, custom methods)
 #   * Write a short guide on how to add and test a new method
 #   * Parameterize regexes? (any faster?)
@@ -232,13 +280,26 @@ def check_path(filepath):
 #   * python3: cache package imports done during test for use during get(), reuse
 #       Use __import__() or importlib?
 #   * Document Method (and subclass) attributes (use Sphinx "#:" comments)
+#   * Proper documentation (ReadTheDocs and Sphinx fanciness)
+#   * Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
+#   * cleanup most or all of the TODOs
+#   * >90% test coverage
+#   * implement proper default interface detection on windows
+
+# TODO: cache method checks (maybe move this to 1.1.0 release?)
+#   This string simply has the names of methods
+#   Save to: file (location configurable via environment variable or option)
+#   Read from: file, environment variable, file pointed to by environment variable
+#   Add a flag to control this behavior and location of the cache
+#   Document the behavior
 
 # TODO: add "Method.parse()" that handles the parsing of command outout.
 #   this would make it *much* easier to test methods
 
+# IDEA: (create GitHub issue?)
+# MAC -> IP. "to_find='mac'"?
 
-# TODO: rewrite
-#   * _fetch_ip_using_dns
+
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
@@ -286,7 +347,7 @@ class Method:
 class ArpFile(Method):
     platforms = {"linux"}
     method_type = "ip"
-    _path = "/proc/net/arp"  # type: str
+    _path = os.environ.get("ARP_PATH", "/proc/net/arp")  # type: str
 
     def test(self):  # type: () -> bool
         return check_path(self._path)
@@ -882,7 +943,7 @@ METHODS = [
 
 
 # Primary method to use for a given method type
-CACHE = {  # type: Dict[str, Optional[Method]]
+METHOD_CACHE = {  # type: Dict[str, Optional[Method]]
     "ip4": None,
     "ip6": None,
     "iface": None,
@@ -902,6 +963,9 @@ FALLBACK_CACHE = {  # type: Dict[str, List[Method]]
 }
 
 
+DEFAULT_IFACE = ""  # type: str
+
+
 def initialize_method_cache(method_type):  # type: (str) -> bool
     """Find methods that work.
 
@@ -910,14 +974,11 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
             Allowed values are: ip | ip4 | ip6 | iface | default_iface
     """
     log.debug("Initializing '%s' method cache (platform: '%s')", method_type, PLATFORM)
-    if CACHE.get(method_type) or (
-        method_type == "ip" and (CACHE.get("ip4") and CACHE.get("ip6"))):
+    if METHOD_CACHE.get(method_type) or (
+        method_type == "ip" and (METHOD_CACHE.get("ip4") and METHOD_CACHE.get("ip6"))):
         if DEBUG:
             log.debug("Cache already initialized for '%s'", method_type)
         return True
-
-    # TODO: check for and load from a cache file on disk or in the environment
-    #   This file simply has the names of methods
 
     # Filter methods by the platform we're running on
     platform_methods = [m for m in METHODS  # type: List[type(Method)]
@@ -948,91 +1009,198 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
     tested_methods = []  # type: List[Method]
     for method_class in type_methods:
         method_instance = method_class()  # type: Method
-        if method_instance.test():
+        try:
+            test_result = method_instance.test()  # type: bool
+        except Exception:
+            test_result = False  # type: bool
+        if test_result:
             tested_methods.append(method_instance)
             # First successful test goes in the cache
             if method_type == "ip":
-                if not CACHE["ip4"]:
-                    CACHE["ip4"] = method_instance
-                if not CACHE["ip6"]:
-                    CACHE["ip6"] = method_instance
+                if not METHOD_CACHE["ip4"]:
+                    METHOD_CACHE["ip4"] = method_instance
+                if not METHOD_CACHE["ip6"]:
+                    METHOD_CACHE["ip6"] = method_instance
             else:
-                if not CACHE[method_type]:
-                    CACHE[method_type] = method_instance
+                if not METHOD_CACHE[method_type]:
+                    METHOD_CACHE[method_type] = method_instance
         else:
             if DEBUG:
                 log.debug("Test failed for method '%s'", str(method_instance))
     if not tested_methods:
         log.critical("All %d '%s' methods failed to test!", len(type_methods), method_type)
         return False
+
+    # Populate fallback cache with all the tested methods, minus the currently active method
+    if METHOD_CACHE.get(method_type):
+        tested_methods.remove(METHOD_CACHE[method_type])
+    FALLBACK_CACHE[method_type] = tested_methods
+
     if DEBUG:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)  # type: str
         log.debug("'%s' tested_methods: %s", method_type, tested_strs)
-        log.debug("Current method cache: %s", str({k: str(v) for k, v in CACHE.items()}))
-
-    # TODO: save cache results to disk and load on future runs
-    #   Add a flag to control this behavior and location of the cache
-    #   Document
-
+        log.debug("Current method cache: %s", str({k: str(v) for k, v in METHOD_CACHE.items()}))
     log.debug("Finished initializing '%s' method cache", method_type)
     return True
 
 
-# TODO:
-#  add tested_methods to global fallback cache
-#  function to query methods out of cache, if they throw exception, pick one out of fallback
+def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
+    """Query for a MAC using a specific method.
 
-# TODO: handle method throwing exception, use to mark as non-usable
-#   Do NOT mark return code 1 on a process as non-usable though!
-#   Example of return code 1 on ifconfig from WSL:
-#     Blake:goesc$ ifconfig eth8
-#     eth8: error fetching interface information: Device not found
-#     Blake:goesc$ echo $?
-#     1
+    Args:
+        method_type: method type to initialize the cache for.
+            Allowed values are: ip4 | ip6 | iface | default_iface
+        arg: Argument to pass to the method, e.g. a interface name or IP address
+    """
+    # TODO(rewrite): net_ok argument, check network_request on method in CACHE,
+    #  if not then keep checking for method in FALLBACK_CACHE that has network_request
 
+    #  TODO(rewrite): function to query methods out of cache,
+    #   if they throw exception, pick one out of fallback.
+    #   the current method in cache should NOT be in fallback cache
 
-def get(method_type, arg=""):  # type: (str, str) -> Optional[str]
-    # ip4 | ip6 | iface | default_iface
-
+    method = METHOD_CACHE.get(method_type)  # type: Optional[Method]
     # Initialize the cache if it hasn't been already
-    if not CACHE.get(method_type):
+    if not method:
         initialize_method_cache(method_type)
-
-    if not CACHE.get(method_type):
+        method = METHOD_CACHE[method_type]
+    if not method:
         log.error("Initialization failed for method %s. It may not be supported "
                   "on this platform or another issue occured.", method_type)
         return None
 
-    method = CACHE[method_type]
     try:
         result = method.get(arg)
     except Exception as ex:
         log.warning("Cached Method '%s' failed for '%s' lookup: %s",
                     str(method), method_type, str(ex))
         result = None
-        # TODO: When exception occurs, remove from cache
+        # TODO(rewrite):
+        #  When exception occurs, remove from cache
         #  and reinitialize with next candidate
         #  For example, if get() call to getmac.exe
         #  returns 1 then it's not valid
-
+        # TODO(rewrite): handle method throwing exception, use to mark as non-usable
+        #   Do NOT mark return code 1 on a process as non-usable though!
+        #   Example of return code 1 on ifconfig from WSL:
+        #     Blake:goesc$ ifconfig eth8
+        #     eth8: error fetching interface information: Device not found
+        #     Blake:goesc$ echo $?
+        #     1
     # Log normal get() failures if debugging is enabled
     if DEBUG and not result:
         log.debug("Method '%s' failed for '%s' lookup",
                   str(method), method_type)
-
-    # TODO: cleanup result (what is line between this and get_mac_address)
     return result
 
 
+def get_mac_address(
+    interface=None, ip=None, ip6=None, hostname=None, network_request=True
+):
+    # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
+    """Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 
-# TODO: move more logic out of get_mac_address into individual methods
-#   interface
-#   remote host
-#   return data cleanup and validation
+    You must only use ONE of the first four arguments (interface, ip, ip6, hostname).
+    If none of the arguments are selected, the default network interface for
+    the system will be used.
 
-# TODO: update get_mac_address to use new implementations
-# TODO: move methods into a separate.py file
+    Exceptions are handled silently and returned as a `None`.
 
+    .. warning::
+       You MUST provide str-typed arguments, REGARDLESS of Python version.
 
-# IDEA: (create GitHub issue?)
-# MAC -> IP. "to_find='mac'"?
+    .. note::
+       ``localhost`` or ``127.0.0.1`` will always return ``"00:00:00:00:00:00"``
+
+    .. note::
+       It is assumed that you are using Ethernet or Wi-Fi. While other protocols
+       such as Bluetooth may work, this has not been tested and should not be
+       relied upon. If you need this funcitonality, please open an issue!
+       (or better yet, a Pull Request ;)
+
+    Args:
+        interface (str): Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
+        ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g 192.168.0.1)
+        ip6 (str): Canonical shortened IPv6 address of a remote host (e.g ff02::1:ffe7:7f19)
+        hostname (str): DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
+        network_request (bool): Send a UDP packet to a remote host to populate
+            the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
+            be configured using the module variable `getmac.PORT`.
+    Returns:
+        Lowercase colon-separated MAC address, or None if one could not be
+        found or there was an error.
+    """
+    if PY2:
+        global WARNED_PY2
+        if not WARNED_PY2:
+            log.warning(
+                "Python 2 compatibility will be dropped in getmac 1.0.0. If you are "
+                'stuck on Python 2, consider loosely pinning the version e.g. "getmac<1".'
+            )
+            WARNED_PY2 = True
+
+    if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
+        return "00:00:00:00:00:00"
+
+    # Resolve hostname to an IP address
+    if hostname:
+        ip = socket.gethostbyname(hostname)
+
+    # Populate the ARP table by sending a empty UDP packet to a high port
+    if network_request and (ip or ip6):
+        if ip:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        else:
+            s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        try:
+            if ip:
+                s.sendto(b"", (ip, PORT))
+            else:
+                s.sendto(b"", (ip6, PORT))
+        except Exception:
+            log.error("Failed to send ARP table population packet")
+            if DEBUG:
+                log.debug(traceback.format_exc())
+        finally:
+            s.close()
+
+    # Setup the address hunt based on the arguments specified
+    mac = None
+    if ip6:
+        if not socket.has_ipv6:
+            log.error(
+                "Cannot get the MAC address of a IPv6 host: "
+                "IPv6 is not supported on this system"
+            )
+            return None
+        elif ":" not in ip6:
+            log.error("Invalid IPv6 address: %s", ip6)
+            return None
+        mac = get_by_method("ip6", ip6)
+    elif ip:
+        mac = get_by_method("ip4", ip)
+    elif interface:
+        mac = get_by_method("iface", interface)
+    else:  # Default to searching for interface
+        # Default to finding MAC of the interface with the default route
+        if WINDOWS and network_request:
+            default_iface_ip = _fetch_ip_using_dns()
+            mac = get_by_method("ip4", default_iface_ip)
+        elif WINDOWS:
+            # TODO: implement proper default interface detection on windows
+            #   (add a Method subclass to implement DefaultIface on Windows)
+            mac = get_by_method("iface", "Ethernet")
+        else:
+            global DEFAULT_IFACE
+            if not DEFAULT_IFACE:
+                DEFAULT_IFACE = get_by_method("default_iface")
+                if DEFAULT_IFACE:
+                    DEFAULT_IFACE = str(DEFAULT_IFACE).strip()
+                # TODO: better fallback if default iface lookup fails
+                if not DEFAULT_IFACE and BSD:
+                    DEFAULT_IFACE = "em0"
+                elif not DEFAULT_IFACE:  # OSX, maybe?
+                    DEFAULT_IFACE = "en0"
+            mac = get_by_method("iface", DEFAULT_IFACE)
+    log.debug("Raw MAC found: %s", mac)
+    return _clean_mac(mac)
