@@ -238,8 +238,6 @@ def check_path(filepath):
 
 
 # TODO: rewrite
-#   * _arping_habets
-#   * _arping_iputils
 #   * _fetch_ip_using_dns
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
@@ -404,8 +402,13 @@ class ArpingHost(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         # First execution we check which command it is. Adds a bit of time.
-        # TODO: more efficient way to do this
-        # TODO: cache the result for subsequent runs
+        # TODO: is there a more efficient way to do this check than running a command?
+        #   maybe try to just run it, if we get unlucky then mark as the proper type,
+        #   then try again with the proper type. e.g. try it as iputils, if get
+        #   return code of 2, then mark it as habets and retry with habets.
+        #   slightly more efficient than running it, then running it again.
+        #   the performance impact is only on the first request of a run, but
+        #   this is a common case for CLI programs and other one-off sorts of things.
         if not self._checked_type:
             try:
                 _popen("arping", "--ridiculous-garbage-string")
@@ -417,20 +420,21 @@ class ArpingHost(Method):
                 # we already threw an exception so mark as checked.
                 self._checked_type = True
         try:
-            # Output examples:
-            #   tests/samples/ubuntu_18.04/arping-iputils.out
-            #   tests/samples/ubuntu_18.04/arping-habets.out
             if self._is_iputils:
-                # return _search(
-                #     r" from %s \[(%s)\]" % (re.escape(host), MAC_RE_COLON),
-                #     _popen("arping", "-f -c 1 %s" % host),
-                # )
-                pass
+                command_output = _popen("arping", "-f -c 1 %s" % arg)
+                if command_output:
+                    return _search(
+                        r" from %s \[(%s)\]" % (re.escape(arg), MAC_RE_COLON),
+                        command_output
+                    )
             else:
-                return _search(r"^%s$" % MAC_RE_COLON, _popen("arping", "-r -C 1 -c 1 %s" % host), )
-                pass
-        except CalledProcessError as ex:
-            pass
+                command_output = _popen("arping", "-r -C 1 -c 1 %s" % arg)
+                if command_output:
+                    return command_output.strip()
+        except CalledProcessError:
+            # TODO: verify return code isn't 2 for iputils? need to experiment
+            #   with this some more to have a more reliable check.
+            return None
 
 
 class FcntlIface(Method):
