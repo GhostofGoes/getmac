@@ -284,7 +284,12 @@ def _fetch_ip_using_dns():
 #   * Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
 #   * cleanup most or all of the TODOs
 #   * >90% test coverage
+#       * directly test methods via a "Method.parse()" function
+#       * add "Method.parse()" that handles the parsing of command output.
+#           this would make it *much* easier to test methods
 #   * implement proper default interface detection on windows
+#   * check stuff in docs/TODO.md
+#   * support python 3.9 (add tests+setup.py classifier)
 
 # TODO: cache method checks (maybe move this to 1.1.0 release?)
 #   This string simply has the names of methods
@@ -293,11 +298,7 @@ def _fetch_ip_using_dns():
 #   Add a flag to control this behavior and location of the cache
 #   Document the behavior
 
-# TODO: add "Method.parse()" that handles the parsing of command outout.
-#   this would make it *much* easier to test methods
-
-# IDEA: (create GitHub issue?)
-# MAC -> IP. "to_find='mac'"?
+# TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
 
 
 class Method:
