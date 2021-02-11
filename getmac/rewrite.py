@@ -4,11 +4,9 @@ import os
 import platform
 import re
 import shlex
-import shutil
 import socket
 import struct
 import sys
-import traceback
 from subprocess import CalledProcessError, check_output
 
 try:  # Python 3
@@ -32,6 +30,12 @@ if not log.handlers:
 
 __version__ = "0.8.1"
 PY2 = sys.version_info[0] == 2  # type: bool
+
+# Monkeypatch shutil.which for python 2.7 (TODO(python3): remove this hack)
+if PY2:
+    from shutilwhich import which
+else:
+    from shutil import which
 
 # Configurable settings
 DEBUG = 0  # type: int
@@ -202,13 +206,10 @@ def _uuid_convert(mac):
 CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
 
 
-# TODO (python3): use shutil.which() instead?
-# TODO: find alternative to shutil.which() on Python 2
-#   https://github.com/mbr/shutilwhich/blob/master/shutilwhich/lib.py
 def check_command(command):
     # type: (str) -> bool
     if command not in CHECK_COMMAND_CACHE:
-        CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=PATH_STR))
+        CHECK_COMMAND_CACHE[command] = bool(which(command, path=PATH_STR))
     return CHECK_COMMAND_CACHE[command]
 
 
@@ -230,17 +231,13 @@ def check_path(filepath):
 #   * python3: Use Enums for platforms and method types instead of strings
 #   * python3: cache package imports done during test for use during get(), reuse
 #       Use __import__() or importlib?
-
-
+#   * Document Method (and subclass) attributes (use Sphinx "#:" comments)
 
 # TODO: add "Method.parse()" that handles the parsing of command outout.
 #   this would make it *much* easier to test methods
 
 
-
 # TODO: rewrite
-#   * Document Method (and subclass) attributes (use Sphinx "#:" comments)
-#   * find alternative to shutil.which() on Python 2
 #   * _arping_habets
 #   * _arping_iputils
 #   * _fetch_ip_using_dns
