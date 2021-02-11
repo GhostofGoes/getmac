@@ -276,6 +276,7 @@ def _fetch_ip_using_dns():
 #       (this is a major API change defer this change to 1.0.0)
 #   * Remove all Python "Scripts" from the path? Document this!
 #   * Document possible values for PLATFORM
+#   * python3: BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES
 #   * python3: Use Enums for platforms and method types instead of strings
 #   * python3: cache package imports done during test for use during get(), reuse
 #       Use __import__() or importlib?
@@ -284,12 +285,14 @@ def _fetch_ip_using_dns():
 #   * Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
 #   * cleanup most or all of the TODOs
 #   * >90% test coverage
+#       * refactor tests to use the new system and structure
 #       * directly test methods via a "Method.parse()" function
 #       * add "Method.parse()" that handles the parsing of command output.
 #           this would make it *much* easier to test methods
 #   * implement proper default interface detection on windows
 #   * check stuff in docs/TODO.md
 #   * support python 3.9 (add tests+setup.py classifier)
+#   * update the samples used in tests
 
 # TODO: cache method checks (maybe move this to 1.1.0 release?)
 #   This string simply has the names of methods
