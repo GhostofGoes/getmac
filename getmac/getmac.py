@@ -5,12 +5,13 @@
 
 It provides a platform-independent interface to get the MAC addresses of:
 
-* System network interfaces (by interface name)
-* Remote hosts on the local network (by IPv4/IPv6 address or hostname)
+- System network interfaces (by interface name)
+- Remote hosts on the local network (by IPv4/IPv6 address or hostname)
 
-It provides one function: `get_mac_address()`
+It provides one function: ``get_mac_address()``
 
-Examples:
+.. code-block:: python
+   :caption: Examples
 
     from getmac import get_mac_address
     eth_mac = get_mac_address(interface="eth0")
@@ -198,9 +199,9 @@ def _read_file(filepath):
         return None
 
 
-def _search(regex, text, group_index=0):
-    # type: (str, str, int) -> Optional[str]
-    match = re.search(regex, text)
+def _search(regex, text, group_index=0, flags=0):
+    # type: (str, str, int, int) -> Optional[str]
+    match = re.search(regex, text, flags)
     if match:
         return match.groups()[group_index]
     return None
@@ -247,7 +248,7 @@ def _fetch_ip_using_dns():
     # type: () -> str
     """Determines the IP address of the default network interface.
 
-    Sends a UDP packet to Cloudflare's DNS (1.1.1.1), which should go through
+    Sends a UDP packet to Cloudflare's DNS (``1.1.1.1``), which should go through
     the default interface. This populates the source address of the socket,
     which we then inspect and return.
     """
@@ -595,7 +596,7 @@ class IpconfigExe(Method):
         return _search(arg + self._regex, _popen("ipconfig.exe", "/all"))
 
 
-class WimcExe(Method):
+class WmicExe(Method):
     platforms = {"windows"}
     method_type = "iface"
 
@@ -704,10 +705,10 @@ class IfconfigEther(Method):
 class IfconfigLinux(Method):
     platforms = {"linux", "wsl"}
     method_type = "iface"
-    # "ether ": modern Ubuntu, "HWaddr": others
+    # "ether " : modern Ubuntu
+    # "HWaddr" : others
     _regexes = [r"ether " + MAC_RE_COLON, r"HWaddr " + MAC_RE_COLON]  # type: List[str]
-    # winner winner chicken dinner
-    _champ = ""  # type: str
+    _working_regex = ""  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("ifconfig")
@@ -721,14 +722,14 @@ class IfconfigLinux(Method):
                 return None
             else:
                 raise err
-        if self._champ:
+        if self._working_regex:
             # Use regex that worked previously. This can still return None in
             # the case of interface not existing, but at least it's a bit faster.
-            return _search(self._champ, command_output)
+            return _search(self._working_regex, command_output)
         for regex in self._regexes:  # See if either regex matches
             result = _search(regex, command_output)
             if result:
-                self._champ = regex  # We have our Apex champion
+                self._working_regex = regex  # We have our Apex champion
                 return result
 
 
@@ -803,7 +804,6 @@ class IpLinkIface(Method):
                 if err.returncode != 255:
                     raise err
             self._tested_arg = True
-
         if self._iface_arg:
             if not command_output:  # Don't repeat work on first run
                 command_output = _popen("ip", "link " + arg)
@@ -814,8 +814,10 @@ class IpLinkIface(Method):
 
 class NetstatIface(Method):
     platforms = {"linux", "wsl", "other"}
+    # TODO: do the ether/HWaddr thing we do for ipconfig (they pull from the same source)
     method_type = "iface"
-    _regex = r".*HWaddr " + MAC_RE_COLON  # type: str
+    # _regex = r".*HWaddr " + MAC_RE_COLON  # type: str
+    _regex = r".*ether " + MAC_RE_COLON  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("netstat")
@@ -833,8 +835,9 @@ class IpNeighShow(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         output = _popen("ip", "neighbor show %s" % arg)
-        # TODO: check if returned anything before exception on index failure
-        return output.partition(arg)[2].partition("lladdr")[2].strip().split()[0]
+        if output:
+            # Note: the space prevents accidental matching of partial IPs
+            return output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
 
 
 class ArpVariousArgs(Method):
@@ -852,17 +855,17 @@ class ArpVariousArgs(Method):
         command_output = _popen("arp", arg)
         found = _search(r"\(" + re.escape(arg) + self._regex_std, command_output)
         found = _search(r"\(" + re.escape(arg) + self._regex_darwin, command_output)
-        # TODO: finish implementing
+        # TODO(rewrite): finish implementing
         raise NotImplementedError
 
 
 class DefaultIfaceLinuxRouteFile(Method):
-    """Get the default interface by reading /proc/net/route.
+    """Get the default interface by reading ``/proc/net/route``.
 
-    This is the same source as the `route` command, however it's much
-    faster to read this file than to call `route`. If it fails for whatever
+    This is the same source as the ``route`` command, however it's much
+    faster to read this file than to call ``route``. If it fails for whatever
     reason, we can fall back on the system commands (e.g for a platform
-    that has a route command, but maybe doesn't use /proc?).
+    that has a route command, but maybe doesn't use ``/proc``?).
     """
     platforms = {"linux", "wsl"}
     method_type = "default_iface"
@@ -931,14 +934,14 @@ class DefaultIfaceFreeBsd(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("netstat", "-r")
-        return _search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)\n", output)
+        return _search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", output)
 
 
 # TODO: order methods by effectiveness/reliability
 #   Use a class attribute maybe? e.g. "score", then sort by score in cache
 METHODS = [
     ArpFile, SysIfaceFile, CtypesHost, FcntlIface, UuidArpGetNode, UuidLanscan,
-    GetmacExe, IpconfigExe, WimcExe, ArpExe, DarwinNetworksetup, ArpFreebsd,
+    GetmacExe, IpconfigExe, WmicExe, ArpExe, DarwinNetworksetup, ArpFreebsd,
     ArpOpenbsd, IfconfigOpenbsd, IfconfigEther, IfconfigLinux, IfconfigOther,
     IpLinkIface, NetstatIface, IpNeighShow, ArpVariousArgs,
     DefaultIfaceLinuxRouteFile, DefaultIfaceRouteCommand, DefaultIfaceOpenBsd,
