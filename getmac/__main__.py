@@ -10,7 +10,7 @@ import sys
 from . import getmac
 
 
-def main():
+def main():  # type: () -> None
     parser = argparse.ArgumentParser(
         "getmac",
         description="Get the MAC address of system network "

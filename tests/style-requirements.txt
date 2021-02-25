@@ -14,6 +14,8 @@ flake8-string-format
 flake8-2020
 flake8-broken-line
 flake8-mutable
+flake8-pytest-style
+flake8-annotations
 flake8-black;python_version>='3.6'
 # NOTE: the released version of flake8-mypy is buggy on Windows (17.8.0)
 # flake8-mypy;python_version>='3.5'
