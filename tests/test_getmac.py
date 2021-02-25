@@ -11,7 +11,6 @@ from getmac import get_mac_address, getmac
 
 PY2 = sys.version_info[0] == 2
 MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
-MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
 
 
 def test_get_mac_address_localhost():
@@ -60,7 +59,7 @@ def test_fcntl_iface(mocker):
     )
     mocker.patch("fcntl.ioctl", return_value=data)
     m = mocker.patch("socket.socket")
-    assert getmac._fcntl_iface("enp3s0") == "74:d4:35:e9:45:73"
+    assert getmac.FcntlIface().get("enp3s0") == "74:d4:35:e9:45:73"
     m.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
 
 
@@ -72,18 +71,18 @@ def test_fcntl_iface(mocker):
 )
 def test_uuid_ip(mocker):
     mocker.patch("uuid._arp_getnode", return_value=278094213753144)
-    assert getmac._uuid_ip("10.0.0.1") == "FC:EC:DA:D3:29:38"
+    assert getmac.UuidArpGetNode().get("10.0.0.1") == "FC:EC:DA:D3:29:38"
     mocker.patch("uuid._arp_getnode", return_value=None)
-    assert getmac._uuid_ip("10.0.0.1") is None
-    assert getmac._uuid_ip("en0") is None
+    assert getmac.UuidArpGetNode().get("10.0.0.1") is None
+    assert getmac.UuidArpGetNode().get("en0") is None
 
 
 def test_uuid_lanscan_iface(mocker):
     mocker.patch("uuid._find_mac", return_value=2482700837424)
-    assert getmac._uuid_lanscan_iface("en1") == "02:42:0C:80:62:30"
+    assert getmac.UuidLanscan().get("en1") == "02:42:0C:80:62:30"
     mocker.patch("uuid._find_mac", return_value=None)
-    assert getmac._uuid_lanscan_iface("10.0.0.1") is None
-    assert getmac._uuid_lanscan_iface("en0") is None
+    assert getmac.UuidLanscan().get("10.0.0.1") is None
+    assert getmac.UuidLanscan().get("en0") is None
 
 
 def test_uuid_convert():
@@ -93,18 +92,18 @@ def test_uuid_convert():
 
 def test_read_sys_iface_file(mocker):
     mocker.patch("getmac.getmac._read_file", return_value="00:0c:29:b5:72:37\n")
-    assert getmac._read_sys_iface_file("ens33") == "00:0c:29:b5:72:37\n"
+    assert getmac.SysIfaceFile().get("ens33") == "00:0c:29:b5:72:37\n"
     mocker.patch("getmac.getmac._read_file", return_value=None)
-    assert getmac._read_sys_iface_file("ens33") is None
+    assert getmac.SysIfaceFile().get("ens33") is None
 
 
 def test_read_arp_file(mocker, get_sample):
     data = get_sample("ubuntu_18.10/proc_net_arp.out")
     mocker.patch("getmac.getmac._read_file", return_value=data)
-    assert getmac._read_arp_file("192.168.16.2") == "00:50:56:e1:a8:4a"
-    assert getmac._read_arp_file("192.168.16.254") == "00:50:56:e8:32:3c"
-    assert getmac._read_arp_file("192.168.95.1") == "00:50:56:c0:00:0a"
-    assert getmac._read_arp_file("192.168.95.254") == "00:50:56:fa:b7:54"
+    assert getmac.ArpFile().get("192.168.16.2") == "00:50:56:e1:a8:4a"
+    assert getmac.ArpFile().get("192.168.16.254") == "00:50:56:e8:32:3c"
+    assert getmac.ArpFile().get("192.168.95.1") == "00:50:56:c0:00:0a"
+    assert getmac.ArpFile().get("192.168.95.254") == "00:50:56:fa:b7:54"
 
 
 def test_read_file_return(mocker, get_sample):
