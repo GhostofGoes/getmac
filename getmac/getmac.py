@@ -422,7 +422,7 @@ class CtypesHost(Method):
                 raise Exception
         except Exception:
             # TODO: this assumes failure is due to arg being a hostname
-            #   We should be explict about only accepting ipv4/ipv6 addresses
+            #   We should be explicit about only accepting ipv4/ipv6 addresses
             #   and handle any hostname resolution in calling code
             hostip = socket.gethostbyname(arg)
             inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
@@ -1073,7 +1073,7 @@ def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
         method = METHOD_CACHE[method_type]
     if not method:
         log.error("Initialization failed for method %s. It may not be supported "
-                  "on this platform or another issue occured.", method_type)
+                  "on this platform or another issue occurred.", method_type)
         return None
 
     try:
@@ -1122,7 +1122,7 @@ def get_mac_address(
     .. note::
        It is assumed that you are using Ethernet or Wi-Fi. While other protocols
        such as Bluetooth may work, this has not been tested and should not be
-       relied upon. If you need this funcitonality, please open an issue!
+       relied upon. If you need this functionality, please open an issue!
        (or better yet, a Pull Request ;)
 
     Args:

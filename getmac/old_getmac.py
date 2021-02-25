@@ -129,7 +129,7 @@ def get_mac_address(
     .. note::
        It is assumed that you are using Ethernet or Wi-Fi. While other protocols
        such as Bluetooth may work, this has not been tested and should not be
-       relied upon. If you need this funcitonality, please open an issue!
+       relied upon. If you need this functionality, please open an issue!
        (or better yet, a Pull Request ;)
 
     Args:

@@ -64,10 +64,12 @@ def test_ubuntu_1804_interface(mocker, get_sample):
     mocker.patch("getmac.getmac._popen", side_effect=[cpe, content])
     assert "00:0c:29:b5:72:37" == getmac.IpLinkIface().get("ens33")
 
+
+def test_ubuntu_1804_netstat(benchmark, mocker, get_sample):
     # TODO(rewrite): need to fix netstat to support ether and HWaddr
-    # content = get_sample('ubuntu_18.04/netstat_iae.out')
-    # mocker.patch('getmac.getmac._popen', return_value=content)
-    # assert '00:0c:29:b5:72:37' == getmac.NetstatIface().get("ens33")
+    content = get_sample("ubuntu_18.04/netstat_iae.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert "00:0c:29:b5:72:37" == benchmark(getmac.NetstatIface().get, arg="ens33")
 
 
 def test_ubuntu_1804_remote(benchmark, mocker, get_sample):
@@ -105,31 +107,31 @@ def test_ubuntu_1804_ip_neigh_show_no_arg(benchmark, mocker, get_sample):
 
 
 def test_windows_10_iface_getmac_exe(benchmark, mocker, get_sample):
-    content = get_sample('windows_10/getmac.out')
-    mocker.patch('getmac.getmac._popen', return_value=content)
+    content = get_sample("windows_10/getmac.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
     assert "74-D4-35-E9-45-71" == benchmark(getmac.GetmacExe().get, arg="Ethernet 2")
 
 
 def test_windows_10_iface_ipconfig(benchmark, mocker, get_sample):
-    content = get_sample('windows_10/ipconfig-all.out')
-    mocker.patch('getmac.getmac._popen', return_value=content)
+    content = get_sample("windows_10/ipconfig-all.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
     assert "74-D4-35-E9-45-71" == benchmark(getmac.IpconfigExe().get, arg="Ethernet 3")
 
 
 def test_windows_10_iface_wmic(benchmark, mocker, get_sample):
-    content = get_sample('windows_10/wmic_nic.out')
-    mocker.patch('getmac.getmac._popen', return_value=content)
+    content = get_sample("windows_10/wmic_nic.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
     assert "00:FF:17:15:F8:C8" == benchmark(getmac.WmicExe().get, arg="Ethernet 3")
 
 
-def test_darwin_interface(mocker, get_sample):
+def test_darwin_interface(benchmark, mocker, get_sample):
     content = get_sample("OSX/ifconfig.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     # TODO: is the ".*" in _arg_regex necessary?
     ether = getmac.IfconfigEther()
     ether._tested_arg = True
     ether._iface_arg = False
-    assert "2c:f0:ee:2f:c7:de" == ether.get("en0")
+    assert "2c:f0:ee:2f:c7:de" == benchmark(ether.get, arg="en0")
 
 
 def test_darwin_remote(mocker, get_sample):
@@ -143,17 +145,14 @@ def test_darwin_remote(mocker, get_sample):
     assert "58:6d:8f:07:c9:94" == getmac.get_mac_address(ip="192.168.1.1")
 
 
-def test_openbsd_interface(mocker, get_sample):
+def test_openbsd_interface(benchmark, mocker, get_sample):
     content = get_sample("openbsd_6/ifconfig.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "08:00:27:18:64:56" == getmac.IfconfigOpenbsd().get("em0")
 
     content = get_sample("openbsd_6/ifconfig_em0.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "08:00:27:18:64:56" == getmac.IfconfigOpenbsd().get("em0")
-    # # Default route (TODO(rewrite))
-    # mocker.patch("getmac.getmac._get_default_iface_openbsd", return_value="em0")
-    # assert "08:00:27:18:64:56" == getmac.get_mac_address()
+    assert "08:00:27:18:64:56" == benchmark(getmac.IfconfigOpenbsd().get, arg="em0")
 
 
 def test_get_default_iface_openbsd(benchmark, mocker, get_sample):
@@ -177,10 +176,7 @@ def test_freebsd_interface(benchmark, mocker, get_sample):
     ether = getmac.IfconfigEther()
     ether._tested_arg = True
     ether._iface_arg = False
-    assert "08:00:27:33:37:26" == ether.get("em0")
-    # # Default route (TODO(rewrite))
-    # mocker.patch("getmac.getmac._get_default_iface_freebsd", return_value="em0")
-    # assert "08:00:27:33:37:26" == benchmark(getmac.get_mac_address)
+    assert "08:00:27:33:37:26" == benchmark(ether.get, arg="em0")
 
 
 def test_get_default_iface_freebsd(benchmark, mocker, get_sample):

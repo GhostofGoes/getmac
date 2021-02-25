@@ -1,12 +1,15 @@
 include LICENSE README.md CHANGELOG.md CONTRIBUTING.md
-include docs/man/getmac.1
-include docs/man/getmac2.1
+
 graft getmac
 graft tests
 
+prune docs
 prune .github
 prune packaging
 prune scripts
+
+include docs/man/getmac.1
+include docs/man/getmac2.1
 
 global-exclude *.py[cod] __pycache__ *.so *.class
 exclude *-getmac.spec *.yml
