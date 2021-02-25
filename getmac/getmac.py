@@ -43,6 +43,7 @@ except ImportError:  # Python 2
 # If you're copying the code, this section can be safely removed
 try:
     from typing import TYPE_CHECKING
+
     if TYPE_CHECKING:
         from typing import Dict, List, Optional, Set, Tuple, Union
 except ImportError:
@@ -71,6 +72,7 @@ _SYST = platform.system()  # type: str
 if _SYST == "Java":
     try:
         import java.lang
+
         _SYST = str(java.lang.System.getProperty("os.name"))
     except ImportError:
         log.critical("Can't determine OS: couldn't import java.lang on Jython")
@@ -161,7 +163,7 @@ def _clean_mac(mac):
     # Fix cases where there are no colons
     if ":" not in mac and len(mac) == 12:
         log.debug("Adding colons to MAC %s", mac)
-        mac = ":".join(mac[i: i + 2] for i in range(0, len(mac), 2))
+        mac = ":".join(mac[i : i + 2] for i in range(0, len(mac), 2))
 
     # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
     elif len(mac) < 17:
@@ -194,7 +196,8 @@ def _read_file(filepath):
     try:
         with open(filepath) as f:
             return f.read()
-    except (OSError, IOError):  # This is IOError on Python 2.7
+    # This is IOError on Python 2.7
+    except (OSError, IOError):  # noqa: B014
         log.debug("Could not find file: '%s'", filepath)
         return None
 
@@ -388,12 +391,14 @@ class UuidLanscan(Method):
     def test(self):  # type: () -> bool
         try:
             from uuid import _find_mac
+
             return check_command("lanscan")
         except Exception:
             return False
 
     def get(self, arg):  # type: (str) -> Optional[str]
         from uuid import _find_mac  # type: ignore
+
         if not PY2:
             arg = bytes(arg, "utf-8")  # type: ignore
         mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)
@@ -409,7 +414,7 @@ class CtypesHost(Method):
 
     def test(self):  # type: () -> bool
         try:
-            return ctypes.windll.wsock32.inet_addr(b'127.0.0.1') > 0
+            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0
         except Exception:
             return False
 
@@ -455,6 +460,7 @@ class ArpingHost(Method):
     - "iputils" arping, from the ``iputils-arping``
         `package <https://packages.debian.org/sid/iputils-arping>`__
     """
+
     platforms = {"linux", "darwin"}
     method_type = "ip4"
     net_request = True
@@ -491,7 +497,7 @@ class ArpingHost(Method):
                 if command_output:
                     return _search(
                         r" from %s \[(%s)\]" % (re.escape(arg), MAC_RE_COLON),
-                        command_output
+                        command_output,
                     )
             else:
                 command_output = _popen("arping", "-r -C 1 -c 1 %s" % arg)
@@ -510,12 +516,14 @@ class FcntlIface(Method):
     def test(self):  # type: () -> bool
         try:
             import fcntl
+
             return True
         except Exception:  # Broad except to handle unknown effects
             return False
 
     def get(self, arg):  # type: (str) -> Optional[str]
         import fcntl
+
         if not PY2:
             arg = arg.encode()  # type: ignore
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -536,12 +544,14 @@ class UuidArpGetNode(Method):
     def test(self):  # type: () -> bool
         try:
             from uuid import _arp_getnode  # type: ignore
+
             return True
         except Exception:
             return False
 
     def get(self, arg):  # type: (str) -> Optional[str]
         from uuid import _arp_getnode  # type: ignore
+
         backup = socket.gethostbyname
         try:
             socket.gethostbyname = lambda x: arg
@@ -562,12 +572,12 @@ class UuidArpGetNode(Method):
 class GetmacExe(Method):
     platforms = {"windows"}
     method_type = "iface"
-    _regexes = [  # type: List[Tuple[str, str]]
+    _regexes = [
         # Connection Name
         (r"\r\n", r".*" + MAC_RE_DASH + r".*\r\n"),
         # Network Adapter (the human-readable name)
-        (r"\r\n.*", r".*" + MAC_RE_DASH + r".*\r\n")
-    ]
+        (r"\r\n.*", r".*" + MAC_RE_DASH + r".*\r\n"),
+    ]  # type: List[Tuple[str, str]]
     _champ = ()  # type: Tuple[str, str]
 
     def test(self):  # type: () -> bool
@@ -587,7 +597,9 @@ class GetmacExe(Method):
 class IpconfigExe(Method):
     platforms = {"windows"}
     method_type = "iface"
-    _regex = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"  # type: str
+    _regex = (
+        r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"
+    )  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("ipconfig.exe")
@@ -735,13 +747,16 @@ class IfconfigLinux(Method):
 
 class IfconfigOther(Method):
     """Wild 'Shot in the Dark' attempt at ``ifconfig`` for unknown platforms."""
+
     platforms = {"linux", "other"}
     method_type = "iface"
     # "-av": Tru64 system?
-    _args = (  # type: Tuple[Tuple[str, Union[str, tuple]]]
-        ("", ("ether", r"HWaddr")), ("-a", (r"HWaddr",)),
-        ("-v", (r"HWaddr",)), ("-av", (r"Ether",))
-    )
+    _args = (
+        ("", ("ether", r"HWaddr")),
+        ("-a", (r"HWaddr",)),
+        ("-v", (r"HWaddr",)),
+        ("-av", (r"Ether",)),
+    )  # type: Tuple[Tuple[str, Union[str, tuple]]]
     _args_tested = False  # type: bool
     _good_pair = []  # type: List[Union[str, Tuple[str, str]]]
 
@@ -837,7 +852,9 @@ class IpNeighShow(Method):
         output = _popen("ip", "neighbor show %s" % arg)
         if output:
             # Note: the space prevents accidental matching of partial IPs
-            return output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
+            return (
+                output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
+            )
 
 
 class ArpVariousArgs(Method):
@@ -867,6 +884,7 @@ class DefaultIfaceLinuxRouteFile(Method):
     reason, we can fall back on the system commands (e.g for a platform
     that has a route command, but maybe doesn't use ``/proc``?).
     """
+
     platforms = {"linux", "wsl"}
     method_type = "default_iface"
 
@@ -940,34 +958,53 @@ class DefaultIfaceFreeBsd(Method):
 # TODO: order methods by effectiveness/reliability
 #   Use a class attribute maybe? e.g. "score", then sort by score in cache
 METHODS = [
-    ArpFile, SysIfaceFile, CtypesHost, FcntlIface, UuidArpGetNode, UuidLanscan,
-    GetmacExe, IpconfigExe, WmicExe, ArpExe, DarwinNetworksetup, ArpFreebsd,
-    ArpOpenbsd, IfconfigOpenbsd, IfconfigEther, IfconfigLinux, IfconfigOther,
-    IpLinkIface, NetstatIface, IpNeighShow, ArpVariousArgs,
-    DefaultIfaceLinuxRouteFile, DefaultIfaceRouteCommand, DefaultIfaceOpenBsd,
+    ArpFile,
+    SysIfaceFile,
+    CtypesHost,
+    FcntlIface,
+    UuidArpGetNode,
+    UuidLanscan,
+    GetmacExe,
+    IpconfigExe,
+    WmicExe,
+    ArpExe,
+    DarwinNetworksetup,
+    ArpFreebsd,
+    ArpOpenbsd,
+    IfconfigOpenbsd,
+    IfconfigEther,
+    IfconfigLinux,
+    IfconfigOther,
+    IpLinkIface,
+    NetstatIface,
+    IpNeighShow,
+    ArpVariousArgs,
+    DefaultIfaceLinuxRouteFile,
+    DefaultIfaceRouteCommand,
+    DefaultIfaceOpenBsd,
     DefaultIfaceFreeBsd,
 ]
 
 
 # Primary method to use for a given method type
-METHOD_CACHE = {  # type: Dict[str, Optional[Method]]
+METHOD_CACHE = {
     "ip4": None,
     "ip6": None,
     "iface": None,
     "default_iface": None,
-}
+}  # type: Dict[str, Optional[Method]]
 
 
 # Order of methods is determined by:
 #   Platform + version
 #   Performance (file read > command)
 #   Reliability (how well I know/understand the command to work)
-FALLBACK_CACHE = {  # type: Dict[str, List[Method]]
+FALLBACK_CACHE = {
     "ip4": [],
     "ip6": [],
     "iface": [],
     "default_iface": [],
-}
+}  # type: Dict[str, List[Method]]
 
 
 DEFAULT_IFACE = ""  # type: str
@@ -982,19 +1019,24 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
     """
     log.debug("Initializing '%s' method cache (platform: '%s')", method_type, PLATFORM)
     if METHOD_CACHE.get(method_type) or (
-        method_type == "ip" and (METHOD_CACHE.get("ip4") and METHOD_CACHE.get("ip6"))):
+        method_type == "ip" and (METHOD_CACHE.get("ip4") and METHOD_CACHE.get("ip6"))
+    ):
         if DEBUG:
             log.debug("Cache already initialized for '%s'", method_type)
         return True
 
     # Filter methods by the platform we're running on
-    platform_methods = [m for m in METHODS  # type: List[type(Method)]
-                        if PLATFORM in m.platforms]
+    platform_methods = [
+        m for m in METHODS if PLATFORM in m.platforms
+    ]  # type: List[type(Method)]
     if not platform_methods:
         # If there isn't a method for the current platform,
         # then fallback to the generic platform "other".
-        log.warning("No methods for platform '%s'! Your system may not be supported. "
-                    "Falling back to platform 'other'", PLATFORM)
+        log.warning(
+            "No methods for platform '%s'! Your system may not be supported. "
+            "Falling back to platform 'other'",
+            PLATFORM,
+        )
         platform_methods = [m for m in METHODS if "other" in m.platforms]
     if DEBUG:
         meth_strs = ", ".join(str(pm) for pm in platform_methods)  # type: str
@@ -1002,9 +1044,12 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
 
     # Filter methods by the type of MAC we're looking for, such as "ip"
     # for remote host methods or "iface" for local interface methods.
-    type_methods = [pm for pm in platform_methods  # type: List[type(Method)]
-                    if pm.method_type == method_type
-                    or (pm.method_type == "ip" and method_type in ["ip4", "ip6"])]
+    type_methods = [
+        pm
+        for pm in platform_methods
+        if pm.method_type == method_type
+        or (pm.method_type == "ip" and method_type in ["ip4", "ip6"])
+    ]  # type: List[type(Method)]
     if not type_methods:
         log.critical("No valid methods found for MAC type '%s'", method_type)
         return False
@@ -1035,7 +1080,9 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
             if DEBUG:
                 log.debug("Test failed for method '%s'", str(method_instance))
     if not tested_methods:
-        log.critical("All %d '%s' methods failed to test!", len(type_methods), method_type)
+        log.critical(
+            "All %d '%s' methods failed to test!", len(type_methods), method_type
+        )
         return False
 
     # Populate fallback cache with all the tested methods, minus the currently active method
@@ -1046,7 +1093,10 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
     if DEBUG:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)  # type: str
         log.debug("'%s' tested_methods: %s", method_type, tested_strs)
-        log.debug("Current method cache: %s", str({k: str(v) for k, v in METHOD_CACHE.items()}))
+        log.debug(
+            "Current method cache: %s",
+            str({k: str(v) for k, v in METHOD_CACHE.items()}),
+        )
     log.debug("Finished initializing '%s' method cache", method_type)
     return True
 
@@ -1072,15 +1122,22 @@ def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
         initialize_method_cache(method_type)
         method = METHOD_CACHE[method_type]
     if not method:
-        log.error("Initialization failed for method %s. It may not be supported "
-                  "on this platform or another issue occurred.", method_type)
+        log.error(
+            "Initialization failed for method %s. It may not be supported "
+            "on this platform or another issue occurred.",
+            method_type,
+        )
         return None
 
     try:
         result = method.get(arg)
     except Exception as ex:
-        log.warning("Cached Method '%s' failed for '%s' lookup: %s",
-                    str(method), method_type, str(ex))
+        log.warning(
+            "Cached Method '%s' failed for '%s' lookup: %s",
+            str(method),
+            method_type,
+            str(ex),
+        )
         result = None
         # TODO(rewrite):
         #  When exception occurs, remove from cache
@@ -1096,8 +1153,7 @@ def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
         #     1
     # Log normal get() failures if debugging is enabled
     if DEBUG and not result:
-        log.debug("Method '%s' failed for '%s' lookup",
-                  str(method), method_type)
+        log.debug("Method '%s' failed for '%s' lookup", str(method), method_type)
     return result
 
 

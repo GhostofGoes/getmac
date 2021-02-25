@@ -402,7 +402,10 @@ def _read_arp_file(host):
 def _arping_habets(host):
     # type: (str) -> Optional[str]
     """Parse https://github.com/ThomasHabets/arping output."""
-    return _search(r"^%s$" % MAC_RE_COLON, _popen("arping", "-r -C 1 -c 1 %s" % host),)
+    return _search(
+        r"^%s$" % MAC_RE_COLON,
+        _popen("arping", "-r -C 1 -c 1 %s" % host),
+    )
 
 
 def _arping_iputils(host):

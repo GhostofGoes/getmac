@@ -97,13 +97,17 @@ def test_arp_file_ubuntu_1804(mocker, get_sample):
 def test_ubuntu_1804_ip_neigh_show_with_arg(benchmark, mocker, get_sample):
     content = get_sample("ubuntu_18.04/ip_neighbor_show_192-168-16-2.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "00:50:56:f1:4c:50" == benchmark(getmac.IpNeighShow().get, arg="192.168.16.2")
+    assert "00:50:56:f1:4c:50" == benchmark(
+        getmac.IpNeighShow().get, arg="192.168.16.2"
+    )
 
 
 def test_ubuntu_1804_ip_neigh_show_no_arg(benchmark, mocker, get_sample):
     content = get_sample("ubuntu_18.04/ip_neighbor_show.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "00:50:56:f1:4c:50" == benchmark(getmac.IpNeighShow().get, arg="192.168.16.2")
+    assert "00:50:56:f1:4c:50" == benchmark(
+        getmac.IpNeighShow().get, arg="192.168.16.2"
+    )
 
 
 def test_windows_10_iface_getmac_exe(benchmark, mocker, get_sample):
