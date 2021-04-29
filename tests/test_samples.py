@@ -66,10 +66,15 @@ def test_ubuntu_1804_interface(mocker, get_sample):
 
 
 def test_ubuntu_1804_netstat(benchmark, mocker, get_sample):
-    # TODO(rewrite): need to fix netstat to support ether and HWaddr
     content = get_sample("ubuntu_18.04/netstat_iae.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "00:0c:29:b5:72:37" == benchmark(getmac.NetstatIface().get, arg="ens33")
+    assert "02:42:33:bf:3e:40" == getmac.NetstatIface().get("docker0")
+    assert getmac.NetstatIface().get("lo") is None
+    assert getmac.NetstatIface().get("ens") is None
+    assert getmac.NetstatIface().get("ens3") is None
+    assert getmac.NetstatIface().get("ens333") is None
+    assert getmac.NetstatIface().get("docker") is None
 
 
 def test_ubuntu_1804_remote(benchmark, mocker, get_sample):

@@ -840,17 +840,32 @@ class IpLinkIface(Method):
 
 class NetstatIface(Method):
     platforms = {"linux", "wsl", "other"}
-    # TODO: do the ether/HWaddr thing we do for ipconfig (they pull from the same source)
     method_type = "iface"
-    # _regex = r".*HWaddr " + MAC_RE_COLON  # type: str
-    _regex = r".*ether " + MAC_RE_COLON  # type: str
+
+    # ".*?": non-greedy
+    # https://docs.python.org/3/howto/regex.html#greedy-versus-non-greedy
+    _regexes = [r": .*?ether " + MAC_RE_COLON,
+                r": .*?HWaddr " + MAC_RE_COLON]  # type: List[str]
+    _working_regex = ""  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("netstat")
 
     # TODO: consolidate the parsing logic between IfconfigOther and netstat
     def get(self, arg):  # type: (str) -> Optional[str]
-        return _search(arg + self._regex, _popen("netstat", "-iae"))
+        # NOTE: netstat and ifconfig pull from the same kernel source and
+        # therefore have the same output format on the same platform.
+        command_output = _popen("netstat", "-iae")
+        if self._working_regex:
+            # Use regex that worked previously. This can still return None in
+            # the case of interface not existing, but at least it's a bit faster.
+            return _search(arg + self._working_regex, command_output, flags=re.DOTALL)
+        # See if either regex matches
+        for regex in self._regexes:
+            result = _search(arg + regex, command_output, flags=re.DOTALL)
+            if result:
+                self._working_regex = regex
+                return result
 
 
 class IpNeighShow(Method):
