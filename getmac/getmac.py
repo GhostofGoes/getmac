@@ -758,10 +758,10 @@ class IfconfigOther(Method):
     method_type = "iface"
     # "-av": Tru64 system?
     _args = (
-        ("", ("ether", r"HWaddr")),
-        ("-a", (r"HWaddr",)),
-        ("-v", (r"HWaddr",)),
-        ("-av", (r"Ether",)),
+        ("", (r".*?ether ", r".*?HWaddr ")),
+        ("-a", (r".*?HWaddr ",)),
+        ("-v", (r".*?HWaddr ",)),
+        ("-av", (r".*?Ether ",)),
     )  # type: Tuple[Tuple[str, Union[str, tuple]]]
     _args_tested = False  # type: bool
     _good_pair = []  # type: List[Union[str, Tuple[str, str]]]
@@ -770,6 +770,7 @@ class IfconfigOther(Method):
         return check_command("ifconfig")
 
     def get(self, arg):  # type: (str) -> Optional[str]
+        # ensure output from testing command on first call isn't wasted
         output = ""
         if not self._args_tested:
             for pair in self._args:
@@ -791,12 +792,14 @@ class IfconfigOther(Method):
         if isinstance(self._good_pair[1], tuple):
             for term in self._good_pair[1]:
                 regex = term + MAC_RE_COLON
-                result = _search(regex, output)
+                result = _search(re.escape(arg) + regex, output)
                 if result:
+                    # changes type from tuple to str, so the else statement
+                    # will be hit on the next call to this method
                     self._good_pair[1] = regex
                     return result
         else:
-            _search(self._good_pair[1], output)
+            _search(re.escape(arg) + self._good_pair[1], output)
 
 
 # TODO: sample of "ip link" on WSL
@@ -874,6 +877,8 @@ class ArpVariousArgs(Method):
         return check_command("arp")
 
     def get(self, arg):  # type: (str) -> Optional[str]
+        if not arg:
+            return None
         # TODO: linux => also try "-an", "-an %s" % arg
         # TODO: darwin => also try "-a", "-a %s" % arg
         command_output = _popen("arp", arg)
@@ -1158,6 +1163,9 @@ def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
         #     eth8: error fetching interface information: Device not found
         #     Blake:goesc$ echo $?
         #     1
+
+        # TODO(rewrite): use the "Unusable" method attribute
+
     # Log normal get() failures if debugging is enabled
     if DEBUG and not result:
         log.debug("Method '%s' failed for '%s' lookup", str(method), method_type)
