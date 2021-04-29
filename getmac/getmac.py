@@ -469,6 +469,7 @@ class ArpingHost(Method):
     - "iputils" arping, from the ``iputils-arping``
         `package <https://packages.debian.org/sid/iputils-arping>`__
     """
+
     platforms = {"linux", "darwin"}
     method_type = "ip4"
     net_request = True
@@ -757,6 +758,7 @@ class IfconfigLinux(Method):
 
 class IfconfigOther(Method):
     """Wild 'Shot in the Dark' attempt at ``ifconfig`` for unknown platforms."""
+
     platforms = {"linux", "other"}
     method_type = "iface"
     # "-av": Tru64 system?
@@ -848,8 +850,10 @@ class NetstatIface(Method):
 
     # ".*?": non-greedy
     # https://docs.python.org/3/howto/regex.html#greedy-versus-non-greedy
-    _regexes = [r": .*?ether " + MAC_RE_COLON,
-                r": .*?HWaddr " + MAC_RE_COLON]  # type: List[str]
+    _regexes = [
+        r": .*?ether " + MAC_RE_COLON,
+        r": .*?HWaddr " + MAC_RE_COLON,
+    ]  # type: List[str]
     _working_regex = ""  # type: str
 
     def test(self):  # type: () -> bool
@@ -900,7 +904,7 @@ class ArpVariousArgs(Method):
         ("-an", True),  # arp -an 192.168.1.1
         # Darwin, WSL, Linux distros???
         ("-a", False),  # arp -a
-        ("-a", True)  # arp -a 192.168.1.1
+        ("-a", True),  # arp -a 192.168.1.1
     )
     _args_tested = False  # type: bool
     _good_pair = ()  # type: Tuple[str, bool]
@@ -963,6 +967,7 @@ class DefaultIfaceLinuxRouteFile(Method):
     reason, we can fall back on the system commands (e.g for a platform
     that has a route command, but maybe doesn't use ``/proc``?).
     """
+
     platforms = {"linux", "wsl"}
     method_type = "default_iface"
 

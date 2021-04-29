@@ -80,7 +80,9 @@ def test_ubuntu_1804_netstat(benchmark, mocker, get_sample):
 def test_ubuntu_1804_remote(benchmark, mocker, get_sample):
     content = get_sample("ubuntu_18.04/arp_-a.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "00:50:56:f1:4c:50" == benchmark(getmac.ArpVariousArgs().get, arg="192.168.16.2")
+    assert "00:50:56:f1:4c:50" == benchmark(
+        getmac.ArpVariousArgs().get, arg="192.168.16.2"
+    )
     content = get_sample("ubuntu_18.04/arp_-an.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "00:50:56:f1:4c:50" == getmac.ArpVariousArgs().get("192.168.16.2")
@@ -144,7 +146,9 @@ def test_darwin_remote(benchmark, mocker, get_sample):
     assert "58:6d:8f:07:c9:94" == getmac._clean_mac(
         getmac.ArpVariousArgs().get("192.168.1.1")
     )
-    assert "58:6d:8f:7:c9:94" == benchmark(getmac.ArpVariousArgs().get, arg="192.168.1.1")
+    assert "58:6d:8f:7:c9:94" == benchmark(
+        getmac.ArpVariousArgs().get, arg="192.168.1.1"
+    )
     content = get_sample("OSX/arp_-an.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "58:6d:8f:07:c9:94" == getmac._clean_mac(
