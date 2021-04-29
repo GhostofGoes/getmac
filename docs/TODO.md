@@ -72,3 +72,5 @@ interface as the default route.
 once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 * [ ] Create a script to collect samples for all relevant commands on a platform
 and save output into the appropriately named sub-directory in `samples/`.
+* [ ] Move to GitHub Actions for automated testing instead of Appveyor/TravisCI
+    * [ ] Automatically publish to PyPI when publishing a release on github

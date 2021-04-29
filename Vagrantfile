@@ -19,6 +19,10 @@
 
 # Example: "vagrant up centos" creates a CentOS 7 dev/test machine
 
+# Available VMs:
+#   centos, openbsd, netbsd, freebsd, opensuse, solaris
+#   android, winserver, win10, win7
+
 Vagrant.configure(2) do |config|
   # CentOS 7
   config.vm.define "centos" do |centos|

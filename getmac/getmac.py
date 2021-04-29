@@ -307,6 +307,12 @@ def _fetch_ip_using_dns():
 
 # TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
 
+# TODO(refactor): release 0.9.0 as a beta release first before doing an actual release
+
+# Regex resources:
+#   https://pythex.org/
+#   https://regex101.com/
+
 
 class Method:
     # VALUES: {linux, windows, bsd, darwin, freebsd, openbsd, wsl, other}
@@ -409,7 +415,7 @@ class UuidLanscan(Method):
 
 class CtypesHost(Method):
     platforms = {"windows"}
-    method_type = "ip4"  # TODO: can CtypesHost be made to work with IPv6?
+    method_type = "ip4"
     net_request = True
 
     def test(self):  # type: () -> bool
@@ -427,7 +433,7 @@ class CtypesHost(Method):
                 raise Exception
         except Exception:
             # TODO: this assumes failure is due to arg being a hostname
-            #   We should be explicit about only accepting ipv4/ipv6 addresses
+            #   We should be explicit about only accepting ipv4 addresses
             #   and handle any hostname resolution in calling code
             hostip = socket.gethostbyname(arg)
             inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
@@ -535,7 +541,7 @@ class FcntlIface(Method):
             return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
 
-# TODO: do we want to keep this around? It calls 3 command and is
+# TODO(py3): do we want to keep this around? It calls 3 commands and is
 #   quite inefficient. We should just take the methods and use directly.
 class UuidArpGetNode(Method):
     platforms = {"linux", "darwin"}
@@ -794,8 +800,8 @@ class IfconfigOther(Method):
 
 
 # TODO: sample of "ip link" on WSL
-# TODO: sample of "ip link" on Android
-# TODO: sample of "ip link eth0" on Ubuntu
+# TODO: sample of "ip link" on Android (use Vagrant)
+# TODO: sample of "ip link eth0" on Ubuntu (use Vagrant)
 class IpLinkIface(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "iface"
@@ -837,6 +843,7 @@ class NetstatIface(Method):
     def test(self):  # type: () -> bool
         return check_command("netstat")
 
+    # TODO: consolidate the parsing logic between IfconfigOther and netstat
     def get(self, arg):  # type: (str) -> Optional[str]
         return _search(arg + self._regex, _popen("netstat", "-iae"))
 
