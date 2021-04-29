@@ -122,6 +122,8 @@ HOSTNAME = 3
 
 MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
 MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
+# On OSX, some MACs in arp output may have a single digit instead of two
+# Examples: "18:4f:32:5a:64:5", "14:cc:20:1a:99:0"
 MAC_RE_DARWIN = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 
 # Ensure we only log the Python 2 warning once
@@ -467,7 +469,6 @@ class ArpingHost(Method):
     - "iputils" arping, from the ``iputils-arping``
         `package <https://packages.debian.org/sid/iputils-arping>`__
     """
-
     platforms = {"linux", "darwin"}
     method_type = "ip4"
     net_request = True
@@ -643,6 +644,7 @@ class ArpExe(Method):
 
 
 class DarwinNetworksetup(Method):
+    # TODO: obtain output sample of networksetup for use in unit tests
     platforms = {"darwin"}
     method_type = "iface"
 
@@ -755,7 +757,6 @@ class IfconfigLinux(Method):
 
 class IfconfigOther(Method):
     """Wild 'Shot in the Dark' attempt at ``ifconfig`` for unknown platforms."""
-
     platforms = {"linux", "other"}
     method_type = "iface"
     # "-av": Tru64 system?
@@ -772,13 +773,16 @@ class IfconfigOther(Method):
         return check_command("ifconfig")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        # ensure output from testing command on first call isn't wasted
-        output = ""
+        if not arg:
+            return None
+        # Ensure output from testing command on first call isn't wasted
+        command_output = ""
+        # Test which arguments are valid to the command
         if not self._args_tested:
-            for pair in self._args:
+            for pair_to_test in self._args:
                 try:
-                    output = _popen("ifconfig", pair[0])
-                    self._good_pair = list(pair)
+                    command_output = _popen("ifconfig", pair_to_test[0])
+                    self._good_pair = list(pair_to_test)
                     if isinstance(self._good_pair[1], str):
                         self._good_pair[1] += MAC_RE_COLON
                     break
@@ -788,20 +792,20 @@ class IfconfigOther(Method):
                 self.unusable = True
                 return None
             self._args_tested = True
-        if not output:
-            output = _popen("ifconfig", self._good_pair[0])
+        if not command_output:
+            command_output = _popen("ifconfig", self._good_pair[0])
         # Handle the two possible search terms
         if isinstance(self._good_pair[1], tuple):
             for term in self._good_pair[1]:
                 regex = term + MAC_RE_COLON
-                result = _search(re.escape(arg) + regex, output)
+                result = _search(re.escape(arg) + regex, command_output)
                 if result:
                     # changes type from tuple to str, so the else statement
                     # will be hit on the next call to this method
                     self._good_pair[1] = regex
                     return result
         else:
-            _search(re.escape(arg) + self._good_pair[1], output)
+            return _search(re.escape(arg) + self._good_pair[1], command_output)
 
 
 # TODO: sample of "ip link" on WSL
@@ -913,7 +917,6 @@ class DefaultIfaceLinuxRouteFile(Method):
     reason, we can fall back on the system commands (e.g for a platform
     that has a route command, but maybe doesn't use ``/proc``?).
     """
-
     platforms = {"linux", "wsl"}
     method_type = "default_iface"
 
