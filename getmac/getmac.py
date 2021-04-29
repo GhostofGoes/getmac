@@ -893,6 +893,18 @@ class ArpVariousArgs(Method):
     method_type = "ip"
     _regex_std = r"\)\s+at\s+" + MAC_RE_COLON  # type: str
     _regex_darwin = r"\)\s+at\s+" + MAC_RE_DARWIN  # type: str
+    _args = (
+        ("", True),  # arp 192.168.1.1
+        # Linux
+        ("-an", False),  # arp -an
+        ("-an", True),  # arp -an 192.168.1.1
+        # Darwin, WSL, Linux distros???
+        ("-a", False),  # arp -a
+        ("-a", True)  # arp -a 192.168.1.1
+    )
+    _args_tested = False  # type: bool
+    _good_pair = ()  # type: Tuple[str, bool]
+    _good_regex = ""  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("arp")
@@ -900,13 +912,47 @@ class ArpVariousArgs(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         if not arg:
             return None
-        # TODO: linux => also try "-an", "-an %s" % arg
-        # TODO: darwin => also try "-a", "-a %s" % arg
-        command_output = _popen("arp", arg)
-        found = _search(r"\(" + re.escape(arg) + self._regex_std, command_output)
-        found = _search(r"\(" + re.escape(arg) + self._regex_darwin, command_output)
-        # TODO(rewrite): finish implementing
-        raise NotImplementedError
+        # Ensure output from testing command on first call isn't wasted
+        command_output = ""
+
+        # Test which arguments are valid to the command
+        # This will NOT test which regex is valid
+        if not self._args_tested:
+            for pair_to_test in self._args:
+                try:
+                    cmd_args = [pair_to_test[0]]
+                    # if True, then include IP as a command argument
+                    if pair_to_test[1]:
+                        cmd_args.append(arg)
+                    command_output = _popen("arp", *cmd_args)
+                    self._good_pair = pair_to_test
+                    break
+                except CalledProcessError:
+                    pass  # TODO: log when debugging
+            if not self._good_pair:
+                self.unusable = True
+                return None
+            self._args_tested = True
+        if not command_output:
+            # if True, then include IP as a command argument
+            cmd_args = [self._good_pair[0]]
+            if self._good_pair[1]:
+                cmd_args.append(arg)
+            command_output = _popen("arp", *cmd_args)
+        escaped = re.escape(arg)
+        if self._good_regex:
+            return _search(r"\(" + escaped + self._good_regex, command_output)
+        # try linux regex first
+        # try darwin regex next
+        #   if a regex succeeds the first time, cache the successful regex
+        #   otherwise, don't bother, since it's a miss anyway
+        for regex in (self._regex_std, self._regex_darwin):
+            # NOTE: Darwin regex will return MACs without leading zeroes,
+            # e.g. "58:6d:8f:7:c9:94" instead of "58:6d:8f:07:c9:94"
+            found = _search(r"\(" + escaped + regex, command_output)
+            if found:
+                self._good_regex = regex
+                return found
 
 
 class DefaultIfaceLinuxRouteFile(Method):

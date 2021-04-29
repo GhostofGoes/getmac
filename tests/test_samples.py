@@ -144,14 +144,19 @@ def test_darwin_interface(benchmark, mocker, get_sample):
 
 
 def test_darwin_remote(mocker, get_sample):
-    # TODO(rewrite): update to use ArpVariousArgs once implemented
     content = get_sample("OSX/arp_-a.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "58:6d:8f:07:c9:94" == getmac.get_mac_address(ip="192.168.1.1")
-    # TODO(rewrite): update to use ArpVariousArgs once implemented
+    assert "58:6d:8f:07:c9:94" == getmac._clean_mac(
+        getmac.ArpVariousArgs().get("192.168.1.1")
+    )
+    assert "58:6d:8f:7:c9:94" == getmac.ArpVariousArgs().get("192.168.1.1")
+
     content = get_sample("OSX/arp_-an.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "58:6d:8f:07:c9:94" == getmac.get_mac_address(ip="192.168.1.1")
+    assert "58:6d:8f:07:c9:94" == getmac._clean_mac(
+        getmac.ArpVariousArgs().get("192.168.1.1")
+    )
+    assert "58:6d:8f:7:c9:94" == getmac.ArpVariousArgs().get("192.168.1.1")
 
 
 def test_openbsd_interface(benchmark, mocker, get_sample):
