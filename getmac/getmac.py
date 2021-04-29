@@ -297,6 +297,7 @@ def _fetch_ip_using_dns():
 #   * check stuff in docs/TODO.md
 #   * support python 3.9 (add tests+setup.py classifier)
 #   * update the samples used in tests
+#   * Reduce duplication: "if not arg: return None"
 
 # TODO: cache method checks (maybe move this to 1.1.0 release?)
 #   This string simply has the names of methods
@@ -744,10 +745,11 @@ class IfconfigLinux(Method):
             # Use regex that worked previously. This can still return None in
             # the case of interface not existing, but at least it's a bit faster.
             return _search(self._working_regex, command_output)
-        for regex in self._regexes:  # See if either regex matches
+        # See if either regex matches
+        for regex in self._regexes:
             result = _search(regex, command_output)
             if result:
-                self._working_regex = regex  # We have our Apex champion
+                self._working_regex = regex
                 return result
 
 
@@ -1127,6 +1129,10 @@ def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
     #  TODO(rewrite): function to query methods out of cache,
     #   if they throw exception, pick one out of fallback.
     #   the current method in cache should NOT be in fallback cache
+
+    if not arg and method_type != "default_iface":
+        log.error("Empty arg for method '%s' (raw value: %s)", method_type, repr(arg))
+        return None
 
     method = METHOD_CACHE.get(method_type)  # type: Optional[Method]
     # Initialize the cache if it hasn't been already
