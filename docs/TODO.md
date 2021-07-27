@@ -1,4 +1,50 @@
 
+
+# 1.0.0 release
+* Move method classes into a separate file
+* Split utils into a separate file
+* move more logic out of get_mac_address into individual methods
+  interface
+  remote host
+  return data cleanup and validation
+* Add docstrings to all util methods
+* API to add/remove methods at runtime (including new, custom methods)
+* Write a short guide on how to add and test a new method
+* Parameterize regexes? (is this any faster?)
+* Raise exceptions on critical failures during cache initialization
+  such as a lack of valid methods or all tests failing can raise exceptions
+  also make sure to document in `get_mac_address`
+  (this is a major API change defer this change to 1.0.0?)
+* Remove all Python "Scripts" from the path? Document this!
+* Document possible values for `PLATFORM` variable
+  Use `__import__()` or `importlib`?
+* Document Method (and subclass) attributes (use Sphinx "#:" comments)
+* Proper documentation (ReadTheDocs and Sphinx fanciness)
+* Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
+* cleanup most or all of the TODOs
+* >90% test coverage
+  * refactor tests to use the new system and structure
+  * directly test methods via a `Method.parse()` function
+  * add `Method.parse()` that handles the parsing of command output.
+      this would make it *much* easier to test methods
+* implement proper default interface detection on Windows
+* update the samples used in tests
+* Reduce duplication, for example "if not arg: return None"
+
+## Py3-related
+* Drop support for python 2.7, 3.4, and 3.5
+* support python 3.9 and 3.10 (add tests+setup.py classifier)
+* BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES
+* Use Enums for platforms and method types instead of strings?
+* cache package imports done during test for use during `get()`, reuse
+* rewrite strings to f-strings
+* move from setup.py to setup.cfg and/or pyproject.toml
+* update classifiers in setup.py
+
+## Documentation
+* [ ]
+
+
 # Etc
 * [ ] Refactor the default interface code. Combine the functions into 
 one, move the default fallback logic into the function.

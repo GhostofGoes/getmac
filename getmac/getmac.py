@@ -264,43 +264,6 @@ def _fetch_ip_using_dns():
     return ip
 
 
-# TODO: 1.0.0 release and py3
-#   * Drop support for python 2.7, 3.4, and 3.5
-#   * Move method classes into a separate file
-#   * Split utils into a separate file
-#   * move more logic out of get_mac_address into individual methods
-#       interface
-#       remote host
-#       return data cleanup and validation
-#   * Add docstrings to all util methods
-#   * API to add/remove methods at runtime (including new, custom methods)
-#   * Write a short guide on how to add and test a new method
-#   * Parameterize regexes? (any faster?)
-#   * Raise exceptions on critical failures during cache initialization
-#       such as a lack of valid methods or all tests failing can raise exceptions
-#       also make sure to document in get_mac_address
-#       (this is a major API change defer this change to 1.0.0)
-#   * Remove all Python "Scripts" from the path? Document this!
-#   * Document possible values for PLATFORM
-#   * python3: BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES
-#   * python3: Use Enums for platforms and method types instead of strings
-#   * python3: cache package imports done during test for use during get(), reuse
-#       Use __import__() or importlib?
-#   * Document Method (and subclass) attributes (use Sphinx "#:" comments)
-#   * Proper documentation (ReadTheDocs and Sphinx fanciness)
-#   * Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
-#   * cleanup most or all of the TODOs
-#   * >90% test coverage
-#       * refactor tests to use the new system and structure
-#       * directly test methods via a "Method.parse()" function
-#       * add "Method.parse()" that handles the parsing of command output.
-#           this would make it *much* easier to test methods
-#   * implement proper default interface detection on windows
-#   * check stuff in docs/TODO.md
-#   * support python 3.9 (add tests+setup.py classifier)
-#   * update the samples used in tests
-#   * Reduce duplication: "if not arg: return None"
-
 # TODO: cache method checks (maybe move this to 1.1.0 release?)
 #   This string simply has the names of methods
 #   Save to: file (location configurable via environment variable or option)
@@ -311,6 +274,8 @@ def _fetch_ip_using_dns():
 # TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
 
 # TODO(refactor): release 0.9.0 as a beta release first before doing an actual release
+
+# TODO(rewrite): add pending deprecation warnings for python 3.4 and 3.5
 
 # Regex resources:
 #   https://pythex.org/
@@ -1318,7 +1283,7 @@ def get_mac_address(
             s.close()
 
     # Setup the address hunt based on the arguments specified
-    mac = None
+    # mac = None
     if ip6:
         if not socket.has_ipv6:
             log.error(

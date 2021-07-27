@@ -8,8 +8,6 @@ from setuptools import setup
 
 from getmac.getmac import __version__
 
-# TODO(python3): move from setup.py to setup.cfg and/or pyproject.toml
-
 
 # Build the page that will be displayed on PyPI from the README and CHANGELOG
 with open("README.md", encoding="utf-8") as f:
