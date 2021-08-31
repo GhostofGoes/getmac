@@ -13,3 +13,8 @@ exclude *-getmac.spec *.yml
 exclude tox.ini Dockerfile Vagrantfile .editorconfig
 exclude conf.py index.md make.bat Makefile packaging.md
 exclude releasing.md style-requirements.txt requirements.txt TODO.md
+
+recursive-include docs *.md
+recursive-include docs *.py
+recursive-include docs *.txt
+recursive-include docs Makefile
