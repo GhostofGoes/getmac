@@ -10,6 +10,7 @@
 ### Changed
 * Added support for Thomas Habets' version of `arping` in addition to the existing iputils one
 * Added support for docker in network bridge mode
+* Fixed code quality test suite errors
 
 ## 0.8.2 (12/07/2019)
 

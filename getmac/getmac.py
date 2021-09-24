@@ -162,7 +162,7 @@ def get_mac_address(
                 s.sendto(b"", (ip, PORT))
             else:
                 s.sendto(b"", (ip6, PORT))
-        except Exception:
+        except Exception:  # noqa: B902
             log.error("Failed to send ARP table population packet")
             if DEBUG:
                 log.debug(traceback.format_exc())
@@ -298,7 +298,7 @@ def _windows_ctypes_host(host):
         inetaddr = ctypes.windll.wsock32.inet_addr(host)  # type: ignore
         if inetaddr in (0, -1):
             raise Exception
-    except Exception:
+    except Exception:  # noqa: BLK100
         hostip = socket.gethostbyname(host)
         inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
 
@@ -349,7 +349,7 @@ def _uuid_ip(ip):
             mac2 = _uuid_convert(mac2)
             if mac1 == mac2:
                 return mac1
-    except Exception:
+    except Exception:  # noqa: B902
         raise
     finally:
         socket.gethostbyname = backup
@@ -393,7 +393,10 @@ def _read_arp_file(host):
 def _arping_habets(host):
     # type: (str) -> Optional[str]
     """Parse https://github.com/ThomasHabets/arping output."""
-    return _search(r"^%s$" % MAC_RE_COLON, _popen("arping", "-r -C 1 -c 1 %s" % host),)
+    return _search(
+        r"^%s$" % MAC_RE_COLON,
+        _popen("arping", "-r -C 1 -c 1 %s" % host),
+    )
 
 
 def _arping_iputils(host):
@@ -410,7 +413,7 @@ def _read_file(filepath):
     try:
         with open(filepath) as f:
             return f.read()
-    except (OSError, IOError):  # This is IOError on Python 2.7
+    except (OSError, IOError):  # noqa: B014 - This is IOError on Python 2.7
         log.debug("Could not find file: '%s'", filepath)
         return None
 
@@ -582,7 +585,7 @@ def _try_methods(methods, to_find=None):
                     log.debug("Result: %s\n", found)
             else:
                 log.critical("Invalid type '%s' for method '%s'", type(m), str(m))
-        except Exception as ex:
+        except Exception as ex:  # noqa: B902
             if DEBUG:
                 log.debug("Exception: %s", str(ex))
             if DEBUG >= 2:
