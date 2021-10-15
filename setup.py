@@ -27,9 +27,10 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/GhostofGoes/getmac",
     project_urls={
-        "Discord server": "https://discord.gg/python",
-        "Issue tracker": "https://github.com/GhostofGoes/getmac/issues",
+        "Documentation": "https://getmac.readthedocs.io/en/latest/",
         "Changelog": "https://github.com/GhostofGoes/getmac/blob/master/CHANGELOG.md",
+        "Issue tracker": "https://github.com/GhostofGoes/getmac/issues",
+        "Discord server": "https://discord.gg/python",
     },
     license="MIT",
     data_files=[
@@ -75,6 +76,8 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        # TODO: test 3.9
+        # TODO: test 3.10
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: Implementation :: CPython",

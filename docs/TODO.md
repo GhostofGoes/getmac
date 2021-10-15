@@ -1,4 +1,8 @@
 
+# 0.9.0 release
+* Tag Beta pre-release on pypi
+* GitHub Actions for CI
+* Basic documentation (single page on RTD)
 
 # 1.0.0 release
 * Move method classes into a separate file
@@ -19,7 +23,6 @@
 * Document possible values for `PLATFORM` variable
   Use `__import__()` or `importlib`?
 * Document Method (and subclass) attributes (use Sphinx "#:" comments)
-* Proper documentation (ReadTheDocs and Sphinx fanciness)
 * Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
 * cleanup most or all of the TODOs
 * >90% test coverage
@@ -30,6 +33,8 @@
 * implement proper default interface detection on Windows
 * update the samples used in tests
 * Reduce duplication, for example "if not arg: return None"
+* Better documentation (ReadTheDocs and Sphinx fanciness)
+* Method-specific loggers? dynamically set logger name based on subclass name so we don't have to manually set it in the string
 
 ## Py3-related
 * Drop support for python 2.7, 3.4, and 3.5
@@ -38,8 +43,9 @@
 * Use Enums for platforms and method types instead of strings?
 * cache package imports done during test for use during `get()`, reuse
 * rewrite strings to f-strings
-* move from setup.py to setup.cfg and/or pyproject.toml
+* Move to using setup.cfg/pyproject.toml instead of setup.py: https://packaging.python.org/tutorials/packaging-projects/
 * update classifiers in setup.py
+* add inline type annotations for method arguments. remove types from docstrings?
 
 ## Documentation
 * [ ]
