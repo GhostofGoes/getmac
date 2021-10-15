@@ -32,6 +32,7 @@ import socket
 import struct
 import sys
 import traceback
+import warnings
 from subprocess import CalledProcessError, check_output
 
 try:  # Python 3
@@ -54,8 +55,15 @@ log = logging.getLogger("getmac")  # type: logging.Logger
 if not log.handlers:
     log.addHandler(logging.NullHandler())
 
-__version__ = "0.8.2"
+__version__ = "0.9.0.a0"
+
 PY2 = sys.version_info[0] == 2  # type: bool
+if PY2 or (sys.version_info[0] == 3 and sys.version_info[1] < 6):
+    warnings.warn(
+        "Support for Python versions before 3.6 is deprecated "
+        "and will be removed in getmac 1.0.0",
+        DeprecationWarning
+    )
 
 # Configurable settings
 DEBUG = 0  # type: int
@@ -273,10 +281,6 @@ def _fetch_ip_using_dns():
 
 # TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
 
-# TODO(refactor): release 0.9.0 as a beta release first before doing an actual release
-
-# TODO(rewrite): add pending deprecation warnings for python 3.4 and 3.5
-
 # Regex resources:
 #   https://pythex.org/
 #   https://regex101.com/
@@ -290,7 +294,7 @@ class Method:
     method_type = ""  # type: str
     # If the method makes a network request as part of the check
     net_request = False  # type: bool
-    # (TODO) If current system supports. Dynamically set at runtime?
+    # (TODO) If current system supports this method. Dynamically set at runtime?
     #   This would let each method do more fine-grained version checking
     supported = False  # type: bool
     # Marks the method as unable to be used, e.g. if there was a runtime
@@ -592,9 +596,12 @@ class WmicExe(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         command_output = _popen(
             "wmic.exe",
-            "nic where \"NetConnectionID = '%s'\" get " "MACAddress /value" % arg,
+            "nic where \"NetConnectionID = '%s'\" get \"MACAddress\" /value" % arg
         )
-        # TODO: check if returned anything before exception on index failure
+        # Negative: "No Instance(s) Available"
+        # Positive: "MACAddress=00:FF:E7:78:95:A0"
+        # Note: .partition() always returns 3 parts,
+        # therefore it won't cause an IndexError
         return command_output.strip().partition("=")[2]
 
 
@@ -753,8 +760,12 @@ class IfconfigOther(Method):
                     if isinstance(self._good_pair[1], str):
                         self._good_pair[1] += MAC_RE_COLON
                     break
-                except CalledProcessError:
-                    pass  # TODO: log when debugging
+                except CalledProcessError as ex:
+                    if DEBUG:
+                        log.debug(
+                            "IfconfigOther pair test failed for (%s, %s): %s",
+                            pair_to_test[0], pair_to_test[1], str(ex)
+                        )
             if not self._good_pair:
                 self.unusable = True
                 return None
@@ -896,8 +907,12 @@ class ArpVariousArgs(Method):
                     command_output = _popen("arp", *cmd_args)
                     self._good_pair = pair_to_test
                     break
-                except CalledProcessError:
-                    pass  # TODO: log when debugging
+                except CalledProcessError as ex:
+                    if DEBUG:
+                        log.debug(
+                            "ArpVariousArgs pair test failed for (%s, %s): %s",
+                            pair_to_test[0], pair_to_test[1], str(ex)
+                        )
             if not self._good_pair:
                 self.unusable = True
                 return None
@@ -959,8 +974,10 @@ class DefaultIfaceRouteCommand(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("route", "-n")
-        # TODO: handle index errors
-        return output.partition("0.0.0.0")[2].partition("\n")[0].split()[-1]
+        try:
+            return output.partition("0.0.0.0")[2].partition("\n")[0].split()[-1]
+        except IndexError as ex:  # index errors means no default route in output?
+            log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
 
 
 # TODO: WSL ip route list sample (compare to ubuntu)
@@ -974,8 +991,10 @@ class DefaultIfaceIpRoute(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("ip", "route list 0/0")
-        # TODO: handle index errors
-        return output.partition("dev")[2].partition("proto")[0].strip()
+        try:
+            return output.partition("dev")[2].partition("proto")[0].strip()
+        except IndexError as ex:
+            log.debug("DefaultIfaceIpRoute failed for %s: %s", arg, str(ex))
 
 
 class DefaultIfaceOpenBsd(Method):
@@ -987,8 +1006,10 @@ class DefaultIfaceOpenBsd(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("route", "-nq show -inet -gateway -priority 1")
-        # TODO: handle index errors
-        return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
+        try:
+            return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
+        except IndexError as ex:
+            log.debug("DefaultIfaceOpenBsd failed for %s: %s", arg, str(ex))
 
 
 class DefaultIfaceFreeBsd(Method):
