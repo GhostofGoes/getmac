@@ -5,8 +5,22 @@
   - [ ] Remove TravisCI
   - [ ] Remove Appveyor
   - [ ] Ensure OSX/Darwin is getting tested too
-- [ ] Basic documentation (single page on RTD/publish with GitHub actions)
+- [ ] Basic documentation 
+  - [ ] Single page on RTD/publish with GitHub actions
+  - [ ] Document `get_by_method()`
+  - [ ] Document `initialize_method_cache()`
+  - [ ] Update docs/usage examples for `get_mac_address()`
 - [ ] Raise Warnings on critical failures during cache initialization, such as a lack of valid methods or all tests failing can raise exceptions. also make sure to document in `get_mac_address` and make obvious in release notes. Turn these into Exceptions in 1.0.0.
+- [ ] Add ability to force a specific method to be used by `get_mac_address()` by setting an argument. Reference a method by either:
+  - Passing a string with the name of a method class (e.g. `"ArpFile"`), this will be dynamically looked up from the list of available methods. This will NOT check if the method works by default!
+  - Passing a subclass of `getmac.Method`
+  - Passing an instance of a subclass of `getmac.Method`
+  - Add an argument to disable call to `Method.test()` on first use
+  - Add a CLI argument to reference class by name
+- [ ] Add ability to set the platform used (and document this) via
+  - argument to `get_mac_address()`
+  - module-level global variable
+  - CLI argument
 
 
 # 1.0.0 release
