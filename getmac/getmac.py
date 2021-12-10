@@ -65,7 +65,7 @@ PORT = 55555  # type: int
 
 # Monkeypatch shutil.which for python 2.7 (TODO(python3): remove this hack)
 if PY2:
-    from shutilwhich import which
+    from .shutilwhich import which
 else:
     from shutil import which
 
