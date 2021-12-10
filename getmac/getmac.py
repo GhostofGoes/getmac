@@ -55,7 +55,7 @@ log = logging.getLogger("getmac")  # type: logging.Logger
 if not log.handlers:
     log.addHandler(logging.NullHandler())
 
-__version__ = "0.9.0.a0"
+__version__ = "0.9.0a0"
 
 PY2 = sys.version_info[0] == 2  # type: bool
 
@@ -590,7 +590,7 @@ class WmicExe(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         command_output = _popen(
             "wmic.exe",
-            "nic where \"NetConnectionID = '%s'\" get \"MACAddress\" /value" % arg
+            'nic where "NetConnectionID = \'%s\'" get "MACAddress" /value' % arg,
         )
         # Negative: "No Instance(s) Available"
         # Positive: "MACAddress=00:FF:E7:78:95:A0"
@@ -758,7 +758,9 @@ class IfconfigOther(Method):
                     if DEBUG:
                         log.debug(
                             "IfconfigOther pair test failed for (%s, %s): %s",
-                            pair_to_test[0], pair_to_test[1], str(ex)
+                            pair_to_test[0],
+                            pair_to_test[1],
+                            str(ex),
                         )
             if not self._good_pair:
                 self.unusable = True
@@ -909,7 +911,9 @@ class ArpVariousArgs(Method):
                     if DEBUG:
                         log.debug(
                             "ArpVariousArgs pair test failed for (%s, %s): %s",
-                            pair_to_test[0], pair_to_test[1], str(ex)
+                            pair_to_test[0],
+                            pair_to_test[1],
+                            str(ex),
                         )
             if not self._good_pair:
                 self.unusable = True
@@ -1282,7 +1286,7 @@ def get_mac_address(
                 "Support for Python versions < 3.6 is deprecated and will be "
                 "removed in getmac 1.0.0. If you are stuck on an unsupported "
                 "Python, considor loosely pinning the version of this package "
-                "in your dependency list, e.g. \"getmac<1\"."
+                'in your dependency list, e.g. "getmac<1".'
             )
             warnings.warn(warning_string, DeprecationWarning)
             log.warning(warning_string)  # Ensure it appears in any logs
