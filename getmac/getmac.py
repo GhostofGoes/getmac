@@ -395,7 +395,7 @@ def _arping_habets(host):
     """Parse https://github.com/ThomasHabets/arping output."""
     return _search(
         r"^%s$" % MAC_RE_COLON,
-        _popen("arping", "-r -C 1 -c 1 %s" % host),
+        _popen("arping", "-r -C 1 -c 1 %s" % host).strip(),
     )
 
 
@@ -404,7 +404,7 @@ def _arping_iputils(host):
     """Parse iputils arping output."""
     return _search(
         r" from %s \[(%s)\]" % (re.escape(host), MAC_RE_COLON),
-        _popen("arping", "-f -c 1 %s" % host),
+        _popen("arping", "-f -c 1 %s" % host).strip(),
     )
 
 

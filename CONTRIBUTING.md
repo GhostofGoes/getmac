@@ -16,6 +16,7 @@ to bring new members into the community, and can always use the help.
 (cursing/swearing), NSFW text/content, or racism are NOT ok.
 
 ## Checklist before submitting a pull request
+* [ ] Code is formatted with Black: `black getmac tests`
 * [ ] All tests run and pass locally
     * [ ] `tox`
     * [ ] `tox -e check`
