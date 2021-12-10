@@ -2,6 +2,7 @@
 # Etc
 * [ ] Refactor the default interface code. Combine the functions into 
 one, move the default fallback logic into the function.
+* [ ] Figure out how to deal with anti-social garbage "educational" ransomware [like this](https://github.com/jorgetstechnology/DeathRansom). Maybe use `inspect` to fingerprint the caller and die if it's used by a ransomware, it wouldn't be difficult to maintain a hardcoded list of blacklisted projects. If the inspection happens when the module is imported, the performance impact will be neglegible, even for one-off CLI scripts. These projects are toxic to humanity, have led to the deaths of many people, and severely impacted the lives of tens of millions. There is absolutely no good reason to provide easy-to-build ransomware. If you're a security researcher or student, there are amble sources of examples to study in the wild (including ones in Python, I wonder why).
 
 # Bugs or potential issues
 * [ ] Fix lookup of a IPv4 address of a local interface on Linux
