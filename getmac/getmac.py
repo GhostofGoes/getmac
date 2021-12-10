@@ -169,7 +169,7 @@ def _clean_mac(mac):
         log.debug("Adding colons to MAC %s", mac)
         mac = ":".join(mac[i : i + 2] for i in range(0, len(mac), 2))
 
-    # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
+    # Pad single-character octets with a leading zero (e.g. Darwin's ARP output)
     elif len(mac) < 17:
         log.debug(
             "Length of MAC %s is %d, padding single-character octets with zeros",
@@ -526,7 +526,7 @@ class UuidArpGetNode(Method):
 
         backup = socket.gethostbyname
         try:
-            socket.gethostbyname = lambda x: arg
+            socket.gethostbyname = lambda x: arg  # noqa: F841
             mac1 = _arp_getnode()
             if mac1 is not None:
                 mac1 = _uuid_convert(mac1)
