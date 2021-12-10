@@ -61,6 +61,7 @@
 - [ ] Move to using setup.cfg/pyproject.toml instead of setup.py: https://packaging.python.org/tutorials/packaging-projects/
 - [ ] update classifiers in setup.py
 - [ ] add inline type annotations for method arguments. remove types from docstrings?
+- [ ] Remove `shutilwhich.py` and `.coveragerc`
 
 ## Documentation
 - [ ] TBD...really do need proper documentation to be done before 1.0.0

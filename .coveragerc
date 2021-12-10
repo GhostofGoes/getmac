@@ -1,0 +1,4 @@
+# Temporary hack until we remove shutilwhich with removal of Python 2
+[run]
+omit =
+    getmac/shutilwhich.py

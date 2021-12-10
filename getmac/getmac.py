@@ -172,7 +172,7 @@ def _clean_mac(mac):
     # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
     elif len(mac) < 17:
         log.debug(
-            "Length of MAC %s is %d, padding single-character " "octets with zeros",
+            "Length of MAC %s is %d, padding single-character octets with zeros",
             mac,
             len(mac),
         )
@@ -297,7 +297,7 @@ class Method:
 
     def test(self):  # type: () -> bool
         """Low-impact test that the method is feasible, e.g. command exists."""
-        pass
+        pass  # pragma: no cover
 
     # TODO: automatically clean MAC on return
     def get(self, arg):  # type: (str) -> Optional[str]
@@ -317,7 +317,7 @@ class Method:
             Lowercase colon-separated MAC address, or None if one could
             not be found.
         """
-        pass
+        pass  # pragma: no cover
 
     @classmethod
     def __str__(cls):  # type: () -> str
