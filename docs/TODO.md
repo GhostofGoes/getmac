@@ -15,11 +15,9 @@
   - Passing a string with the name of a method class (e.g. `"ArpFile"`), this will be dynamically looked up from the list of available methods. This will NOT check if the method works by default!
   - Passing a subclass of `getmac.Method`
   - Passing an instance of a subclass of `getmac.Method`
-  - Add an argument to disable call to `Method.test()` on first use
   - Add a CLI argument to reference class by name
 - [ ] Add ability to set the platform used (and document this) via
   - argument to `get_mac_address()`
-  - module-level global variable
   - CLI argument
 
 

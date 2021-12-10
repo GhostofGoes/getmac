@@ -780,6 +780,10 @@ class IfconfigOther(Method):
             return _search(re.escape(arg) + self._good_pair[1], command_output)
 
 
+# (r"state UP.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+# (r"wlan.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+# (r"ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+
 # TODO: sample of "ip link" on WSL
 # TODO: sample of "ip link" on Android (use Vagrant)
 # TODO: sample of "ip link eth0" on Ubuntu (use Vagrant)
@@ -1263,6 +1267,14 @@ def get_mac_address(
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error.
     """
+    # TODO: method string
+    # TODO: CLI argument for method string
+    # TODO: method class
+    # TODO: method instance
+
+    # TODO: force platform name (e.g. linux). define a set of platform strings.
+    # TODO: CLI argument to force platform name
+
     if PY2 or (sys.version_info[0] == 3 and sys.version_info[1] < 6):
         global WARNED_UNSUPPORTED_PYTHONS
         if not WARNED_UNSUPPORTED_PYTHONS:
