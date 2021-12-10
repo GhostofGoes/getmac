@@ -1,5 +1,4 @@
 # 0.9.0 release
-- [ ] Support python 3.9 and 3.10 (add tests+setup.py classifier)
 - [ ] Tag Beta pre-release on PyPI
 - [ ] GitHub Actions for CI
   - [ ] Remove TravisCI
@@ -22,6 +21,9 @@
 
 
 # 1.0.0 release
+- [ ] Support Python 3.10
+    - [ ] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
+    - [ ] add tests + setup.py classifier
 - [ ] Move method classes into a separate file
 - [ ] Split utils into a separate file
 - [ ] move more logic out of `get_mac_address()` into individual methods:

@@ -43,8 +43,7 @@ setup(
     entry_points={"console_scripts": ["getmac2 = getmac.__main__:main"]}
     if sys.version_info[:2] <= (2, 7)
     else {"console_scripts": ["getmac = getmac.__main__:main"]},
-    # Monkeypatch shutil.which for python 2.7 (TODO(python3): remove this hack)
-    install_requires=['shutilwhich;python_version<="2.7"'],
+    install_requires=[],
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     keywords=[
         "getmac",
@@ -76,8 +75,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        # TODO: test 3.9
-        # TODO: test 3.10
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: Implementation :: CPython",

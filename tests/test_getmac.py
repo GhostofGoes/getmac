@@ -67,7 +67,7 @@ def test_fcntl_iface(mocker):
 # The commit adding it: https://bit.ly/2Hnd7bN (no idea what release it was in)
 @pytest.mark.skipif(
     not hasattr(uuid, "_arp_getnode"),
-    reason="This version of Python doesn't have _arp_getnode",
+    reason="This version of Python doesn't have uuid._arp_getnode",
 )
 def test_uuid_ip(mocker):
     mocker.patch("uuid._arp_getnode", return_value=278094213753144)
@@ -77,6 +77,10 @@ def test_uuid_ip(mocker):
     assert getmac.UuidArpGetNode().get("en0") is None
 
 
+@pytest.mark.skipif(
+    sys.version_info[0] == 3 and sys.version_info[1] >= 9,
+    reason="Python 3.9+ doesn't have uuid._find_mac",
+)
 def test_uuid_lanscan_iface(mocker):
     mocker.patch("uuid._find_mac", return_value=2482700837424)
     assert getmac.UuidLanscan().get("en1") == "02:42:0C:80:62:30"
