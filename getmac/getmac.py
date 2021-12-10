@@ -505,13 +505,18 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
             (r"ether " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
             # Fast ifconfig
             (r"HWaddr " + MAC_RE_COLON, 0, "ifconfig", [to_find]),
+            # Android 6.0.1
+            (r"state UP.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+            (r"wlan.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+            (r"ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
             # ip link (Don't use 'list' due to SELinux [Android 24+])
-            (
-                to_find + r".*\n.*link/ether " + MAC_RE_COLON,
-                0,
-                "ip",
-                ["link %s" % to_find, "link"],
-            ),
+            #(
+            #    to_find + r".*\n.*link/ether " + MAC_RE_COLON,
+            #    0,
+            #    "ip",
+            #    ["link %s" % to_find, "link"],
+            #),
+            
             # netstat
             (to_find + r".*HWaddr " + MAC_RE_COLON, 0, "netstat", ["-iae"]),
             # More variations of ifconfig
