@@ -1,16 +1,28 @@
 # Changelog
 
-**NOTE**: if any changes significantly impact your project or use case,
- please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues)
- or send me an email (see git commit author info for address).
+**NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
+
 
 ## NEXT (XX/XX/XXXX)
 * TBD
 
+
+## 0.8.3 (12/10/2021)
+
+**Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.
+
 ### Changed
-* Added support for Thomas Habets' version of `arping` in addition to the existing iputils one
-* Added support for docker in network bridge mode
-* Fixed code quality test suite errors
+* Added support for Thomas Habets' version of `arping` in addition to the existing iputils one (contributed by Ville Skyttä (@scop) in [#52](https://github.com/GhostofGoes/getmac/pull/52) and [#54](https://github.com/GhostofGoes/getmac/pull/54))
+* Added support for docker in network bridge mode (contributed by Tomasz Duda (@tomaszduda23) in [#57](https://github.com/GhostofGoes/getmac/pull/57))
+* Add CHANGELOG URL to PyPI metadata (contributed by Ville Skyttä (@scop) in [#58](https://github.com/GhostofGoes/getmac/pull/58))
+* Fixed code quality test suite errors (includes changes by Daniel Flanagan (@FlantasticDan) in [#67](https://github.com/GhostofGoes/getmac/pull/67))
+* Improved Android support (contributed by @emadmahdi in [#71](https://github.com/GhostofGoes/getmac/pull/71))
+* Minor code quality fixes (2 years of neglecting master branch)
+* Add [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/master/CODE_OF_CONDUCT.md) for project contributors
+* Add [SECURITY.md](https://github.com/GhostofGoes/getmac/blob/master/SECURITY.md) for reporting security issues (e.g. vulnerabilities)
+* Deprecate Python 3.4 and 3.5
+* Issue deprecation message as a warning in addition to a log message
+
 
 ## 0.8.2 (12/07/2019)
 

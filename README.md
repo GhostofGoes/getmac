@@ -275,13 +275,15 @@ to ask questions or discuss the project (Handle: @KnownError).
 ### Contributors
 * Christopher Goes (@ghostofgoes) - Author and maintainer
 * Calvin Tran (@cyberhobbes) - Windows interface detection improvements
+* Daniel Flanagan (@FlantasticDan) - Code cleanup
+* @emadmahdi - Android fixes
 * Izra Faturrahman (@Frizz925) - Unit tests using the platform samples
 * Jose Gonzalez (@Komish) - Docker container and Docker testing
 * @fortunate-man - Awesome usage videos
 * @martmists - legacy Python compatibility improvements
 * @hargoniX - scripts and specfiles for RPM packaging
 * Ville Skyttä (@scop) - arping lookup support
-* Tomasz Duda - support for docker in network bridge mode
+* Tomasz Duda (@tomaszduda23) - support for docker in network bridge mode
 
 ## Sources
 Many of the methods used to acquire an address and the core logic framework
