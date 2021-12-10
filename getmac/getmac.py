@@ -649,7 +649,7 @@ def _get_default_iface_openbsd():
 
 def _get_default_iface_freebsd():
     # type: () -> Optional[str]
-    methods = [(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)\n", 0, "netstat", ["-r"])]
+    methods = [(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", 0, "netstat", ["-r"])]
     return _try_methods(methods)
 
 
