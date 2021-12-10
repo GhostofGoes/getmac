@@ -13,4 +13,4 @@ global-exclude *.py[cod] __pycache__ *.so *.class
 exclude *-getmac.spec *.yml
 exclude tox.ini Dockerfile Vagrantfile .editorconfig
 exclude conf.py index.md make.bat Makefile packaging.md
-exclude releasing.md style-requirements.txt requirements.txt TODO.md
+exclude releasing.md style-requirements.txt requirements.txt TODO.md CODE_OF_CONDUCT.md SECURITY.md
