@@ -1,0 +1,8 @@
+eth8: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.176.1  netmask 255.255.240.0  broadcast 192.168.191.255
+        inet6 fe80::4cb7:47ff:dbce:6e31  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:15:5d:83:d9:0a  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0

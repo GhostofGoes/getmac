@@ -691,13 +691,15 @@ class IfconfigEther(Method):
             return _search(self._blank_regex, _popen("ifconfig", ""))
 
 
-# TODO: sample of ifconfig on WSL (it uses "ether")
 class IfconfigLinux(Method):
     platforms = {"linux", "wsl"}
     method_type = "iface"
-    # "ether " : modern Ubuntu
-    # "HWaddr" : others
-    _regexes = [r"ether " + MAC_RE_COLON, r"HWaddr " + MAC_RE_COLON]  # type: List[str]
+    _regexes = (
+        # "ether " : modern Ubuntu and WSL
+        r"ether " + MAC_RE_COLON,
+        # "HWaddr" : others
+        r"HWaddr " + MAC_RE_COLON,
+    )  # type: Tuple[str, str]
     _working_regex = ""  # type: str
 
     def test(self):  # type: () -> bool

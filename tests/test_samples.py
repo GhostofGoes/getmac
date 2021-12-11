@@ -5,7 +5,7 @@ from subprocess import CalledProcessError
 from getmac import getmac
 
 
-def test_linux_ifconfig(benchmark, mocker, get_sample):
+def test_ifconfig_linux(benchmark, mocker, get_sample):
     content = get_sample("ifconfig.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "74:d4:35:e9:45:71" == benchmark(getmac.IfconfigLinux().get, arg="eth0")
@@ -88,7 +88,7 @@ def test_ubuntu_1804_remote(benchmark, mocker, get_sample):
     assert "00:50:56:f1:4c:50" == getmac.ArpVariousArgs().get("192.168.16.2")
 
 
-def test_arp_file_ubuntu_1804(mocker, get_sample):
+def test_ubuntu_1804_arp_file(mocker, get_sample):
     content = get_sample("ubuntu_18.04/cat_proc-net-arp.out")
     mocker.patch("getmac.getmac._read_file", return_value=content)
     assert "00:50:56:f1:4c:50" == getmac.ArpFile().get("192.168.16.2")
@@ -167,7 +167,7 @@ def test_openbsd_interface(benchmark, mocker, get_sample):
     assert "08:00:27:18:64:56" == benchmark(getmac.IfconfigOpenbsd().get, arg="em0")
 
 
-def test_get_default_iface_openbsd(benchmark, mocker, get_sample):
+def test_openbsd_get_default_iface(benchmark, mocker, get_sample):
     content = get_sample("openbsd_6/route_nq_show_inet_gateway_priority_1.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "em0" == benchmark(getmac.DefaultIfaceOpenBsd().get)
@@ -191,7 +191,7 @@ def test_freebsd_interface(benchmark, mocker, get_sample):
     assert "08:00:27:33:37:26" == benchmark(ether.get, arg="em0")
 
 
-def test_get_default_iface_freebsd(benchmark, mocker, get_sample):
+def test_freebsd_get_default_iface(benchmark, mocker, get_sample):
     content = get_sample("freebsd11/netstat_r.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "em0" == benchmark(getmac.DefaultIfaceFreeBsd().get)
@@ -201,3 +201,9 @@ def test_freebsd_remote(benchmark, mocker, get_sample):
     content = get_sample("freebsd11/arp_10-0-2-2.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "52:54:00:12:35:02" == benchmark(getmac.ArpFreebsd().get, arg="10.0.2.2")
+
+
+def test_wsl_ifconfig(benchmark, mocker, get_sample):
+    content = get_sample("WSL_ubuntu_18.04/ifconfig_eth8.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert "00:15:5d:83:d9:0a" == benchmark(getmac.IfconfigLinux().get, arg="eth8")

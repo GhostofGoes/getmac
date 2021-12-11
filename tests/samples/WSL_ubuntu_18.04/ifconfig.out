@@ -1,0 +1,125 @@
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.1.1.111  netmask 255.255.255.0  broadcast 10.0.0.255
+        inet6 fe80::d1a5:787d:4c36:db2f  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether b4:2e:99:36:1e:64  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.17.1  netmask 255.255.255.0  broadcast 192.168.17.255
+        inet6 fe80::5c07:67a6:7f15:9bab  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:50:56:c0:00:01  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth2: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.235.1  netmask 255.255.255.0  broadcast 192.168.235.255
+        inet6 fe80::a12b:835:ea84:a256  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:50:56:c0:00:08  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth4: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.29.80.1  netmask 255.255.240.0  broadcast 172.29.95.255
+        inet6 fe80::d1e5:9273:4ac4:70f5  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:15:5d:4f:eb:ba  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth5: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.28.64.1  netmask 255.255.240.0  broadcast 172.28.79.255
+        inet6 fe80::9c39:305:316b:dbb6  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:15:5d:6e:6f:b3  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth6: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.31.112.1  netmask 255.255.240.0  broadcast 172.31.127.255
+        inet6 fe80::f489:53fc:2d7f:63ef  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:15:5d:eb:24:56  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth7: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.18.192.1  netmask 255.255.240.0  broadcast 172.18.207.255
+        inet6 fe80::185a:82d8:747:a641  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:15:5d:b3:e0:57  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth8: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.176.1  netmask 255.255.240.0  broadcast 192.168.191.255
+        inet6 fe80::4cb7:47ff:dbce:6e31  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:15:5d:83:d9:0a  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth9: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.21.96.1  netmask 255.255.240.0  broadcast 172.21.111.255
+        inet6 fe80::cd0f:cd2f:c367:13d4  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:15:5d:6f:a9:e2  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth10: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.19.192.1  netmask 255.255.240.0  broadcast 172.19.207.255
+        inet6 fe80::1442:4968:adcd:596e  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:15:5d:0a:ad:ac  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth11: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.24.176.1  netmask 255.255.240.0  broadcast 172.24.191.255
+        inet6 fe80::5d25:1914:b104:7bf4  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 00:15:5d:e7:41:c3  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth12: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.38.1  netmask 255.255.255.0  broadcast 192.168.38.255
+        inet6 fe80::f133:a3dc:2230:165d  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 0a:00:27:00:00:1e  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eth13: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.56.1  netmask 255.255.255.0  broadcast 192.168.56.255
+        inet6 fe80::857f:1b2d:b973:b0f9  prefixlen 64  scopeid 0xfd<compat,link,site,host>
+        ether 0a:00:27:00:00:1d  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 1500
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0xfe<compat,link,site,host>
+        loop  (Local Loopback)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
