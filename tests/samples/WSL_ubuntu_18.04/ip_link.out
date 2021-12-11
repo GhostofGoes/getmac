@@ -1,0 +1,34 @@
+4: eth0: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether b4:2e:99:36:1e:33
+18: eth1: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:50:56:c0:00:01
+37: eth2: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:50:56:c0:00:08
+16: eth3: <> mtu 1500 group default qlen 1
+    link/ether b4:2e:99:35:1e:86
+13: eth4: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:15:5d:4f:eb:ba
+31: eth5: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:15:5d:6e:6f:b3
+74: eth6: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:15:5d:eb:24:56
+80: eth7: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:15:5d:b3:e0:57
+86: eth8: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:15:5d:83:d9:0a
+92: eth9: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:15:5d:6f:a9:e2
+98: eth10: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:15:5d:0a:ad:ac
+106: eth11: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 00:15:5d:e7:41:c3
+30: eth12: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 0a:00:27:00:00:1e
+29: eth13: <BROADCAST,MULTICAST,UP> mtu 1500 group default qlen 1
+    link/ether 0a:00:27:00:00:1d
+2: eth14: <> mtu 1500 group default qlen 1
+    link/ether d4:3b:04:1a:0f:26
+1: lo: <LOOPBACK,UP> mtu 1500 group default qlen 1
+    link/loopback 00:00:00:00:00:00
+14: eth15: <> mtu 1500 group default qlen 1
+    link/ether 00:ff:36:20:68:56

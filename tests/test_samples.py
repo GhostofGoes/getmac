@@ -2,6 +2,8 @@
 
 from subprocess import CalledProcessError
 
+import pytest
+
 from getmac import getmac
 
 
@@ -207,3 +209,20 @@ def test_wsl_ifconfig(benchmark, mocker, get_sample):
     content = get_sample("WSL_ubuntu_18.04/ifconfig_eth8.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "00:15:5d:83:d9:0a" == benchmark(getmac.IfconfigLinux().get, arg="eth8")
+
+
+@pytest.mark.parametrize(("expected_mac", "iface_arg"), [
+    ("b4:2e:99:36:1e:33", "eth0"),
+    ("b4:2e:99:35:1e:86", "eth3"),
+    ("00:15:5d:83:d9:0a", "eth8"),
+    (None, "lo"),
+    ("00:ff:36:20:68:56", "eth15"),
+    (None, "eth16"),
+    (None, "eth"),
+])
+def test_wsl_ip_link_iface(benchmark, mocker, get_sample, expected_mac, iface_arg):
+    mocker.patch("getmac.getmac.IpLinkIface._tested_arg", True)
+    mocker.patch("getmac.getmac.IpLinkIface._iface_arg", False)
+    content = get_sample("WSL_ubuntu_18.04/ip_link.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert expected_mac == benchmark(getmac.IpLinkIface().get, arg=iface_arg)

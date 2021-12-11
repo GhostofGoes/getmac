@@ -825,7 +825,7 @@ class IpLinkIface(Method):
                 command_output = _popen("ip", "link " + arg)
             return _search(arg + self._regex, command_output)
         else:
-            return _search(arg + self._regex, _popen("ip", "link"))
+            return _search(arg + r":" + self._regex, _popen("ip", "link"))
 
 
 class NetstatIface(Method):
