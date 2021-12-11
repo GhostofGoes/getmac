@@ -46,7 +46,7 @@ try:
     from typing import TYPE_CHECKING
 
     if TYPE_CHECKING:
-        from typing import Dict, List, Optional, Set, Tuple, Union
+        from typing import Dict, List, Optional, Set, Tuple, Type, Union
 except ImportError:
     pass
 
@@ -362,7 +362,7 @@ class UuidLanscan(Method):
 
     def test(self):  # type: () -> bool
         try:
-            from uuid import _find_mac
+            from uuid import _find_mac  # noqa: T484
 
             return check_command("lanscan")
         except Exception:
@@ -386,7 +386,7 @@ class CtypesHost(Method):
 
     def test(self):  # type: () -> bool
         try:
-            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0
+            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # noqa: T484
         except Exception:
             return False
 
@@ -478,7 +478,8 @@ class ArpingHost(Method):
         except CalledProcessError:
             # TODO: verify return code isn't 2 for iputils? need to experiment
             #   with this some more to have a more reliable check.
-            return None
+            pass
+        return None
 
 
 class FcntlIface(Method):
@@ -550,7 +551,7 @@ class GetmacExe(Method):
         # Network Adapter (the human-readable name)
         (r"\r\n.*", r".*" + MAC_RE_DASH + r".*\r\n"),
     ]  # type: List[Tuple[str, str]]
-    _champ = ()  # type: Tuple[str, str]
+    _champ = ()  # type: Union[tuple, Tuple[str, str]]
 
     def test(self):  # type: () -> bool
         return check_command("getmac.exe")
@@ -564,6 +565,7 @@ class GetmacExe(Method):
             if result:
                 self._champ = pair
                 return result
+        return None
 
 
 class IpconfigExe(Method):
@@ -720,6 +722,7 @@ class IfconfigLinux(Method):
             if result:
                 self._working_regex = regex
                 return result
+        return None
 
 
 class IfconfigOther(Method):
@@ -730,10 +733,10 @@ class IfconfigOther(Method):
     # "-av": Tru64 system?
     _args = (
         ("", (r".*?ether ", r".*?HWaddr ")),
-        ("-a", (r".*?HWaddr ",)),
-        ("-v", (r".*?HWaddr ",)),
-        ("-av", (r".*?Ether ",)),
-    )  # type: Tuple[Tuple[str, Union[str, tuple]]]
+        ("-a", r".*?HWaddr "),
+        ("-v", r".*?HWaddr "),
+        ("-av", r".*?Ether "),
+    )
     _args_tested = False  # type: bool
     _good_pair = []  # type: List[Union[str, Tuple[str, str]]]
 
@@ -750,7 +753,7 @@ class IfconfigOther(Method):
             for pair_to_test in self._args:
                 try:
                     command_output = _popen("ifconfig", pair_to_test[0])
-                    self._good_pair = list(pair_to_test)
+                    self._good_pair = list(pair_to_test)  # noqa: T484
                     if isinstance(self._good_pair[1], str):
                         self._good_pair[1] += MAC_RE_COLON
                     break
@@ -766,7 +769,7 @@ class IfconfigOther(Method):
                 self.unusable = True
                 return None
             self._args_tested = True
-        if not command_output:
+        if not command_output and isinstance(self._good_pair[0], str):
             command_output = _popen("ifconfig", self._good_pair[0])
         # Handle the two possible search terms
         if isinstance(self._good_pair[1], tuple):
@@ -778,13 +781,16 @@ class IfconfigOther(Method):
                     # will be hit on the next call to this method
                     self._good_pair[1] = regex
                     return result
+            return None
         else:
             return _search(re.escape(arg) + self._good_pair[1], command_output)
 
 
+# TODO: add these for Android 6.0.1
 # (r"state UP.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
 # (r"wlan.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
 # (r"ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+
 
 # TODO: sample of "ip link" on WSL
 # TODO: sample of "ip link" on Android (use Vagrant)
@@ -850,6 +856,7 @@ class NetstatIface(Method):
             if result:
                 self._working_regex = regex
                 return result
+        return None
 
 
 class IpNeighShow(Method):
@@ -866,6 +873,7 @@ class IpNeighShow(Method):
             return (
                 output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
             )
+        return None
 
 
 class ArpVariousArgs(Method):
@@ -883,7 +891,7 @@ class ArpVariousArgs(Method):
         ("-a", True),  # arp -a 192.168.1.1
     )
     _args_tested = False  # type: bool
-    _good_pair = ()  # type: Tuple[str, bool]
+    _good_pair = ()  # type: Union[Tuple, Tuple[str, bool]]
     _good_regex = ""  # type: str
 
     def test(self):  # type: () -> bool
@@ -939,6 +947,7 @@ class ArpVariousArgs(Method):
             if found:
                 self._good_regex = regex
                 return found
+        return None
 
 
 class DefaultIfaceLinuxRouteFile(Method):
@@ -963,6 +972,7 @@ class DefaultIfaceLinuxRouteFile(Method):
                 iface_name, dest = line.split("\t")[:2]
                 if dest == "00000000":
                     return iface_name
+        return None
 
 
 # TODO: WSL ip route sample (compare to ubuntu)
@@ -980,6 +990,7 @@ class DefaultIfaceRouteCommand(Method):
             return output.partition("0.0.0.0")[2].partition("\n")[0].split()[-1]
         except IndexError as ex:  # index errors means no default route in output?
             log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
+            return None
 
 
 # TODO: WSL ip route list sample (compare to ubuntu)
@@ -997,6 +1008,7 @@ class DefaultIfaceIpRoute(Method):
             return output.partition("dev")[2].partition("proto")[0].strip()
         except IndexError as ex:
             log.debug("DefaultIfaceIpRoute failed for %s: %s", arg, str(ex))
+            return None
 
 
 class DefaultIfaceOpenBsd(Method):
@@ -1012,6 +1024,7 @@ class DefaultIfaceOpenBsd(Method):
             return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
         except IndexError as ex:
             log.debug("DefaultIfaceOpenBsd failed for %s: %s", arg, str(ex))
+            return None
 
 
 class DefaultIfaceFreeBsd(Method):
@@ -1099,7 +1112,7 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
     # Filter methods by the platform we're running on
     platform_methods = [
         m for m in METHODS if PLATFORM in m.platforms
-    ]  # type: List[type(Method)]
+    ]  # type: List[Type[Method]]
     if not platform_methods:
         # If there isn't a method for the current platform,
         # then fallback to the generic platform "other".
@@ -1120,7 +1133,7 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
         for pm in platform_methods
         if pm.method_type == method_type
         or (pm.method_type == "ip" and method_type in ["ip4", "ip6"])
-    ]  # type: List[type(Method)]
+    ]  # type: List[Type[Method]]
     if not type_methods:
         log.critical("No valid methods found for MAC type '%s'", method_type)
         return False
@@ -1135,7 +1148,7 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
         try:
             test_result = method_instance.test()  # type: bool
         except Exception:
-            test_result = False  # type: bool
+            test_result = False
         if test_result:
             tested_methods.append(method_instance)
             # First successful test goes in the cache
@@ -1158,7 +1171,7 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
 
     # Populate fallback cache with all the tested methods, minus the currently active method
     if METHOD_CACHE.get(method_type):
-        tested_methods.remove(METHOD_CACHE[method_type])
+        tested_methods.remove(METHOD_CACHE[method_type])  # noqa: T484
     FALLBACK_CACHE[method_type] = tested_methods
 
     if DEBUG:
@@ -1346,7 +1359,7 @@ def get_mac_address(
         else:
             global DEFAULT_IFACE
             if not DEFAULT_IFACE:
-                DEFAULT_IFACE = get_by_method("default_iface")
+                DEFAULT_IFACE = get_by_method("default_iface")  # noqa: T484
                 if DEFAULT_IFACE:
                     DEFAULT_IFACE = str(DEFAULT_IFACE).strip()
                 # TODO: better fallback if default iface lookup fails
