@@ -4,6 +4,7 @@
   - [ ] Remove TravisCI
   - [ ] Remove Appveyor
   - [ ] Ensure OSX/Darwin is getting tested too
+  - `python-colorlog` as example of GitHub Actions pipeline for a python project
 - [ ] Basic documentation 
   - [ ] Single page on RTD/publish with GitHub actions
   - [ ] Document `get_by_method()`
@@ -18,12 +19,16 @@
 - [ ] Add ability to set the platform used (and document this) via
   - argument to `get_mac_address()`
   - CLI argument
+- [ ] Add changelog and other modern PyPI page fields to getmac setup.py
+
 
 
 # 1.0.0 release
 - [ ] Support Python 3.10
     - [ ] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
     - [ ] add tests + setup.py classifier
+- [ ] Consolidate ip6 argument into ip argument, parse based on `::` character vs `.` character in string
+- [ ] Support ipaddress objects, IPv4Address and IPv6Address
 - [ ] Move method classes into a separate file
 - [ ] Split utils into a separate file
 - [ ] move more logic out of `get_mac_address()` into individual methods:
@@ -31,16 +36,11 @@
     - [ ] remote host
     - [ ] return data cleanup and validation
 - [ ] Add docstrings to all util methods
-- [ ] API to add/remove methods at runtime (including new, custom methods)
-- [ ] Write a short guide on how to add and test a new method
-- [ ] Parameterize regexes? (is this any faster?)
 - [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0)
 - [ ] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping"). Document this behavior!
 - [ ] Document possible values for `PLATFORM` variable
-- [ ] Use `__import__()` or `importlib`?
 - [ ] Document Method (and subclass) attributes (use Sphinx "#:" comments)
 - [ ] Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
-- [ ] cleanup most or all of the TODOs
 - [ ] >90% test coverage
   - refactor tests to use the new system and structure
   - directly test methods via a `Method.parse()` function
@@ -48,9 +48,8 @@
       this would make it *much* easier to test methods
 - [ ] implement proper default interface detection on Windows
 - [ ] update the samples used in tests
-- [ ] Reduce duplication, for example "if not arg: return None"
-- [ ] Better documentation (ReadTheDocs and Sphinx fanciness)
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
+- [ ] address all TODOs in the code
 
 ## Py3-related stuff for 1.0.0
 - [ ] Drop support for python 2.7, 3.4, and 3.5
@@ -63,14 +62,10 @@
 - [ ] add inline type annotations for method arguments. remove types from docstrings?
 - [ ] Remove `shutilwhich.py` and `.coveragerc`
 
-## Documentation
-- [ ] TBD...really do need proper documentation to be done before 1.0.0
-
 
 # Etc
 - [ ] Refactor the default interface code. Combine the functions into 
 one, move the default fallback logic into the function.
-* [ ] Figure out how to deal with anti-social garbage "educational" ransomware [like this](https://github.com/jorgetstechnology/DeathRansom). Maybe use `inspect` to fingerprint the caller and die if it's used by a ransomware, it wouldn't be difficult to maintain a hardcoded list of blacklisted projects. If the inspection happens when the module is imported, the performance impact will be neglegible, even for one-off CLI scripts. These projects are toxic to humanity, have led to the deaths of many people, and severely impacted the lives of tens of millions. There is absolutely no good reason to provide easy-to-build ransomware. If you're a security researcher or student, there are amble sources of examples to study in the wild (including ones in Python, I wonder why).
 
 # Bugs or potential issues
 - [ ] Fix lookup of a IPv4 address of a local interface on Linux
@@ -88,6 +83,10 @@ with a slow run since it tries every method before failing.
 ## Windows
 
 ### Remote hosts
+do this next, i guess, to get ipv6 working on windows + WSL
+also, on WSL, do netsh.exe instead of netsh
+https://www.prodjim.com/how-to-arp-a-in-ipv6
+
 - [ ] IPv6: `netsh int ipv6 show neigh`
 - [ ] IPv4: `netsh int ipv4 show neigh`
 
@@ -108,25 +107,43 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] `arping` (command): investigate for remote macs
 - [ ] `fcntl` (library): IPv6?
 - [ ] `ip addr` (command)
+- [ ] `ip -6 neigh` (command)
 
 ## OSX (Darwin)
 - [ ] Determine best remote host detection methods, split off not-applicable commands.
 - [ ] Darwin hostnames? Does it have arp file? (Do less work)
-
+- [ ] Mac: `ndp -a` to get IPv6 network neighbors (NDP table)
 ## Performance
 - [ ] Profiling: CPU usage, memory usage, run time/load time
 
 ## Misc.
 - [ ] Add ability to match user-provided arguments case-insensitively
 - [ ] Add ability to get the mac address of a socket's interface
-- [ ] Add support for Unix and Windows interface indices as a separate argument to `get_mac_address`. On Windows, we could use `wmic`, while on Unix and Python 3 we can use `socket.if_indextoname()`.
 - [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
-- [ ] Threading (spin out attempts, make thread-friendly)
-- [ ] asyncio-friendly?
-
-
-# Code/Other
-- [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 - [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
-- [ ] Move to GitHub Actions for automated testing instead of Appveyor/TravisCI
-    - [ ] Automatically publish to PyPI when publishing a release on GitHub
+
+
+# Post-1.0.0
+- [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
+- [ ] Use `__import__()` or `importlib`?
+- [ ] Parameterize regexes? (is this any faster?)
+- [ ] Write a short guide on how to add and test a new method
+- [ ] Automatically publish to PyPI when publishing a release on GitHub
+- [ ] Add support for Unix and Windows interface indices as a separate argument to `get_mac_address`. On Windows, we could use `wmic`, while on Unix and Python 3 we can use `socket.if_indextoname()`.
+- [ ] API to add/remove methods at runtime (including new, custom methods)
+- [ ] Reduce duplication, for example "if not arg: return None"
+- [ ] Cache method checks (maybe move this to 1.1.0 release?) Save a string with the names of methods. Save to: file (location configurable via environment variable or option). Read from: file, environment variable, file pointed to by environment variable. Add a flag to control this behavior and location of the cache. Document the behavior.
+- [ ] Add a "net_ok" argument, check network_request attribute on method in CACHE, if not then keep checking for method in FALLBACK_CACHE that has network_request.
+- [ ] Add ability to specify what methods to use via function argument and CLI argument
+  - [ ] Function arguments
+- [ ] Add ability to force platform name (e.g. `linux`) via function argument and CLI argument
+```
+methods=None
+type: Optional[List[Union[str, Method, Type[Method]]]]
+methods (list): Optional list of methods to use for MAC address lookup.
+            This will override the default methods that are auto-determined based on
+            platform inspection and testing, and will be used regardless of whether
+            they work or not. These can be names of method classes as strings
+            (``"ArpFile"``), ``Method`` subclasses (``ArpFile``),
+            or instances of ``Method`` subclasses (``ArpFile()``).
+```
