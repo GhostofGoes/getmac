@@ -1312,9 +1312,16 @@ def get_mac_address(
 
     # Resolve hostname to an IP address
     if hostname:
-        ip = socket.gethostbyname(hostname)
+        # Exceptions will be handled silently and returned as a None
+        try:
+            ip = socket.gethostbyname(hostname)
+        except Exception as ex:
+            log.error("Could not resolve hostname '%s': %s", hostname, ex)
+            if DEBUG:
+                log.debug(traceback.format_exc())
+            return None
 
-    # Populate the ARP table by sending a empty UDP packet to a high port
+    # Populate the ARP table by sending an empty UDP packet to a high port
     if network_request and (ip or ip6):
         if ip:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -1333,7 +1340,6 @@ def get_mac_address(
             s.close()
 
     # Setup the address hunt based on the arguments specified
-    # mac = None
     if ip6:
         if not socket.has_ipv6:
             log.error(

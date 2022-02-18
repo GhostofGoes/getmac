@@ -3,8 +3,8 @@
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
 
-## NEXT (XX/XX/XXXX)
-* TBD
+## 0.9.0a0 (TBD)
+* Fixed a failure to look up a hostname now returns `None`, as expected, instead of raising an exception (`socket.gaierror`).
 
 
 ## 0.8.3 (12/10/2021)

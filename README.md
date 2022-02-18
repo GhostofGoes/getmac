@@ -3,8 +3,9 @@
 [![Coverage Status](https://coveralls.io/repos/github/GhostofGoes/getmac/badge.svg?branch=master)](https://coveralls.io/github/GhostofGoes/getmac?branch=master)
 [![Travis CI build status](https://travis-ci.org/GhostofGoes/getmac.svg?branch=master)](https://travis-ci.org/GhostofGoes/getmac)
 [![Appveyor build status](https://ci.appveyor.com/api/projects/status/4o9mx4d35adrbssq/branch/master?svg=true)](https://ci.appveyor.com/project/GhostofGoes/get-mac)
-[![PyPI download](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
-[![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
+[![Weekly PyPI downloads](https://pepy.tech/badge/getmac/week)](https://pepy.tech/project/getmac)
+[![PyPI downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
+[![PyPI downloadss of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
@@ -173,7 +174,7 @@ specified, and can be safely set if using in a script.
 Wi-Fi (802.11), are currently not tested or considered. I plan to
 address this in the future, and am definitely open to pull requests
 or issues related to this, including error reports.
-* Exceptions will be handled silently and returned as a None.
+* **Exceptions will be handled silently and returned as a None.**
     If you run into problems, you can set DEBUG to true and get more
     information about what's happening. If you're still having issues,
     please create an issue on GitHub and include the output with DEBUG enabled.
