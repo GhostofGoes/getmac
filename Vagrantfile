@@ -20,10 +20,22 @@
 # Example: "vagrant up centos" creates a CentOS 7 dev/test machine
 
 # Available VMs:
-#   centos, openbsd, netbsd, freebsd, opensuse, solaris
-#   android, winserver, win10, win7
+#   ubuntu18, centos, openbsd, netbsd, freebsd, opensuse, solaris
+#   winserver, win10, win7
 
 Vagrant.configure(2) do |config|
+  # Ubuntu 18.04 LTS
+  config.vm.define "ubuntu18" do |centos|
+    centos.vm.box = "ubuntu/bionic64"
+    centos.vm.host_name = "getmac-ubuntu18"
+    centos.vm.provider "virtualbox" do |vb|
+      vb.gui = false
+      vb.memory = "1024"
+      vb.name = "getmac-Ubuntu-18.04-LTS"
+    end
+    centos.vm.provision "shell", path: "scripts/ubuntu-provision.sh", privileged: false
+  end
+
   # CentOS 7
   config.vm.define "centos" do |centos|
     centos.vm.box = "centos/7"
@@ -99,17 +111,18 @@ Vagrant.configure(2) do |config|
     solaris.vm.provision "shell", path: "scripts/solaris-provision.sh", privileged: false
   end
 
-  # Android
-  config.vm.define "android" do |android|
-    android.vm.box = "lgromb/androidx86-kk"
-    android.vm.host_name = "getmac-android"
-    android.vm.provider "virtualbox" do |vb|
-      vb.gui = true
-      vb.memory = "1024"
-      vb.name = "getmac-Android-KitKat"
-    end
-    android.vm.synced_folder ".", "/home/vagrant/getmac"
-  end
+  # Yeah this no longer works...probably best to just use the official emulator.
+  #   # Android
+  #   config.vm.define "android" do |android|
+  #     android.vm.box = "lgromb/androidx86-kk"
+  #     android.vm.host_name = "getmac-android"
+  #     android.vm.provider "virtualbox" do |vb|
+  #       vb.gui = true
+  #       vb.memory = "1024"
+  #       vb.name = "getmac-Android-KitKat"
+  #     end
+  #     android.vm.synced_folder ".", "/home/vagrant/getmac"
+  #   end
 
   # Windows Server 2012 R2
   config.vm.define "winserver" do |winserver|
