@@ -25,15 +25,17 @@
 
 Vagrant.configure(2) do |config|
   # Ubuntu 18.04 LTS
-  config.vm.define "ubuntu18" do |centos|
-    centos.vm.box = "ubuntu/bionic64"
-    centos.vm.host_name = "getmac-ubuntu18"
-    centos.vm.provider "virtualbox" do |vb|
-      vb.gui = false
-      vb.memory = "1024"
-      vb.name = "getmac-Ubuntu-18.04-LTS"
+  config.vm.define "ubuntu18" do |ubuntu18|
+    ubuntu18.vm.box = "ubuntu/bionic64"
+    # ubuntu18.vm.box = "generic/ubuntu1804"
+    ubuntu18.vm.host_name = "getmac-ubuntu18"
+    ubuntu18.vm.boot_timeout = 1440
+    ubuntu18.vm.provider "virtualbox" do |vb|
+      vb.gui = true
+      vb.memory = "2048"
+      vb.name = "getmac-Ubuntu-1804-Generic"
     end
-    centos.vm.provision "shell", path: "scripts/ubuntu-provision.sh", privileged: false
+    ubuntu18.vm.provision "shell", path: "scripts/ubuntu-provision.sh", privileged: false
   end
 
   # CentOS 7
