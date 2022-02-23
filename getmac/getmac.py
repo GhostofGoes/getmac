@@ -1139,7 +1139,8 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
 
     # Filter methods by the platform we're running on
     platform_methods = [
-        m for m in METHODS if PLATFORM in m.platforms
+        method for method in METHODS
+        if PLATFORM in method.platforms
     ]  # type: List[Type[Method]]
     if not platform_methods:
         # If there isn't a method for the current platform,
@@ -1149,7 +1150,10 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
             "Falling back to platform 'other'",
             PLATFORM,
         )
-        platform_methods = [m for m in METHODS if "other" in m.platforms]
+        platform_methods = [
+            method for method in METHODS
+            if "other" in method.platforms
+        ]
     if DEBUG:
         meth_strs = ", ".join(pm.__name__ for pm in platform_methods)  # type: str
         log.debug("'%s' platform_methods: %s", method_type, meth_strs)
