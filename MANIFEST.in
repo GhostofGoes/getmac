@@ -14,5 +14,5 @@ include docs/man/getmac2.1
 global-exclude *.py[cod] __pycache__ *.so *.class
 exclude *-getmac.spec *.yml
 exclude tox.ini Dockerfile Vagrantfile .editorconfig .coveragerc
-exclude conf.py index.md make.bat Makefile packaging.md
-exclude releasing.md style-requirements.txt requirements.txt TODO.md CODE_OF_CONDUCT.md SECURITY.md
+exclude conf.py index.md make.bat Makefile rewrite.md releasing.md
+exclude style-requirements.txt requirements.txt TODO.md CODE_OF_CONDUCT.md SECURITY.md

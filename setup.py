@@ -62,7 +62,7 @@ setup(
         "802.3",
     ],
     classifiers=[  # TODO(python3): update classifiers
-        "Development Status :: 4 - Beta",
+        "Development Status :: 4 - Beta",  # TODO(1.0.0): change to 5 - Production/Stable
         "Environment :: Console",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",

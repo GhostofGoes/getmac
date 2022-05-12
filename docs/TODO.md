@@ -16,9 +16,6 @@
   - Passing a subclass of `getmac.Method`
   - Passing an instance of a subclass of `getmac.Method`
   - Add a CLI argument to reference class by name
-- [ ] Add ability to set the platform used (and document this) via
-  - argument to `get_mac_address()`
-  - CLI argument
 - [x] Add changelog and other modern PyPI page fields to getmac setup.py
 
 
@@ -37,6 +34,9 @@
     - [ ] remote host
     - [ ] return data cleanup and validation
 - [ ] Add docstrings to all util methods
+- [ ] Add ability to force the platform used (and document this) via
+  - argument to `get_mac_address()`
+  - CLI argument
 - [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0)
 - [ ] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping"). Document this behavior!
 - [ ] Document possible values for `PLATFORM` variable

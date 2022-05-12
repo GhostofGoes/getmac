@@ -6,14 +6,16 @@
 ## 0.9.0a1 (TBD)
 **Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.
 
-**NOTE**: This release is a *complete rewrite of getmac from the ground up*. It's passing tests and seems to be operable. However, with a change this large there are ineviteably issues that the tests or I don't catch, so I'm doing a series of pre-releases until I'm 99% confident in it's stability. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes.
+This release is a *complete rewrite of getmac from the ground up*. The public API of `getmac` is **unchanged** as part of this rewrite. `get_mac_address()` is still the primary way of getting a MAC address, it's just the "under the hood" internals that have changed completely.
+
+ It's passing tests and seems to be operable. However, with a change this large there are ineviteably issues that the tests or I don't catch, so I'm doing a series of pre-releases until I'm 99% confident in it's stability. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes.
 
 The new system has a number of benefits
 - Reduction of false-positives and false-negatives by improving method selection accuracy (platform, validity, etc.)
 - *Significantly* faster overall
 - "Misses" have the same performance as "Hits"
 - Easier to test, since each method can be tested directly via it's class
-- Eaiser to type annotate and analyze with mypy
+- Easier to type annotate and analyze with mypy
 - Easier to read, improving reviewability and ease of contributing for newcomers
 - Extensible! Custom methods can be defined and added at runtime (which is perfect if you have some particular edge case but aren't able to open-source it).
 
