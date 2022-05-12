@@ -1139,8 +1139,7 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
 
     # Filter methods by the platform we're running on
     platform_methods = [
-        method for method in METHODS
-        if PLATFORM in method.platforms
+        method for method in METHODS if PLATFORM in method.platforms
     ]  # type: List[Type[Method]]
     if not platform_methods:
         # If there isn't a method for the current platform,
@@ -1150,10 +1149,7 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
             "Falling back to platform 'other'",
             PLATFORM,
         )
-        platform_methods = [
-            method for method in METHODS
-            if "other" in method.platforms
-        ]
+        platform_methods = [method for method in METHODS if "other" in method.platforms]
     if DEBUG:
         meth_strs = ", ".join(pm.__name__ for pm in platform_methods)  # type: str
         log.debug("'%s' platform_methods: %s", method_type, meth_strs)
@@ -1240,9 +1236,7 @@ def _attempt_method_get(
 ):  # type: (Method, str, str) -> Optional[str]
     """Attempt to use methods, and if they fail, fallback to the next method in the cache."""
     if not METHOD_CACHE[method_type] and not FALLBACK_CACHE[method_type]:
-        log.critical(
-            "No usable methods found for MAC type '%s'", method_type
-        )
+        log.critical("No usable methods found for MAC type '%s'", method_type)
         return None
 
     result = None
@@ -1301,7 +1295,7 @@ def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
     if not method:
         # Initialize the cache if it hasn't been already
         initialize_method_cache(method_type)
-        method = METHOD_CACHE[method_type]  # type: Optional[Method]
+        method = METHOD_CACHE[method_type]
     if not method:
         log.error(
             "Initialization failed for method %s. It may not be supported "
