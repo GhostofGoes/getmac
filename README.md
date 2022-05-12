@@ -205,7 +205,7 @@ All or almost all features should work on "supported" platforms.
 While other versions of the same family or distro may work, they
 are untested and may have bugs or missing features.
 * Windows
-    * Desktop: 7, 8, 8.1, 10
+    * Desktop: 7, 8, 8.1, 10, 11 (thanks @StevenLooman for testing Windows 11!)
     * Server: TBD
     * Partially supported (untested): 2000, XP, Vista
 * Linux distros
@@ -284,6 +284,7 @@ to ask questions or discuss the project (Handle: @KnownError).
 * @hargoniX - scripts and specfiles for RPM packaging
 * Ville Skyttä (@scop) - arping lookup support
 * Tomasz Duda (@tomaszduda23) - support for docker in network bridge mode
+* Steven Looman (@StevenLooman) - Windows 11 testing
 
 ## Sources
 Many of the methods used to acquire an address and the core logic framework
