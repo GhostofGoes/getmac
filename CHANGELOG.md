@@ -3,8 +3,37 @@
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
 
-## 0.9.0a0 (TBD)
+## 0.9.0a1 (TBD)
+**Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.
+
+**NOTE**: This release is a *complete rewrite of getmac from the ground up*. It's passing tests and seems to be operable. However, with a change this large there are ineviteably issues that the tests or I don't catch, so I'm doing a series of pre-releases until I'm 99% confident in it's stability. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes.
+
+The new system has a number of benefits
+- Reduction of false-positives and false-negatives by improving method selection accuracy (platform, validity, etc.)
+- *Significantly* faster overall
+- "Misses" have the same performance as "Hits"
+- Easier to test, since each method can be tested directly via it's class
+- Eaiser to type annotate and analyze with mypy
+- Easier to read, improving reviewability and ease of contributing for newcomers
+- Extensible! Custom methods can be defined and added at runtime (which is perfect if you have some particular edge case but aren't able to open-source it).
+
+### Added
+* Support Python 3.9
+
+### Changed
+* **Complete rewrite of `getmac` from the ground up. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes**
 * Fixed a failure to look up a hostname now returns `None`, as expected, instead of raising an exception (`socket.gaierror`).
+* Fixed numerous false-negative and false-positive bugs
+* Improved performance overall
+* Performance for cases where no MAC is found is now the same as cases where a MAC is found (speed of "misses" now equals that of "hits")
+* Improved the reliability of many methods
+* Improved the performance of many methods
+
+### Dev
+* Add samples and tests for WSL (Ubuntu 18.04)
+* Add flake8 plugins: `flake8-pytest-style` and `flake8-annotations`
+* Add additional tests
+* Improve existing tests
 
 
 ## 0.8.3 (12/10/2021)

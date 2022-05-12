@@ -1,5 +1,5 @@
 # 0.9.0 release
-- [ ] Tag Beta pre-release on PyPI
+- [x] Tag Beta pre-release on PyPI
 - [ ] GitHub Actions for CI
   - [ ] Remove TravisCI
   - [ ] Remove Appveyor
@@ -19,11 +19,12 @@
 - [ ] Add ability to set the platform used (and document this) via
   - argument to `get_mac_address()`
   - CLI argument
-- [ ] Add changelog and other modern PyPI page fields to getmac setup.py
+- [x] Add changelog and other modern PyPI page fields to getmac setup.py
 
 
 
 # 1.0.0 release
+- [ ] Switch to Poetry for project management
 - [ ] Support Python 3.10
     - [ ] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
     - [ ] add tests + setup.py classifier
