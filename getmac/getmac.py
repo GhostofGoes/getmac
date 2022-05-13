@@ -814,6 +814,7 @@ class NetstatIface(Method):
     _regexes = [
         r": .*?ether " + MAC_RE_COLON,
         r": .*?HWaddr " + MAC_RE_COLON,
+        r" .*?Link encap:Ethernet  HWaddr " + MAC_RE_COLON,  # Ubuntu 12.04 and other older kernels
     ]  # type: List[str]
     _working_regex = ""  # type: str
 

@@ -30,6 +30,7 @@ The new system has a number of benefits
 * Performance for cases where no MAC is found is now the same as cases where a MAC is found (speed of "misses" now equals that of "hits")
 * Improved the reliability of many methods
 * Improved the performance of many methods
+* Fixed `netstat` on older Linux distros (such as Ubuntu 12.04)
 
 ### Dev
 * Add samples and tests for WSL (Ubuntu 18.04)
