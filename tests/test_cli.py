@@ -12,6 +12,7 @@ BASE_CMD = [sys.executable, "-m", "getmac"]
 
 
 def run_cmd(command):
+    # type: (list) -> str
     stdout, _ = Popen(command, stdout=PIPE, stderr=PIPE).communicate()
     return stdout.decode("utf-8").strip()
 
@@ -62,3 +63,7 @@ def test_cli_localhost():
     assert run_cmd(BASE_CMD + ["-n", "localhost"]) != ""
     assert run_cmd(BASE_CMD + ["--no-network-requests", "-4", "127.0.0.1"]) != ""
     assert run_cmd(BASE_CMD + ["--no-network-requests", "-n", "localhost"]) != ""
+
+
+def test_cli_override_platform():
+    assert not run_cmd(BASE_CMD + ["-v", "-dd", "--override-platform", "other"])

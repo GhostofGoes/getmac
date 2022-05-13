@@ -13,7 +13,7 @@
   - [ ] Document `initialize_method_cache()`
   - [ ] Update docs/usage examples for `get_mac_address()`
 - [ ] Raise Warnings on critical failures during cache initialization, such as a lack of valid methods or all tests failing can raise exceptions. also make sure to document in `get_mac_address` and make obvious in release notes. Turn these into Exceptions in 1.0.0.
-- [ ] Add ability to force the platform used via CLI argument (for testing)
+- [x] Add ability to force the platform used via CLI argument (for testing)
 - [ ] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [x] Add changelog and other modern PyPI page fields to getmac setup.py
 
@@ -21,6 +21,7 @@
 
 # 1.0.0 release
 - [ ] Switch to Poetry for project management
+    - Also, add `isort`
 - [ ] Support Python 3.10
     - [ ] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
     - [ ] add tests + setup.py classifier

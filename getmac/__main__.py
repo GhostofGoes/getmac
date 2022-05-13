@@ -37,6 +37,15 @@ def main():  # type: () -> None
         dest="NO_NET",
         help="Do not send a UDP packet to refresh the ARP table",
     )
+    parser.add_argument(
+        "--override-platform",
+        type=str,
+        default=None,
+        metavar="PLATFORM",
+        help="Override the platform detection with the given value "
+        "(e.g. 'linux', 'windows', 'freebsd', etc.'). "
+        "Any values returned by platform.system() are valid.",
+    )
 
     group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument(
@@ -62,8 +71,12 @@ def main():  # type: () -> None
         logging.basicConfig(
             format="%(levelname)-8s %(message)s", level=logging.DEBUG, stream=sys.stderr
         )
+
     if args.debug:
         getmac.DEBUG = args.debug
+
+    if args.override_platform:
+        getmac.OVERRIDE_PLATFORM = args.override_platform.strip().lower()
 
     mac = getmac.get_mac_address(
         interface=args.interface,

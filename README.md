@@ -111,6 +111,13 @@ getmac --verbose
 getmac -v --debug
 python -m getmac -v -d -i enp11s4
 python -m getmac -v -dd -n home.router
+
+# The platform detected by getmac can be overridden via '--override-platform'.
+# This is useful when debugging issues or if you know a method
+# for a different platform works on the current platform.
+# Any values returned by platform.system() are valid.
+getmac -i eth0 --override-platform linux
+getmac -4 192.168.0.1 --override-platform windows
 ```
 
 ## Function: get_mac_address()

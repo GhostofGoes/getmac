@@ -99,6 +99,10 @@ PLATFORM = _SYST.lower()  # type: str
 if PLATFORM == "linux" and "Microsoft" in platform.version():
     PLATFORM = "wsl"
 
+# User-configurable override to force a specific platform
+# This will change to a function argument in 1.0.0
+OVERRIDE_PLATFORM = ""  # type: str
+
 # Get and cache the configured system PATH on import
 # The process environment does not change after a process is started
 PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)  # type: List[str]
@@ -361,7 +365,7 @@ class SysIfaceFile(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         data = _read_file(self._path + arg + "/address")
-        # Note: if "/sys/class/net/" exists, but interface file doesn't,
+        # NOTE: if "/sys/class/net/" exists, but interface file doesn't,
         # then that means the interface doesn't exist
         # Sometimes this can be empty or a single newline character
         return None if data is not None and len(data) < 17 else data
@@ -613,7 +617,7 @@ class WmicExe(Method):
         )
         # Negative: "No Instance(s) Available"
         # Positive: "MACAddress=00:FF:E7:78:95:A0"
-        # Note: .partition() always returns 3 parts,
+        # NOTE: .partition() always returns 3 parts,
         # therefore it won't cause an IndexError
         return command_output.strip().partition("=")[2]
 
@@ -814,7 +818,8 @@ class NetstatIface(Method):
     _regexes = [
         r": .*?ether " + MAC_RE_COLON,
         r": .*?HWaddr " + MAC_RE_COLON,
-        r" .*?Link encap:Ethernet  HWaddr " + MAC_RE_COLON,  # Ubuntu 12.04 and other older kernels
+        r" .*?Link encap:Ethernet  HWaddr "
+        + MAC_RE_COLON,  # Ubuntu 12.04 and other older kernels
     ]  # type: List[str]
     _working_regex = ""  # type: str
 
@@ -845,7 +850,7 @@ class NetstatIface(Method):
 
 # TODO (rewrite): add these for Android 6.0.1 (need a sample)
 #   Add to IpLinkIface
-#   New method for "ip addr"?
+#   New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 # (r"state UP.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
 # (r"wlan.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
 # (r"ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
@@ -901,7 +906,7 @@ class IpNeighShow(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         output = _popen("ip", "neighbor show %s" % arg)
         if output:
-            # Note: the space prevents accidental matching of partial IPs
+            # NOTE: the space prevents accidental matching of partial IPs
             return (
                 output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
             )
@@ -1146,9 +1151,20 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
             log.debug("Cache already initialized for '%s'", method_type)
         return True
 
+    if OVERRIDE_PLATFORM:
+        log.warning(
+            "Platform override is set, using '%s' as platform "
+            "instead of detected platform '%s'",
+            OVERRIDE_PLATFORM,
+            PLATFORM,
+        )
+        platform = OVERRIDE_PLATFORM
+    else:
+        platform = PLATFORM
+
     # Filter methods by the platform we're running on
     platform_methods = [
-        method for method in METHODS if PLATFORM in method.platforms
+        method for method in METHODS if platform in method.platforms
     ]  # type: List[Type[Method]]
     if not platform_methods:
         # If there isn't a method for the current platform,
@@ -1156,7 +1172,7 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
         log.warning(
             "No methods for platform '%s'! Your system may not be supported. "
             "Falling back to platform 'other'",
-            PLATFORM,
+            platform,
         )
         platform_methods = [method for method in METHODS if "other" in method.platforms]
     if DEBUG:
@@ -1370,9 +1386,10 @@ def get_mac_address(
     Returns:
         Lowercase colon-separated MAC address, or :obj:`None` if one could not be
         found or there was an error.
-    """
+    """  # noqa: E501
     if DEBUG:
         import timeit
+
         start_time = timeit.default_timer()
 
     if PY2 or (sys.version_info[0] == 3 and sys.version_info[1] < 6):
