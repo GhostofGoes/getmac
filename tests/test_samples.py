@@ -79,6 +79,27 @@ def test_ubuntu_1804_netstat(benchmark, mocker, get_sample):
     assert getmac.NetstatIface().get("docker") is None
 
 
+def test_ubuntu_1204_netstat(benchmark, mocker, get_sample):
+    content = get_sample("ubuntu_12.04/netstat_iae.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    mocker.patch("getmac.getmac.DEBUG", 4)
+    assert "08:00:27:e8:81:6f" == benchmark(getmac.NetstatIface().get, arg="eth0")
+    assert getmac.NetstatIface().get("lo") is None
+    assert getmac.NetstatIface().get("ens") is None
+    assert getmac.NetstatIface().get("eth") is None
+    assert getmac.NetstatIface().get("eth00") is None
+
+
+@pytest.mark.parametrize("sample", [
+    ("ubuntu_12.04/ifconfig.out"),
+    ("ubuntu_12.04/ifconfig_eth0.out"),
+])
+def test_ubuntu_1204_ifconfig(benchmark, mocker, get_sample, sample):
+    content = get_sample(sample)
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert "08:00:27:e8:81:6f" == benchmark(getmac.IfconfigLinux().get, arg="eth0")
+
+
 def test_ubuntu_1804_remote(benchmark, mocker, get_sample):
     content = get_sample("ubuntu_18.04/arp_-a.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
