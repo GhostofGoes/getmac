@@ -1248,6 +1248,14 @@ def _attempt_method_get(
         log.critical("No usable methods found for MAC type '%s'", method_type)
         return None
 
+    if DEBUG:
+        log.debug(
+            "Attempting get() (method='%s', method_type='%s', arg='%s')",
+            str(method),
+            method_type,
+            arg,
+        )
+
     result = None
     try:
         result = method.get(arg)
