@@ -17,6 +17,7 @@
 - [ ] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [x] Add changelog and other modern PyPI page fields to getmac setup.py
 - [ ] Address any remaining "TODO (rewrite)" TODOs
+- [ ] Combine and parameterize tests that are testing the same method with different samples as input
 
 
 # 1.0.0 release

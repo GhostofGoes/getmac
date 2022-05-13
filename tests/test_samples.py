@@ -265,3 +265,13 @@ def test_wsl_ip_route_default_iface(benchmark, mocker, get_sample):
     content = get_sample("WSL_ubuntu_18.04/ip_route_list_0slash0.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "eth0" == benchmark(getmac.DefaultIfaceIpRoute().get)
+
+
+@pytest.mark.parametrize(("expected_iface", "sample_file"), [
+    ("ens33", "ubuntu_18.04/route_-n.out"),
+    ("eth0", "WSL_ubuntu_18.04/route_-n.out"),
+])
+def test_default_iface_route_command(benchmark, mocker, get_sample, expected_iface, sample_file):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert expected_iface == benchmark(getmac.DefaultIfaceRouteCommand().get)
