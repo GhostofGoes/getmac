@@ -94,7 +94,7 @@ Vagrant.configure(2) do |config|
     openbsd.vm.host_name = "getmac-openbsd"
     openbsd.vm.provider "virtualbox" do |vb|
       vb.gui = false
-      vb.memory = "512"
+      vb.memory = "1024"
       vb.name = "getmac-OpenBSD-6"
     end
     # openbsd.vm.synced_folder ".", "/home/vagrant/getmac"
@@ -107,7 +107,7 @@ Vagrant.configure(2) do |config|
     netbsd.vm.host_name = "getmac-netbsd"
     netbsd.vm.provider "virtualbox" do |vb|
       vb.gui = false
-      vb.memory = "512"
+      vb.memory = "1024"
       vb.name = "getmac-NetBSD-8"
     end
     netbsd.vbguest.auto_update = false
@@ -125,9 +125,10 @@ Vagrant.configure(2) do |config|
     freebsd.vm.host_name = "getmac-freebsd"
     freebsd.vm.provider "virtualbox" do |vb|
       vb.gui = false
-      vb.memory = "512"
+      vb.memory = "1024"
       vb.name = "getmac-FreeBSD-12"
     end
+    freebsd.vbguest.auto_update = false
     freebsd.vm.provision "shell", path: "scripts/freebsd-provision.sh", privileged: false
   end
 
@@ -137,9 +138,10 @@ Vagrant.configure(2) do |config|
     opensuse.vm.host_name = "getmac-opensuse"
     opensuse.vm.provider "virtualbox" do |vb|
       vb.gui = false
-      vb.memory = "512"
+      vb.memory = "1024"
       vb.name = "getmac-OpenSUSE-42"
     end
+    opensuse.vbguest.auto_update = false
   end
 
   # Solaris 10
@@ -148,9 +150,10 @@ Vagrant.configure(2) do |config|
     solaris.vm.host_name = "getmac-solaris"
     solaris.vm.provider "virtualbox" do |vb|
       vb.gui = false
-      vb.memory = "512"
+      vb.memory = "1024"
       vb.name = "getmac-Solaris-10"
     end
+    solaris.vbguest.auto_update = false
     solaris.vm.provision "shell", path: "scripts/solaris-provision.sh", privileged: false
   end
 

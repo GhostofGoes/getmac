@@ -90,10 +90,13 @@ def test_ubuntu_1204_netstat(benchmark, mocker, get_sample):
     assert getmac.NetstatIface().get("eth00") is None
 
 
-@pytest.mark.parametrize("sample", [
-    ("ubuntu_12.04/ifconfig.out"),
-    ("ubuntu_12.04/ifconfig_eth0.out"),
-])
+@pytest.mark.parametrize(
+    "sample",
+    [
+        ("ubuntu_12.04/ifconfig.out"),
+        ("ubuntu_12.04/ifconfig_eth0.out"),
+    ],
+)
 def test_ubuntu_1204_ifconfig(benchmark, mocker, get_sample, sample):
     content = get_sample(sample)
     mocker.patch("getmac.getmac._popen", return_value=content)
