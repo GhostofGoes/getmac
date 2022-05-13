@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # http://web.archive.org/web/20140718071917/http://multivax.com/last_question.html
 
-"""Get the MAC address of remote hosts or network interfaces.
+"""
+Get the MAC address of remote hosts or network interfaces.
 
 It provides a platform-independent interface to get the MAC addresses of:
 
@@ -262,7 +263,8 @@ def _uuid_convert(mac):
 
 def _fetch_ip_using_dns():
     # type: () -> str
-    """Determines the IP address of the default network interface.
+    """
+    Determines the IP address of the default network interface.
 
     Sends a UDP packet to Cloudflare's DNS (``1.1.1.1``), which should go through
     the default interface. This populates the source address of the socket,
@@ -297,7 +299,7 @@ class Method:
     # VALUES: {ip, ip4, ip6, iface, default_iface}
     method_type = ""  # type: str
     # If the method makes a network request as part of the check
-    net_request = False  # type: bool
+    network_request = False  # type: bool
     # (TODO) If current system supports this method. Dynamically set at runtime?
     #   This would let each method do more fine-grained version checking
     supported = False  # type: bool
@@ -311,7 +313,8 @@ class Method:
 
     # TODO: automatically clean MAC on return
     def get(self, arg):  # type: (str) -> Optional[str]
-        """Core logic of the method that performs the lookup.
+        """
+        Core logic of the method that performs the lookup.
 
         .. warning::
            If the method itself fails to function an exception will be raised!
@@ -395,9 +398,13 @@ class UuidLanscan(Method):
 
 
 class CtypesHost(Method):
+    """
+    Uses ``SendARP`` from the Windows ``Iphlpapi`` to get the MAC address
+    of a remote IPv4 host.
+    """
     platforms = {"windows"}
     method_type = "ip4"
-    net_request = True
+    network_request = True
 
     def test(self):  # type: () -> bool
         try:
@@ -422,6 +429,7 @@ class CtypesHost(Method):
         buffer = ctypes.c_buffer(6)
         addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
 
+        # https://docs.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp
         send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
         if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
             return None
@@ -438,7 +446,8 @@ class CtypesHost(Method):
 
 
 class ArpingHost(Method):
-    """Use ``arping`` command to determine the MAC of a host.
+    """
+    Use ``arping`` command to determine the MAC of a host.
 
     Supports two variants of ``arping``
 
@@ -450,7 +459,7 @@ class ArpingHost(Method):
 
     platforms = {"linux", "darwin"}
     method_type = "ip4"
-    net_request = True
+    network_request = True
     _checked_type = False  # type: bool
     _is_iputils = False  # type: bool
     _habets = "-r -C 1 -c 1 %s"
@@ -988,7 +997,8 @@ class ArpVariousArgs(Method):
 
 
 class DefaultIfaceLinuxRouteFile(Method):
-    """Get the default interface by reading ``/proc/net/route``.
+    """
+    Get the default interface by reading ``/proc/net/route``.
 
     This is the same source as the ``route`` command, however it's much
     faster to read this file than to call ``route``. If it fails for whatever
@@ -1017,8 +1027,7 @@ class DefaultIfaceLinuxRouteFile(Method):
         return None
 
 
-# TODO (rewrite): WSL ip route sample (compare to ubuntu)
-# TODO: Android ip route sample
+# TODO: Android sample for "ip route -n"
 class DefaultIfaceRouteCommand(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "default_iface"
@@ -1035,7 +1044,7 @@ class DefaultIfaceRouteCommand(Method):
             return None
 
 
-# TODO: Android ip route list sample
+# TODO: Android sample for "ip route list 0/0"
 class DefaultIfaceIpRoute(Method):
     # NOTE: this is slightly faster than "route" since
     # there is less output than "route -n"
@@ -1085,9 +1094,11 @@ class DefaultIfaceFreeBsd(Method):
 # TODO: order methods by effectiveness/reliability
 #   Use a class attribute maybe? e.g. "score", then sort by score in cache
 METHODS = [
+    # NOTE: CtypesHost is faster than ArpExe because of process startup times :)
+    CtypesHost,
+    ArpingHost,
     ArpFile,
     SysIfaceFile,
-    CtypesHost,
     FcntlIface,
     UuidArpGetNode,
     UuidLanscan,
@@ -1144,6 +1155,8 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
     Args:
         method_type: method type to initialize the cache for.
             Allowed values are: ``ip`` | ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
+        network_request: if methods that make network requests should be included
+            (those methods that have the attribute ``network_request`` set to ``True``)
     """
     log.debug("Initializing '%s' method cache (platform: '%s')", method_type, PLATFORM)
     if METHOD_CACHE.get(method_type) or (
@@ -1195,6 +1208,10 @@ def initialize_method_cache(method_type):  # type: (str) -> bool
     if DEBUG:
         type_strs = ", ".join(tm.__name__ for tm in type_methods)  # type: str
         log.debug("'%s' type_methods: %s", method_type, type_strs)
+
+    # If network_request is False, then remove any methods that have network_request=True
+    if not network_request:
+        type_methods = [m for m in type_methods if not m.network_request]
 
     # Determine which methods work on the current system
     tested_methods = []  # type: List[Method]
@@ -1314,13 +1331,17 @@ def _attempt_method_get(
     return result
 
 
-def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
-    """Query for a MAC using a specific method.
+def get_by_method(method_type, arg="", network_request=True):
+    # type: (str, str, bool) -> Optional[str]
+    """
+    Query for a MAC using a specific method.
 
     Args:
         method_type: method type to initialize the cache for.
             Allowed values are: ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
         arg: Argument to pass to the method, e.g. an interface name or IP address
+        network_request: if methods that make network requests should be included
+            (those methods that have the attribute ``network_request`` set to ``True``)
     """
     if not arg and method_type != "default_iface":
         log.error("Empty arg for method '%s' (raw value: %s)", method_type, repr(arg))
@@ -1329,7 +1350,7 @@ def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
     method = METHOD_CACHE.get(method_type)  # type: Optional[Method]
     if not method:
         # Initialize the cache if it hasn't been already
-        initialize_method_cache(method_type)
+        initialize_method_cache(method_type, network_request)
         method = METHOD_CACHE[method_type]
     if not method:
         log.error(
@@ -1354,7 +1375,8 @@ def get_mac_address(
     interface=None, ip=None, ip6=None, hostname=None, network_request=True
 ):
     # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
-    """Get an Unicast IEEE 802 MAC-48 address from a local interface or remote host.
+    """
+    Get an Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 
     Only ONE of the first four arguments may be used
     (``interface``,``ip``, ``ip6``, or ``hostname``).
@@ -1381,7 +1403,9 @@ def get_mac_address(
         ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g ``192.168.0.1``)
         ip6 (str): Canonical shortened IPv6 address of a remote host (e.g ``ff02::1:ffe7:7f19``)
         hostname (str): DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
-        network_request (bool): Send a UDP packet to a remote host to populate
+        network_request (bool): If network requests should be made when attempting to find the
+            MAC of a remote host. If the ``arping`` command is available, this will be used.
+            If not, a UDP packet will be sent to the remote host to populate
             the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
             be configured using the module variable ``getmac.PORT``.
 
@@ -1389,6 +1413,7 @@ def get_mac_address(
         Lowercase colon-separated MAC address, or :obj:`None` if one could not be
         found or there was an error.
     """  # noqa: E501
+
     if DEBUG:
         import timeit
 
@@ -1414,11 +1439,23 @@ def get_mac_address(
     if hostname:
         # Exceptions will be handled silently and returned as a None
         try:
+            # TODO: can this return a IPv6 address? If so, handle that!
             ip = socket.gethostbyname(hostname)
         except Exception as ex:
             log.error("Could not resolve hostname '%s': %s", hostname, ex)
             if DEBUG:
                 log.debug(traceback.format_exc())
+            return None
+
+    if ip6:
+        if not socket.has_ipv6:
+            log.error(
+                "Cannot get the MAC address of a IPv6 host: "
+                "IPv6 is not supported on this system"
+            )
+            return None
+        elif ":" not in ip6:
+            log.error("Invalid IPv6 address (no ':'): %s", ip6)
             return None
 
     # Populate the ARP table by sending an empty UDP packet to a high port
@@ -1441,15 +1478,6 @@ def get_mac_address(
 
     # Setup the address hunt based on the arguments specified
     if ip6:
-        if not socket.has_ipv6:
-            log.error(
-                "Cannot get the MAC address of a IPv6 host: "
-                "IPv6 is not supported on this system"
-            )
-            return None
-        elif ":" not in ip6:
-            log.error("Invalid IPv6 address: %s", ip6)
-            return None
         mac = get_by_method("ip6", ip6)
     elif ip:
         mac = get_by_method("ip4", ip)
