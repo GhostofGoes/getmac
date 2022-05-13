@@ -27,6 +27,11 @@
 #   winserver, win7, win10, win11
 
 # NOTE: files from this directory are mounted to "/vagrant" in the VM
+# This only works if guest additions are installed and the proper version.
+#   Potential workaround: vagrant plugin install vagrant-vbguest
+
+# wget --no-check-certificate https://github.com/GhostofGoes/getmac/archive/refs/heads/refactor.tar.gz
+# tar -xzvf refactor.tar.gz
 
 Vagrant.configure(2) do |config|
   # Mojave
@@ -60,7 +65,7 @@ Vagrant.configure(2) do |config|
     ubuntu18.vm.host_name = "getmac-ubuntu18"
     ubuntu18.vm.boot_timeout = 1440
     ubuntu18.vm.provider "virtualbox" do |vb|
-      vb.gui = true
+      vb.gui = false
       vb.memory = "2048"
       vb.name = "getmac-Ubuntu-1804-Generic"
     end

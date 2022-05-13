@@ -1,7 +1,7 @@
 # 0.9.0 release
 - [x] Tag Beta pre-release on PyPI
 - [ ] test changes in Vagrant VMs (`pip install https://github.com/ghostofgoes/getmac/archive/rewrite.tar.gz`)
-- [ ] Ubuntu 12.04 sample
+- [x] Ubuntu 12.04 sample
 - [ ] GitHub Actions for CI
   - [ ] Remove TravisCI
   - [ ] Remove Appveyor
