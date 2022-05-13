@@ -36,6 +36,7 @@ The new system has a number of benefits
 * Add flake8 plugins: `flake8-pytest-style` and `flake8-annotations`
 * Add additional tests
 * Improve existing tests
+* Add samples for NetBSD (support coming in future release)
 
 
 ## 0.8.3 (12/10/2021)

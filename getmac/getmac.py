@@ -352,7 +352,7 @@ class SysIfaceFile(Method):
     _path = "/sys/class/net/"  # type: str
 
     def test(self):  # type: () -> bool
-        # TODO: imperfect, but should work well enough
+        # Imperfect, but should work well enough
         return check_path(self._path)
 
     def get(self, arg):  # type: (str) -> Optional[str]
@@ -515,7 +515,7 @@ class FcntlIface(Method):
             return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
 
-# TODO(py3): do we want to keep this around? It calls 3 commands and is
+# TODO(python3): do we want to keep this around? It calls 3 commands and is
 #   quite inefficient. We should just take the methods and use directly.
 class UuidArpGetNode(Method):
     platforms = {"linux", "darwin"}
@@ -626,7 +626,7 @@ class ArpExe(Method):
 
 
 class DarwinNetworksetup(Method):
-    # TODO: obtain output sample of networksetup for use in unit tests
+    # TODO (rewrite): obtain output sample of networksetup for use in unit tests
     platforms = {"darwin"}
     method_type = "iface"
 
@@ -817,7 +817,7 @@ class IfconfigOther(Method):
 
 
 # TODO: sample of "ip link" on Android (use emulator)
-# TODO: sample of "ip link eth0" on Ubuntu (use Vagrant)
+# TODO (rewrite): sample of "ip link eth0" on Ubuntu (use Vagrant)
 class IpLinkIface(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "iface"
@@ -1307,9 +1307,6 @@ def get_by_method(method_type, arg=""):  # type: (str, str) -> Optional[str]
     # TODO: add a "net_ok" argument, check network_request attribute
     #   on method in CACHE, if not then keep checking for method in
     #   FALLBACK_CACHE that has network_request.
-
-    # TODO(rewrite): test changes in Vagrant VMs and https://www.onworks.net/
-
     result = _attempt_method_get(method, method_type, arg)
 
     # Log normal get() failures if debugging is enabled

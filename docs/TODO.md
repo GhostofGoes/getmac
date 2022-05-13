@@ -1,5 +1,7 @@
 # 0.9.0 release
 - [x] Tag Beta pre-release on PyPI
+- [ ] test changes in Vagrant VMs (`pip install https://github.com/ghostofgoes/getmac/archive/rewrite.tar.gz`)
+- [ ] Ubuntu 12.04 sample
 - [ ] GitHub Actions for CI
   - [ ] Remove TravisCI
   - [ ] Remove Appveyor
@@ -11,6 +13,9 @@
   - [ ] Document `initialize_method_cache()`
   - [ ] Update docs/usage examples for `get_mac_address()`
 - [ ] Raise Warnings on critical failures during cache initialization, such as a lack of valid methods or all tests failing can raise exceptions. also make sure to document in `get_mac_address` and make obvious in release notes. Turn these into Exceptions in 1.0.0.
+- [ ] Add ability to force the platform used (and document this) via
+  - argument to `get_mac_address()`
+  - CLI argument
 - [ ] Add ability to force a specific method to be used by `get_mac_address()` by setting an argument. Reference a method by either:
   - Passing a string with the name of a method class (e.g. `"ArpFile"`), this will be dynamically looked up from the list of available methods. This will NOT check if the method works by default!
   - Passing a subclass of `getmac.Method`
@@ -34,9 +39,6 @@
     - [ ] remote host
     - [ ] return data cleanup and validation
 - [ ] Add docstrings to all util methods
-- [ ] Add ability to force the platform used (and document this) via
-  - argument to `get_mac_address()`
-  - CLI argument
 - [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0)
 - [ ] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping"). Document this behavior!
 - [ ] Document possible values for `PLATFORM` variable
@@ -51,6 +53,10 @@
 - [ ] update the samples used in tests
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
 - [ ] address all TODOs in the code
+- [ ] Support NetBSD
+    - platform: `netbsd` (`NETBSD = _SYST == "NetBSD"  # type: bool`)
+    - default interface: "wm0"
+    - ip: "route -nq show", "netstat -r", arp -a
 
 ## Py3-related stuff for 1.0.0
 - [ ] Drop support for python 2.7, 3.4, and 3.5
