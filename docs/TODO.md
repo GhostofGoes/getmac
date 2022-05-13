@@ -16,7 +16,7 @@
 - [x] Add ability to force the platform used via CLI argument (for testing)
 - [ ] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [x] Add changelog and other modern PyPI page fields to getmac setup.py
-
+- [ ] Address any remaining "TODO (rewrite)" TODOs
 
 
 # 1.0.0 release

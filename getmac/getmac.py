@@ -1017,7 +1017,7 @@ class DefaultIfaceLinuxRouteFile(Method):
         return None
 
 
-# TODO: WSL ip route sample (compare to ubuntu)
+# TODO (rewrite): WSL ip route sample (compare to ubuntu)
 # TODO: Android ip route sample
 class DefaultIfaceRouteCommand(Method):
     platforms = {"linux", "wsl", "other"}
@@ -1035,9 +1035,10 @@ class DefaultIfaceRouteCommand(Method):
             return None
 
 
-# TODO: WSL ip route list sample (compare to ubuntu)
 # TODO: Android ip route list sample
 class DefaultIfaceIpRoute(Method):
+    # NOTE: this is slightly faster than "route" since
+    # there is less output than "route -n"
     platforms = {"linux", "wsl", "other"}
     method_type = "default_iface"
 
@@ -1106,6 +1107,7 @@ METHODS = [
     IpNeighShow,
     ArpVariousArgs,
     DefaultIfaceLinuxRouteFile,
+    DefaultIfaceIpRoute,
     DefaultIfaceRouteCommand,
     DefaultIfaceOpenBsd,
     DefaultIfaceFreeBsd,

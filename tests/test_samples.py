@@ -138,6 +138,12 @@ def test_ubuntu_1804_ip_neigh_show_no_arg(benchmark, mocker, get_sample):
     )
 
 
+def test_ubuntu_1804_ip_route_default_iface(benchmark, mocker, get_sample):
+    content = get_sample("ubuntu_18.04/ip_route_list_0slash0.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert "ens33" == benchmark(getmac.DefaultIfaceIpRoute().get)
+
+
 def test_windows_10_iface_getmac_exe(benchmark, mocker, get_sample):
     content = get_sample("windows_10/getmac.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
@@ -253,3 +259,9 @@ def test_wsl_ip_link_iface(benchmark, mocker, get_sample, expected_mac, iface_ar
     content = get_sample("WSL_ubuntu_18.04/ip_link.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert expected_mac == benchmark(getmac.IpLinkIface().get, arg=iface_arg)
+
+
+def test_wsl_ip_route_default_iface(benchmark, mocker, get_sample):
+    content = get_sample("WSL_ubuntu_18.04/ip_route_list_0slash0.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert "eth0" == benchmark(getmac.DefaultIfaceIpRoute().get)
