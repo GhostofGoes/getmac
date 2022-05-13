@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import inspect
 import platform
 import socket
 import sys
@@ -11,6 +12,21 @@ from getmac import get_mac_address, getmac
 
 PY2 = sys.version_info[0] == 2
 MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
+
+
+@pytest.mark.skipif(sys.version_info[0] == 2, reason="No need to run on Python 2")
+def test_all_methods_defined_are_in_methods_list():
+    """Test that all methods present in getmac.py are in the METHODS list."""
+
+    def _is_method(member):
+        return (
+            inspect.isclass(member)
+            and issubclass(member, getmac.Method)
+            and not member is getmac.Method
+        )
+
+    members = [m[1] for m in inspect.getmembers(getmac, _is_method)]
+    assert set(members) == set(getmac.METHODS)
 
 
 def test_check_path():
