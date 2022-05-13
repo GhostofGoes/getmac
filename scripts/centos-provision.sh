@@ -14,13 +14,14 @@ sudo yum -y -t -q install yum-utils \
 
 # https://stackoverflow.com/a/23317640/2214380
 sudo yum -y -t -q install python34 python34-setuptools python34-virtualenv
-sudo easy_install-3.4 pip
-sudo pip3 install virtualenv
+# note: can't install pip anymore, too old :)
+#sudo easy_install-3.4 pip
+#sudo pip3 install virtualenv
 
 # Pull down the codebase
 git clone https://github.com/GhostofGoes/getmac.git
 
 # Create Python virtual environments
 mkdir -p "$HOME/.virtualenvs/"
-python3 -m virtualenv --python=python3 "$HOME/.virtualenvs/getmac34"
+python3.4 -m virtualenv --python=python3.4 "$HOME/.virtualenvs/getmac34"
 python -m virtualenv --python=python2 "$HOME/.virtualenvs/getmac27"

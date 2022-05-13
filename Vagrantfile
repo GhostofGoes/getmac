@@ -21,8 +21,8 @@
 
 # Available VMs:
 #   osx
-#   ubuntu12, ubuntu18, centos
-#   openbsd, netbsd, freebsd
+#   ubuntu12, ubuntu18, centos7
+#   openbsd, freebsd, netbsd
 #   opensuse, solaris
 #   winserver, win7, win10, win11
 
@@ -34,7 +34,8 @@
 # tar -xzvf refactor.tar.gz
 
 Vagrant.configure(2) do |config|
-  # Mojave
+
+  # Mojave (not sure if this works)
   config.vm.define "osx" do |osx|
     osx.vm.box = "adasilva/Mojave"
     osx.vm.host_name = "getmac-osx"
@@ -44,6 +45,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "2048"
       vb.name = "getmac-osx-mojave"
     end
+    centos7.vbguest.auto_update = false
   end
 
   # Ubuntu 12.04 LTS
@@ -56,6 +58,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "2048"
       vb.name = "getmac-Ubuntu-1204"
     end
+    centos7.vbguest.auto_update = false
   end
 
   # Ubuntu 18.04 LTS
@@ -73,15 +76,16 @@ Vagrant.configure(2) do |config|
   end
 
   # CentOS 7
-  config.vm.define "centos" do |centos|
-    centos.vm.box = "centos/7"
-    centos.vm.host_name = "getmac-centos7"
-    centos.vm.provider "virtualbox" do |vb|
+  config.vm.define "centos7" do |centos7|
+    centos7.vm.box = "centos/7"
+    centos7.vm.host_name = "getmac-centos7"
+    centos7.vm.provider "virtualbox" do |vb|
       vb.gui = false
       vb.memory = "1024"
       vb.name = "getmac-CentOS-7"
     end
-    centos.vm.provision "shell", path: "scripts/centos-provision.sh", privileged: false
+    centos7.vbguest.auto_update = false
+    centos7.vm.provision "shell", path: "scripts/centos-provision.sh", privileged: false
   end
 
   # OpenBSD 6
@@ -93,7 +97,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "512"
       vb.name = "getmac-OpenBSD-6"
     end
-    openbsd.vm.synced_folder ".", "/home/vagrant/getmac"
+    # openbsd.vm.synced_folder ".", "/home/vagrant/getmac"
     openbsd.vm.provision "shell", path: "scripts/openbsd-provision.sh", privileged: false
   end
 
@@ -106,11 +110,13 @@ Vagrant.configure(2) do |config|
       vb.memory = "512"
       vb.name = "getmac-NetBSD-8"
     end
+    centos7.vbguest.auto_update = false
     # To test code:
     #   wget --no-check-certificate https://github.com/ghostofgoes/getmac/archive/refactor.zip
     #   sudo pkgin install python37
+    #
     # NOTE: this requires SMB, since no guest extensions
-    #netbsd.vm.synced_folder ".", "/home/vagrant/getmac"
+    # netbsd.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # FreeBSD 11 (version currently used by PFSense)
@@ -122,7 +128,6 @@ Vagrant.configure(2) do |config|
       vb.memory = "512"
       vb.name = "getmac-FreeBSD-12"
     end
-    # freebsd.vm.synced_folder ".", "/home/vagrant/getmac"
     freebsd.vm.provision "shell", path: "scripts/freebsd-provision.sh", privileged: false
   end
 
@@ -135,7 +140,6 @@ Vagrant.configure(2) do |config|
       vb.memory = "512"
       vb.name = "getmac-OpenSUSE-42"
     end
-    # opensuse.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # Solaris 10
@@ -147,7 +151,6 @@ Vagrant.configure(2) do |config|
       vb.memory = "512"
       vb.name = "getmac-Solaris-10"
     end
-    # solaris.vm.synced_folder ".", "/home/vagrant/getmac"
     solaris.vm.provision "shell", path: "scripts/solaris-provision.sh", privileged: false
   end
 
@@ -161,7 +164,6 @@ Vagrant.configure(2) do |config|
   #       vb.memory = "1024"
   #       vb.name = "getmac-Android-KitKat"
   #     end
-  #     android.vm.synced_folder ".", "/home/vagrant/getmac"
   #   end
 
   # Windows Server 2012 R2
@@ -173,7 +175,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "2048"
       vb.name = "getmac-Windows-Server-2012R2"
     end
-    winserver.vm.synced_folder ".", "/home/vagrant/getmac"
+    # winserver.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # Windows 7
@@ -185,7 +187,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "2048"
       vb.name = "getmac-Windows-7"
     end
-    win7.vm.synced_folder ".", "/home/vagrant/getmac"
+    # win7.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # Windows 10
@@ -197,7 +199,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "2048"
       vb.name = "getmac-Windows-10"
     end
-    win10.vm.synced_folder ".", "/home/vagrant/getmac"
+    # win10.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # Windows 11
@@ -209,7 +211,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "2048"
       vb.name = "getmac-Windows-11"
     end
-    win11.vm.synced_folder ".", "/home/vagrant/getmac"
+    # win11.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
 end
