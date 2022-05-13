@@ -13,14 +13,8 @@
   - [ ] Document `initialize_method_cache()`
   - [ ] Update docs/usage examples for `get_mac_address()`
 - [ ] Raise Warnings on critical failures during cache initialization, such as a lack of valid methods or all tests failing can raise exceptions. also make sure to document in `get_mac_address` and make obvious in release notes. Turn these into Exceptions in 1.0.0.
-- [ ] Add ability to force the platform used (and document this) via
-  - argument to `get_mac_address()`
-  - CLI argument
-- [ ] Add ability to force a specific method to be used by `get_mac_address()` by setting an argument. Reference a method by either:
-  - Passing a string with the name of a method class (e.g. `"ArpFile"`), this will be dynamically looked up from the list of available methods. This will NOT check if the method works by default!
-  - Passing a subclass of `getmac.Method`
-  - Passing an instance of a subclass of `getmac.Method`
-  - Add a CLI argument to reference class by name
+- [ ] Add ability to force the platform used via CLI argument (for testing)
+- [ ] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [x] Add changelog and other modern PyPI page fields to getmac setup.py
 
 
@@ -30,7 +24,16 @@
 - [ ] Support Python 3.10
     - [ ] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
     - [ ] add tests + setup.py classifier
-- [ ] Consolidate ip6 argument into ip argument, parse based on `::` character vs `.` character in string
+- [ ] **API changes** (technically speaking)
+    - Add argument to `get_mac_address()` to force the platform used (e.g. `platform_override="linux"`)
+        - Also add CLI argument to configure this
+    - Add argument to `get_mac_address()` to force a specific method to be used
+        - Passing a string with the name of a method class (e.g. `"ArpFile"`), this will be dynamically looked up from the list of available methods. This will NOT check if the method works by default!
+        - Passing a subclass of `getmac.Method`
+        - Passing an instance of a subclass of `getmac.Method`
+        - Add a CLI argument to reference class by name
+    - Document these features in the README/docs, including the CLI arguments
+- [ ] Consolidate ip6 argument into ip argument. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
 - [ ] Support ipaddress objects, IPv4Address and IPv6Address
 - [ ] Move method classes into a separate file
 - [ ] Split utils into a separate file

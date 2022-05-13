@@ -45,7 +45,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "2048"
       vb.name = "getmac-osx-mojave"
     end
-    centos7.vbguest.auto_update = false
+    osx.vbguest.auto_update = false
   end
 
   # Ubuntu 12.04 LTS
@@ -58,7 +58,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "2048"
       vb.name = "getmac-Ubuntu-1204"
     end
-    centos7.vbguest.auto_update = false
+    ubuntu12.vbguest.auto_update = false
   end
 
   # Ubuntu 18.04 LTS
@@ -110,7 +110,7 @@ Vagrant.configure(2) do |config|
       vb.memory = "512"
       vb.name = "getmac-NetBSD-8"
     end
-    centos7.vbguest.auto_update = false
+    netbsd.vbguest.auto_update = false
     # To test code:
     #   wget --no-check-certificate https://github.com/ghostofgoes/getmac/archive/refactor.zip
     #   sudo pkgin install python37
@@ -160,7 +160,7 @@ Vagrant.configure(2) do |config|
   #     android.vm.box = "lgromb/androidx86-kk"
   #     android.vm.host_name = "getmac-android"
   #     android.vm.provider "virtualbox" do |vb|
-  #       vb.gui = true
+  #       vb.gui = false
   #       vb.memory = "1024"
   #       vb.name = "getmac-Android-KitKat"
   #     end
