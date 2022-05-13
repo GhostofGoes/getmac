@@ -805,6 +805,43 @@ class IfconfigOther(Method):
             return _search(re.escape(arg) + self._good_pair[1], command_output)
 
 
+class NetstatIface(Method):
+    platforms = {"linux", "wsl", "other"}
+    method_type = "iface"
+
+    # ".*?": non-greedy
+    # https://docs.python.org/3/howto/regex.html#greedy-versus-non-greedy
+    _regexes = [
+        r": .*?ether " + MAC_RE_COLON,
+        r": .*?HWaddr " + MAC_RE_COLON,
+    ]  # type: List[str]
+    _working_regex = ""  # type: str
+
+    def test(self):  # type: () -> bool
+        return check_command("netstat")
+
+    # TODO: consolidate the parsing logic between IfconfigOther and netstat
+    def get(self, arg):  # type: (str) -> Optional[str]
+        # NOTE: netstat and ifconfig pull from the same kernel source and
+        # therefore have the same output format on the same platform.
+        command_output = _popen("netstat", "-iae")
+        if not command_output:
+            log.warning("no netstat output, marking unusable")
+            self.unusable = True
+            return None
+        if self._working_regex:
+            # Use regex that worked previously. This can still return None in
+            # the case of interface not existing, but at least it's a bit faster.
+            return _search(arg + self._working_regex, command_output, flags=re.DOTALL)
+        # See if either regex matches
+        for regex in self._regexes:
+            result = _search(arg + regex, command_output, flags=re.DOTALL)
+            if result:
+                self._working_regex = regex
+                return result
+        return None
+
+
 # TODO (rewrite): add these for Android 6.0.1 (need a sample)
 #   Add to IpLinkIface
 #   New method for "ip addr"?
@@ -851,43 +888,6 @@ class IpLinkIface(Method):
             return _search(arg + self._regex, command_output)
         else:
             return _search(arg + r":" + self._regex, _popen("ip", "link"))
-
-
-class NetstatIface(Method):
-    platforms = {"linux", "wsl", "other"}
-    method_type = "iface"
-
-    # ".*?": non-greedy
-    # https://docs.python.org/3/howto/regex.html#greedy-versus-non-greedy
-    _regexes = [
-        r": .*?ether " + MAC_RE_COLON,
-        r": .*?HWaddr " + MAC_RE_COLON,
-    ]  # type: List[str]
-    _working_regex = ""  # type: str
-
-    def test(self):  # type: () -> bool
-        return check_command("netstat")
-
-    # TODO: consolidate the parsing logic between IfconfigOther and netstat
-    def get(self, arg):  # type: (str) -> Optional[str]
-        # NOTE: netstat and ifconfig pull from the same kernel source and
-        # therefore have the same output format on the same platform.
-        command_output = _popen("netstat", "-iae")
-        if not command_output:
-            log.warning("no netstat output, marking unusable")
-            self.unusable = True
-            return None
-        if self._working_regex:
-            # Use regex that worked previously. This can still return None in
-            # the case of interface not existing, but at least it's a bit faster.
-            return _search(arg + self._working_regex, command_output, flags=re.DOTALL)
-        # See if either regex matches
-        for regex in self._regexes:
-            result = _search(arg + regex, command_output, flags=re.DOTALL)
-            if result:
-                self._working_regex = regex
-                return result
-        return None
 
 
 class IpNeighShow(Method):
