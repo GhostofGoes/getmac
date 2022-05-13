@@ -36,6 +36,7 @@ def test_get_mac_address_localhost():
 def test_search(get_sample):
     text = get_sample("ifconfig.out")
     regex = r"HWaddr " + MAC_RE_COLON
+    assert getmac._search(regex, "") is None
     assert getmac._search(regex, text, 0) == "74:d4:35:e9:45:71"
 
 

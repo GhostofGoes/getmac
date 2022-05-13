@@ -209,6 +209,10 @@ def _read_file(filepath):
 
 def _search(regex, text, group_index=0, flags=0):
     # type: (str, str, int, int) -> Optional[str]
+    if not text:
+        if DEBUG:
+            log.debug("No text to _search()")
+        return None
     match = re.search(regex, text, flags)
     if match:
         return match.groups()[group_index]
@@ -869,6 +873,10 @@ class NetstatIface(Method):
         # NOTE: netstat and ifconfig pull from the same kernel source and
         # therefore have the same output format on the same platform.
         command_output = _popen("netstat", "-iae")
+        if not command_output:
+            log.warning("no netstat output, marking unusable")
+            self.unusable = True
+            return None
         if self._working_regex:
             # Use regex that worked previously. This can still return None in
             # the case of interface not existing, but at least it's a bit faster.
