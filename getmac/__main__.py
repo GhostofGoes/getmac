@@ -35,7 +35,14 @@ def main():  # type: () -> None
         "--no-network-requests",
         action="store_true",
         dest="NO_NET",
-        help="Do not send a UDP packet to refresh the ARP table",
+        help="Do not use arping or send a UDP packet to refresh the ARP table",
+    )
+    parser.add_argument(
+        "--override-port",
+        type=int,
+        metavar="PORT",
+        help="Override the default UDP port used to refresh the ARP table "
+        "if network requests are enabled and arping is unavailable",
     )
     parser.add_argument(
         "--override-platform",
@@ -74,6 +81,13 @@ def main():  # type: () -> None
 
     if args.debug:
         getmac.DEBUG = args.debug
+
+    if args.override_port:
+        port = int(args.override_port)
+        getmac.log.debug(
+            "Using UDP port %d (overriding the default port %d)", port, getmac.PORT
+        )
+        getmac.PORT = port
 
     if args.override_platform:
         getmac.OVERRIDE_PLATFORM = args.override_platform.strip().lower()

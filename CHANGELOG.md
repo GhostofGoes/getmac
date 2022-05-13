@@ -22,7 +22,8 @@ The new system has a number of benefits
 ### Added
 * Support Python 3.9
 * The amount of time taken to get a result (in seconds) will now be recorded and logged if debugging is enabled (`DEBUG>=1` or `-d`)
-* Added ability to override the detected platform via `--override-platform` (CLI) or `getmac.getmac.OVERRIDE_PLATFORM` (Python). This will force methods for that platform to be used, regardless of the actual platform. Here's an example forcing `linux` to be used as the platform: `getmac -i eth0 --override-platform linux`. In version 1.0.0, this feature will added as an argument to `get_mac_address()`.
+* Added command line argument to override the UDP port for network requests: `--override-port` (this was already possible in Python via `getmac.PORT`, but wasn't configurable via the CLI. Now it is!).
+* Added ability to override the detected platform via `--override-platform` argument (CLI) or `getmac.getmac.OVERRIDE_PLATFORM` variable (Python). This will force methods for that platform to be used, regardless of the actual platform. Here's an example forcing `linux` to be used as the platform: `getmac -i eth0 --override-platform linux`. In version 1.0.0, this feature will added as an argument to `get_mac_address()`.
 
 ### Changed
 * **Complete rewrite of `getmac` from the ground up. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes**

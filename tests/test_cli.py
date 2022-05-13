@@ -58,6 +58,13 @@ def test_cli_no_net():
     )
 
 
+def test_cli_override_port():
+    assert (
+        run_cmd(BASE_CMD + ["-v", "-dd", "-4", "127.0.0.1", "--override-port", "44444"])
+        != ""
+    )
+
+
 def test_cli_localhost():
     assert run_cmd(BASE_CMD + ["-4", "127.0.0.1"]) != ""
     assert run_cmd(BASE_CMD + ["-n", "localhost"]) != ""

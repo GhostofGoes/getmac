@@ -62,6 +62,7 @@
     - platform: `netbsd` (`NETBSD = _SYST == "NetBSD"  # type: bool`)
     - default interface: "wm0"
     - ip: "route -nq show", "netstat -r", arp -a
+- [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 
 ## Py3-related stuff for 1.0.0
 - [ ] Drop support for python 2.7, 3.4, and 3.5
