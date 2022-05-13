@@ -21,6 +21,7 @@ The new system has a number of benefits
 
 ### Added
 * Support Python 3.9
+* The amount of time taken to get a result (in seconds) will now be recorded and logged if debugging is enabled (`DEBUG>=1` or `-d`)
 
 ### Changed
 * **Complete rewrite of `getmac` from the ground up. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes**
@@ -33,12 +34,12 @@ The new system has a number of benefits
 * Fixed `netstat` on older Linux distros (such as Ubuntu 12.04)
 
 ### Dev
-* Add samples and tests for WSL (Ubuntu 18.04)
 * Add flake8 plugins: `flake8-pytest-style` and `flake8-annotations`
+* Add samples and tests for WSL1 (with the Ubuntu 18.04 distro)
+* Add samples and tests for Ubuntu 12.04
+* Add samples for NetBSD (support coming in future release)
 * Add additional tests
 * Improve existing tests
-* Add tests and samples for Ubuntu 12.04
-* Add samples for NetBSD (support coming in future release)
 
 
 ## 0.8.3 (12/10/2021)

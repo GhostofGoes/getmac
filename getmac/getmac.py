@@ -1363,6 +1363,10 @@ def get_mac_address(
         Lowercase colon-separated MAC address, or :obj:`None` if one could not be
         found or there was an error.
     """
+    if DEBUG:
+        import timeit
+        start_time = timeit.default_timer()
+
     if PY2 or (sys.version_info[0] == 3 and sys.version_info[1] < 6):
         global WARNED_UNSUPPORTED_PYTHONS
         if not WARNED_UNSUPPORTED_PYTHONS:
@@ -1446,4 +1450,10 @@ def get_mac_address(
                     DEFAULT_IFACE = "en0"
             mac = get_by_method("iface", DEFAULT_IFACE)
     log.debug("Raw MAC found: %s", mac)
+
+    # Log how long it took
+    if DEBUG:
+        duration = timeit.default_timer() - start_time
+        log.debug("getmac took %.4f seconds", duration)
+
     return _clean_mac(mac)
