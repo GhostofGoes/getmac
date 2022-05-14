@@ -71,8 +71,12 @@ else:
     from shutil import which
 
 # Platform identifiers
-_UNAME = platform.uname()  # type: platform.uname_result
-_SYST = _UNAME.system  # type: str
+if PY2:
+    _UNAME = platform.uname()  # type: Tuple[str, str, str, str, str, str]
+    _SYST = _UNAME[0]  # type: str
+else:
+    _UNAME = platform.uname()  # type: platform.uname_result
+    _SYST = _UNAME.system  # type: str
 if _SYST == "Java":
     try:
         import java.lang
@@ -1173,7 +1177,7 @@ def _swap_method_fallback(method_type, swap_with):
     curr = METHOD_CACHE[method_type]
     FALLBACK_CACHE[method_type].remove(found)
     METHOD_CACHE[method_type] = found
-    FALLBACK_CACHE[method_type].insert(0, curr)
+    FALLBACK_CACHE[method_type].insert(0, curr)  # noqa: T484
     return True
 
 
@@ -1197,12 +1201,6 @@ def initialize_method_cache(
         return True
     log.debug("Initializing '%s' method cache (platform: '%s')", method_type, PLATFORM)
 
-    # This should never happen unless there's a severe bug in the code
-    if method_type not in METHOD_CACHE:
-        msg = "invalid method type: '%s'" % method_type
-        log.critical(msg)
-        raise ValueError(msg)
-
     if OVERRIDE_PLATFORM:
         log.warning(
             "Platform override is set, using '%s' as platform "
@@ -1223,7 +1221,7 @@ def initialize_method_cache(
     type_methods = [
         method
         for method in METHODS
-        if method.method_type == method_type
+        if (method.method_type != "ip" and method.method_type == method_type)
         # Methods with a type of "ip" can handle both IPv4 and IPv6
         or (method.method_type == "ip" and method_type in ["ip4", "ip6"])
     ]  # type: List[Type[Method]]
@@ -1311,7 +1309,7 @@ def initialize_method_cache(
 
     # Populate fallback cache with all the tested methods, minus the currently active method
     if METHOD_CACHE[method_type] and METHOD_CACHE[method_type] in tested_methods:
-        tested_methods.remove(METHOD_CACHE[method_type])
+        tested_methods.remove(METHOD_CACHE[method_type])  # noqa: T484
     FALLBACK_CACHE[method_type] = tested_methods
 
     if DEBUG:

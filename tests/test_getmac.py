@@ -22,7 +22,7 @@ def test_all_methods_defined_are_in_methods_list():
         return (
             inspect.isclass(member)
             and issubclass(member, getmac.Method)
-            and not member is getmac.Method
+            and member is not getmac.Method
         )
 
     members = [m[1] for m in inspect.getmembers(getmac, _is_method)]
@@ -201,7 +201,7 @@ def test_initialize_method_cache_initialized(mocker):
         {"ip4": getmac.ArpFile(), "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
-    mocker.patch("getmac.getmac.PLATFORM", "some-unknown-platform")
+    mocker.patch("getmac.getmac.PLATFORM", "linux")
     assert getmac.initialize_method_cache("ip4")
     assert str(getmac.METHOD_CACHE["ip4"]) == "ArpFile"
     assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.Method)
@@ -214,8 +214,6 @@ def test_initialize_method_cache_bad_type(mocker):
         {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
-    mocker.patch("getmac.getmac.PLATFORM", "some-unknown-platform")
-    with pytest.raises(ValueError):
-        assert not getmac.initialize_method_cache("invalid_method_type")
-    with pytest.raises(ValueError):
-        assert not getmac.initialize_method_cache("ip")
+    mocker.patch("getmac.getmac.PLATFORM", "linux")
+    assert not getmac.initialize_method_cache("invalid_method_type")
+    assert not getmac.initialize_method_cache("ip")
