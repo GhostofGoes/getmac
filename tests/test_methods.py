@@ -122,15 +122,6 @@ def test_arping_host_iputils(benchmark, mocker, get_sample):
     assert "00:50:56:E8:32:3C" == benchmark(ap.get, arg="192.168.16.254")
 
 
-def test_ubuntu_1804_arp_file(mocker, get_sample):
-    content = get_sample("ubuntu_18.04/cat_proc-net-arp.out")
-    mocker.patch("getmac.getmac._read_file", return_value=content)
-    assert "00:50:56:f1:4c:50" == getmac.ArpFile().get("192.168.16.2")
-
-    mocker.patch("getmac.getmac._read_file", return_value=None)
-    assert not getmac.ArpFile().get("192.168.16.2")
-
-
 def test_ubuntu_1804_ip_neigh_show_with_arg(benchmark, mocker, get_sample):
     content = get_sample("ubuntu_18.04/ip_neighbor_show_192-168-16-2.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
@@ -214,6 +205,24 @@ def test_wsl_ip_route_default_iface(benchmark, mocker, get_sample):
     content = get_sample("WSL_ubuntu_18.04/ip_route_list_0slash0.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "eth0" == benchmark(getmac.DefaultIfaceIpRoute().get)
+
+
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"), [
+        ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/cat_proc-net-arp.out"),
+        ("00:50:56:fa:b7:54", "192.168.95.254", "ubuntu_18.10/proc_net_arp.out"),
+    ])
+def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.getmac._read_file", return_value=content)
+    assert mac == benchmark(getmac.ArpFile().get, arg=ip)
+    assert not getmac.ArpFile().get("0.0.0.0")
+    assert not getmac.ArpFile().get("104.0.0.0")
+    assert not getmac.ArpFile().get("")
+    assert not getmac.ArpFile().get(mac)
+
+    mocker.patch("getmac.getmac._read_file", return_value=None)
+    assert not getmac.ArpFile().get(ip)
 
 
 @pytest.mark.parametrize(

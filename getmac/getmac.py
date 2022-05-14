@@ -348,6 +348,8 @@ class ArpFile(Method):
         return check_path(self._path)
 
     def get(self, arg):  # type: (str) -> Optional[str]
+        if not arg:
+            return None
         data = _read_file(self._path)
         if data is None:
             self.unusable = True
