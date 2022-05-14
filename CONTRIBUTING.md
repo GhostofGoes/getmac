@@ -117,3 +117,6 @@ detailing the idea, and tag it appropriately (e.g. "Feature" for a new feature).
 ## Regex resources (regular expressions)
 - https://pythex.org/
 - https://regex101.com/
+- [Python's `re` documentation](https://docs.python.org/3/library/re.html)
+- [Python's guide to regex](https://docs.python.org/3/howto/regex.html) (this is actually really helpful)
+- https://ultrapico.com/Expresso.htm (I haven't used this but it looks useful)

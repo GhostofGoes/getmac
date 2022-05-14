@@ -37,7 +37,7 @@
     - Add ability to exclude methods. Just remove them from METHODS list so they never get used. Useful for testing specific methods or working around buggy methods.
     - Document these features in the README/docs, including the CLI arguments 
 - [ ] Consolidate ip6 argument into ip argument. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
-- [ ] Support ipaddress objects, IPv4Address and IPv6Address
+- [ ] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
 - [ ] Move method classes into a separate file
 - [ ] Split utils into a separate file
 - [ ] move more logic out of `get_mac_address()` into individual methods:
@@ -59,15 +59,18 @@
 - [ ] update the samples used in tests
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
 - [ ] address all TODOs in the code
+- [ ] FreeBSD default interface: `route get default`
 - [ ] Support NetBSD
     - platform: `netbsd`
     - default interface: `wm0`
     - ip: "route -nq show", "netstat -r", arp -a
+    - default interface via `route get default`?
 - [ ] Support Solaris
     - platform: `sunos`
     - default interface; `e1000g0` (NOTE: likely because this is in Vagrant VM)
     - `ifconfig` with no arguments DOES NOT work, need `ifconfig -a`
     - `netstat` doesn't work with `-e`, but does work with no arguments, `-a` and `-i`. `-n` prevents hostnames from resolving, which is faster. `-i` gives the shortest output (and is fastest), but doesn't give us a MAC address. Providing the interface as an argument also doesn't work to get a MAC (`netstat -a -I e1000g0`).
+    - default interface via `route get default`?
     - no `ip` command
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 

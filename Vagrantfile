@@ -79,6 +79,7 @@ Vagrant.configure(2) do |config|
   config.vm.define "centos7" do |centos7|
     centos7.vm.box = "centos/7"
     centos7.vm.host_name = "getmac-centos7"
+    centos7.vm.boot_timeout = 1440
     centos7.vm.provider "virtualbox" do |vb|
       vb.gui = false
       vb.memory = "1024"
@@ -92,12 +93,13 @@ Vagrant.configure(2) do |config|
   config.vm.define "openbsd" do |openbsd|
     openbsd.vm.box = "generic/openbsd6"
     openbsd.vm.host_name = "getmac-openbsd"
+    openbsd.vm.boot_timeout = 1440
     openbsd.vm.provider "virtualbox" do |vb|
       vb.gui = false
       vb.memory = "1024"
       vb.name = "getmac-OpenBSD-6"
     end
-    # openbsd.vm.synced_folder ".", "/home/vagrant/getmac"
+    openbsd.vbguest.auto_update = false
     openbsd.vm.provision "shell", path: "scripts/openbsd-provision.sh", privileged: false
   end
 
@@ -105,6 +107,7 @@ Vagrant.configure(2) do |config|
   config.vm.define "netbsd" do |netbsd|
     netbsd.vm.box = "generic/netbsd8"
     netbsd.vm.host_name = "getmac-netbsd"
+    netbsd.vm.boot_timeout = 1440
     netbsd.vm.provider "virtualbox" do |vb|
       vb.gui = false
       vb.memory = "1024"
@@ -123,19 +126,20 @@ Vagrant.configure(2) do |config|
   config.vm.define "freebsd" do |freebsd|
     freebsd.vm.box = "generic/freebsd11"
     freebsd.vm.host_name = "getmac-freebsd"
+    freebsd.vm.boot_timeout = 1440
     freebsd.vm.provider "virtualbox" do |vb|
       vb.gui = false
       vb.memory = "1024"
       vb.name = "getmac-FreeBSD-12"
     end
     freebsd.vbguest.auto_update = false
-    freebsd.vm.provision "shell", path: "scripts/freebsd-provision.sh", privileged: false
   end
 
   # OpenSUSE 42
   config.vm.define "opensuse" do |opensuse|
     opensuse.vm.box = "generic/opensuse42"
     opensuse.vm.host_name = "getmac-opensuse"
+    opensuse.vm.boot_timeout = 1440
     opensuse.vm.provider "virtualbox" do |vb|
       vb.gui = false
       vb.memory = "1024"
@@ -150,6 +154,7 @@ Vagrant.configure(2) do |config|
   config.vm.define "solaris" do |solaris|
     solaris.vm.box = "tnarik/solaris10-minimal"
     solaris.vm.host_name = "getmac-solaris"
+    solaris.vm.boot_timeout = 1440
     solaris.vm.provider "virtualbox" do |vb|
       vb.gui = false
       vb.memory = "1024"
@@ -175,48 +180,48 @@ Vagrant.configure(2) do |config|
   config.vm.define "winserver" do |winserver|
     winserver.vm.box = "opentable/win-2012r2-standard-amd64-nocm"
     winserver.vm.host_name = "getmac-winserver"
+    winserver.vm.boot_timeout = 1440
     winserver.vm.provider "virtualbox" do |vb|
       vb.gui = true
       vb.memory = "2048"
       vb.name = "getmac-Windows-Server-2012R2"
     end
-    # winserver.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # Windows 7
   config.vm.define "win7" do |win7|
     win7.vm.box = "datacastle/windows7"
     win7.vm.host_name = "getmac-win7"
+    win7.vm.boot_timeout = 1440
     win7.vm.provider "virtualbox" do |vb|
       vb.gui = true
       vb.memory = "2048"
       vb.name = "getmac-Windows-7"
     end
-    # win7.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # Windows 10
   config.vm.define "win10" do |win10|
     win10.vm.box = "Microsoft/EdgeOnWindows10"
     win10.vm.host_name = "getmac-win10"
+    win10.vm.boot_timeout = 1440
     win10.vm.provider "virtualbox" do |vb|
       vb.gui = true
       vb.memory = "2048"
       vb.name = "getmac-Windows-10"
     end
-    # win10.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
   # Windows 11
   config.vm.define "win11" do |win11|
     win11.vm.box = "gusztavvargadr/windows-11"
     win11.vm.host_name = "getmac-win11"
+    win11.vm.boot_timeout = 1440
     win11.vm.provider "virtualbox" do |vb|
       vb.gui = true
       vb.memory = "2048"
       vb.name = "getmac-Windows-11"
     end
-    # win11.vm.synced_folder ".", "/home/vagrant/getmac"
   end
 
 end
