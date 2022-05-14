@@ -106,6 +106,14 @@ Filing a bug report:
 **NOTE**: If the issue is a potential security vulnerability, do *NOT* open an issue!
 Instead, email: ghostofgoes(at)gmail(dot)com
 
+
 # Features and ideas
 Ideas for features or other things are welcomed. Open an issue on GitHub
 detailing the idea, and tag it appropriately (e.g. "Feature" for a new feature).
+
+
+# Resources
+
+## Regex resources (regular expressions)
+- https://pythex.org/
+- https://regex101.com/

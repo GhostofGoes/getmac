@@ -64,7 +64,7 @@ PY2 = sys.version_info[0] == 2  # type: bool
 DEBUG = 0  # type: int
 PORT = 55555  # type: int
 
-# Monkeypatch shutil.which for python 2.7 (TODO(python3): remove this hack)
+# Monkeypatch shutil.which for python 2.7 (TODO(python3): remove shutilwhich.py)
 if PY2:
     from .shutilwhich import which
 else:
@@ -282,13 +282,6 @@ def _fetch_ip_using_dns():
     ip = s.getsockname()[0]
     s.close()  # NOTE: sockets don't have context manager in 2.7 :(
     return ip
-
-
-# TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
-
-# Regex resources:
-#   https://pythex.org/
-#   https://regex101.com/
 
 
 class Method:

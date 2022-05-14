@@ -7,10 +7,18 @@ import pytest
 from getmac import getmac
 
 
-def test_ifconfig_linux(benchmark, mocker, get_sample):
-    content = get_sample("ifconfig.out")
+@pytest.mark.parametrize(("mac", "iface", "sample_file"), [
+    ("74:d4:35:e9:45:71", "eth0", "ifconfig.out"),
+    ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ifconfig_ens33.out"),
+    ("08:00:27:e8:81:6f", "eth0", "ubuntu_12.04/ifconfig.out"),
+    ("08:00:27:e8:81:6f", "eth0", "ubuntu_12.04/ifconfig_eth0.out"),
+    ("00:15:5d:83:d9:0a", "eth8", "WSL_ubuntu_18.04/ifconfig_eth8.out"),
+
+])
+def test_ifconfiglinux_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
+    content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "74:d4:35:e9:45:71" == benchmark(getmac.IfconfigLinux().get, arg="eth0")
+    assert mac == benchmark(getmac.IfconfigLinux().get, arg=iface)
 
 
 def test_ip_link_iface_old_style(benchmark, mocker, get_sample):
@@ -53,10 +61,6 @@ def test_arping_host_iputils(benchmark, mocker, get_sample):
 
 
 def test_ubuntu_1804_interface(mocker, get_sample):
-    content = get_sample("ubuntu_18.04/ifconfig_ens33.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "00:0c:29:b5:72:37" == getmac.IfconfigLinux().get("ens33")
-
     content = get_sample("ubuntu_18.04/ip_link_list.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "00:0c:29:b5:72:37" == getmac.IpLinkIface().get("ens33")
@@ -88,19 +92,6 @@ def test_ubuntu_1204_netstat(benchmark, mocker, get_sample):
     assert getmac.NetstatIface().get("ens") is None
     assert getmac.NetstatIface().get("eth") is None
     assert getmac.NetstatIface().get("eth00") is None
-
-
-@pytest.mark.parametrize(
-    "sample_file",
-    [
-        ("ubuntu_12.04/ifconfig.out"),
-        ("ubuntu_12.04/ifconfig_eth0.out"),
-    ],
-)
-def test_ubuntu_1204_ifconfig(benchmark, mocker, get_sample, sample_file):
-    content = get_sample(sample_file)
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "08:00:27:e8:81:6f" == benchmark(getmac.IfconfigLinux().get, arg="eth0")
 
 
 def test_ubuntu_1804_arp_file(mocker, get_sample):
@@ -205,12 +196,6 @@ def test_freebsd_remote(benchmark, mocker, get_sample):
     content = get_sample("freebsd11/arp_10-0-2-2.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "52:54:00:12:35:02" == benchmark(getmac.ArpFreebsd().get, arg="10.0.2.2")
-
-
-def test_wsl_ifconfig(benchmark, mocker, get_sample):
-    content = get_sample("WSL_ubuntu_18.04/ifconfig_eth8.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "00:15:5d:83:d9:0a" == benchmark(getmac.IfconfigLinux().get, arg="eth8")
 
 
 @pytest.mark.parametrize(

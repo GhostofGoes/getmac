@@ -86,6 +86,7 @@
 # Etc
 - [ ] Refactor the default interface code. Combine the functions into 
 one, move the default fallback logic into the function.
+- TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
 
 # Bugs or potential issues
 - [ ] Fix lookup of a IPv4 address of a local interface on Linux
