@@ -71,7 +71,8 @@ else:
     from shutil import which
 
 # Platform identifiers
-_SYST = platform.system()  # type: str
+_UNAME = platform.uname()  # type: platform.uname_result
+_SYST = _UNAME.system  # type: str
 if _SYST == "Java":
     try:
         import java.lang
@@ -83,8 +84,10 @@ WINDOWS = _SYST == "Windows"  # type: bool
 DARWIN = _SYST == "Darwin"  # type: bool
 OPENBSD = _SYST == "OpenBSD"  # type: bool
 FREEBSD = _SYST == "FreeBSD"  # type: bool
-# Not including Darwin for now
-BSD = OPENBSD or FREEBSD  # type: bool
+NETBSD = _SYST == "NetBSD"  # type: bool
+SOLARIS = _SYST == "SunOS"  # type: bool
+# Not including Darwin or Solaris as a "BSD"
+BSD = OPENBSD or FREEBSD or NETBSD  # type: bool
 # Windows Subsystem for Linux (WSL)
 WSL = False  # type: bool
 LINUX = False  # type: bool
@@ -292,6 +295,7 @@ class Method:
         "wsl",
         "openbsd",
         "freebsd",
+        "sunos",
         "other",
     }
     # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
@@ -402,6 +406,7 @@ class CtypesHost(Method):
     Uses ``SendARP`` from the Windows ``Iphlpapi`` to get the MAC address
     of a remote IPv4 host.
     """
+
     platforms = {"windows"}
     method_type = "ip4"
     network_request = True
@@ -535,7 +540,7 @@ class FcntlIface(Method):
 # TODO(python3): do we want to keep this around? It calls 3 commands and is
 #   quite inefficient. We should just take the methods and use directly.
 class UuidArpGetNode(Method):
-    platforms = {"linux", "darwin"}
+    platforms = {"linux", "darwin", "sunos", "other"}
     method_type = "ip"
 
     def test(self):  # type: () -> bool
@@ -923,18 +928,18 @@ class IpNeighShow(Method):
 
 
 class ArpVariousArgs(Method):
-    platforms = {"linux", "darwin", "other"}
+    platforms = {"linux", "darwin", "freebsd", "sunos", "other"}
     method_type = "ip"
     _regex_std = r"\)\s+at\s+" + MAC_RE_COLON  # type: str
     _regex_darwin = r"\)\s+at\s+" + MAC_RE_DARWIN  # type: str
     _args = (
-        ("", True),  # arp 192.168.1.1
+        ("", True),  # "arp 192.168.1.1"
         # Linux
-        ("-an", False),  # arp -an
-        ("-an", True),  # arp -an 192.168.1.1
+        ("-an", False),  # "arp -an"
+        ("-an", True),  # "arp -an 192.168.1.1"
         # Darwin, WSL, Linux distros???
-        ("-a", False),  # arp -a
-        ("-a", True),  # arp -a 192.168.1.1
+        ("-a", False),  # "arp -a"
+        ("-a", True),  # "arp -a 192.168.1.1"
     )
     _args_tested = False  # type: bool
     _good_pair = ()  # type: Union[Tuple, Tuple[str, bool]]
@@ -946,6 +951,7 @@ class ArpVariousArgs(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         if not arg:
             return None
+
         # Ensure output from testing command on first call isn't wasted
         command_output = ""
 
@@ -973,15 +979,18 @@ class ArpVariousArgs(Method):
                 self.unusable = True
                 return None
             self._args_tested = True
+
         if not command_output:
             # if True, then include IP as a command argument
             cmd_args = [self._good_pair[0]]
             if self._good_pair[1]:
                 cmd_args.append(arg)
-            command_output = _popen("arp", *cmd_args)
+            command_output = _popen("arp", " ".join(cmd_args))
+
         escaped = re.escape(arg)
         if self._good_regex:
             return _search(r"\(" + escaped + self._good_regex, command_output)
+
         # try linux regex first
         # try darwin regex next
         #   if a regex succeeds the first time, cache the successful regex
@@ -993,6 +1002,7 @@ class ArpVariousArgs(Method):
             if found:
                 self._good_regex = regex
                 return found
+
         return None
 
 

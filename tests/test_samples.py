@@ -91,27 +91,16 @@ def test_ubuntu_1204_netstat(benchmark, mocker, get_sample):
 
 
 @pytest.mark.parametrize(
-    "sample",
+    "sample_file",
     [
         ("ubuntu_12.04/ifconfig.out"),
         ("ubuntu_12.04/ifconfig_eth0.out"),
     ],
 )
-def test_ubuntu_1204_ifconfig(benchmark, mocker, get_sample, sample):
-    content = get_sample(sample)
+def test_ubuntu_1204_ifconfig(benchmark, mocker, get_sample, sample_file):
+    content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "08:00:27:e8:81:6f" == benchmark(getmac.IfconfigLinux().get, arg="eth0")
-
-
-def test_ubuntu_1804_remote(benchmark, mocker, get_sample):
-    content = get_sample("ubuntu_18.04/arp_-a.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "00:50:56:f1:4c:50" == benchmark(
-        getmac.ArpVariousArgs().get, arg="192.168.16.2"
-    )
-    content = get_sample("ubuntu_18.04/arp_-an.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "00:50:56:f1:4c:50" == getmac.ArpVariousArgs().get("192.168.16.2")
 
 
 def test_ubuntu_1804_arp_file(mocker, get_sample):
@@ -170,23 +159,6 @@ def test_darwin_interface(benchmark, mocker, get_sample):
     ether._tested_arg = True
     ether._iface_arg = False
     assert "2c:f0:ee:2f:c7:de" == benchmark(ether.get, arg="en0")
-
-
-def test_darwin_remote(benchmark, mocker, get_sample):
-    content = get_sample("OSX/arp_-a.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "58:6d:8f:07:c9:94" == getmac._clean_mac(
-        getmac.ArpVariousArgs().get("192.168.1.1")
-    )
-    assert "58:6d:8f:7:c9:94" == benchmark(
-        getmac.ArpVariousArgs().get, arg="192.168.1.1"
-    )
-    content = get_sample("OSX/arp_-an.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "58:6d:8f:07:c9:94" == getmac._clean_mac(
-        getmac.ArpVariousArgs().get("192.168.1.1")
-    )
-    assert "58:6d:8f:7:c9:94" == getmac.ArpVariousArgs().get("192.168.1.1")
 
 
 def test_openbsd_interface(benchmark, mocker, get_sample):
@@ -280,3 +252,35 @@ def test_default_iface_route_command(
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert expected_iface == benchmark(getmac.DefaultIfaceRouteCommand().get)
+
+
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"),
+    [
+        ("58:6d:8f:07:c9:94", "192.168.1.1", "OSX/arp_-a.out"),
+        ("58:6d:8f:07:c9:94", "192.168.1.1", "OSX/arp_-an.out"),
+        ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/arp_-a.out"),
+        ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/arp_-an.out"),
+        ("52:54:00:12:35:02", "10.0.2.2", "freebsd11/arp_10-0-2-2.out"),
+        ("52:54:00:12:35:02", "10.0.2.2", "solaris10/arp_10-0-2-2.out"),
+    ],
+)
+def test_arp_various_args(benchmark, mocker, get_sample, mac, ip, sample_file):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    result = benchmark(getmac.ArpVariousArgs().get, arg=ip)
+
+    # NOTE: Darwin  and Solaris will return MACs without leading zeroes,
+    # e.g. "58:6d:8f:7:c9:94" instead of "58:6d:8f:07:c9:94"
+    #
+    # It makes more sense to me to just handle the weird mac here
+    # in the test instead of adding redundant logic for cleaning
+    # the result to the method.
+    if "OSX" in sample_file:
+        assert result == "58:6d:8f:7:c9:94"
+    elif "solaris" in sample_file:
+        assert result == "52:54:0:12:35:2"
+    if "OSX" in sample_file or "solaris" in sample_file:
+        result = getmac._clean_mac(result)
+
+    assert mac == result

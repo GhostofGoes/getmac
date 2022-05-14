@@ -145,6 +145,8 @@ Vagrant.configure(2) do |config|
   end
 
   # Solaris 10
+  # NOTE: this box appears to have working guest extensions so the 
+  # local directory (and code) will be available in the VM at "/vagrant"
   config.vm.define "solaris" do |solaris|
     solaris.vm.box = "tnarik/solaris10-minimal"
     solaris.vm.host_name = "getmac-solaris"
