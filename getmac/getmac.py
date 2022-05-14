@@ -958,7 +958,7 @@ class ArpVariousArgs(Method):
                     # if True, then include IP as a command argument
                     if pair_to_test[1]:
                         cmd_args.append(arg)
-                    command_output = _popen("arp", *cmd_args)
+                    command_output = _popen("arp", " ".join(cmd_args))
                     self._good_pair = pair_to_test
                     break
                 except CalledProcessError as ex:
