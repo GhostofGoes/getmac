@@ -190,11 +190,24 @@ def test_freebsd_get_default_iface(benchmark, mocker, get_sample):
     getmac.check_command.assert_called_once_with("netstat")
 
 
-def test_freebsd_remote(benchmark, mocker, get_sample):
-    # TODO (rewrite): freebsd11/arp_-a.out
-    content = get_sample("freebsd11/arp_10-0-2-2.out")
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"),
+    [
+        ("52:54:00:12:35:02", "10.0.2.2", "freebsd11/arp_-a.out"),
+        ("08:00:27:ab:b0:67", "10.0.2.15", "freebsd11/arp_-a.out"),
+        ("52:54:00:12:35:02", "10.0.2.2", "freebsd11/arp_10-0-2-2.out"),
+    ],
+)
+def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+    content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "52:54:00:12:35:02" == benchmark(getmac.ArpFreebsd().get, arg="10.0.2.2")
+    assert mac == benchmark(getmac.ArpFreebsd().get, arg=ip)
+
+    assert not getmac.ArpFreebsd().get("")
+    assert not getmac.ArpFreebsd().get("10.")
+    assert not getmac.ArpFreebsd().get("10.10.10.10")
+    assert not getmac.ArpFreebsd().get(mac)
+    assert not getmac.ArpFreebsd().get("em0")
 
     mocker.patch("getmac.getmac.check_command", return_value=True)
     assert getmac.ArpFreebsd().test() is True
@@ -208,10 +221,12 @@ def test_wsl_ip_route_default_iface(benchmark, mocker, get_sample):
 
 
 @pytest.mark.parametrize(
-    ("mac", "ip", "sample_file"), [
+    ("mac", "ip", "sample_file"),
+    [
         ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/cat_proc-net-arp.out"),
         ("00:50:56:fa:b7:54", "192.168.95.254", "ubuntu_18.10/proc_net_arp.out"),
-    ])
+    ],
+)
 def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._read_file", return_value=content)
@@ -226,13 +241,15 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
 
 
 @pytest.mark.parametrize(
-    ("mac", "iface", "sample_file"), [
+    ("mac", "iface", "sample_file"),
+    [
         ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/netstat_iae.out"),
         ("02:42:33:bf:3e:40", "docker0", "ubuntu_18.04/netstat_iae.out"),
         ("08:00:27:e8:81:6f", "eth0", "ubuntu_12.04/netstat_iae.out"),
         ("b4:2e:99:35:1e:84", "eth0", "WSL_ubuntu_18.04/netstat_-iae.out"),
         ("0a:00:27:00:00:0c", "eth4", "WSL_ubuntu_18.04/netstat_-iae.out"),
-    ])
+    ],
+)
 def test_netstatiface_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
@@ -248,8 +265,8 @@ def test_netstatiface_samples(benchmark, mocker, get_sample, mac, iface, sample_
     # TODO (rewrite): improve netstat regex.
     #   On Linux, it uses the same source as ifconfig (the Kernel Interface Table),
     #   so we can just use the same regex that we use for Ifconfig* methods
-    #assert getmac.NetstatIface().get("Kernel") is None
-    #assert getmac.NetstatIface().get("e") is None
+    # assert getmac.NetstatIface().get("Kernel") is None
+    # assert getmac.NetstatIface().get("e") is None
 
 
 def test_ip_link_iface_bad_returncode(mocker, get_sample):

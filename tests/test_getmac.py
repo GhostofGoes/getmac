@@ -216,19 +216,19 @@ def test_initialize_method_cache_bad_type(mocker):
 
 
 def test_initialize_method_cache_platform_override(mocker):
-    mocker.patch("getmac.getmac.METHODS", [getmac.GetmacExe, getmac.UuidLanscan])
+    mocker.patch("getmac.getmac.METHODS", [getmac.GetmacExe, getmac.IfconfigEther])
     mocker.patch(
         "getmac.getmac.METHOD_CACHE",
         {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
     mocker.patch("getmac.getmac.PLATFORM", "windows")
-    mocker.patch("getmac.getmac.OVERRIDE_PLATFORM", "other")
+    mocker.patch("getmac.getmac.OVERRIDE_PLATFORM", "darwin")
     mocker.patch("getmac.getmac.check_command", return_value=True)
     assert getmac.initialize_method_cache("iface")
-    assert getmac.OVERRIDE_PLATFORM == "other"
+    assert getmac.OVERRIDE_PLATFORM == "darwin"
     assert getmac.PLATFORM == "windows"
-    assert isinstance(getmac.METHOD_CACHE["iface"], getmac.UuidLanscan)
+    assert isinstance(getmac.METHOD_CACHE["iface"], getmac.IfconfigEther)
 
 
 def test_initialize_method_cache_no_network_request(mocker):
