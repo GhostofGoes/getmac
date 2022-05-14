@@ -37,10 +37,11 @@ def test_check_path():
 def test_clean_mac():
     assert getmac._clean_mac(None) is None
     assert getmac._clean_mac("") is None
-    assert getmac._clean_mac("  00-50-56-C0-00-01  ") == "00:50:56:c0:00:01"
     assert getmac._clean_mac("00:00:00:00:00:00:00:00:00") is None
     assert getmac._clean_mac("00:0000:0000") is None
     assert getmac._clean_mac("00000000000000000") is None
+    assert getmac._clean_mac("  00-50-56-C0-00-01  ") == "00:50:56:c0:00:01"
+    assert getmac._clean_mac("000000000000") == "00:00:00:00:00:00"
 
 
 def test_get_mac_address_localhost():
@@ -50,7 +51,8 @@ def test_get_mac_address_localhost():
     assert result == "00:00:00:00:00:00"
 
 
-def test_search(get_sample):
+def test_search(mocker, get_sample):
+    mocker.patch("getmac.getmac.DEBUG", 1)
     text = get_sample("ifconfig.out")
     regex = r"HWaddr " + MAC_RE_COLON
     assert getmac._search(regex, "") is None
@@ -217,3 +219,35 @@ def test_initialize_method_cache_bad_type(mocker):
     mocker.patch("getmac.getmac.PLATFORM", "linux")
     assert not getmac.initialize_method_cache("invalid_method_type")
     assert not getmac.initialize_method_cache("ip")
+
+
+def test_initialize_method_cache_platform_override(mocker):
+    mocker.patch("getmac.getmac.DEBUG", 4)
+    mocker.patch("getmac.getmac.METHODS", [getmac.GetmacExe, getmac.UuidLanscan])
+    mocker.patch(
+        "getmac.getmac.METHOD_CACHE",
+        {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
+    )
+    mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
+    mocker.patch("getmac.getmac.PLATFORM", "windows")
+    mocker.patch("getmac.getmac.OVERRIDE_PLATFORM", "other")
+    mocker.patch("getmac.getmac.check_command", return_value=True)
+    assert getmac.initialize_method_cache("iface")
+    assert getmac.OVERRIDE_PLATFORM == "other"
+    assert getmac.PLATFORM == "windows"
+    assert isinstance(getmac.METHOD_CACHE["iface"], getmac.UuidLanscan)
+
+
+def test_initialize_method_cache_no_network_request(mocker):
+    mocker.patch("getmac.getmac.DEBUG", 4)
+    mocker.patch(
+        "getmac.getmac.METHOD_CACHE",
+        {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
+    )
+    mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
+    mocker.patch("getmac.getmac.PLATFORM", "linux")
+    mocker.patch("getmac.getmac.check_command", return_value=True)
+    mocker.patch("getmac.getmac.check_path", return_value=True)
+    assert getmac.initialize_method_cache("ip4", network_request=False)
+    assert getmac.PLATFORM == "linux"
+    assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.ArpFile)

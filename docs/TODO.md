@@ -18,6 +18,7 @@
 - [x] Add changelog and other modern PyPI page fields to getmac setup.py
 - [ ] Address any remaining "TODO (rewrite)" TODOs
 - [ ] Combine and parameterize tests that are testing the same method with different samples as input
+- [ ] Add unit tests calling `getmac.get_mac_address()` directly using samples
 
 
 # 1.0.0 release
