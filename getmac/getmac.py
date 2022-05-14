@@ -682,17 +682,11 @@ class ArpOpenbsd(Method):
         return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
 
 
-# utun0[: ]\sflags=.*?(?:(?:\w+[: ]\sflags=)|\sether\s([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
-# wm0[: ]\s?flags=.*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address)[ :]\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
-# <<<ARG GOES HERE>>>[: ]\s?flags=.*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
-# [: ]\s?flags=.*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
-# [: ]\s?(?:flags=|\s).*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
-# [: ]\s?(?:flags=|\s).*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr|hwaddr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
-
 # This only took 15-20 hours of throwing my brain against a wall multiple times
-# over the span of two years to figure out. It works for almost all concievable
+# over the span of 1-2 years to figure out. It works for almost all concievable
 # output from "ifconfig", and probably netstat too. It can probably be made more
 # efficient by someone who actually knows how to write regex.
+# [: ]\s?(?:flags=|\s).*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr|hwaddr|lladdr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))  # noqa: E501
 IFCONFIG_REGEX = (
     r"[: ]\s?(?:flags=|\s).*?(?:"
     r"(?:\w+[: ]\s?flags=)|"  # Prevent interfaces w/o a MAC from matching
