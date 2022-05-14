@@ -1185,17 +1185,23 @@ def initialize_method_cache(
 
     Args:
         method_type: method type to initialize the cache for.
-            Allowed values are: ``ip`` | ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
+            Allowed values are:  ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
         network_request: if methods that make network requests should be included
             (those methods that have the attribute ``network_request`` set to ``True``)
     """
-    log.debug("Initializing '%s' method cache (platform: '%s')", method_type, PLATFORM)
-    if METHOD_CACHE.get(method_type) or (
-        method_type == "ip" and (METHOD_CACHE.get("ip4") and METHOD_CACHE.get("ip6"))
-    ):
+    if METHOD_CACHE.get(method_type):
         if DEBUG:
-            log.debug("Cache already initialized for '%s'", method_type)
+            log.debug(
+                "Method cache already initialized for method type '%s'", method_type
+            )
         return True
+    log.debug("Initializing '%s' method cache (platform: '%s')", method_type, PLATFORM)
+
+    # This should never happen unless there's a severe bug in the code
+    if method_type not in METHOD_CACHE:
+        msg = "invalid method type: '%s'" % method_type
+        log.critical(msg)
+        raise ValueError(msg)
 
     if OVERRIDE_PLATFORM:
         log.warning(
@@ -1208,9 +1214,34 @@ def initialize_method_cache(
     else:
         platform = PLATFORM
 
+    if DEBUG >= 4:
+        meth_strs = ", ".join(m.__name__ for m in METHODS)  # type: str
+        log.debug("%d methods available: %s", len(METHODS), meth_strs)
+
+    # Filter methods by the type of MAC we're looking for, such as "ip"
+    # for remote host methods or "iface" for local interface methods.
+    type_methods = [
+        method
+        for method in METHODS
+        if method.method_type == method_type
+        # Methods with a type of "ip" can handle both IPv4 and IPv6
+        or (method.method_type == "ip" and method_type in ["ip4", "ip6"])
+    ]  # type: List[Type[Method]]
+    if not type_methods:
+        log.critical("No valid methods matching MAC type '%s'", method_type)
+        return False
+    if DEBUG >= 2:
+        type_strs = ", ".join(tm.__name__ for tm in type_methods)  # type: str
+        log.debug(
+            "%d type-filtered methods for '%s': %s",
+            len(type_methods),
+            method_type,
+            type_strs,
+        )
+
     # Filter methods by the platform we're running on
     platform_methods = [
-        method for method in METHODS if platform in method.platforms
+        method for method in type_methods if platform in method.platforms
     ]  # type: List[Type[Method]]
     if not platform_methods:
         # If there isn't a method for the current platform,
@@ -1220,33 +1251,36 @@ def initialize_method_cache(
             "Falling back to platform 'other'",
             platform,
         )
-        platform_methods = [method for method in METHODS if "other" in method.platforms]
-    if DEBUG:
-        meth_strs = ", ".join(pm.__name__ for pm in platform_methods)  # type: str
-        log.debug("'%s' platform_methods: %s", method_type, meth_strs)
+        platform_methods = [
+            method for method in type_methods if "other" in method.platforms
+        ]
+    if DEBUG >= 2:
+        plat_strs = ", ".join(pm.__name__ for pm in platform_methods)  # type: str
+        log.debug(
+            "%d platform-filtered methods for '%s' (method_type='%s'): %s",
+            len(platform_methods),
+            platform,
+            method_type,
+            plat_strs,
+        )
 
-    # Filter methods by the type of MAC we're looking for, such as "ip"
-    # for remote host methods or "iface" for local interface methods.
-    type_methods = [
-        pm
-        for pm in platform_methods
-        if pm.method_type == method_type
-        or (pm.method_type == "ip" and method_type in ["ip4", "ip6"])
-    ]  # type: List[Type[Method]]
-    if not type_methods:
-        log.critical("No valid methods found for MAC type '%s'", method_type)
+    if not platform_methods:
+        log.critical(
+            "No valid methods found for MAC type '%s' and platform '%s'",
+            method_type,
+            platform,
+        )
         return False
-    if DEBUG:
-        type_strs = ", ".join(tm.__name__ for tm in type_methods)  # type: str
-        log.debug("'%s' type_methods: %s", method_type, type_strs)
+
+    filtered_methods = platform_methods  # type: List[Type[Method]]
 
     # If network_request is False, then remove any methods that have network_request=True
     if not network_request:
-        type_methods = [m for m in type_methods if not m.network_request]
+        filtered_methods = [m for m in platform_methods if not m.network_request]
 
     # Determine which methods work on the current system
     tested_methods = []  # type: List[Method]
-    for method_class in type_methods:
+    for method_class in filtered_methods:
         method_instance = method_class()  # type: Method
         try:
             test_result = method_instance.test()  # type: bool
@@ -1255,31 +1289,32 @@ def initialize_method_cache(
         if test_result:
             tested_methods.append(method_instance)
             # First successful test goes in the cache
-            if method_type == "ip":
-                if not METHOD_CACHE["ip4"]:
-                    METHOD_CACHE["ip4"] = method_instance
-                if not METHOD_CACHE["ip6"]:
-                    METHOD_CACHE["ip6"] = method_instance
-            else:
-                if not METHOD_CACHE[method_type]:
-                    METHOD_CACHE[method_type] = method_instance
-        else:
-            if DEBUG:
-                log.debug("Test failed for method '%s'", str(method_instance))
+            if not METHOD_CACHE[method_type]:
+                METHOD_CACHE[method_type] = method_instance
+        elif DEBUG:
+            log.debug("Test failed for method '%s'", str(method_instance))
+
     if not tested_methods:
         log.critical(
-            "All %d '%s' methods failed to test!", len(type_methods), method_type
+            "All %d '%s' methods failed to test!", len(filtered_methods), method_type
         )
         return False
 
+    if DEBUG >= 2:
+        tested_strs = ", ".join(str(ts) for ts in tested_methods)  # type: str
+        log.debug(
+            "%d tested methods for '%s': %s",
+            len(tested_methods),
+            method_type,
+            tested_strs,
+        )
+
     # Populate fallback cache with all the tested methods, minus the currently active method
-    if METHOD_CACHE.get(method_type):
-        tested_methods.remove(METHOD_CACHE[method_type])  # noqa: T484
+    if METHOD_CACHE[method_type] and METHOD_CACHE[method_type] in tested_methods:
+        tested_methods.remove(METHOD_CACHE[method_type])
     FALLBACK_CACHE[method_type] = tested_methods
 
     if DEBUG:
-        tested_strs = ", ".join(str(ts) for ts in tested_methods)  # type: str
-        log.debug("'%s' tested_methods: %s", method_type, tested_strs)
         log.debug(
             "Current method cache: %s",
             str({k: str(v) for k, v in METHOD_CACHE.items()}),
@@ -1381,11 +1416,17 @@ def get_by_method(method_type, arg="", network_request=True):
     method = METHOD_CACHE.get(method_type)  # type: Optional[Method]
     if not method:
         # Initialize the cache if it hasn't been already
-        initialize_method_cache(method_type, network_request)
+        if not initialize_method_cache(method_type, network_request):
+            log.error(
+                "Failed to initialize method cache for method '%s' (arg: '%s')",
+                method_type,
+                arg,
+            )
+            return None
         method = METHOD_CACHE[method_type]
     if not method:
         log.error(
-            "Initialization failed for method %s. It may not be supported "
+            "Initialization failed for method '%s'. It may not be supported "
             "on this platform or another issue occurred.",
             method_type,
         )
@@ -1499,16 +1540,12 @@ def get_mac_address(
             if not METHOD_CACHE["ip4"]:
                 initialize_method_cache("ip4", network_request)
             for arp_meth in ["CtypesHost", "ArpingHost"]:
-                print(arp_meth)
-                print(FALLBACK_CACHE["ip4"])
                 if arp_meth == str(METHOD_CACHE["ip4"]):
-                    print("1")
                     send_udp_packet = False
                     break
                 elif any(
                     arp_meth == str(x) for x in FALLBACK_CACHE["ip4"]
                 ) and _swap_method_fallback("ip4", arp_meth):
-                    print("2")
                     send_udp_packet = False
                     break
 

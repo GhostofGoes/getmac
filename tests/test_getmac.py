@@ -179,7 +179,7 @@ def test_swap_method_fallback(mocker):
     assert str(getmac.FALLBACK_CACHE["ip4"][0]) == "ArpExe"
 
 
-@pytest.mark.parametrize("method_type", ["ip", "ip4", "ip6", "iface", "default_iface"])
+@pytest.mark.parametrize("method_type", ["ip4", "ip6", "iface", "default_iface"])
 def test_initialize_method_cache_valid_types(mocker, method_type):
     mocker.patch("getmac.getmac.DEBUG", 4)
     mocker.patch(
@@ -187,8 +187,11 @@ def test_initialize_method_cache_valid_types(mocker, method_type):
         {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
-    mocker.patch("getmac.getmac.PLATFORM", "some-unknown-platform")
+    mocker.patch("getmac.getmac.PLATFORM", "linux")
     assert getmac.initialize_method_cache(method_type)
+    assert getmac.METHOD_CACHE[method_type] is not None
+    if method_type in ["ip4", "ip6"]:
+        assert getmac.FALLBACK_CACHE[method_type]
 
 
 def test_initialize_method_cache_initialized(mocker):
@@ -212,4 +215,7 @@ def test_initialize_method_cache_bad_type(mocker):
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
     mocker.patch("getmac.getmac.PLATFORM", "some-unknown-platform")
-    assert not getmac.initialize_method_cache("invalid_method_type")
+    with pytest.raises(ValueError):
+        assert not getmac.initialize_method_cache("invalid_method_type")
+    with pytest.raises(ValueError):
+        assert not getmac.initialize_method_cache("ip")
