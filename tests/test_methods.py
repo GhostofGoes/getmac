@@ -8,6 +8,8 @@ from getmac import getmac
 
 
 # TODO (rewrite): freebsd11/route_get_default.out
+# TODO (rewrite): freebsd11/netstat_-ia.out
+
 # TODO (rewrite): test for DarwinNetworksetup
 
 
@@ -120,31 +122,6 @@ def test_arping_host_iputils(benchmark, mocker, get_sample):
     assert "00:50:56:E8:32:3C" == benchmark(ap.get, arg="192.168.16.254")
 
 
-def test_ubuntu_1804_netstat(benchmark, mocker, get_sample):
-    content = get_sample("ubuntu_18.04/netstat_iae.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-
-    assert "00:0c:29:b5:72:37" == benchmark(getmac.NetstatIface().get, arg="ens33")
-    assert "02:42:33:bf:3e:40" == getmac.NetstatIface().get("docker0")
-    assert getmac.NetstatIface().get("lo") is None
-    assert getmac.NetstatIface().get("ens") is None
-    assert getmac.NetstatIface().get("ens3") is None
-    assert getmac.NetstatIface().get("ens333") is None
-    assert getmac.NetstatIface().get("docker") is None
-
-
-def test_ubuntu_1204_netstat(benchmark, mocker, get_sample):
-    # TODO (rewrite): freebsd11/netstat_-ia.out
-    content = get_sample("ubuntu_12.04/netstat_iae.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-
-    assert "08:00:27:e8:81:6f" == benchmark(getmac.NetstatIface().get, arg="eth0")
-    assert getmac.NetstatIface().get("lo") is None
-    assert getmac.NetstatIface().get("ens") is None
-    assert getmac.NetstatIface().get("eth") is None
-    assert getmac.NetstatIface().get("eth00") is None
-
-
 def test_ubuntu_1804_arp_file(mocker, get_sample):
     content = get_sample("ubuntu_18.04/cat_proc-net-arp.out")
     mocker.patch("getmac.getmac._read_file", return_value=content)
@@ -237,6 +214,33 @@ def test_wsl_ip_route_default_iface(benchmark, mocker, get_sample):
     content = get_sample("WSL_ubuntu_18.04/ip_route_list_0slash0.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "eth0" == benchmark(getmac.DefaultIfaceIpRoute().get)
+
+
+@pytest.mark.parametrize(
+    ("mac", "iface", "sample_file"), [
+        ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/netstat_iae.out"),
+        ("02:42:33:bf:3e:40", "docker0", "ubuntu_18.04/netstat_iae.out"),
+        ("08:00:27:e8:81:6f", "eth0", "ubuntu_12.04/netstat_iae.out"),
+        ("b4:2e:99:35:1e:84", "eth0", "WSL_ubuntu_18.04/netstat_-iae.out"),
+        ("0a:00:27:00:00:0c", "eth4", "WSL_ubuntu_18.04/netstat_-iae.out"),
+    ])
+def test_netstatiface_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.getmac._popen", return_value=content)
+
+    assert mac == benchmark(getmac.NetstatIface().get, arg=iface)
+    assert getmac.NetstatIface().get("lo") is None
+    assert getmac.NetstatIface().get("ens") is None
+    assert getmac.NetstatIface().get("ens3") is None
+    assert getmac.NetstatIface().get("ens333") is None
+    assert getmac.NetstatIface().get("docker") is None
+    assert getmac.NetstatIface().get("eth") is None
+    assert getmac.NetstatIface().get("eth00") is None
+    # TODO (rewrite): improve netstat regex.
+    #   On Linux, it uses the same source as ifconfig (the Kernel Interface Table),
+    #   so we can just use the same regex that we use for Ifconfig* methods
+    #assert getmac.NetstatIface().get("Kernel") is None
+    #assert getmac.NetstatIface().get("e") is None
 
 
 def test_ip_link_iface_bad_returncode(mocker, get_sample):
