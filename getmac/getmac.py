@@ -139,7 +139,8 @@ MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
 MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
 # On OSX, some MACs in arp output may have a single digit instead of two
 # Examples: "18:4f:32:5a:64:5", "14:cc:20:1a:99:0"
-MAC_RE_DARWIN = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
+# This can also happen on other platforms, like Solaris
+MAC_RE_SHORT = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 
 # Ensure we only log the Python 2 warning once
 WARNED_UNSUPPORTED_PYTHONS = False
@@ -681,25 +682,67 @@ class ArpOpenbsd(Method):
         return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
 
 
-class IfconfigOpenbsd(Method):
-    platforms = {"openbsd"}
+# utun0[: ]\sflags=.*?(?:(?:\w+[: ]\sflags=)|\sether\s([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
+# wm0[: ]\s?flags=.*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address)[ :]\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
+# <<<ARG GOES HERE>>>[: ]\s?flags=.*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
+# [: ]\s?flags=.*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
+# [: ]\s?(?:flags=|\s).*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
+# [: ]\s?(?:flags=|\s).*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr|hwaddr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))
+
+# This only took 15-20 hours of throwing my brain against a wall multiple times
+# over the span of two years to figure out. It works for almost all concievable
+# output from "ifconfig", and probably netstat too. It can probably be made more
+# efficient by someone who actually knows how to write regex.
+IFCONFIG_REGEX = (
+    r"[: ]\s?(?:flags=|\s).*?(?:"
+    r"(?:\w+[: ]\s?flags=)|"  # Prevent interfaces w/o a MAC from matching
+    r"\s(?:ether|address|HWaddr|hwaddr|lladdr)[ :]?\s?"  # Handle various prefixes
+    r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))"  # Match the MAC
+)
+
+
+def _parse_ifconfig(iface, command_output):
+    # type: (str, str) -> Optional[str]
+    if not iface or not command_output:
+        return None
+    # Sanity check on input e.g. if user does "eth0:" as argument
+    iface = iface.strip(":")
+    # "(?:^|\s)": prevent an input of "h0" from matching on "eth0"
+    search_re = r"(?:^|\s)" + iface + IFCONFIG_REGEX
+    return _search(search_re, command_output, flags=re.DOTALL)
+
+
+class IfconfigWithIfaceArg(Method):
+    """
+    ``ifconfig`` command with the interface name as an argument
+    (e.g. ``ifconfig eth0``).
+    """
+
+    platforms = {"linux", "wsl", "freebsd", "openbsd", "other"}
     method_type = "iface"
-    _regex = r"lladdr " + MAC_RE_COLON  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("ifconfig")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        return _search(self._regex, _popen("ifconfig", arg))
+        try:
+            command_output = _popen("ifconfig", arg)
+        except CalledProcessError as err:
+            # Return code of 1 means interface doesn't exist
+            if err.returncode == 1:
+                return None
+            else:
+                raise err  # this will cause another method to be used
+        return _parse_ifconfig(arg, command_output)
 
 
+# TODO (rewrite): combine this with IfconfigWithArg/IfconfigNoArg
+#   (need to do live testing on Darwin once I fix my old Macbook)
 class IfconfigEther(Method):
-    platforms = {"darwin", "freebsd"}
+    platforms = {"darwin"}
     method_type = "iface"
     _tested_arg = False  # type: bool
     _iface_arg = False  # type: bool
-    _arg_regex = r".*ether " + MAC_RE_COLON  # type: str
-    _blank_regex = r"ether " + MAC_RE_COLON  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("ifconfig")
@@ -715,50 +758,16 @@ class IfconfigEther(Method):
                 self._iface_arg = False
             self._tested_arg = True
 
-        if self._iface_arg:
-            if not command_output:  # Don't repeat work on first run
-                command_output = _popen("ifconfig", arg)
-            return _search(arg + self._arg_regex, command_output)
-        else:
-            return _search(self._blank_regex, _popen("ifconfig", ""))
-
-
-class IfconfigLinux(Method):
-    platforms = {"linux", "wsl"}
-    method_type = "iface"
-    _regexes = (
-        # "ether " : modern Ubuntu and WSL
-        r"ether " + MAC_RE_COLON,
-        # "HWaddr" : others
-        r"HWaddr " + MAC_RE_COLON,
-    )  # type: Tuple[str, str]
-    _working_regex = ""  # type: str
-
-    def test(self):  # type: () -> bool
-        return check_command("ifconfig")
-
-    def get(self, arg):  # type: (str) -> Optional[str]
-        try:
+        if self._iface_arg and not command_output:  # Don't repeat work on first run
             command_output = _popen("ifconfig", arg)
-        except CalledProcessError as err:
-            # Return code of 1 means interface doesn't exist
-            if err.returncode == 1:
-                return None
-            else:
-                raise err
-        if self._working_regex:
-            # Use regex that worked previously. This can still return None in
-            # the case of interface not existing, but at least it's a bit faster.
-            return _search(self._working_regex, command_output)
-        # See if either regex matches
-        for regex in self._regexes:
-            result = _search(regex, command_output)
-            if result:
-                self._working_regex = regex
-                return result
-        return None
+        else:
+            command_output = _popen("ifconfig", "")
+        return _parse_ifconfig(arg, command_output)
 
 
+# TODO (rewrite): IfconfigNoArgs
+# TODO (rewrite): IfconfigVariousArgs
+# TODO (rewrite): unit tests
 class IfconfigOther(Method):
     """Wild 'Shot in the Dark' attempt at ``ifconfig`` for unknown platforms."""
 
@@ -766,10 +775,10 @@ class IfconfigOther(Method):
     method_type = "iface"
     # "-av": Tru64 system?
     _args = (
-        ("", (r".*?ether ", r".*?HWaddr ")),
-        ("-a", r".*?HWaddr "),
-        ("-v", r".*?HWaddr "),
-        ("-av", r".*?Ether "),
+        ("", (r"(?::| ).*?\sether\s", r"(?::| ).*?\sHWaddr\s")),
+        ("-a", r".*?HWaddr\s"),
+        ("-v", r".*?HWaddr\s"),
+        ("-av", r".*?Ether\s"),
     )
     _args_tested = False  # type: bool
     _good_pair = []  # type: List[Union[str, Tuple[str, str]]]
@@ -829,8 +838,8 @@ class NetstatIface(Method):
     _regexes = [
         r": .*?ether " + MAC_RE_COLON,
         r": .*?HWaddr " + MAC_RE_COLON,
-        r" .*?Link encap:Ethernet  HWaddr "
-        + MAC_RE_COLON,  # Ubuntu 12.04 and other older kernels
+        # Ubuntu 12.04 and other older kernels
+        r" .*?Link encap:Ethernet  HWaddr " + MAC_RE_COLON,
     ]  # type: List[str]
     _working_regex = ""  # type: str
 
@@ -928,7 +937,7 @@ class ArpVariousArgs(Method):
     platforms = {"linux", "darwin", "freebsd", "sunos", "other"}
     method_type = "ip"
     _regex_std = r"\)\s+at\s+" + MAC_RE_COLON  # type: str
-    _regex_darwin = r"\)\s+at\s+" + MAC_RE_DARWIN  # type: str
+    _regex_darwin = r"\)\s+at\s+" + MAC_RE_SHORT  # type: str
     _args = (
         ("", True),  # "arp 192.168.1.1"
         # Linux
@@ -1005,12 +1014,12 @@ class ArpVariousArgs(Method):
 
 class DefaultIfaceLinuxRouteFile(Method):
     """
-    Get the default interface by reading ``/proc/net/route``.
+    Get the default interface by parsing the ``/proc/net/route`` file.
 
     This is the same source as the ``route`` command, however it's much
     faster to read this file than to call ``route``. If it fails for whatever
-    reason, we can fall back on the system commands (e.g for a platform
-    that has a route command, but maybe doesn't use ``/proc``?).
+    reason, we can fall back on the system commands (e.g for a platform that
+    has a route command, but doesn't use ``/proc``, such as BSD-based platforms).
     """
 
     platforms = {"linux", "wsl"}
@@ -1116,9 +1125,8 @@ METHODS = [
     DarwinNetworksetup,
     ArpFreebsd,
     ArpOpenbsd,
-    IfconfigOpenbsd,
+    IfconfigWithIfaceArg,
     IfconfigEther,
-    IfconfigLinux,
     IfconfigOther,
     IpLinkIface,
     NetstatIface,
