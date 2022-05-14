@@ -4,6 +4,10 @@ from os import path
 
 import pytest
 
+import getmac
+
+getmac.getmac.DEBUG = 4
+
 
 @pytest.fixture()
 def get_sample():
