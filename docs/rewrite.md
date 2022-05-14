@@ -12,8 +12,8 @@ There are two functions that are implemented by `Method` subclasses: `test()` an
 
 When `get_mac_address()` is called for the first time for a particular method type (e.g. `"iface"`), a cache is initialized for that method type (in `initialize_method_cache()`):
 1. Create a list of all methods
-2. Remove any that don't apply to the current platform (e.g. `"windows"`)
-3. Remove any that don't apply to this method type (`"iface"`)
+2. Remove any that don't apply to this method type (e.g. `"iface"` or `"ip4"`)
+3. Remove any that don't apply to the current platform (e.g. `"windows"`)
 4. If method type is `ip`, `ip4` or `ip6`, and `network_request=False`, remove any methods that result in network traffic. These will have the attribute `Method.network_request = True`.
 5. Test all methods by calling `test()` and remove any that fail (return `False`)
 6. Store any methods that remain in the cache for this method type (`"iface"`)

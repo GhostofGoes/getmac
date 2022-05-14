@@ -27,6 +27,7 @@ def test_all_methods_defined_are_in_methods_list():
 
     members = [m[1] for m in inspect.getmembers(getmac, _is_method)]
     assert set(members) == set(getmac.METHODS)
+    assert len(members) == len(getmac.METHODS)
 
 
 def test_check_path():
@@ -163,6 +164,21 @@ def test_fetch_ip_using_dns(mocker):
     assert getmac._fetch_ip_using_dns() == "1.2.3.4"
 
 
+def test_swap_method_fallback(mocker):
+    mocker.patch(
+        "getmac.getmac.METHOD_CACHE",
+        {"ip4": getmac.ArpExe()},
+    )
+    mocker.patch("getmac.getmac.FALLBACK_CACHE", {"ip4": [getmac.CtypesHost()]})
+    assert getmac._swap_method_fallback("ip4", "ArpExe")
+    assert not getmac._swap_method_fallback("ip4", "InvalidMethod")
+    assert getmac._swap_method_fallback("ip4", "CtypesHost")
+    assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.Method)
+    assert str(getmac.METHOD_CACHE["ip4"]) == "CtypesHost"
+    assert isinstance(getmac.FALLBACK_CACHE["ip4"][0], getmac.Method)
+    assert str(getmac.FALLBACK_CACHE["ip4"][0]) == "ArpExe"
+
+
 @pytest.mark.parametrize("method_type", ["ip", "ip4", "ip6", "iface", "default_iface"])
 def test_initialize_method_cache_valid_types(mocker, method_type):
     mocker.patch("getmac.getmac.DEBUG", 4)
@@ -179,11 +195,13 @@ def test_initialize_method_cache_initialized(mocker):
     mocker.patch("getmac.getmac.DEBUG", 4)
     mocker.patch(
         "getmac.getmac.METHOD_CACHE",
-        {"ip4": [getmac.ArpFile()], "ip6": None, "iface": None, "default_iface": None},
+        {"ip4": getmac.ArpFile(), "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
     mocker.patch("getmac.getmac.PLATFORM", "some-unknown-platform")
     assert getmac.initialize_method_cache("ip4")
+    assert str(getmac.METHOD_CACHE["ip4"]) == "ArpFile"
+    assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.Method)
 
 
 def test_initialize_method_cache_bad_type(mocker):

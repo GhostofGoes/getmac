@@ -1149,8 +1149,29 @@ FALLBACK_CACHE = {
 DEFAULT_IFACE = ""  # type: str
 
 
-def initialize_method_cache(method_type):  # type: (str) -> bool
-    """Find methods that work.
+def _swap_method_fallback(method_type, swap_with):
+    # type: (str, str) -> bool
+    if str(METHOD_CACHE[method_type]) == swap_with:
+        return True
+    found = None  # type: Optional[Method]
+    for f_meth in FALLBACK_CACHE[method_type]:
+        if str(f_meth) == swap_with:
+            found = f_meth
+            break
+    if not found:
+        return False
+    curr = METHOD_CACHE[method_type]
+    FALLBACK_CACHE[method_type].remove(found)
+    METHOD_CACHE[method_type] = found
+    FALLBACK_CACHE[method_type].insert(0, curr)
+    return True
+
+
+def initialize_method_cache(
+    method_type, network_request=True
+):  # type: (str, bool) -> bool
+    """
+    Initialize the method cache for the given method type.
 
     Args:
         method_type: method type to initialize the cache for.
@@ -1458,23 +1479,57 @@ def get_mac_address(
             log.error("Invalid IPv6 address (no ':'): %s", ip6)
             return None
 
-    # Populate the ARP table by sending an empty UDP packet to a high port
     if network_request and (ip or ip6):
+        send_udp_packet = True  # type: bool
+
+        # If IPv4, use ArpingHost or CtypesHost if they're available instead
+        # of populating the ARP table. This provides more reliable results
+        # and a ARP packet is lower impact than a UDP packet.
         if ip:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        else:
-            s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        try:
-            if ip:
-                s.sendto(b"", (ip, PORT))
-            else:
-                s.sendto(b"", (ip6, PORT))
-        except Exception:
-            log.error("Failed to send ARP table population packet")
+            if not METHOD_CACHE["ip4"]:
+                initialize_method_cache("ip4", network_request)
+            for arp_meth in ["CtypesHost", "ArpingHost"]:
+                print(arp_meth)
+                print(FALLBACK_CACHE["ip4"])
+                if arp_meth == str(METHOD_CACHE["ip4"]):
+                    print("1")
+                    send_udp_packet = False
+                    break
+                elif any(
+                    arp_meth == str(x) for x in FALLBACK_CACHE["ip4"]
+                ) and _swap_method_fallback("ip4", arp_meth):
+                    print("2")
+                    send_udp_packet = False
+                    break
+
+        # Populate the ARP table by sending an empty UDP packet to a high port
+        if send_udp_packet:
             if DEBUG:
-                log.debug(traceback.format_exc())
-        finally:
-            s.close()
+                log.debug(
+                    "Attempting to populate ARP table with UDP packet to %s:%d",
+                    ip if ip else ip6,
+                    PORT,
+                )
+            if ip:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            else:
+                sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+            try:
+                if ip:
+                    sock.sendto(b"", (ip, PORT))
+                else:
+                    sock.sendto(b"", (ip6, PORT))
+            except Exception:
+                log.error("Failed to send ARP table population packet")
+                if DEBUG:
+                    log.debug(traceback.format_exc())
+            finally:
+                sock.close()
+        elif DEBUG:
+            log.debug(
+                "Not sending UDP packet, using network request method '%s' instead",
+                str(METHOD_CACHE["ip4"]),
+            )
 
     # Setup the address hunt based on the arguments specified
     if ip6:
