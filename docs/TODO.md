@@ -19,6 +19,7 @@
 - [ ] Address any remaining "TODO (rewrite)" TODOs
 - [ ] Combine and parameterize tests that are testing the same method with different samples as input
 - [ ] Add unit tests calling `getmac.get_mac_address()` directly using samples
+- [ ] Reorganize order of classes and group related ones together in the code
 
 
 # 1.0.0 release

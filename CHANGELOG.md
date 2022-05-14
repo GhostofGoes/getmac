@@ -36,6 +36,7 @@ The new system has a number of benefits
 * Improved the reliability of many methods
 * Improved the performance of many methods
 * Fixed `netstat` on older Linux distros (such as Ubuntu 12.04)
+* Overhauled `ifconfig` parsing. It should now be far more reliable and accurate across all platforms.
 
 ### Dev
 * Add flake8 plugins: `flake8-pytest-style` and `flake8-annotations`

@@ -878,7 +878,6 @@ class NetstatIface(Method):
 
 
 # TODO: sample of "ip link" on Android (use emulator)
-# TODO (rewrite): sample of "ip link eth0" on Ubuntu (use Vagrant)
 class IpLinkIface(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "iface"
@@ -892,10 +891,11 @@ class IpLinkIface(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         # Check if this version of "ip link" accepts an interface argument
         # Not accepting one is a quirk of older versions of 'iproute2'
+        # TODO: is it "ip link <arg>" on some platforms and "ip link show <arg>" on others?
         command_output = ""
         if not self._tested_arg:
             try:
-                command_output = _popen("ip", "link " + arg)
+                command_output = _popen("ip", "link show " + arg)
                 self._iface_arg = True
             except CalledProcessError as err:
                 # Output: 'Command "eth0" is unknown, try "ip link help"'
@@ -904,9 +904,10 @@ class IpLinkIface(Method):
             self._tested_arg = True
         if self._iface_arg:
             if not command_output:  # Don't repeat work on first run
-                command_output = _popen("ip", "link " + arg)
+                command_output = _popen("ip", "link show " + arg)
             return _search(arg + self._regex, command_output)
         else:
+            # TODO (rewrite): improve this regex to not need extra portion for no arg
             return _search(arg + r":" + self._regex, _popen("ip", "link"))
 
 
