@@ -1,0 +1,198 @@
+Active Internet connections (w/o servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        1      0 ::ffff:10.0.2.15:44094  slc08s02-in-f10.1e100.net:https CLOSE_WAIT
+tcp        0      0 ::ffff:10.0.2.15:49898  dd-in-f188.1e100.net:5228 ESTABLISHED
+tcp        0      0 ::ffff:10.0.2.15:41798  slc09s02-in-f10.1e100.net:https ESTABLISHED
+tcp        0      0 ::ffff:10.0.2.15:41018  dd-in-f188.1e100.net:5228 ESTABLISHED
+tcp        1      0 ::ffff:10.0.2.15:38431  slc08s01-in-f10.1e100.net:https CLOSE_WAIT
+tcp        0      0 ::ffff:10.0.2.15:44896  ya-in-f188.1e100.net:5228 ESTABLISHED
+tcp        1      0 ::ffff:10.0.2.15:46642  slc09s02-in-f10.1e100.net:https CLOSE_WAIT
+Active UNIX domain sockets (w/o servers)
+Proto RefCnt Flags       Type       State         I-Node Path
+unix  16     [ ]         DGRAM                      5131 /dev/socket/logdw
+unix  2      [ ]         STREAM                     7537 /dev/socket/sap_uim_socket1
+unix  3      [ ]         SEQPACKET  CONNECTED      12088
+unix  3      [ ]         STREAM     CONNECTED      12778
+unix  3      [ ]         STREAM     CONNECTED       4248
+unix  3      [ ]         STREAM     CONNECTED      12668
+unix  2      [ ]         DGRAM                      6384
+unix  3      [ ]         STREAM     CONNECTED      20062
+unix  3      [ ]         STREAM     CONNECTED      11844
+unix  3      [ ]         STREAM     CONNECTED      16194
+unix  3      [ ]         STREAM     CONNECTED      12902
+unix  3      [ ]         STREAM     CONNECTED       4254
+unix  3      [ ]         STREAM     CONNECTED      14732 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED       9927
+unix  3      [ ]         STREAM     CONNECTED       8916
+unix  3      [ ]         STREAM     CONNECTED      20568
+unix  3      [ ]         SEQPACKET  CONNECTED      19670
+unix  3      [ ]         STREAM     CONNECTED      10089 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      16743
+unix  3      [ ]         STREAM     CONNECTED      11374 /dev/socket/mdns
+unix  3      [ ]         SEQPACKET  CONNECTED      12456
+unix  3      [ ]         SEQPACKET  CONNECTED      12078
+unix  3      [ ]         STREAM     CONNECTED       8780
+unix  3      [ ]         STREAM     CONNECTED      19914
+unix  3      [ ]         STREAM     CONNECTED      14042
+unix  3      [ ]         STREAM     CONNECTED      12402
+unix  3      [ ]         STREAM     CONNECTED      12475 /dev/socket/zygote
+unix  3      [ ]         STREAM     CONNECTED      29478
+unix  3      [ ]         STREAM     CONNECTED       9353 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      16412
+unix  3      [ ]         STREAM     CONNECTED      12761
+unix  2      [ ]         DGRAM                      3719
+unix  3      [ ]         SEQPACKET  CONNECTED      12363
+unix  2      [ ]         SEQPACKET  CONNECTED      20480
+unix  3      [ ]         STREAM     CONNECTED      13384 @jdwp-control
+unix  2      [ ]         DGRAM                      7563
+unix  3      [ ]         STREAM     CONNECTED      17376
+unix  3      [ ]         STREAM     CONNECTED      15689 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED       8267 /dev/socket/cryptd
+unix  3      [ ]         STREAM     CONNECTED      16432
+unix  3      [ ]         STREAM     CONNECTED      11290 /dev/socket/vold
+unix  2      [ ]         DGRAM                      5149
+unix  3      [ ]         STREAM     CONNECTED      17244
+unix  2      [ ]         DGRAM                      7564
+unix  3      [ ]         STREAM     CONNECTED      10306
+unix  3      [ ]         STREAM     CONNECTED      16547
+unix  3      [ ]         STREAM     CONNECTED      12660
+unix  3      [ ]         STREAM     CONNECTED      31747
+unix  2      [ ]         DGRAM                      4691
+unix  3      [ ]         STREAM     CONNECTED      20058
+unix  3      [ ]         STREAM     CONNECTED       9929 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      12776 @jdwp-control
+unix  3      [ ]         SEQPACKET  CONNECTED       9079
+unix  3      [ ]         STREAM     CONNECTED      11843
+unix  2      [ ]         DGRAM                      7583
+unix  3      [ ]         STREAM     CONNECTED      12901
+unix  3      [ ]         STREAM     CONNECTED      14730
+unix  3      [ ]         SEQPACKET  CONNECTED      12107
+unix  3      [ ]         SEQPACKET  CONNECTED       9363 /dev/socket/lmkd
+unix  3      [ ]         STREAM     CONNECTED      16744
+unix  3      [ ]         STREAM     CONNECTED       8503
+unix  3      [ ]         STREAM     CONNECTED      11373
+unix  3      [ ]         SEQPACKET  CONNECTED      12455
+unix  3      [ ]         SEQPACKET  CONNECTED      19672
+unix  3      [ ]         STREAM     CONNECTED      10087
+unix  3      [ ]         STREAM     CONNECTED      16196 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED       8504
+unix  3      [ ]         SEQPACKET  CONNECTED      12364
+unix  3      [ ]         STREAM     CONNECTED      11408
+unix  3      [ ]         SEQPACKET  CONNECTED      19652
+unix  3      [ ]         STREAM     CONNECTED      14047
+unix  3      [ ]         SEQPACKET  CONNECTED       8961
+unix  3      [ ]         STREAM     CONNECTED      17375
+unix  3      [ ]         STREAM     CONNECTED       4055
+unix  3      [ ]         STREAM     CONNECTED      10299 /dev/socket/installd
+unix  3      [ ]         STREAM     CONNECTED       8781
+unix  3      [ ]         STREAM     CONNECTED       9354
+unix  3      [ ]         STREAM     CONNECTED      16399
+unix  3      [ ]         STREAM     CONNECTED      15833
+unix  3      [ ]         STREAM     CONNECTED      12756 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      20567
+unix  3      [ ]         STREAM     CONNECTED      11289
+unix  3      [ ]         STREAM     CONNECTED      14044 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      16430 @jdwp-control
+unix  2      [ ]         DGRAM                      5160
+unix  3      [ ]         STREAM     CONNECTED      16453
+unix  3      [ ]         SEQPACKET  CONNECTED      12180
+unix  3      [ ]         STREAM     CONNECTED       4255
+unix  3      [ ]         STREAM     CONNECTED      12664
+unix  3      [ ]         STREAM     CONNECTED      31746
+unix  3      [ ]         STREAM     CONNECTED      20093
+unix  3      [ ]         SEQPACKET  CONNECTED      11287
+unix  2      [ ]         DGRAM                      4699
+unix  3      [ ]         STREAM     CONNECTED      20060 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      11547 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      16849
+unix  3      [ ]         SEQPACKET  CONNECTED       6398
+unix  3      [ ]         STREAM     CONNECTED       9720
+unix  3      [ ]         SEQPACKET  CONNECTED      19673
+unix  3      [ ]         STREAM     CONNECTED      32376
+unix  3      [ ]         STREAM     CONNECTED      11822
+unix  3      [ ]         STREAM     CONNECTED      12933
+unix  3      [ ]         SEQPACKET  CONNECTED      12108
+unix  3      [ ]         SEQPACKET  CONNECTED      12325
+unix  3      [ ]         STREAM     CONNECTED       4252
+unix  3      [ ]         STREAM     CONNECTED      14680 @jdwp-control
+unix  3      [ ]         SEQPACKET  CONNECTED       8960
+unix  3      [ ]         STREAM     CONNECTED      10092
+unix  3      [ ]         SEQPACKET  CONNECTED      19653
+unix  3      [ ]         STREAM     CONNECTED       4100
+unix  3      [ ]         SEQPACKET  CONNECTED      19554
+unix  3      [ ]         SEQPACKET  CONNECTED       9078
+unix  3      [ ]         SEQPACKET  CONNECTED      11393
+unix  3      [ ]         SEQPACKET  CONNECTED      12454
+unix  3      [ ]         STREAM     CONNECTED       8458
+unix  3      [ ]         STREAM     CONNECTED      17374
+unix  3      [ ]         STREAM     CONNECTED      12774
+unix  3      [ ]         SEQPACKET  CONNECTED       8233
+unix  3      [ ]         STREAM     CONNECTED      16398
+unix  3      [ ]         STREAM     CONNECTED      18934
+unix  3      [ ]         STREAM     CONNECTED      17722 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED       9355
+unix  3      [ ]         STREAM     CONNECTED      16428
+unix  3      [ ]         STREAM     CONNECTED       4056
+unix  3      [ ]         STREAM     CONNECTED      30720
+unix  3      [ ]         SEQPACKET  CONNECTED      18658
+unix  2      [ ]         DGRAM                      5840
+unix  3      [ ]         STREAM     CONNECTED      12754
+unix  3      [ ]         STREAM     CONNECTED      16452
+unix  3      [ ]         SEQPACKET  CONNECTED      12181
+unix  3      [ ]         SEQPACKET  CONNECTED       4270
+unix  3      [ ]         STREAM     CONNECTED      13341 @jdwp-control
+unix  3      [ ]         SEQPACKET  CONNECTED      11288
+unix  3      [ ]         STREAM     CONNECTED      15106 @jdwp-control
+unix  3      [ ]         SEQPACKET  CONNECTED       8234
+unix  3      [ ]         STREAM     CONNECTED      20094
+unix  3      [ ]         STREAM     CONNECTED      12666 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      16850
+unix  2      [ ]         DGRAM                      7576
+unix  3      [ ]         STREAM     CONNECTED      14678
+unix  3      [ ]         STREAM     CONNECTED      11545
+unix  3      [ ]         STREAM     CONNECTED      32375
+unix  3      [ ]         SEQPACKET  CONNECTED      12087
+unix  3      [ ]         SEQPACKET  CONNECTED       6397
+unix  3      [ ]         STREAM     CONNECTED       4247
+unix  3      [ ]         STREAM     CONNECTED      12669
+unix  3      [ ]         STREAM     CONNECTED       9703 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      20061
+unix  3      [ ]         STREAM     CONNECTED      12779
+unix  3      [ ]         STREAM     CONNECTED      15104
+unix  3      [ ]         STREAM     CONNECTED      11824 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      15835 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED       9719
+unix  3      [ ]         STREAM     CONNECTED       4253
+unix  3      [ ]         STREAM     CONNECTED      19916 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      12932
+unix  2      [ ]         DGRAM                      6266
+unix  3      [ ]         SEQPACKET  CONNECTED      12457
+unix  3      [ ]         STREAM     CONNECTED      10091
+unix  3      [ ]         STREAM     CONNECTED       8917 /dev/socket/rild
+unix  3      [ ]         SEQPACKET  CONNECTED      19669
+unix  3      [ ]         STREAM     CONNECTED       4101
+unix  3      [ ]         SEQPACKET  CONNECTED      11392
+unix  3      [ ]         STREAM     CONNECTED      12403 /dev/socket/netd
+unix  3      [ ]         STREAM     CONNECTED      14048
+unix  3      [ ]         SEQPACKET  CONNECTED      19555
+unix  3      [ ]         SEQPACKET  CONNECTED      12077
+unix  3      [ ]         STREAM     CONNECTED      29480 @jdwp-control
+unix  3      [ ]         STREAM     CONNECTED      17720
+unix  3      [ ]         STREAM     CONNECTED       9351
+unix  3      [ ]         STREAM     CONNECTED      17373
+unix  3      [ ]         STREAM     CONNECTED      12762
+unix  2      [ ]         DGRAM                      3732
+unix  3      [ ]         STREAM     CONNECTED      18935
+unix  3      [ ]         STREAM     CONNECTED      16413
+unix  3      [ ]         SEQPACKET  CONNECTED      18657
+unix  3      [ ]         STREAM     CONNECTED      15687
+unix  3      [ ]         STREAM     CONNECTED       8266
+unix  3      [ ]         STREAM     CONNECTED      30719
+unix  3      [ ]         SEQPACKET  CONNECTED       4271 /dev/socket/logdr
+unix  3      [ ]         STREAM     CONNECTED      16433
+unix  3      [ ]         STREAM     CONNECTED      12661
+unix  2      [ ]         DGRAM                      7572
+unix  3      [ ]         STREAM     CONNECTED      13339
+unix  3      [ ]         STREAM     CONNECTED      16548
+unix  3      [ ]         STREAM     CONNECTED      17245
+unix  3      [ ]         STREAM     CONNECTED      13382
