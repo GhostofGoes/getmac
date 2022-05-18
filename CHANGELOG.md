@@ -37,6 +37,8 @@ The new system has a number of benefits
 * Improved the performance of many methods
 * Fixed `netstat` on older Linux distros (such as Ubuntu 12.04)
 * Overhauled `ifconfig` parsing. It should now be far more reliable and accurate across all platforms.
+* Improved Android support. Note that newer devices are locked down and the amount of information that's obtainable by an unpriviledged process is quite limited (Android 7/9 and newer, not sure exactly when they changed this, I'm not an Android guy). That being said, the normal Linux methods should work fine, provided you have the proper permissions (usually, `root`).
+* Fixed bug with `/proc/net/route` parsing (this affected Android and potentially other platforms)
 
 ### Dev
 * Add flake8 plugins: `flake8-pytest-style` and `flake8-annotations`
@@ -44,7 +46,8 @@ The new system has a number of benefits
 * Add samples and tests for Ubuntu 12.04
 * Add samples for NetBSD 8 (support coming in a future release)
 * Add samples for Solaris 10 (support TBD)
-* Add additional tests
+* Add samples for several versions of Android
+* Add new tests
 * Improve existing tests
 
 

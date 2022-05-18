@@ -84,14 +84,18 @@ if _SYST == "Java":
         _SYST = str(java.lang.System.getProperty("os.name"))
     except ImportError:
         log.critical("Can't determine OS: couldn't import java.lang on Jython")
+
 WINDOWS = _SYST == "Windows"  # type: bool
 DARWIN = _SYST == "Darwin"  # type: bool
+
 OPENBSD = _SYST == "OpenBSD"  # type: bool
 FREEBSD = _SYST == "FreeBSD"  # type: bool
 NETBSD = _SYST == "NetBSD"  # type: bool
 SOLARIS = _SYST == "SunOS"  # type: bool
+
 # Not including Darwin or Solaris as a "BSD"
 BSD = OPENBSD or FREEBSD or NETBSD  # type: bool
+
 # Windows Subsystem for Linux (WSL)
 WSL = False  # type: bool
 LINUX = False  # type: bool
@@ -100,7 +104,13 @@ if _SYST == "Linux":
         WSL = True
     else:
         LINUX = True
-# TODO: platform identification for Android?
+
+# NOTE: "Linux" methods apply to Android without modifications
+# If there's Android-specific stuff then we can add a platform
+# identifier for it.
+ANDROID = (
+    hasattr(sys, "getandroidapilevel") or "ANDROID_STORAGE" in os.environ
+)  # type: bool
 
 # Generic platform identifier used for filtering methods
 PLATFORM = _SYST.lower()  # type: str
@@ -1029,7 +1039,18 @@ class DefaultIfaceLinuxRouteFile(Method):
         data = _read_file("/proc/net/route")
         if data is not None and len(data) > 1:
             for line in data.split("\n")[1:-1]:
-                iface_name, dest = line.split("\t")[:2]
+                line = line.strip()
+                if not line:
+                    continue
+
+                # Some have tab separators, some have spaces
+                if "\t" in line:
+                    sep = "\t"
+                else:
+                    sep = "    "
+
+                iface_name, dest = line.split(sep)[:2]
+
                 if dest == "00000000":
                     return iface_name
             if DEBUG:
@@ -1037,10 +1058,11 @@ class DefaultIfaceLinuxRouteFile(Method):
                     "Failed to find default interface in data from "
                     "'/proc/net/route', no destination of '00000000' was found"
                 )
+        elif DEBUG:
+            log.warning("No data from /proc/net/route")
         return None
 
 
-# TODO: Android sample for "ip route -n"
 class DefaultIfaceRouteCommand(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "default_iface"
@@ -1057,7 +1079,6 @@ class DefaultIfaceRouteCommand(Method):
             return None
 
 
-# TODO: Android sample for "ip route list 0/0"
 class DefaultIfaceIpRoute(Method):
     # NOTE: this is slightly faster than "route" since
     # there is less output than "route -n"

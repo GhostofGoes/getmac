@@ -94,12 +94,6 @@ def test_ifconfigwithifacearg_bad_exits(mocker):
         getmac.IfconfigWithIfaceArg().get("eth0")
 
 
-def test_default_iface_linux_route_file(benchmark, mocker, get_sample):
-    content = get_sample("ubuntu_18.10/proc_net_route.out")
-    mocker.patch("getmac.getmac._read_file", return_value=content)
-    assert benchmark(getmac.DefaultIfaceLinuxRouteFile().get) == "ens33"
-
-
 def test_arping_host_habets(benchmark, mocker, get_sample):
     content = get_sample("ubuntu_18.04/arping-habets.out")
     cpe = CalledProcessError(cmd="", returncode=1)
@@ -333,6 +327,29 @@ def test_default_iface_route_command(
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert expected_iface == benchmark(getmac.DefaultIfaceRouteCommand().get)
+
+
+@pytest.mark.parametrize(
+    ("iface", "sample_file"),
+    [
+        ("ens33", "ubuntu_18.10/proc_net_route.out"),
+        ("eth0", "android_6.0_API_23/cat_proc-net-route.out"),
+        (None, "android_9.0_API_28_wifi/cat_proc-net-route.out"),
+    ],
+)
+def test_defaultifacelinuxroutefile_samples(
+    benchmark, mocker, get_sample, iface, sample_file
+):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.getmac._read_file", return_value=content)
+    assert benchmark(getmac.DefaultIfaceLinuxRouteFile().get) == iface
+
+
+def test_defaultifacelinuxroutefile(mocker):
+    mocker.patch("getmac.getmac._read_file", return_value=None)
+    assert getmac.DefaultIfaceLinuxRouteFile().get() is None
+    mocker.patch("getmac.getmac._read_file", return_value="")
+    assert getmac.DefaultIfaceLinuxRouteFile().get() is None
 
 
 @pytest.mark.parametrize(
