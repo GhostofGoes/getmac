@@ -1,0 +1,4 @@
+192.168.232.1 dev wlan0 lladdr 02:00:00:00:01:00 STALE
+192.168.200.1 dev radio0 lladdr 8e:8f:aa:c9:d2:8b STALE
+fe80::ff:fe00:100 dev wlan0 lladdr 02:00:00:00:01:00 router STALE
+fe80::8c8f:aaff:fec9:d28b dev radio0 lladdr 8e:8f:aa:c9:d2:8b router STALE
