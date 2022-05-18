@@ -389,7 +389,7 @@ def test_defaultifaceiproute_samples(benchmark, mocker, get_sample, iface, sampl
     assert iface == benchmark(getmac.DefaultIfaceIpRoute().get)
 
 
-def test_defaultifacelinuxroutefile(mocker):
+def test_defaultifaceiproute(mocker):
     mocker.patch("getmac.getmac._popen", return_value=None)
     assert getmac.DefaultIfaceIpRoute().get() is None
     mocker.patch("getmac.getmac._popen", return_value="")
