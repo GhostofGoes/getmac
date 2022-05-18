@@ -42,7 +42,8 @@ The new system has a number of benefits
 
 ### Dev
 * Add flake8 plugins: `flake8-pytest-style` and `flake8-annotations`
-* Add samples and tests for WSL1 (with the Ubuntu 18.04 distro)
+* Add additional samples and tests for WSL1 (with the Ubuntu 18.04 distro)
+* Add additional samples for Windows 10
 * Add samples and tests for Ubuntu 12.04
 * Add samples for NetBSD 8 (support coming in a future release)
 * Add samples for Solaris 10 (support TBD)

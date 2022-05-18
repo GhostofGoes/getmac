@@ -1,0 +1,51 @@
+===========================================================================
+Interface List
+ 15...b4 2e 99 35 1e 86 ......Intel(R) Ethernet Connection (7) I219-V
+ 72...00 15 5d 79 b6 61 ......Hyper-V Virtual Ethernet Adapter
+  5...b4 2e 99 35 1e 84 ......Intel(R) I211 Gigabit Network Connection
+ 12...0a 00 27 00 00 0c ......WireGuard Tunnel
+ 24...0a 00 27 00 00 18 ......VirtualBox Host-Only Ethernet Adapter #2
+ 23...0a 00 27 00 00 17 ......VirtualBox Host-Only Ethernet Adapter
+ 16...00 50 56 c0 00 01 ......VMware Virtual Ethernet Adapter for VMnet1
+ 28...00 50 56 c0 00 08 ......VMware Virtual Ethernet Adapter for VMnet8
+  2...d4 3b 04 1a 0f 26 ......Bluetooth Device (Personal Area Network) #2
+  1...........................Software Loopback Interface 1
+===========================================================================
+
+IPv6 Route Table
+===========================================================================
+Active Routes:
+ If Metric Network Destination      Gateway
+  1    331 ::1/128                  On-link
+ 12    281 fe80::/64                On-link
+ 23    281 fe80::/64                On-link
+ 24    281 fe80::/64                On-link
+  5    281 fe80::/64                On-link
+ 28    291 fe80::/64                On-link
+ 16    291 fe80::/64                On-link
+ 72    271 fe80::/64                On-link
+ 16    291 fe80::5c07:67a6:7f15:9bab/128
+                                    On-link
+ 72    271 fe80::60bd:73eb:8d76:c285/128
+                                    On-link
+ 23    281 fe80::790c:3100:c91d:7928/128
+                                    On-link
+ 28    291 fe80::a12b:835:ea84:a256/128
+                                    On-link
+ 12    281 fe80::c45c:29cc:f16d:350d/128
+                                    On-link
+ 24    281 fe80::d0d7:cafa:5c08:bc45/128
+                                    On-link
+  5    281 fe80::d1a5:787d:4c36:db2f/128
+                                    On-link
+  1    331 ff00::/8                 On-link
+ 12    281 ff00::/8                 On-link
+ 23    281 ff00::/8                 On-link
+ 24    281 ff00::/8                 On-link
+  5    281 ff00::/8                 On-link
+ 28    291 ff00::/8                 On-link
+ 16    291 ff00::/8                 On-link
+ 72    271 ff00::/8                 On-link
+===========================================================================
+Persistent Routes:
+  None

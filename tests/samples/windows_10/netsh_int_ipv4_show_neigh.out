@@ -1,0 +1,143 @@
+
+Interface 1: Loopback Pseudo-Interface 1
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+224.0.0.2                                                        Permanent
+224.0.0.22                                                       Permanent
+224.0.0.251                                                      Permanent
+224.0.0.252                                                      Permanent
+233.89.188.1                                                     Permanent
+239.0.0.250                                                      Permanent
+239.255.255.250                                                  Permanent
+
+Interface 13: Local Area Connection 2
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent
+233.89.188.1                                  01-00-5e-59-bc-01  Permanent
+239.0.0.250                                   01-00-5e-00-00-fa  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+
+Interface 5: Ethernet 4
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+10.0.0.1                                      6a-d7-9a-29-2b-82  Reachable
+10.0.0.175                                    78-28-ca-c4-66-fe  Stale
+10.0.0.187                                    5c-aa-fd-5e-49-48  Stale
+10.0.0.198                                    b8-e9-37-46-ff-76  Stale
+10.0.0.255                                    ff-ff-ff-ff-ff-ff  Permanent
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent
+224.168.100.1                                 01-00-5e-28-64-01  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+255.255.255.255                               ff-ff-ff-ff-ff-ff  Permanent
+
+Interface 16: VMware Network Adapter VMnet1
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+192.168.17.1                                  00-00-00-00-00-00  Unreachable
+192.168.17.255                                ff-ff-ff-ff-ff-ff  Permanent
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+
+Interface 28: VMware Network Adapter VMnet8
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+192.168.235.255                               ff-ff-ff-ff-ff-ff  Permanent
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+
+Interface 15: Ethernet 5
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent
+233.89.188.1                                  01-00-5e-59-bc-01  Permanent
+239.0.0.250                                   01-00-5e-00-00-fa  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+
+Interface 12: Ethernet 6
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+192.168.84.255                                ff-ff-ff-ff-ff-ff  Permanent
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+
+Interface 72: vEthernet (WSL)
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+172.17.127.255                                ff-ff-ff-ff-ff-ff  Permanent
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+
+Interface 24: VirtualBox Host-Only Network #2
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+192.168.38.255                                ff-ff-ff-ff-ff-ff  Permanent
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+
+Interface 23: VirtualBox Host-Only Network
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+192.168.56.255                                ff-ff-ff-ff-ff-ff  Permanent
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+
+Interface 2: Bluetooth Network Connection 2
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+224.0.0.2                                     01-00-5e-00-00-02  Permanent
+224.0.0.22                                    01-00-5e-00-00-16  Permanent
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent
+233.89.188.1                                  01-00-5e-59-bc-01  Permanent
+239.0.0.250                                   01-00-5e-00-00-fa  Permanent
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent
+

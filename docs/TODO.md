@@ -145,7 +145,7 @@ This is going to be a bit more complicated since the highest metric routes are g
 
 ## Misc.
 - [ ] Add ability to match user-provided arguments case-insensitively
-- [ ] Add ability to get the mac address of a socket's interface
+- [ ] Add ability to get the mac address of a Python socket's interface (`socket.socket`)
 - [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
 - [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 
