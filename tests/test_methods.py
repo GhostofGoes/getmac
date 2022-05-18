@@ -116,28 +116,6 @@ def test_arping_host_iputils(benchmark, mocker, get_sample):
     assert "00:50:56:E8:32:3C" == benchmark(ap.get, arg="192.168.16.254")
 
 
-def test_ubuntu_1804_ip_neigh_show_with_arg(benchmark, mocker, get_sample):
-    content = get_sample("ubuntu_18.04/ip_neighbor_show_192-168-16-2.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "00:50:56:f1:4c:50" == benchmark(
-        getmac.IpNeighShow().get, arg="192.168.16.2"
-    )
-
-
-def test_ubuntu_1804_ip_neigh_show_no_arg(benchmark, mocker, get_sample):
-    content = get_sample("ubuntu_18.04/ip_neighbor_show.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "00:50:56:f1:4c:50" == benchmark(
-        getmac.IpNeighShow().get, arg="192.168.16.2"
-    )
-
-
-def test_ubuntu_1804_ip_route_default_iface(benchmark, mocker, get_sample):
-    content = get_sample("ubuntu_18.04/ip_route_list_0slash0.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "ens33" == benchmark(getmac.DefaultIfaceIpRoute().get)
-
-
 def test_windows_10_iface_getmac_exe(benchmark, mocker, get_sample):
     content = get_sample("windows_10/getmac.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
@@ -208,17 +186,22 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
     getmac.check_command.assert_called_once_with("arp")
 
 
-def test_wsl_ip_route_default_iface(benchmark, mocker, get_sample):
-    content = get_sample("WSL_ubuntu_18.04/ip_route_list_0slash0.out")
-    mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "eth0" == benchmark(getmac.DefaultIfaceIpRoute().get)
-
-
 @pytest.mark.parametrize(
     ("mac", "ip", "sample_file"),
     [
         ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/cat_proc-net-arp.out"),
         ("00:50:56:fa:b7:54", "192.168.95.254", "ubuntu_18.10/proc_net_arp.out"),
+        ("52:55:0a:00:02:02", "10.0.2.2", "android_6.0_API_23/cat_proc-net-arp.out"),
+        (
+            "02:00:00:00:01:00",
+            "192.168.232.1",
+            "android_9.0_API_28_wifi/cat_proc-net-arp.out",
+        ),
+        (
+            "8e:8f:aa:c9:d2:8b",
+            "192.168.200.1",
+            "android_9.0_API_28_wifi/cat_proc-net-arp.out",
+        ),
     ],
 )
 def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -232,6 +215,41 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
 
     mocker.patch("getmac.getmac._read_file", return_value=None)
     assert not getmac.ArpFile().get(ip)
+
+
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"),
+    [
+        (
+            "00:50:56:f1:4c:50",
+            "192.168.16.2",
+            "ubuntu_18.04/ip_neighbor_show_192-168-16-2.out",
+        ),
+        ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/ip_neighbor_show.out"),
+        (
+            "52:55:0a:00:02:02",
+            "10.0.2.2",
+            "android_6.0_API_23/ip_neighbor_show_10.0.2.2.out",
+        ),
+        ("52:55:0a:00:02:02", "10.0.2.2", "android_6.0_API_23/ip_neighbor.out"),
+        ("52:56:00:00:00:02", "fe80::2", "android_6.0_API_23/ip_neighbor.out"),
+        (
+            "8e:8f:aa:c9:d2:8b",
+            "192.168.200.1",
+            "android_9.0_API_28_wifi/ip_neighbor.out",
+        ),
+        (
+            "8e:8f:aa:c9:d2:8b",
+            "fe80::8c8f:aaff:fec9:d28b",
+            "android_9.0_API_28_wifi/ip_neighbor.out",
+        ),
+    ],
+)
+def test_ipneighshow_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert mac == benchmark(getmac.IpNeighShow().get, arg=ip)
+    assert getmac.IpNeighShow().get("bad") is None
 
 
 @pytest.mark.parametrize(
@@ -299,6 +317,8 @@ def test_ip_link_iface_wsl(benchmark, mocker, get_sample, expected_mac, iface_ar
         ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ip_link_list.out"),
         ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ip_link.out"),
         ("74:d4:35:e9:45:71", "eth0", "ip_link_list.out"),
+        ("52:54:00:12:34:56", "eth0", "android_6.0_API_23/ip_link.out"),
+        ("46:37:e2:ae:b8:7f", "radio0@if10", "android_9.0_API_28_wifi/ip_link.out"),
     ],
 )
 def test_iplinkiface_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
@@ -311,6 +331,8 @@ def test_iplinkiface_samples(benchmark, mocker, get_sample, mac, iface, sample_f
     # assert getmac.IpLinkIface().get("e") is None
     assert getmac.IpLinkIface().get("e0") is None
     assert getmac.IpLinkIface().get("en33") is None
+    assert getmac.IpLinkIface().get("sit0") is None
+    assert getmac.IpLinkIface().get("radio@if10") is None
     # assert getmac.IpLinkIface().get("") is None
 
 
@@ -319,6 +341,7 @@ def test_iplinkiface_samples(benchmark, mocker, get_sample, mac, iface, sample_f
     [
         ("ens33", "ubuntu_18.04/route_-n.out"),
         ("eth0", "WSL_ubuntu_18.04/route_-n.out"),
+        ("eth0", "android_6.0_API_23/route_-n.out"),
     ],
 )
 def test_default_iface_route_command(
@@ -350,6 +373,29 @@ def test_defaultifacelinuxroutefile(mocker):
     assert getmac.DefaultIfaceLinuxRouteFile().get() is None
     mocker.patch("getmac.getmac._read_file", return_value="")
     assert getmac.DefaultIfaceLinuxRouteFile().get() is None
+
+
+@pytest.mark.parametrize(
+    ("iface", "sample_file"),
+    [
+        ("ens33", "ubuntu_18.04/ip_route_list_0slash0.out"),
+        ("eth0", "WSL_ubuntu_18.04/ip_route_list_0slash0.out"),
+        ("eth0", "android_6.0_API_23/ip_route_list_0slash0.out"),
+    ],
+)
+def test_defaultifaceiproute_samples(benchmark, mocker, get_sample, iface, sample_file):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert iface == benchmark(getmac.DefaultIfaceIpRoute().get)
+
+
+def test_defaultifacelinuxroutefile(mocker):
+    mocker.patch("getmac.getmac._popen", return_value=None)
+    assert getmac.DefaultIfaceIpRoute().get() is None
+    mocker.patch("getmac.getmac._popen", return_value="")
+    assert getmac.DefaultIfaceIpRoute().get() is None
+    mocker.patch("getmac.getmac._popen", return_value="asdfalksj3")
+    assert not getmac.DefaultIfaceIpRoute().get()
 
 
 @pytest.mark.parametrize(

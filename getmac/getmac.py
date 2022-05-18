@@ -923,6 +923,8 @@ class IpLinkIface(Method):
             return _search(arg + r":" + self._regex, _popen("ip", "link"))
 
 
+# TODO (rewrite): better marking of what methods are ipv6+ipv4 vs. ipv4-only?
+# document better? i forgot so it's probably not obvious lol.
 class IpNeighShow(Method):
     platforms = {"linux", "other"}
     method_type = "ip"
@@ -932,12 +934,17 @@ class IpNeighShow(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         output = _popen("ip", "neighbor show %s" % arg)
-        if output:
+        if not output:
+            return None
+
+        try:
             # NOTE: the space prevents accidental matching of partial IPs
             return (
                 output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
             )
-        return None
+        except IndexError as ex:
+            log.debug("IpNeighShow failed with exception: %s", str(ex))
+            return None
 
 
 class ArpVariousArgs(Method):
@@ -1090,10 +1097,14 @@ class DefaultIfaceIpRoute(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("ip", "route list 0/0")
+        if not output:
+            if DEBUG:
+                log.debug("DefaultIfaceIpRoute failed: no output")
+            return None
         try:
             return output.partition("dev")[2].partition("proto")[0].strip()
         except IndexError as ex:
-            log.debug("DefaultIfaceIpRoute failed for %s: %s", arg, str(ex))
+            log.debug("DefaultIfaceIpRoute failed with exception: %s", str(ex))
             return None
 
 
