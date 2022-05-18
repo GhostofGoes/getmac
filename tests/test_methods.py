@@ -12,7 +12,20 @@ from getmac import getmac
 # TODO (rewrite): netstat_-ian_aix.out
 # TODO (rewrite): netstat_-ian_unknown.out
 
-# TODO (rewrite): test for DarwinNetworksetup
+
+def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
+    content = get_sample("macos_10.12.6/networksetup_-getmacaddress_en0.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert "08:00:27:2b:c2:ed" == benchmark(getmac.DarwinNetworksetupIface().get, arg="en0")
+
+    mocker.patch("getmac.getmac._popen", return_value=None)
+    assert not getmac.DarwinNetworksetupIface().get("en0")
+    mocker.patch("getmac.getmac._popen", return_value="")
+    assert not getmac.DarwinNetworksetupIface().get("en0")
+
+    mocker.patch("getmac.getmac.check_command", return_value=True)
+    assert getmac.DarwinNetworksetupIface().test() is True
+    getmac.check_command.assert_called_once_with("networksetup")
 
 
 def test_ifconfigether_darwin(benchmark, mocker, get_sample):
@@ -224,6 +237,9 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     assert not getmac.ArpFile().get(mac)
 
     mocker.patch("getmac.getmac._read_file", return_value=None)
+    assert not getmac.ArpFile().get(ip)
+
+    mocker.patch("getmac.getmac._read_file", return_value="")
     assert not getmac.ArpFile().get(ip)
 
 

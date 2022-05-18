@@ -1,13 +1,13 @@
 # 0.9.0 release
 - [x] Tag Beta pre-release on PyPI
-- [ ] test changes in Vagrant VMs (`pip install https://github.com/ghostofgoes/getmac/archive/rewrite.tar.gz`)
+- [x] test changes in Vagrant VMs (`pip install https://github.com/ghostofgoes/getmac/archive/rewrite.tar.gz`)
 - [x] Ubuntu 12.04 sample
 - [ ] GitHub Actions for CI
   - [ ] Remove TravisCI
   - [ ] Remove Appveyor
   - [ ] Ensure OSX/Darwin is getting tested too
   - `python-colorlog` as example of GitHub Actions pipeline for a python project
-- [ ] Basic documentation 
+- [ ] Basic documentation
   - [ ] Single page on RTD/publish with GitHub actions
   - [ ] Document `get_by_method()`
   - [ ] Document `initialize_method_cache()`
@@ -17,7 +17,7 @@
 - [ ] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [x] Add changelog and other modern PyPI page fields to getmac setup.py
 - [ ] Address any remaining "TODO (rewrite)" TODOs
-- [ ] Combine and parameterize tests that are testing the same method with different samples as input
+- [x] Combine and parameterize tests that are testing the same method with different samples as input
 - [ ] Add unit tests calling `getmac.get_mac_address()` directly using samples
 - [ ] Reorganize order of classes and group related ones together in the code
 

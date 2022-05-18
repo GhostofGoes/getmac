@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import platform
 from subprocess import PIPE, Popen
 
 import pytest
@@ -73,5 +74,6 @@ def test_cli_localhost():
 
 
 # TODO: figure out how to properly test CLI commands and isolate platform-specific behavior
-# def test_cli_override_platform(mocker):
-#     assert not run_cmd(BASE_CMD + ["-v", "-dd", "--override-platform", "other"])
+def test_cli_override_platform():
+    plat = platform.system().lower()
+    assert run_cmd(BASE_CMD + ["-v", "-dd", "--override-platform", plat]) != ""

@@ -657,8 +657,7 @@ class ArpExe(Method):
         return _search(MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
 
 
-class DarwinNetworksetup(Method):
-    # TODO (rewrite): obtain output sample of networksetup for use in unit tests
+class DarwinNetworksetupIface(Method):
     platforms = {"darwin"}
     method_type = "iface"
 
@@ -1151,7 +1150,7 @@ METHODS = [
     IpconfigExe,
     WmicExe,
     ArpExe,
-    DarwinNetworksetup,
+    DarwinNetworksetupIface,
     ArpFreebsd,
     ArpOpenbsd,
     IfconfigWithIfaceArg,
