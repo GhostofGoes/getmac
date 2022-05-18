@@ -1,0 +1,8 @@
+en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+        options=2b<RXCSUM,TXCSUM,VLAN_HWTAGGING,TSO4>
+        ether 08:00:27:2b:c2:ed
+        inet6 fe80::18d8:82a8:174e:ac2%en0 prefixlen 64 secured scopeid 0x4
+        inet 10.0.2.15 netmask 0xffffff00 broadcast 10.0.2.255
+        nd6 options=201<PERFORMNUD,DAD>
+        media: autoselect (1000baseT <full-duplex>)
+        status: active

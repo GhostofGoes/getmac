@@ -30,20 +30,26 @@
 # This only works if guest additions are installed and the proper version.
 #   Potential workaround: vagrant plugin install vagrant-vbguest
 
+# NOTE: for Android, use the official emulators included with Android Studio
+
 # wget --no-check-certificate https://github.com/GhostofGoes/getmac/archive/refs/heads/refactor.tar.gz
 # tar -xzvf refactor.tar.gz
 
 Vagrant.configure(2) do |config|
 
-  # Mojave (not sure if this works)
+  # MacOS (not sure if this works)
   config.vm.define "osx" do |osx|
-    osx.vm.box = "adasilva/Mojave"
+    osx.vm.box = "jhcook/macos-sierra"
+    #osx.vm.box = "adasilva/Mojave"
     osx.vm.host_name = "getmac-osx"
     osx.vm.boot_timeout = 1440
     osx.vm.provider "virtualbox" do |vb|
-      vb.gui = true
+      vb.gui = false
       vb.memory = "4096"
       vb.name = "getmac-osx-mojave"
+      # Fix errors (source: https://github.com/mbigras/macos-vagrant)
+      vb.customize ["modifyvm", :id, "--usb", "on"]
+      vb.customize ["modifyvm", :id, "--usbehci", "off"]
     end
     osx.vbguest.auto_update = false
   end
@@ -63,7 +69,6 @@ Vagrant.configure(2) do |config|
 
   # Ubuntu 18.04 LTS
   config.vm.define "ubuntu18" do |ubuntu18|
-    # ubuntu18.vm.box = "ubuntu/bionic64"
     ubuntu18.vm.box = "generic/ubuntu1804"
     ubuntu18.vm.host_name = "getmac-ubuntu18"
     ubuntu18.vm.boot_timeout = 1440
@@ -163,18 +168,6 @@ Vagrant.configure(2) do |config|
     solaris.vbguest.auto_update = false
     solaris.vm.provision "shell", path: "scripts/solaris-provision.sh", privileged: false
   end
-
-  # Yeah this no longer works...probably best to just use the official emulator.
-  #   # Android
-  #   config.vm.define "android" do |android|
-  #     android.vm.box = "lgromb/androidx86-kk"
-  #     android.vm.host_name = "getmac-android"
-  #     android.vm.provider "virtualbox" do |vb|
-  #       vb.gui = false
-  #       vb.memory = "1024"
-  #       vb.name = "getmac-Android-KitKat"
-  #     end
-  #   end
 
   # Windows Server 2012 R2
   config.vm.define "winserver" do |winserver|

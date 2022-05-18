@@ -1,0 +1,29 @@
+Name  Mtu   Network       Address            Ipkts Ierrs    Opkts Oerrs  Coll
+lo0   16384 <Link#1>                           132     0      132     0     0
+lo0   16384 127           localhost            132     -      132     -     -
+                        224.0.0.251
+                        all-systems.mcast.net
+lo0   16384 localhost   ::1                    132     -      132     -     -
+                        ff02::fb           (refs: 1)
+                        ff02::2:ff33:9cc0  (refs: 1)
+                        ff01::1            (refs: 1)
+                        ff02::1            (refs: 1)
+                        ff02::1:ff00:1     (refs: 1)
+lo0   16384 fe80::1%lo0 fe80:1::1              132     -      132     -     -
+                        ff02::fb           (refs: 1)
+                        ff02::2:ff33:9cc0  (refs: 1)
+                        ff01::1            (refs: 1)
+                        ff02::1            (refs: 1)
+                        ff02::1:ff00:1     (refs: 1)
+gif0* 1280  <Link#2>                             0     0        0     0     0
+stf0* 1280  <Link#3>                             0     0        0     0     0
+en0   1500  <Link#4>    08:00:27:2b:c2:ed     2872     0     2943     0     0
+en0   1500  this-macboo fe80:4::18d8:82a8     2872     -     2943     -     -
+                        ff02::fb           (refs: 1)
+                        ff01::1            (refs: 1)
+                        ff02::2:ff9a:82d9  (refs: 1)
+                        ff02::1            (refs: 1)
+                        ff02::1:ff4e:ac2   (refs: 1)
+en0   1500  10.0.2/24     10.0.2.15           2872     -     2943     -     -
+                        224.0.0.251
+                        all-systems.mcast.net
