@@ -191,17 +191,9 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
     [
         ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/cat_proc-net-arp.out"),
         ("00:50:56:fa:b7:54", "192.168.95.254", "ubuntu_18.10/proc_net_arp.out"),
-        ("52:55:0a:00:02:02", "10.0.2.2", "android_6.0_API_23/cat_proc-net-arp.out"),
-        (
-            "02:00:00:00:01:00",
-            "192.168.232.1",
-            "android_9.0_API_28_wifi/cat_proc-net-arp.out",
-        ),
-        (
-            "8e:8f:aa:c9:d2:8b",
-            "192.168.200.1",
-            "android_9.0_API_28_wifi/cat_proc-net-arp.out",
-        ),
+        ("52:55:0a:00:02:02", "10.0.2.2", "android_6/cat_proc-net-arp.out"),
+        ("02:00:00:00:01:00", "192.168.232.1", "android_9/cat_proc-net-arp.out"),
+        ("8e:8f:aa:c9:d2:8b", "192.168.200.1", "android_9/cat_proc-net-arp.out"),
     ],
 )
 def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -226,23 +218,11 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
             "ubuntu_18.04/ip_neighbor_show_192-168-16-2.out",
         ),
         ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/ip_neighbor_show.out"),
-        (
-            "52:55:0a:00:02:02",
-            "10.0.2.2",
-            "android_6.0_API_23/ip_neighbor_show_10.0.2.2.out",
-        ),
-        ("52:55:0a:00:02:02", "10.0.2.2", "android_6.0_API_23/ip_neighbor.out"),
-        ("52:56:00:00:00:02", "fe80::2", "android_6.0_API_23/ip_neighbor.out"),
-        (
-            "8e:8f:aa:c9:d2:8b",
-            "192.168.200.1",
-            "android_9.0_API_28_wifi/ip_neighbor.out",
-        ),
-        (
-            "8e:8f:aa:c9:d2:8b",
-            "fe80::8c8f:aaff:fec9:d28b",
-            "android_9.0_API_28_wifi/ip_neighbor.out",
-        ),
+        ("52:55:0a:00:02:02", "10.0.2.2", "android_6/ip_neighbor_show_10.0.2.2.out"),
+        ("52:55:0a:00:02:02", "10.0.2.2", "android_6/ip_neighbor.out"),
+        ("52:56:00:00:00:02", "fe80::2", "android_6/ip_neighbor.out"),
+        ("8e:8f:aa:c9:d2:8b", "192.168.200.1", "android_9/ip_neighbor.out"),
+        ("8e:8f:aa:c9:d2:8b", "fe80::8c8f:aaff:fec9:d28b", "android_9/ip_neighbor.out"),
     ],
 )
 def test_ipneighshow_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -317,8 +297,8 @@ def test_ip_link_iface_wsl(benchmark, mocker, get_sample, expected_mac, iface_ar
         ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ip_link_list.out"),
         ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ip_link.out"),
         ("74:d4:35:e9:45:71", "eth0", "ip_link_list.out"),
-        ("52:54:00:12:34:56", "eth0", "android_6.0_API_23/ip_link.out"),
-        ("46:37:e2:ae:b8:7f", "radio0@if10", "android_9.0_API_28_wifi/ip_link.out"),
+        ("52:54:00:12:34:56", "eth0", "android_6/ip_link.out"),
+        ("46:37:e2:ae:b8:7f", "radio0@if10", "android_9/ip_link.out"),
     ],
 )
 def test_iplinkiface_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
@@ -341,7 +321,7 @@ def test_iplinkiface_samples(benchmark, mocker, get_sample, mac, iface, sample_f
     [
         ("ens33", "ubuntu_18.04/route_-n.out"),
         ("eth0", "WSL_ubuntu_18.04/route_-n.out"),
-        ("eth0", "android_6.0_API_23/route_-n.out"),
+        ("eth0", "android_6/route_-n.out"),
     ],
 )
 def test_default_iface_route_command(
@@ -356,8 +336,8 @@ def test_default_iface_route_command(
     ("iface", "sample_file"),
     [
         ("ens33", "ubuntu_18.10/proc_net_route.out"),
-        ("eth0", "android_6.0_API_23/cat_proc-net-route.out"),
-        (None, "android_9.0_API_28_wifi/cat_proc-net-route.out"),
+        ("eth0", "android_6/cat_proc-net-route.out"),
+        (None, "android_9/cat_proc-net-route.out"),
     ],
 )
 def test_defaultifacelinuxroutefile_samples(
@@ -380,7 +360,7 @@ def test_defaultifacelinuxroutefile(mocker):
     [
         ("ens33", "ubuntu_18.04/ip_route_list_0slash0.out"),
         ("eth0", "WSL_ubuntu_18.04/ip_route_list_0slash0.out"),
-        ("eth0", "android_6.0_API_23/ip_route_list_0slash0.out"),
+        ("eth0", "android_6/ip_route_list_0slash0.out"),
     ],
 )
 def test_defaultifaceiproute_samples(benchmark, mocker, get_sample, iface, sample_file):
