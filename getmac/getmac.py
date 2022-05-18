@@ -648,7 +648,7 @@ class WmicExe(Method):
 
 class ArpExe(Method):
     platforms = {"windows", "wsl"}
-    method_type = "ip"
+    method_type = "ip4"
 
     def test(self):  # type: () -> bool
         return check_command("arp.exe")

@@ -75,6 +75,7 @@
     - default interface via `route get default`?
     - no `ip` command
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
+- [ ] Support IPv6 remote hosts on windows, and IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
 
 ## Py3-related stuff for 1.0.0
 - [ ] Drop support for python 2.7, 3.4, and 3.5

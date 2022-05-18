@@ -136,6 +136,22 @@ def test_windows_10_iface_wmic(benchmark, mocker, get_sample):
     assert "00:FF:17:15:F8:C8" == benchmark(getmac.WmicExe().get, arg="Ethernet 3")
 
 
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"),
+    [
+        ("78-28-ca-c4-66-fe", "10.0.0.175", "windows_10/arp_-a_10.0.0.175.out"),
+    ],
+)
+def test_arpexe_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert mac == benchmark(getmac.ArpExe().get, arg=ip)
+
+    mocker.patch("getmac.getmac.check_command", return_value=True)
+    assert getmac.ArpExe().test() is True
+    getmac.check_command.assert_called_once_with("arp.exe")
+
+
 def test_openbsd_get_default_iface(benchmark, mocker, get_sample):
     content = get_sample("openbsd_6/route_nq_show_inet_gateway_priority_1.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
