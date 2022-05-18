@@ -1276,7 +1276,7 @@ def initialize_method_cache(
         # then fallback to the generic platform "other".
         log.warning(
             "No methods for platform '%s'! Your system may not be supported. "
-            "Falling back to platform 'other'",
+            "Falling back to platform 'other'.",
             platform,
         )
         platform_methods = [

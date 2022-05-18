@@ -9,6 +9,8 @@ from getmac import getmac
 
 # TODO (rewrite): freebsd11/route_get_default.out
 # TODO (rewrite): freebsd11/netstat_-ia.out
+# TODO (rewrite): netstat_-ian_aix.out
+# TODO (rewrite): netstat_-ian_unknown.out
 
 # TODO (rewrite): test for DarwinNetworksetup
 
