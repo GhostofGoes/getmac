@@ -1085,6 +1085,24 @@ class DefaultIfaceRouteCommand(Method):
             return None
 
 
+class DefaultIfaceRouteGetCommand(Method):
+    platforms = {"darwin", "freebsd", "other"}
+    method_type = "default_iface"
+
+    def test(self):  # type: () -> bool
+        return check_command("route")
+
+    def get(self, arg=""):  # type: (str) -> Optional[str]
+        output = _popen("route", "get default")
+        if not output:
+            return None
+        try:
+            return output.partition("interface: ")[2].strip().split()[0].strip()
+        except IndexError as ex:
+            log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
+            return None
+
+
 class DefaultIfaceIpRoute(Method):
     # NOTE: this is slightly faster than "route" since
     # there is less output than "route -n"

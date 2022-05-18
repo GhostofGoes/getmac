@@ -7,7 +7,6 @@ import pytest
 from getmac import getmac
 
 
-# TODO (rewrite): freebsd11/route_get_default.out
 # TODO (rewrite): freebsd11/netstat_-ia.out
 # TODO (rewrite): netstat_-ian_aix.out
 # TODO (rewrite): netstat_-ian_unknown.out
@@ -410,6 +409,23 @@ def test_defaultifaceiproute(mocker):
     assert getmac.DefaultIfaceIpRoute().get() is None
     mocker.patch("getmac.getmac._popen", return_value="asdfalksj3")
     assert not getmac.DefaultIfaceIpRoute().get()
+
+
+@pytest.mark.parametrize(
+    ("iface", "sample_file"),
+    [
+        ("en0", "macos_10.12.6/route_-n_get_default.out"),
+        ("em0", "freebsd11/route_get_default.out"),
+    ],
+)
+def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, iface, sample_file):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert iface == benchmark(getmac.DefaultIfaceRouteGetCommand().get)
+
+    mocker.patch("getmac.getmac.check_command", return_value=True)
+    assert getmac.DefaultIfaceRouteGetCommand().test() is True
+    getmac.check_command.assert_called_once_with("route")
 
 
 @pytest.mark.parametrize(
