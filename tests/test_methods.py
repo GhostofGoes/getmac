@@ -230,6 +230,7 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._read_file", return_value=content)
     assert mac == benchmark(getmac.ArpFile().get, arg=ip)
+
     assert not getmac.ArpFile().get("0.0.0.0")
     assert not getmac.ArpFile().get("104.0.0.0")
     assert not getmac.ArpFile().get("")
@@ -262,6 +263,7 @@ def test_ipneighshow_samples(benchmark, mocker, get_sample, mac, ip, sample_file
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert mac == benchmark(getmac.IpNeighShow().get, arg=ip)
+
     assert getmac.IpNeighShow().get("bad") is None
 
 
@@ -338,6 +340,7 @@ def test_iplinkiface_samples(benchmark, mocker, get_sample, mac, iface, sample_f
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert mac == benchmark(getmac.IpLinkIface().get, arg=iface)
+
     # TODO: IpLinkIface regexes need improvements
     # assert getmac.IpLinkIface().get("eth") is None
     # assert getmac.IpLinkIface().get("et") is None
@@ -364,6 +367,12 @@ def test_default_iface_route_command(
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert expected_iface == benchmark(getmac.DefaultIfaceRouteCommand().get)
 
+    mocker.patch("getmac.getmac._popen", return_value="")
+    assert not getmac.DefaultIfaceRouteCommand().get()
+
+    mocker.patch("getmac.getmac._popen", return_value="0.0.0.0 ")
+    assert not getmac.DefaultIfaceRouteCommand().get()
+
 
 @pytest.mark.parametrize(
     ("iface", "sample_file"),
@@ -384,6 +393,7 @@ def test_defaultifacelinuxroutefile_samples(
 def test_defaultifacelinuxroutefile(mocker):
     mocker.patch("getmac.getmac._read_file", return_value=None)
     assert getmac.DefaultIfaceLinuxRouteFile().get() is None
+
     mocker.patch("getmac.getmac._read_file", return_value="")
     assert getmac.DefaultIfaceLinuxRouteFile().get() is None
 
@@ -405,8 +415,10 @@ def test_defaultifaceiproute_samples(benchmark, mocker, get_sample, iface, sampl
 def test_defaultifaceiproute(mocker):
     mocker.patch("getmac.getmac._popen", return_value=None)
     assert getmac.DefaultIfaceIpRoute().get() is None
+
     mocker.patch("getmac.getmac._popen", return_value="")
     assert getmac.DefaultIfaceIpRoute().get() is None
+
     mocker.patch("getmac.getmac._popen", return_value="asdfalksj3")
     assert not getmac.DefaultIfaceIpRoute().get()
 
@@ -422,6 +434,16 @@ def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, ifac
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert iface == benchmark(getmac.DefaultIfaceRouteGetCommand().get)
+
+    mocker.patch("getmac.getmac._popen", return_value=None)
+    assert not getmac.DefaultIfaceRouteGetCommand().get()
+
+    mocker.patch("getmac.getmac._popen", return_value="")
+    assert not getmac.DefaultIfaceRouteGetCommand().get()
+
+    # test with bad input (hit the except indexerror case)
+    mocker.patch("getmac.getmac._popen", return_value="interface:")
+    assert not getmac.DefaultIfaceRouteGetCommand().get()
 
     mocker.patch("getmac.getmac.check_command", return_value=True)
     assert getmac.DefaultIfaceRouteGetCommand().test() is True

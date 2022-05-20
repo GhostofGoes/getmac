@@ -657,6 +657,7 @@ class ArpExe(Method):
         return _search(MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
 
 
+# TODO (rewrite): "ipconfig getifaddr <iface>" on darwin
 class DarwinNetworksetupIface(Method):
     platforms = {"darwin"}
     method_type = "iface"
@@ -742,7 +743,9 @@ class IfconfigWithIfaceArg(Method):
 
 
 # TODO (rewrite): combine this with IfconfigWithArg/IfconfigNoArg
-#   (need to do live testing on Darwin once I fix my old Macbook)
+#   (need to do live testing on Darwin)
+#
+# TODO (rewrite): add unit test using new samples
 class IfconfigEther(Method):
     platforms = {"darwin"}
     method_type = "iface"
@@ -1118,11 +1121,7 @@ class DefaultIfaceIpRoute(Method):
             if DEBUG:
                 log.debug("DefaultIfaceIpRoute failed: no output")
             return None
-        try:
-            return output.partition("dev")[2].partition("proto")[0].strip()
-        except IndexError as ex:
-            log.debug("DefaultIfaceIpRoute failed with exception: %s", str(ex))
-            return None
+        return output.partition("dev")[2].partition("proto")[0].strip()
 
 
 class DefaultIfaceOpenBsd(Method):
@@ -1181,6 +1180,7 @@ METHODS = [
     DefaultIfaceLinuxRouteFile,
     DefaultIfaceIpRoute,
     DefaultIfaceRouteCommand,
+    DefaultIfaceRouteGetCommand,
     DefaultIfaceOpenBsd,
     DefaultIfaceFreeBsd,
 ]

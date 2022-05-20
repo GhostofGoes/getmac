@@ -26,6 +26,7 @@ The new system has a number of benefits
 * Added ability to override the detected platform via `--override-platform` argument (CLI) or `getmac.getmac.OVERRIDE_PLATFORM` variable (Python). This will force methods for that platform to be used, regardless of the actual platform. Here's an example forcing `linux` to be used as the platform: `getmac -i eth0 --override-platform linux`. In version 1.0.0, this feature will added as an argument to `get_mac_address()`.
 * `arping` (POSIX) or `SendARP` (Windows) will now *always* be used instead of sending a UDP packet when looking for the MAC of a IPv4 host, if they're available and operable (otherwise, UDP + ARP table check will be used like before).
 * Added initial support for Solaris/SunOS. There were a few existing methods that worked as-is, so just added indicators that those methods support `sunos` (Which applies to any system where `platform.system() == SunOS`).
+* Added default interface detection for MacOS (command: `route get default`)
 
 ### Changed
 * **Complete rewrite of `getmac` from the ground up. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes**
@@ -39,6 +40,7 @@ The new system has a number of benefits
 * Overhauled `ifconfig` parsing. It should now be far more reliable and accurate across all platforms.
 * Improved Android support. Note that newer devices are locked down and the amount of information that's obtainable by an unpriviledged process is quite limited (Android 7/9 and newer, not sure exactly when they changed this, I'm not an Android guy). That being said, the normal Linux methods should work fine, provided you have the proper permissions (usually, `root`).
 * Fixed bug with `/proc/net/route` parsing (this affected Android and potentially other platforms)
+* Improve default interface detection for FreeBSD (command: `route get default`)
 
 ### Dev
 * Add flake8 plugins: `flake8-pytest-style` and `flake8-annotations`
