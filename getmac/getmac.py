@@ -891,9 +891,8 @@ class NetstatIface(Method):
 # )  # type: Tuple[str, str, str, str]
 
 
-# TODO: sample of "ip link" on Android (use emulator)
 class IpLinkIface(Method):
-    platforms = {"linux", "wsl", "other"}
+    platforms = {"linux", "wsl", "android", "other"}
     method_type = "iface"
     _regex = r".*\n.*link/ether " + MAC_RE_COLON  # type: str
     _tested_arg = False  # type: bool
@@ -922,14 +921,13 @@ class IpLinkIface(Method):
             return _search(arg + self._regex, command_output)
         else:
             # TODO (rewrite): improve this regex to not need extra portion for no arg
-            return _search(arg + r":" + self._regex, _popen("ip", "link"))
+            command_output = _popen("ip", "link")
+            return _search(arg + r":" + self._regex, command_output)
 
 
-# TODO (rewrite): better marking of what methods are ipv6+ipv4 vs. ipv4-only?
-# document better? i forgot so it's probably not obvious lol.
-class IpNeighShow(Method):
+class IpNeighborShow(Method):
     platforms = {"linux", "other"}
-    method_type = "ip"
+    method_type = "ip"  # IPv6 and IPv4
 
     def test(self):  # type: () -> bool
         return check_command("ip")
@@ -945,7 +943,7 @@ class IpNeighShow(Method):
                 output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
             )
         except IndexError as ex:
-            log.debug("IpNeighShow failed with exception: %s", str(ex))
+            log.debug("IpNeighborShow failed with exception: %s", str(ex))
             return None
 
 
@@ -1133,11 +1131,7 @@ class DefaultIfaceOpenBsd(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("route", "-nq show -inet -gateway -priority 1")
-        try:
-            return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
-        except IndexError as ex:
-            log.debug("DefaultIfaceOpenBsd failed for %s: %s", arg, str(ex))
-            return None
+        return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
 
 
 class DefaultIfaceFreeBsd(Method):
@@ -1175,7 +1169,7 @@ METHODS = [
     IfconfigOther,
     IpLinkIface,
     NetstatIface,
-    IpNeighShow,
+    IpNeighborShow,
     ArpVariousArgs,
     DefaultIfaceLinuxRouteFile,
     DefaultIfaceIpRoute,

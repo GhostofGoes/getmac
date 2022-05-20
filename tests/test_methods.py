@@ -169,6 +169,13 @@ def test_openbsd_get_default_iface(benchmark, mocker, get_sample):
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert "em0" == benchmark(getmac.DefaultIfaceOpenBsd().get)
 
+    mocker.patch("getmac.getmac._popen", return_value="")
+    assert not getmac.DefaultIfaceOpenBsd().get()
+
+    mocker.patch("getmac.getmac.check_command", return_value=True)
+    assert getmac.DefaultIfaceOpenBsd().test() is True
+    getmac.check_command.assert_called_once_with("route")
+
 
 def test_openbsd_remote(benchmark, mocker, get_sample):
     content = get_sample("openbsd_6/arp_an.out")
@@ -262,9 +269,9 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
 def test_ipneighshow_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert mac == benchmark(getmac.IpNeighShow().get, arg=ip)
+    assert mac == benchmark(getmac.IpNeighborShow().get, arg=ip)
 
-    assert getmac.IpNeighShow().get("bad") is None
+    assert getmac.IpNeighborShow().get("bad") is None
 
 
 @pytest.mark.parametrize(
@@ -294,6 +301,11 @@ def test_netstatiface_samples(benchmark, mocker, get_sample, mac, iface, sample_
     #   so we can just use the same regex that we use for Ifconfig* methods
     # assert getmac.NetstatIface().get("Kernel") is None
     # assert getmac.NetstatIface().get("e") is None
+
+    mocker.patch("getmac.getmac._popen", return_value=None)
+    assert getmac.NetstatIface().get("eth0") is None
+    mocker.patch("getmac.getmac._popen", return_value=" ")
+    assert getmac.NetstatIface().get("eth0") is None
 
 
 def test_ip_link_iface_bad_returncode(mocker, get_sample):
