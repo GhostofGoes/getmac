@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
+import platform
+import socket
+import sys
+import uuid
 from subprocess import CalledProcessError
 
 import pytest
 
 from getmac import getmac
-
 
 # TODO (rewrite): freebsd11/netstat_-ia.out
 # TODO (rewrite): netstat_-ian_aix.out
@@ -15,7 +18,9 @@ from getmac import getmac
 def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
     content = get_sample("macos_10.12.6/networksetup_-getmacaddress_en0.out")
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "08:00:27:2b:c2:ed" == benchmark(getmac.DarwinNetworksetupIface().get, arg="en0")
+    assert "08:00:27:2b:c2:ed" == benchmark(
+        getmac.DarwinNetworksetupIface().get, arg="en0"
+    )
 
     mocker.patch("getmac.getmac._popen", return_value=None)
     assert not getmac.DarwinNetworksetupIface().get("en0")
@@ -227,6 +232,9 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
     ("mac", "ip", "sample_file"),
     [
         ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/cat_proc-net-arp.out"),
+        ("00:50:56:e1:a8:4a", "192.168.16.2", "ubuntu_18.10/proc_net_arp.out"),
+        ("00:50:56:e8:32:3c", "192.168.16.254", "ubuntu_18.10/proc_net_arp.out"),
+        ("00:50:56:c0:00:0a", "192.168.95.1", "ubuntu_18.10/proc_net_arp.out"),
         ("00:50:56:fa:b7:54", "192.168.95.254", "ubuntu_18.10/proc_net_arp.out"),
         ("52:55:0a:00:02:02", "10.0.2.2", "android_6/cat_proc-net-arp.out"),
         ("02:00:00:00:01:00", "192.168.232.1", "android_9/cat_proc-net-arp.out"),
@@ -442,7 +450,9 @@ def test_defaultifaceiproute(mocker):
         ("em0", "freebsd11/route_get_default.out"),
     ],
 )
-def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, iface, sample_file):
+def test_defaultifaceroutegetcommand_samples(
+    benchmark, mocker, get_sample, iface, sample_file
+):
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
     assert iface == benchmark(getmac.DefaultIfaceRouteGetCommand().get)
@@ -492,3 +502,56 @@ def test_arp_various_args(benchmark, mocker, get_sample, mac, ip, sample_file):
         result = getmac._clean_mac(result)
 
     assert mac == result
+
+
+def test_sys_iface_file(mocker):
+    mocker.patch("getmac.getmac._read_file", return_value="00:0c:29:b5:72:37\n")
+    assert getmac.SysIfaceFile().get("ens33") == "00:0c:29:b5:72:37\n"
+
+    mocker.patch("getmac.getmac._read_file", return_value=None)
+    assert getmac.SysIfaceFile().get("ens33") is None
+
+
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Can't reliably mock fcntl on non-Linux platforms",
+)
+def test_fcntl_iface(mocker):
+    data = (
+        b"enp3s0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00t\xd45\xe9"
+        b"Es\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    )
+    mocker.patch("fcntl.ioctl", return_value=data)
+    m = mocker.patch("socket.socket")
+    assert getmac.FcntlIface().get("enp3s0") == "74:d4:35:e9:45:73"
+    m.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
+
+
+# Python 2.7.5 (CentOS 7) doesn't have this...
+# The commit adding it: https://bit.ly/2Hnd7bN (no idea what release it was in)
+@pytest.mark.skipif(
+    not hasattr(uuid, "_arp_getnode"),
+    reason="This version of Python doesn't have uuid._arp_getnode",
+)
+def test_uuid_arp_get_node(mocker):
+    mocker.patch("uuid._arp_getnode", return_value=278094213753144)
+    assert getmac.UuidArpGetNode().get("10.0.0.1") == "FC:EC:DA:D3:29:38"
+    mocker.patch("uuid._arp_getnode", return_value=None)
+    assert getmac.UuidArpGetNode().get("10.0.0.1") is None
+    assert getmac.UuidArpGetNode().get("en0") is None
+
+
+@pytest.mark.skipif(
+    sys.version_info[0] == 3 and sys.version_info[1] >= 9,
+    reason="Python 3.9+ doesn't have uuid._find_mac",
+)
+def test_uuid_lanscan(mocker):
+    mocker.patch("uuid._find_mac", return_value=2482700837424)
+    assert getmac.UuidLanscan().get("en1") == "02:42:0C:80:62:30"
+    mocker.patch("uuid._find_mac", return_value=None)
+    assert getmac.UuidLanscan().get("10.0.0.1") is None
+    assert getmac.UuidLanscan().get("en0") is None
+
+    mocker.patch("getmac.getmac.check_command", return_value=True)
+    assert getmac.UuidLanscan().test() is True
+    getmac.check_command.assert_called_once_with("lanscan")
