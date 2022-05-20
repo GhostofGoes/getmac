@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import sys
 import platform
+import sys
 from subprocess import PIPE, Popen
 
 import pytest

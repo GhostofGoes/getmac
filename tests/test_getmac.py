@@ -2,6 +2,7 @@
 
 import inspect
 import sys
+from subprocess import CalledProcessError
 
 import pytest
 
@@ -185,4 +186,38 @@ def test_get_mac_address_localhost():
     assert result == "00:00:00:00:00:00"
 
 
-# TODO (rewrite): more tests of get_mac_address directly
+def test_get_mac_address_interface(mocker):
+    pass  # TODO (rewrite)
+
+
+def test_get_mac_address_ip(mocker):
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:12")
+    assert getmac.get_mac_address(ip="192.0.2.2") == "00:01:02:04:00:12"
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.2")
+
+
+def test_get_mac_address_ip6(mocker):
+    mocker.patch("socket.has_ipv6", False)
+    assert getmac.get_mac_address(ip6="fe80::1") is None
+
+    mocker.patch("socket.has_ipv6", True)
+    assert getmac.get_mac_address(ip6="192.168.0.1") is None
+
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:00")
+    assert getmac.get_mac_address(ip6="fe80::1") == "00:01:02:04:00:00"
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::1")
+
+
+def test_get_mac_address_hostname(mocker):
+    cpe = CalledProcessError(cmd="socket.gaierror", returncode=1)
+    mocker.patch("socket.gethostbyname", side_effect=cpe)
+    assert getmac.get_mac_address(hostname="bogus") is None
+
+    mocker.patch("socket.gethostbyname", return_value="192.0.2.22")
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:22")
+    assert getmac.get_mac_address(hostname="test_hostname") == "00:01:02:04:00:22"
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.22")
+
+
+def test_get_mac_address_network_request(mocker):
+    pass  # TODO (rewrite)

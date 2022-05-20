@@ -38,7 +38,7 @@
         - Add a CLI argument to reference class by name
     - Add ability to exclude methods. Just remove them from METHODS list so they never get used. Useful for testing specific methods or working around buggy methods.
     - Document these features in the README/docs, including the CLI arguments 
-- [ ] Consolidate ip6 argument into ip argument. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
+- [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
 - [ ] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
 - [ ] Move method classes into a separate file
 - [ ] Split utils into a separate file
