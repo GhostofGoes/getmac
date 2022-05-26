@@ -12,7 +12,6 @@ PY2 = sys.version_info[0] == 2
 MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
 
 
-# @pytest.mark.skipif(sys.version_info[0] == 2, reason="No need to run on Python 2")
 def test_all_methods_defined_are_in_methods_list():
     """Test that all methods present in getmac.py are in the METHODS list."""
 
