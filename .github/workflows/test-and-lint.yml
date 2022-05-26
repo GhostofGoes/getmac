@@ -1,0 +1,71 @@
+name: Run lint checks and tests
+
+on:
+- push
+- pull_request
+
+jobs:
+  lint:
+    name: Run Lint Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: "🐍 Set up Python ${{ matrix.python-version }}"
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.8"
+      - name: "🐍 Display Python version"
+        run: python --version
+      - name: Install dependencies
+        run: python -m pip install tox
+      - name: Run lint checks with tox
+        run: tox -e check
+  test:
+    name: Run Tests on all platforms
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        python-version:
+          - "2.7"
+          - "3.4"
+          - "3.5"
+          - "3.6"
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "pypy-2.7"
+          - "pypy-3.6"
+          - "pypy-3.7"
+          - "pypy-3.8"
+        architecture:
+          - x86
+          - x64
+        platform:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: "🐍 Set up Python ${{ matrix.python-version }}"
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.architecture }}
+          cache: pip
+      - name: Display platform and environment information
+        # run: "python -c 'import sys, os, platform; print(sys.version); print(sys.platform); print(os.name); print(platform.system()); print(platform.version()); print(platform.uname())'"
+        run: |
+          python --version
+          python -c 'import sys; print(sys.version)'
+          python -c 'import sys; print(sys.platform)'
+          python -c 'import os; print(os.name)'
+          python -c 'import platform; print(platform.system())'
+          python -c 'import platform; print(platform.version())'
+          python -c 'import platform; print(platform.uname())'
+      # TODO: do we need coveralls still?
+      - name: Install dependencies
+        run: python -m pip install tox coveralls tox-gh-actions
+      - name: "Run tests with tox"
+        run: tox
