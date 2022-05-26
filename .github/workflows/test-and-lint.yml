@@ -58,7 +58,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
-          cache: pip
       - name: Display platform and environment information
         # run: "python -c 'import sys, os, platform; print(sys.version); print(sys.platform); print(os.name); print(platform.system()); print(platform.version()); print(platform.uname())'"
         run: |
