@@ -1,25 +1,12 @@
-name: Run lint checks and tests
+name: Test
 
 on:
 - push
 - pull_request
 
 jobs:
-  lint:
-    name: Run Lint Checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: "🐍 Set up Python"
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.8"
-      - name: Install dependencies
-        run: python -m pip install tox
-      - name: Run lint checks with tox
-        run: tox -e check
   test:
-    name: Run Tests on all platforms
+    name: Run tests
     runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
@@ -32,7 +19,6 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
-          - "3.11"
           - "pypy-2.7"
           - "pypy-3.6"
           - "pypy-3.7"
@@ -45,10 +31,14 @@ jobs:
           - windows-latest
           - macos-latest
         exclude:
+          - platform: ubuntu-latest
+            architecture: x86
           - platform: macos-latest
             architecture: x86
           - platform: ubuntu-latest
-            architecture: x86
+            python-version: "3.4"
+          - platform: macos-latest
+            python-version: "3.4"
     steps:
       - uses: actions/checkout@v3
       - name: "🐍 Set up Python ${{ matrix.python-version }}"
@@ -72,3 +62,53 @@ jobs:
         run: python -m pip install tox coveralls tox-gh-actions
       - name: "Run tests with tox"
         run: tox
+      # TODO: call coveralls
+      # https://coveralls-python.readthedocs.io/en/latest/usage/configuration.html#github-actions-support
+      - name: Coveralls
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          parallel: true
+          flag-name: ${{ matrix.python-version }}-${{ matrix.platform }}
+  coveralls_finish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        parallel-finished: true
+
+
+# TODO: publish
+# TODO: need to do this for both "getmac" and "get-mac" packages
+# TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
+
+# name: "Build and publish a release"
+
+# on:
+#   release:
+#     types: [released]
+
+# jobs:
+#   publish:
+#     name: "📦 Publish Python distributions"
+#     runs-on: "ubuntu-latest"
+#     strategy:
+#       matrix:
+#         python-version:
+#           - "3.8"
+#     steps:
+#       - uses: "actions/checkout@master"
+#       - name: "🐍 Set up Python ${{ matrix.python-version }}"
+#         uses: "actions/setup-python@v2"
+#         with:
+#           python-version: "${{ matrix.python-version }}"
+#       - name: "🐍 Install wheel"
+#         run: "python -m pip install wheel --user"
+#       - name: "🐍 Build a binary wheel and a source tarball"
+#         run: "python setup.py sdist bdist_wheel"
+#       - name: "📦 Publish distribution to PyPI"
+#         uses: "pypa/gh-action-pypi-publish@master"
+#         if: "startsWith(github.ref, 'refs/tags')"
+#         with:
+#           password: "${{ secrets.pypi_password }}"
