@@ -79,10 +79,8 @@ jobs:
       - name: Run tests
         run: tox
       - uses: codecov/codecov-action@v2
-        if: ${{ matrix.platform != 'windows-latest' }}
         with:
           fail_ci_if_error: true
-          verbose: true
       # TODO: call coveralls on Windows and MacOS as well
       # https://coveralls-python.readthedocs.io/en/latest/usage/configuration.html#github-actions-support
       - name: Coveralls
