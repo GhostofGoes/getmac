@@ -66,12 +66,10 @@ jobs:
       - name: Display platform and environment information
         run: |
           python --version
-          python -c 'import sys; print("sys.version: %s" % str(sys.version))'
-          python -c 'import sys; print("sys.platform: %s" % str(sys.platform))'
-          python -c 'import os; print("os.name: %s" % str(os.name))'
-          python -c 'import platform; print("platform.system(): %s" % str(platform.system()))'
-          python -c 'import platform; print("platform.version(): %s" % str(platform.version()))'
-          python -c 'import platform; print("platform.uname(): %s" % str(platform.uname()))'
+          python -c "import sys; print('sys.version: %s' % str(sys.version))"
+          python -c "import sys; print('sys.platform: %s' % str(sys.platform))"
+          python -c "import os; print('os.name: %s' % str(os.name))"
+          python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
       - name: Install dependencies
         run: python -m pip install tox coveralls tox-gh-actions
       - name: Run tests
