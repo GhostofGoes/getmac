@@ -106,6 +106,8 @@ jobs:
 # TODO: need to do this for both "getmac" and "get-mac" packages
 # TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
 
+# https://github.com/marketplace/actions/upload-a-build-artifact
+
 # name: "Build and publish a release"
 
 # on:
