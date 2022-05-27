@@ -57,6 +57,8 @@ jobs:
             python-version: "pypy-3.7"
           - platform: macos-latest
             python-version: "pypy-3.8"
+          - platform: windows-latest
+            python-version: "pypy-2.7"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
