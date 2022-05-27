@@ -4,7 +4,7 @@
 - [x] Ubuntu 12.04 sample
 - [x] GitHub Actions for CI
   - [x] Remove TravisCI
-  - [ ] Remove Appveyor
+  - [x] Remove Appveyor
   - [x] Ensure OSX/Darwin is getting tested too
 - [ ] Basic documentation
   - [ ] Single page on RTD/publish with GitHub actions
