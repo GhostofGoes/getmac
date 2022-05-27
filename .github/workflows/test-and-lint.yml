@@ -79,7 +79,7 @@ jobs:
       # TODO: call coveralls on Windows and MacOS as well
       # https://coveralls-python.readthedocs.io/en/latest/usage/configuration.html#github-actions-support
       - name: Coveralls
-        if: ${{ matrix.platform == 'ubuntu-latest' }}
+        if: ${{ matrix.platform == 'ubuntu-latest' }} && ${{ github.event_name != 'pull_request' }}
         uses: AndreMiras/coveralls-python-action@develop
         with:
           parallel: true
@@ -89,6 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls Finished
+      if: ${{ github.event_name != 'pull_request' }}
       uses: AndreMiras/coveralls-python-action@develop
       with:
         parallel-finished: true
