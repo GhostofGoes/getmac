@@ -10,5 +10,3 @@ sudo mkdir -p "/usr/local/.virtualenvs/"
 sudo chown vagrant: /usr/local/.virtualenvs/
 python3 -m venv "/usr/local/.virtualenvs/getmac36"
 python2 -m virtualenv "/usr/local/.virtualenvs/getmac27"
-
-sudo updatedb
