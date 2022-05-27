@@ -1222,6 +1222,16 @@ def _swap_method_fallback(method_type, swap_with):
     return True
 
 
+def _warn_critical(err_msg):
+    # type: (str) -> None
+    log.critical(err_msg)
+    warnings.warn(
+        "%s. NOTICE: this warning will likely turn into a raised exception in getmac 1.0.0!"
+        % err_msg,
+        RuntimeWarning,
+    )
+
+
 def initialize_method_cache(
     method_type, network_request=True
 ):  # type: (str, bool) -> bool
@@ -1266,9 +1276,11 @@ def initialize_method_cache(
         # Methods with a type of "ip" can handle both IPv4 and IPv6
         or (method.method_type == "ip" and method_type in ["ip4", "ip6"])
     ]  # type: List[Type[Method]]
+
     if not type_methods:
-        log.critical("No valid methods matching MAC type '%s'", method_type)
+        _warn_critical("No valid methods matching MAC type '%s'" % method_type)
         return False
+
     if DEBUG >= 2:
         type_strs = ", ".join(tm.__name__ for tm in type_methods)  # type: str
         log.debug(
@@ -1285,11 +1297,12 @@ def initialize_method_cache(
     if not platform_methods:
         # If there isn't a method for the current platform,
         # then fallback to the generic platform "other".
-        log.warning(
+        warn_msg = (
             "No methods for platform '%s'! Your system may not be supported. "
-            "Falling back to platform 'other'.",
-            platform,
+            "Falling back to platform 'other'." % platform
         )
+        log.warning(warn_msg)
+        warnings.warn(warn_msg, RuntimeWarning)
         platform_methods = [
             method for method in type_methods if "other" in method.platforms
         ]
@@ -1304,10 +1317,9 @@ def initialize_method_cache(
         )
 
     if not platform_methods:
-        log.critical(
-            "No valid methods found for MAC type '%s' and platform '%s'",
-            method_type,
-            platform,
+        _warn_critical(
+            "No valid methods found for MAC type '%s' and platform '%s'"
+            % (method_type, platform)
         )
         return False
 
@@ -1334,8 +1346,8 @@ def initialize_method_cache(
             log.debug("Test failed for method '%s'", str(method_instance))
 
     if not tested_methods:
-        log.critical(
-            "All %d '%s' methods failed to test!", len(filtered_methods), method_type
+        _warn_critical(
+            "All %d '%s' methods failed to test!" % (len(filtered_methods), method_type)
         )
         return False
 
@@ -1385,7 +1397,7 @@ def _attempt_method_get(
 ):  # type: (Method, str, str) -> Optional[str]
     """Attempt to use methods, and if they fail, fallback to the next method in the cache."""
     if not METHOD_CACHE[method_type] and not FALLBACK_CACHE[method_type]:
-        log.critical("No usable methods found for MAC type '%s'", method_type)
+        _warn_critical("No usable methods found for MAC type '%s'" % method_type)
         return None
 
     if DEBUG:
@@ -1426,6 +1438,7 @@ def _attempt_method_get(
             str(ex),
         )
         method.unusable = True
+
     # When an unhandled exception occurs (or exit code other than 1), remove
     # the method from the cache and reinitialize with next candidate.
     if not result and method.unusable:
@@ -1433,6 +1446,7 @@ def _attempt_method_get(
         if not new_method:
             return None
         return _attempt_method_get(new_method, method_type, arg)
+
     return result
 
 
@@ -1495,7 +1509,8 @@ def get_mac_address(
     the system will be used.
 
     .. warning::
-       Exceptions are handled silently and returned as :obj:`None`
+       In getmac 1.0.0, exceptions will be raised if the method cache initialization fails
+       (in other words, if there are no valid methods found for the type of MAC requested).
 
     .. warning::
        You MUST provide :class:`str` typed arguments, REGARDLESS of Python version
@@ -1508,6 +1523,9 @@ def get_mac_address(
        such as Bluetooth may work, this has not been tested and should not be
        relied upon. If you need this functionality, please open an issue
        (or better yet, a Pull Request ;))!
+
+    .. note::
+       Exceptions raised by methods are handled silently and returned as :obj:`None`.
 
     Args:
         interface (str): Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")

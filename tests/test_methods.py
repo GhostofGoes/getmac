@@ -155,9 +155,7 @@ def test_windows_10_iface_wmic(benchmark, mocker, get_sample):
 
 @pytest.mark.parametrize(
     ("mac", "ip", "sample_file"),
-    [
-        ("78-28-ca-c4-66-fe", "10.0.0.175", "windows_10/arp_-a_10.0.0.175.out"),
-    ],
+    [("78-28-ca-c4-66-fe", "10.0.0.175", "windows_10/arp_-a_10.0.0.175.out")],
 )
 def test_arpexe_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     content = get_sample(sample_file)

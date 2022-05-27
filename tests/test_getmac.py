@@ -97,10 +97,7 @@ def test_fetch_ip_using_dns(mocker):
 
 
 def test_swap_method_fallback(mocker):
-    mocker.patch(
-        "getmac.getmac.METHOD_CACHE",
-        {"ip4": getmac.ArpExe()},
-    )
+    mocker.patch("getmac.getmac.METHOD_CACHE", {"ip4": getmac.ArpExe()})
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {"ip4": [getmac.CtypesHost()]})
     assert getmac._swap_method_fallback("ip4", "ArpExe")
     assert not getmac._swap_method_fallback("ip4", "InvalidMethod")
