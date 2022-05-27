@@ -42,7 +42,11 @@ The new system has a number of benefits
 * Fixed bug with `/proc/net/route` parsing (this affected Android and potentially other platforms)
 * Improve default interface detection for FreeBSD (command: `route get default`)
 
+### Removed
+* TBD
+
 ### Dev
+* Migrate CI to GitHub Actions, remove TravisCI and Appveyor
 * Add flake8 plugins: `flake8-pytest-style` and `flake8-annotations`
 * Add additional samples and tests for WSL1 (with the Ubuntu 18.04 distro)
 * Add additional samples for Windows 10
@@ -53,6 +57,7 @@ The new system has a number of benefits
 * Add samples for several versions of Android
 * Add new tests
 * Improve existing tests
+* Consolidate everything related to RPM packaging to `packaging/rpm/`. This stuff hasn't been updated since 0.6.0, may remove in the future and leave distro packaging to distro maintainers.
 
 
 ## 0.8.3 (12/10/2021)

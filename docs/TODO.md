@@ -40,6 +40,7 @@
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
 - [ ] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
 - [ ] Move method classes into a separate file
+- [ ] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
 - [ ] Split utils into a separate file
 - [ ] move more logic out of `get_mac_address()` into individual methods:
     - [ ] interface
