@@ -79,6 +79,7 @@ jobs:
       - name: Run tests
         run: tox
       - uses: codecov/codecov-action@v2
+        if: ${{ matrix.platform != 'windows-latest' }}
         with:
           fail_ci_if_error: true
           verbose: true
