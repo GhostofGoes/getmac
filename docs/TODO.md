@@ -2,11 +2,10 @@
 - [x] Tag Beta pre-release on PyPI
 - [x] test changes in Vagrant VMs (`pip install https://github.com/ghostofgoes/getmac/archive/rewrite.tar.gz`)
 - [x] Ubuntu 12.04 sample
-- [ ] GitHub Actions for CI
-  - [ ] Remove TravisCI
+- [x] GitHub Actions for CI
+  - [x] Remove TravisCI
   - [ ] Remove Appveyor
-  - [ ] Ensure OSX/Darwin is getting tested too
-  - `python-colorlog` as example of GitHub Actions pipeline for a python project
+  - [x] Ensure OSX/Darwin is getting tested too
 - [ ] Basic documentation
   - [ ] Single page on RTD/publish with GitHub actions
   - [ ] Document `get_by_method()`

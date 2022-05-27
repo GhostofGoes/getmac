@@ -24,8 +24,7 @@ to bring new members into the community, and can always use the help.
 * [ ] Add your name to the contributors list in the [README](README.md)
 
 ## Checklist before a Pull Request will be merged
-* [ ] *All* TravisCI tests pass
-* [ ] Appveyor tests pass
+* [ ] *All* tests pass in GitHub Actions
 * [ ] Code has been reviewed by at least one maintainer
 
 

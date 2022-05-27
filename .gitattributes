@@ -17,7 +17,6 @@ tests/samples/windows*/*.out   text eol=crlf
 # POSIX
 *.sh        text eol=lf
 *.bash      text eol=lf
-.travis-osx text eol=lf
 *.1         text eol=lf
 packaging/*.spec text eol=lf
 Makefile    text eol=lf
