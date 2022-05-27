@@ -1,6 +1,7 @@
-name: Test and lint
+name: CI
 
 on:
+- release
 - push
 - pull_request
 
@@ -21,6 +22,7 @@ jobs:
     name: Run tests
     runs-on: ${{ matrix.platform }}
     strategy:
+      fail-fast: false
       matrix:
         python-version:
           - "2.7"
@@ -76,6 +78,10 @@ jobs:
         run: python -m pip install tox coveralls tox-gh-actions
       - name: Run tests
         run: tox
+      - uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
+          verbose: true
       # TODO: call coveralls on Windows and MacOS as well
       # https://coveralls-python.readthedocs.io/en/latest/usage/configuration.html#github-actions-support
       - name: Coveralls
