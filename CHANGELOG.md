@@ -43,7 +43,7 @@ The new system has a number of benefits
 * Improve default interface detection for FreeBSD (command: `route get default`)
 
 ### Removed
-* TBD
+* Removed man pages from distribution (`getmac.1`/`getmac2.1`). They were severely out of date and unused. May re-add at a later date.
 
 ### Dev
 * Migrate CI to GitHub Actions, remove TravisCI and Appveyor

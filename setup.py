@@ -34,11 +34,7 @@ setup(
         "Discord server": "https://discord.gg/python",
     },
     license="MIT",
-    data_files=[
-        ("share/man/man1", ["docs/man/getmac2.1"])
-        if sys.version_info[:2] <= (2, 7)
-        else ("share/man/man1", ["docs/man/getmac.1"])
-    ],
+    data_files=[],
     packages=["getmac"],
     zip_safe=True,
     entry_points={"console_scripts": ["getmac2 = getmac.__main__:main"]}
