@@ -83,7 +83,9 @@ if _SYST == "Java":
 
         _SYST = str(java.lang.System.getProperty("os.name"))
     except ImportError:
-        log.critical("Can't determine OS: couldn't import java.lang on Jython")
+        _java_err_msg = "Can't determine OS: couldn't import java.lang on Jython"
+        log.critical(_java_err_msg)
+        warnings.warn(_java_err_msg, RuntimeWarning)
 
 WINDOWS = _SYST == "Windows"  # type: bool
 DARWIN = _SYST == "Darwin"  # type: bool
@@ -298,6 +300,7 @@ def _fetch_ip_using_dns():
 class Method:
     #: Valid platform identifier strings
     VALID_PLATFORM_NAMES = {
+        "android",
         "darwin",
         "linux",
         "windows",

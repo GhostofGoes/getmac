@@ -27,6 +27,12 @@ def test_all_methods_defined_are_in_methods_list():
     assert len(members) == len(getmac.METHODS)
 
 
+def test_method_platform_strings_are_valid():
+    """test "platforms" for all methods have a valid platform name."""
+    for method in getmac.METHODS:
+        assert method.platforms <= getmac.Method.VALID_PLATFORM_NAMES
+
+
 def test_check_path():
     assert getmac.check_path(__file__)
 
