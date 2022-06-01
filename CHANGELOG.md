@@ -3,7 +3,7 @@
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
 
-## 0.9.0a1 (TBD)
+## 0.9.0 (TBD)
 **Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.
 
 This release is a *complete rewrite of getmac from the ground up*. The public API of `getmac` is **unchanged** as part of this rewrite. `get_mac_address()` is still the primary way of getting a MAC address, it's just the "under the hood" internals that have changed completely.
@@ -32,10 +32,9 @@ The new system has a number of benefits
 * **Complete rewrite of `getmac` from the ground up. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes**
 * Fixed a failure to look up a hostname now returns `None`, as expected, instead of raising an exception (`socket.gaierror`).
 * Fixed numerous false-negative and false-positive bugs
-* Improved performance overall
+* Improved overall performance
 * Performance for cases where no MAC is found is now the same as cases where a MAC is found (speed of "misses" now equals that of "hits")
-* Improved the reliability of many methods
-* Improved the performance of many methods
+* Improved the reliability and performance of many methods
 * Fixed `netstat` on older Linux distros (such as Ubuntu 12.04)
 * Overhauled `ifconfig` parsing. It should now be far more reliable and accurate across all platforms.
 * Improved Android support. Note that newer devices are locked down and the amount of information that's obtainable by an unpriviledged process is quite limited (Android 7/9 and newer, not sure exactly when they changed this, I'm not an Android guy). That being said, the normal Linux methods should work fine, provided you have the proper permissions (usually, `root`).
