@@ -6,24 +6,18 @@
   - [x] Remove TravisCI
   - [x] Remove Appveyor
   - [x] Ensure OSX/Darwin is getting tested too
-- [ ] Basic documentation
-  - [ ] Single page on RTD/publish with GitHub actions
-  - [ ] Document `get_by_method()`
-  - [ ] Document `initialize_method_cache()`
-  - [ ] Update docs/usage examples for `get_mac_address()`
 - [x] Raise Warnings on critical failures during cache initialization, such as a lack of valid methods or all tests failing can raise exceptions. also make sure to document in `get_mac_address` and make obvious in release notes. Turn these into Exceptions in 1.0.0.
 - [x] Add ability to force the platform used via CLI argument (for testing)
-- [ ] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [x] Add changelog and other modern PyPI page fields to getmac setup.py
-- [ ] Address any remaining "TODO (rewrite)" TODOs
 - [x] Combine and parameterize tests that are testing the same method with different samples as input
 - [ ] Add unit tests calling `getmac.get_mac_address()` directly using samples
 - [ ] Reorganize order of classes and group related ones together in the code
-
+- [ ] Add ability to force a specific method to be used via a CLI argument (for testing)
+- [ ] Address any remaining "TODO (rewrite)" TODOs
 
 # 1.0.0 release
 - [ ] Switch to Poetry for project management
-    - Also, add `isort`
+    - [ ] Also, add `isort`
 - [ ] Support Python 3.10
     - [ ] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
     - [ ] add tests + setup.py classifier
@@ -41,17 +35,23 @@
 - [ ] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
 - [ ] Move method classes into a separate file
 - [ ] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
-- [ ] Re-add Man pages (and auto-build them in CI and include in releases and the distributions)
 - [ ] Split utils into a separate file
 - [ ] move more logic out of `get_mac_address()` into individual methods:
     - [ ] interface
     - [ ] remote host
     - [ ] return data cleanup and validation
-- [ ] Add docstrings to all util methods
 - [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 - [ ] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping"). Document this behavior!
-- [ ] Document possible values for `PLATFORM` variable
-- [ ] Document Method (and subclass) attributes (use Sphinx "#:" comments)
+- [ ] Documentation
+    - [ ] Single page on RTD/publish with GitHub actions built with Sphinx and Furo
+  - [ ] Update docs/usage examples for `get_mac_address()`
+    - [ ] Document possible values for `PLATFORM` variable
+    - [ ] Document Method (and subclass) attributes (use Sphinx "#:" comments)
+    - [ ] Re-add Man pages (and auto-build them in CI and include in releases and the distributions)
+    - [ ] Document `get_by_method()`
+    - [ ] Document `initialize_method_cache()`
+    - [ ] Auto-generated API docs
+    - [ ] Add docstrings to all util methods
 - [ ] Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
 - [ ] >90% test coverage
   - refactor tests to use the new system and structure
@@ -59,7 +59,6 @@
   - add `Method.parse()` that handles the parsing of command output.
       this would make it *much* easier to test methods
 - [ ] implement proper default interface detection on Windows
-- [ ] update the samples used in tests
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
 - [ ] address all TODOs in the code
 - [ ] FreeBSD default interface: `route get default`
