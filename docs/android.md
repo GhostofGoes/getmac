@@ -74,6 +74,19 @@ generic_x86_arm:/ $ arp
 /system/bin/sh: arp: not found
 127|generic_x86_arm:/ $ arp -a
 /system/bin/sh: arp: not found
+```
 
+If android stuff ever breaks, these may be useful (the updated methods should work but something could've slipped through the cracks, so documenting here for my own sanity).
 
+```python
+(r"state UP.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+(r"wlan.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+(r"ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+_regexes = (
+    r".*\n.*link/ether " + MAC_RE_COLON,
+    # Android 6.0.1+ (and likely other platforms as well)
+    r"state UP.*\n.*ether " + MAC_RE_COLON,
+    r"wlan.*\n.*ether " + MAC_RE_COLON,
+    r"ether " + MAC_RE_COLON,
+)  # type: Tuple[str, str, str, str]
 ```

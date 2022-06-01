@@ -296,6 +296,7 @@ def _fetch_ip_using_dns():
 
 
 class Method:
+    #: Valid platform identifier strings
     VALID_PLATFORM_NAMES = {
         "darwin",
         "linux",
@@ -306,17 +307,19 @@ class Method:
         "sunos",
         "other",
     }
-    # TODO: platform versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
+
+    #: Platforms supported by a method
     platforms = set()  # type: Set[str]
-    # VALUES: {ip, ip4, ip6, iface, default_iface}
+
+    #: The type of method, e.g. does it get the MAC of a interface?
+    #: Allowed values: {ip, ip4, ip6, iface, default_iface}
     method_type = ""  # type: str
-    # If the method makes a network request as part of the check
+
+    #: If the method makes a network request as part of the check
     network_request = False  # type: bool
-    # (TODO) If current system supports this method. Dynamically set at runtime?
-    #   This would let each method do more fine-grained version checking
-    supported = False  # type: bool
-    # Marks the method as unable to be used, e.g. if there was a runtime
-    # error indicating the method won't work on the current platform.
+
+    #: Marks the method as unable to be used, e.g. if there was a runtime
+    #: error indicating the method won't work on the current platform.
     unusable = False  # type: bool
 
     def test(self):  # type: () -> bool
@@ -349,6 +352,40 @@ class Method:
         return cls.__name__
 
 
+# TODO(python3): do we want to keep this around? It calls 3 commands and is
+#   quite inefficient. We should just take the methods and use directly.
+class UuidArpGetNode(Method):
+    platforms = {"linux", "darwin", "sunos", "other"}
+    method_type = "ip"
+
+    def test(self):  # type: () -> bool
+        try:
+            from uuid import _arp_getnode  # type: ignore
+
+            return True
+        except Exception:
+            return False
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        from uuid import _arp_getnode  # type: ignore
+
+        backup = socket.gethostbyname
+        try:
+            socket.gethostbyname = lambda x: arg  # noqa: F841
+            mac1 = _arp_getnode()
+            if mac1 is not None:
+                mac1 = _uuid_convert(mac1)
+                mac2 = _arp_getnode()
+                mac2 = _uuid_convert(mac2)
+                if mac1 == mac2:
+                    return mac1
+        except Exception:
+            raise
+        finally:
+            socket.gethostbyname = backup
+        return None
+
+
 class ArpFile(Method):
     platforms = {"linux"}
     method_type = "ip"
@@ -371,93 +408,118 @@ class ArpFile(Method):
         return None
 
 
-class SysIfaceFile(Method):
-    platforms = {"linux", "wsl"}
-    method_type = "iface"
-    _path = "/sys/class/net/"  # type: str
+class ArpFreebsd(Method):
+    platforms = {"freebsd"}
+    method_type = "ip"
 
     def test(self):  # type: () -> bool
-        # Imperfect, but should work well enough
-        return check_path(self._path)
+        return check_command("arp")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        data = _read_file(self._path + arg + "/address")
-        # NOTE: if "/sys/class/net/" exists, but interface file doesn't,
-        # then that means the interface doesn't exist
-        # Sometimes this can be empty or a single newline character
-        return None if data is not None and len(data) < 17 else data
+        regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + MAC_RE_COLON
+        return _search(regex, _popen("arp", arg))
 
 
-class UuidLanscan(Method):
-    platforms = {"other"}
-    method_type = "iface"
+class ArpOpenbsd(Method):
+    platforms = {"openbsd"}
+    method_type = "ip"
+    _regex = r"[ ]+" + MAC_RE_COLON  # type: str
 
     def test(self):  # type: () -> bool
-        try:
-            from uuid import _find_mac  # noqa: T484
-
-            return check_command("lanscan")
-        except Exception:
-            return False
+        return check_command("arp")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        from uuid import _find_mac  # type: ignore
+        return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
 
-        if not PY2:
-            arg = bytes(arg, "utf-8")  # type: ignore
-        mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)
-        if mac:
-            return _uuid_convert(mac)
+
+class ArpVariousArgs(Method):
+    platforms = {"linux", "darwin", "freebsd", "sunos", "other"}
+    method_type = "ip"
+    _regex_std = r"\)\s+at\s+" + MAC_RE_COLON  # type: str
+    _regex_darwin = r"\)\s+at\s+" + MAC_RE_SHORT  # type: str
+    _args = (
+        ("", True),  # "arp 192.168.1.1"
+        # Linux
+        ("-an", False),  # "arp -an"
+        ("-an", True),  # "arp -an 192.168.1.1"
+        # Darwin, WSL, Linux distros???
+        ("-a", False),  # "arp -a"
+        ("-a", True),  # "arp -a 192.168.1.1"
+    )
+    _args_tested = False  # type: bool
+    _good_pair = ()  # type: Union[Tuple, Tuple[str, bool]]
+    _good_regex = ""  # type: str
+
+    def test(self):  # type: () -> bool
+        return check_command("arp")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        if not arg:
+            return None
+
+        # Ensure output from testing command on first call isn't wasted
+        command_output = ""
+
+        # Test which arguments are valid to the command
+        # This will NOT test which regex is valid
+        if not self._args_tested:
+            for pair_to_test in self._args:
+                try:
+                    cmd_args = [pair_to_test[0]]
+                    # if True, then include IP as a command argument
+                    if pair_to_test[1]:
+                        cmd_args.append(arg)
+                    command_output = _popen("arp", " ".join(cmd_args))
+                    self._good_pair = pair_to_test
+                    break
+                except CalledProcessError as ex:
+                    if DEBUG:
+                        log.debug(
+                            "ArpVariousArgs pair test failed for (%s, %s): %s",
+                            pair_to_test[0],
+                            pair_to_test[1],
+                            str(ex),
+                        )
+            if not self._good_pair:
+                self.unusable = True
+                return None
+            self._args_tested = True
+
+        if not command_output:
+            # if True, then include IP as a command argument
+            cmd_args = [self._good_pair[0]]
+            if self._good_pair[1]:
+                cmd_args.append(arg)
+            command_output = _popen("arp", " ".join(cmd_args))
+
+        escaped = re.escape(arg)
+        if self._good_regex:
+            return _search(r"\(" + escaped + self._good_regex, command_output)
+
+        # try linux regex first
+        # try darwin regex next
+        #   if a regex succeeds the first time, cache the successful regex
+        #   otherwise, don't bother, since it's a miss anyway
+        for regex in (self._regex_std, self._regex_darwin):
+            # NOTE: Darwin regex will return MACs without leading zeroes,
+            # e.g. "58:6d:8f:7:c9:94" instead of "58:6d:8f:07:c9:94"
+            found = _search(r"\(" + escaped + regex, command_output)
+            if found:
+                self._good_regex = regex
+                return found
+
         return None
 
 
-class CtypesHost(Method):
-    """
-    Uses ``SendARP`` from the Windows ``Iphlpapi`` to get the MAC address
-    of a remote IPv4 host.
-    """
-
-    platforms = {"windows"}
+class ArpExe(Method):
+    platforms = {"windows", "wsl"}
     method_type = "ip4"
-    network_request = True
 
     def test(self):  # type: () -> bool
-        try:
-            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # noqa: T484
-        except Exception:
-            return False
+        return check_command("arp.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        if not PY2:  # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
-            arg = arg.encode()  # type: ignore
-        try:
-            inetaddr = ctypes.windll.wsock32.inet_addr(arg)  # type: ignore
-            if inetaddr in (0, -1):
-                raise Exception
-        except Exception:
-            # TODO: this assumes failure is due to arg being a hostname
-            #   We should be explicit about only accepting ipv4 addresses
-            #   and handle any hostname resolution in calling code
-            hostip = socket.gethostbyname(arg)
-            inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
-
-        buffer = ctypes.c_buffer(6)
-        addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
-
-        # https://docs.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp
-        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
-        if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
-            return None
-
-        # Convert binary data into a string.
-        macaddr = ""
-        for intval in struct.unpack("BBBBBB", buffer):  # type: ignore
-            if intval > 15:
-                replacestr = "0x"
-            else:
-                replacestr = "x"
-            macaddr = "".join([macaddr, hex(intval).replace(replacestr, "")])
-        return macaddr
+        return _search(MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
 
 
 class ArpingHost(Method):
@@ -521,6 +583,117 @@ class ArpingHost(Method):
         return None
 
 
+class CtypesHost(Method):
+    """
+    Uses ``SendARP`` from the Windows ``Iphlpapi`` to get the MAC address
+    of a remote IPv4 host.
+    """
+
+    platforms = {"windows"}
+    method_type = "ip4"
+    network_request = True
+
+    def test(self):  # type: () -> bool
+        try:
+            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # noqa: T484
+        except Exception:
+            return False
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        if not PY2:  # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
+            arg = arg.encode()  # type: ignore
+        try:
+            inetaddr = ctypes.windll.wsock32.inet_addr(arg)  # type: ignore
+            if inetaddr in (0, -1):
+                raise Exception
+        except Exception:
+            # TODO: this assumes failure is due to arg being a hostname
+            #   We should be explicit about only accepting ipv4 addresses
+            #   and handle any hostname resolution in calling code
+            hostip = socket.gethostbyname(arg)
+            inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
+
+        buffer = ctypes.c_buffer(6)
+        addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
+
+        # https://docs.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp
+        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
+        if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
+            return None
+
+        # Convert binary data into a string.
+        macaddr = ""
+        for intval in struct.unpack("BBBBBB", buffer):  # type: ignore
+            if intval > 15:
+                replacestr = "0x"
+            else:
+                replacestr = "x"
+            macaddr = "".join([macaddr, hex(intval).replace(replacestr, "")])
+        return macaddr
+
+
+class IpNeighborShow(Method):
+    platforms = {"linux", "other"}
+    method_type = "ip"  # IPv6 and IPv4
+
+    def test(self):  # type: () -> bool
+        return check_command("ip")
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        output = _popen("ip", "neighbor show %s" % arg)
+        if not output:
+            return None
+
+        try:
+            # NOTE: the space prevents accidental matching of partial IPs
+            return (
+                output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
+            )
+        except IndexError as ex:
+            log.debug("IpNeighborShow failed with exception: %s", str(ex))
+            return None
+
+
+class SysIfaceFile(Method):
+    platforms = {"linux", "wsl"}
+    method_type = "iface"
+    _path = "/sys/class/net/"  # type: str
+
+    def test(self):  # type: () -> bool
+        # Imperfect, but should work well enough
+        return check_path(self._path)
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        data = _read_file(self._path + arg + "/address")
+        # NOTE: if "/sys/class/net/" exists, but interface file doesn't,
+        # then that means the interface doesn't exist
+        # Sometimes this can be empty or a single newline character
+        return None if data is not None and len(data) < 17 else data
+
+
+class UuidLanscan(Method):
+    platforms = {"other"}
+    method_type = "iface"
+
+    def test(self):  # type: () -> bool
+        try:
+            from uuid import _find_mac  # noqa: T484
+
+            return check_command("lanscan")
+        except Exception:
+            return False
+
+    def get(self, arg):  # type: (str) -> Optional[str]
+        from uuid import _find_mac  # type: ignore
+
+        if not PY2:
+            arg = bytes(arg, "utf-8")  # type: ignore
+        mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)
+        if mac:
+            return _uuid_convert(mac)
+        return None
+
+
 class FcntlIface(Method):
     platforms = {"linux", "wsl"}
     method_type = "iface"
@@ -545,40 +718,6 @@ class FcntlIface(Method):
             return ":".join(["%02x" % ord(char) for char in info[18:24]])
         else:
             return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
-
-
-# TODO(python3): do we want to keep this around? It calls 3 commands and is
-#   quite inefficient. We should just take the methods and use directly.
-class UuidArpGetNode(Method):
-    platforms = {"linux", "darwin", "sunos", "other"}
-    method_type = "ip"
-
-    def test(self):  # type: () -> bool
-        try:
-            from uuid import _arp_getnode  # type: ignore
-
-            return True
-        except Exception:
-            return False
-
-    def get(self, arg):  # type: (str) -> Optional[str]
-        from uuid import _arp_getnode  # type: ignore
-
-        backup = socket.gethostbyname
-        try:
-            socket.gethostbyname = lambda x: arg  # noqa: F841
-            mac1 = _arp_getnode()
-            if mac1 is not None:
-                mac1 = _uuid_convert(mac1)
-                mac2 = _arp_getnode()
-                mac2 = _uuid_convert(mac2)
-                if mac1 == mac2:
-                    return mac1
-        except Exception:
-            raise
-        finally:
-            socket.gethostbyname = backup
-        return None
 
 
 class GetmacExe(Method):
@@ -646,17 +785,6 @@ class WmicExe(Method):
         return command_output.strip().partition("=")[2]
 
 
-class ArpExe(Method):
-    platforms = {"windows", "wsl"}
-    method_type = "ip4"
-
-    def test(self):  # type: () -> bool
-        return check_command("arp.exe")
-
-    def get(self, arg):  # type: (str) -> Optional[str]
-        return _search(MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
-
-
 # TODO (rewrite): "ipconfig getifaddr <iface>" on darwin
 class DarwinNetworksetupIface(Method):
     platforms = {"darwin"}
@@ -668,30 +796,6 @@ class DarwinNetworksetupIface(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         command_output = _popen("networksetup", "-getmacaddress %s" % arg)
         return _search(MAC_RE_COLON, command_output)
-
-
-class ArpFreebsd(Method):
-    platforms = {"freebsd"}
-    method_type = "ip"
-
-    def test(self):  # type: () -> bool
-        return check_command("arp")
-
-    def get(self, arg):  # type: (str) -> Optional[str]
-        regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + MAC_RE_COLON
-        return _search(regex, _popen("arp", arg))
-
-
-class ArpOpenbsd(Method):
-    platforms = {"openbsd"}
-    method_type = "ip"
-    _regex = r"[ ]+" + MAC_RE_COLON  # type: str
-
-    def test(self):  # type: () -> bool
-        return check_command("arp")
-
-    def get(self, arg):  # type: (str) -> Optional[str]
-        return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
 
 
 # This only took 15-20 hours of throwing my brain against a wall multiple times
@@ -876,7 +980,7 @@ class NetstatIface(Method):
         return None
 
 
-# TODO (rewrite): add these for Android 6.0.1 (need a sample)
+# TODO (rewrite):
 #   Add to IpLinkIface
 #   New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 # (r"state UP.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
@@ -923,107 +1027,6 @@ class IpLinkIface(Method):
             # TODO (rewrite): improve this regex to not need extra portion for no arg
             command_output = _popen("ip", "link")
             return _search(arg + r":" + self._regex, command_output)
-
-
-class IpNeighborShow(Method):
-    platforms = {"linux", "other"}
-    method_type = "ip"  # IPv6 and IPv4
-
-    def test(self):  # type: () -> bool
-        return check_command("ip")
-
-    def get(self, arg):  # type: (str) -> Optional[str]
-        output = _popen("ip", "neighbor show %s" % arg)
-        if not output:
-            return None
-
-        try:
-            # NOTE: the space prevents accidental matching of partial IPs
-            return (
-                output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
-            )
-        except IndexError as ex:
-            log.debug("IpNeighborShow failed with exception: %s", str(ex))
-            return None
-
-
-class ArpVariousArgs(Method):
-    platforms = {"linux", "darwin", "freebsd", "sunos", "other"}
-    method_type = "ip"
-    _regex_std = r"\)\s+at\s+" + MAC_RE_COLON  # type: str
-    _regex_darwin = r"\)\s+at\s+" + MAC_RE_SHORT  # type: str
-    _args = (
-        ("", True),  # "arp 192.168.1.1"
-        # Linux
-        ("-an", False),  # "arp -an"
-        ("-an", True),  # "arp -an 192.168.1.1"
-        # Darwin, WSL, Linux distros???
-        ("-a", False),  # "arp -a"
-        ("-a", True),  # "arp -a 192.168.1.1"
-    )
-    _args_tested = False  # type: bool
-    _good_pair = ()  # type: Union[Tuple, Tuple[str, bool]]
-    _good_regex = ""  # type: str
-
-    def test(self):  # type: () -> bool
-        return check_command("arp")
-
-    def get(self, arg):  # type: (str) -> Optional[str]
-        if not arg:
-            return None
-
-        # Ensure output from testing command on first call isn't wasted
-        command_output = ""
-
-        # Test which arguments are valid to the command
-        # This will NOT test which regex is valid
-        if not self._args_tested:
-            for pair_to_test in self._args:
-                try:
-                    cmd_args = [pair_to_test[0]]
-                    # if True, then include IP as a command argument
-                    if pair_to_test[1]:
-                        cmd_args.append(arg)
-                    command_output = _popen("arp", " ".join(cmd_args))
-                    self._good_pair = pair_to_test
-                    break
-                except CalledProcessError as ex:
-                    if DEBUG:
-                        log.debug(
-                            "ArpVariousArgs pair test failed for (%s, %s): %s",
-                            pair_to_test[0],
-                            pair_to_test[1],
-                            str(ex),
-                        )
-            if not self._good_pair:
-                self.unusable = True
-                return None
-            self._args_tested = True
-
-        if not command_output:
-            # if True, then include IP as a command argument
-            cmd_args = [self._good_pair[0]]
-            if self._good_pair[1]:
-                cmd_args.append(arg)
-            command_output = _popen("arp", " ".join(cmd_args))
-
-        escaped = re.escape(arg)
-        if self._good_regex:
-            return _search(r"\(" + escaped + self._good_regex, command_output)
-
-        # try linux regex first
-        # try darwin regex next
-        #   if a regex succeeds the first time, cache the successful regex
-        #   otherwise, don't bother, since it's a miss anyway
-        for regex in (self._regex_std, self._regex_darwin):
-            # NOTE: Darwin regex will return MACs without leading zeroes,
-            # e.g. "58:6d:8f:7:c9:94" instead of "58:6d:8f:07:c9:94"
-            found = _search(r"\(" + escaped + regex, command_output)
-            if found:
-                self._good_regex = regex
-                return found
-
-        return None
 
 
 class DefaultIfaceLinuxRouteFile(Method):
@@ -1149,7 +1152,7 @@ class DefaultIfaceFreeBsd(Method):
 # TODO: order methods by effectiveness/reliability
 #   Use a class attribute maybe? e.g. "score", then sort by score in cache
 METHODS = [
-    # NOTE: CtypesHost is faster than ArpExe because of process startup times :)
+    # NOTE: CtypesHost is faster than ArpExe because of sub-process startup times :)
     CtypesHost,
     ArpingHost,
     ArpFile,
