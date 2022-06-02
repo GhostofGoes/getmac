@@ -27,7 +27,7 @@ The new system has a number of benefits
 * The amount of time taken to get a result (in seconds) will now be recorded and logged if debugging is enabled (`DEBUG>=1` or `-d`)
 * Added command line argument to override the UDP port for network requests: `--override-port` (this was already possible in Python via `getmac.getmac.PORT`, but wasn't configurable via the CLI. Now it is!).
 * Added ability to override the detected platform via `--override-platform` argument (CLI) or `getmac.getmac.OVERRIDE_PLATFORM` variable (Python). This will force methods for that platform to be used, regardless of the actual platform. Here's an example forcing `linux` to be used as the platform: `getmac -i eth0 --override-platform linux`. In version 1.0.0, this feature will added as an argument to `get_mac_address()`.
-* Added ability to force a specific method to be used via `--force-method` argument (CLI) or `getmac.getmac.FORCE_METHOD` variable (Python). This is useful for troubleshotting issues, general debugging, and testing changes. Example: `getmac -v -dddd --ip 10.0.0.1 --force-method ctypeshost`
+* Added ability to force a specific method to be used via `--force-method` argument (CLI) or `getmac.getmac.FORCE_METHOD` variable (Python). This is useful for troubleshotting issues, general debugging, and testing changes. Example: `getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost`
 
 ### Changed
 * **Complete rewrite of `getmac` from the ground up. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes**

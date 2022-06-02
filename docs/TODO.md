@@ -14,6 +14,9 @@
 - [x] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [ ] Add unit tests calling `getmac.get_mac_address()` directly using samples
 - [ ] Address any remaining "TODO (rewrite)" TODOs
+- [ ] Update README:
+    - refresh various sections post-rewrite
+    - add a word of warning about Netifaces being unmaintained for a while (which makes me sad, but that's the current unfortunate state of affairs)
 
 # 1.0.0 release
 - [ ] Switch to Poetry for project management
