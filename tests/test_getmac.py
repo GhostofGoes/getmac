@@ -102,6 +102,13 @@ def test_fetch_ip_using_dns(mocker):
     assert getmac._fetch_ip_using_dns() == "1.2.3.4"
 
 
+def test_get_method_by_name():
+    assert not getmac.get_method_by_name("")
+    assert not getmac.get_method_by_name("invalidmethodname")
+    assert getmac.get_method_by_name("ArpFile") == getmac.ArpFile
+    assert getmac.get_method_by_name("getmacexe") == getmac.GetmacExe
+
+
 def test_swap_method_fallback(mocker):
     mocker.patch("getmac.getmac.METHOD_CACHE", {"ip4": getmac.ArpExe()})
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {"ip4": [getmac.CtypesHost()]})
@@ -147,8 +154,10 @@ def test_initialize_method_cache_bad_type(mocker):
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
     mocker.patch("getmac.getmac.PLATFORM", "linux")
-    assert not getmac.initialize_method_cache("invalid_method_type")
-    assert not getmac.initialize_method_cache("ip")
+    with pytest.warns(RuntimeWarning):
+        assert not getmac.initialize_method_cache("invalid_method_type")
+    with pytest.warns(RuntimeWarning):
+        assert not getmac.initialize_method_cache("ip")
 
 
 def test_initialize_method_cache_platform_override(mocker):
@@ -179,6 +188,12 @@ def test_initialize_method_cache_no_network_request(mocker):
     assert getmac.initialize_method_cache("ip4", network_request=False)
     assert getmac.PLATFORM == "linux"
     assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.ArpFile)
+
+
+# TODO (rewrite): unit tests for get_by_method() directly
+# TODO (rewrite): unit tests for FORCE_METHOD
+# def test_get_by_method_force_method(mocker):
+#     pass
 
 
 def test_get_mac_address_localhost():

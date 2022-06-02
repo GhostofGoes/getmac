@@ -53,6 +53,15 @@ def main():  # type: () -> None
         "(e.g. 'linux', 'windows', 'freebsd', etc.'). "
         "Any values returned by platform.system() are valid.",
     )
+    parser.add_argument(
+        "--force-method",
+        type=str,
+        default=None,
+        metavar="METHOD",
+        help="Force a specific method to be used, e.g. 'IpNeighborShow'. "
+        "This will be used regardless of it's method type or platform "
+        "compatibility, and Method.test() will NOT be checked!",
+    )
 
     group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument(
@@ -91,6 +100,9 @@ def main():  # type: () -> None
 
     if args.override_platform:
         getmac.OVERRIDE_PLATFORM = args.override_platform.strip().lower()
+
+    if args.force_method:
+        getmac.FORCE_METHOD = args.force_method.strip().lower()
 
     mac = getmac.get_mac_address(
         interface=args.interface,

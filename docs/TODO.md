@@ -10,9 +10,9 @@
 - [x] Add ability to force the platform used via CLI argument (for testing)
 - [x] Add changelog and other modern PyPI page fields to getmac setup.py
 - [x] Combine and parameterize tests that are testing the same method with different samples as input
+- [x] Reorganize order of classes and group related ones together in the code
+- [x] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [ ] Add unit tests calling `getmac.get_mac_address()` directly using samples
-- [ ] Reorganize order of classes and group related ones together in the code
-- [ ] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [ ] Address any remaining "TODO (rewrite)" TODOs
 
 # 1.0.0 release
@@ -32,6 +32,7 @@
     - Add ability to exclude methods. Just remove them from METHODS list so they never get used. Useful for testing specific methods or working around buggy methods.
     - Document these features in the README/docs, including the CLI arguments 
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
+    - Combine `--ip` and `--ip6` CLI arguments into `--ip`
 - [ ] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
 - [ ] Move method classes into a separate file
 - [ ] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
@@ -52,6 +53,7 @@
     - [ ] Document `initialize_method_cache()`
     - [ ] Auto-generated API docs
     - [ ] Add docstrings to all util methods
+    - Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
 - [ ] Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
 - [ ] >90% test coverage
   - refactor tests to use the new system and structure
@@ -77,6 +79,7 @@
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 - [ ] Support IPv6 remote hosts on windows, and IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
 - [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
+- [ ] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
 
 ## Py3-related stuff for 1.0.0
 - [ ] Drop support for python 2.7, 3.4, and 3.5

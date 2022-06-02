@@ -123,6 +123,10 @@ if PLATFORM == "linux" and "Microsoft" in platform.version():
 # This will change to a function argument in 1.0.0
 OVERRIDE_PLATFORM = ""  # type: str
 
+# Force a specific method to be used for all lookups
+# Used for debugging and testing
+FORCE_METHOD = ""  # type: str
+
 # Get and cache the configured system PATH on import
 # The process environment does not change after a process is started
 PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)  # type: List[str]
@@ -1183,8 +1187,7 @@ METHODS = [
     DefaultIfaceRouteGetCommand,
     DefaultIfaceOpenBsd,
     DefaultIfaceFreeBsd,
-]
-
+]  # type: List[Type[Method]]
 
 # Primary method to use for a given method type
 METHOD_CACHE = {
@@ -1208,6 +1211,14 @@ FALLBACK_CACHE = {
 
 
 DEFAULT_IFACE = ""  # type: str
+
+
+def get_method_by_name(method_name):
+    # type: (str) -> Optional[Type[Method]]
+    for method in METHODS:
+        if method.__name__.lower() == method_name.lower():
+            return method
+    return None
 
 
 def _swap_method_fallback(method_type, swap_with):
@@ -1462,8 +1473,8 @@ def get_by_method(method_type, arg="", network_request=True):
     Query for a MAC using a specific method.
 
     Args:
-        method_type: method type to initialize the cache for.
-            Allowed values are: ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
+        method_type: the type of lookup being performed.
+            Allowed values are: ``ip4``, ``ip6``, ``iface``, ``default_iface``
         arg: Argument to pass to the method, e.g. an interface name or IP address
         network_request: if methods that make network requests should be included
             (those methods that have the attribute ``network_request`` set to ``True``)
@@ -1472,7 +1483,21 @@ def get_by_method(method_type, arg="", network_request=True):
         log.error("Empty arg for method '%s' (raw value: %s)", method_type, repr(arg))
         return None
 
+    if FORCE_METHOD:
+        log.warning(
+            "Forcing method '%s' to be used for '%s' lookup (arg: '%s')",
+            FORCE_METHOD,
+            method_type,
+            arg,
+        )
+        forced_method = get_method_by_name(FORCE_METHOD)
+        if not forced_method:
+            log.error("Invalid FORCE_METHOD method name '%s'", FORCE_METHOD)
+            return None
+        return forced_method().get(arg)
+
     method = METHOD_CACHE.get(method_type)  # type: Optional[Method]
+
     if not method:
         # Initialize the cache if it hasn't been already
         if not initialize_method_cache(method_type, network_request):
@@ -1483,6 +1508,7 @@ def get_by_method(method_type, arg="", network_request=True):
             )
             return None
         method = METHOD_CACHE[method_type]
+
     if not method:
         log.error(
             "Initialization failed for method '%s'. It may not be supported "
