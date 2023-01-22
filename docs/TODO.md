@@ -17,6 +17,8 @@
 - [ ] Update README:
     - refresh various sections post-rewrite
     - add a word of warning about Netifaces being unmaintained for a while (which makes me sad, but that's the current unfortunate state of affairs)
+- [x] Fix interface fallback if default route not found: https://github.com/GhostofGoes/getmac/issues/78
+  - use first non-loopback interface. if no non-loopback interfaces, and there's a loopback interface, then use that.
 
 # 1.0.0 release
 - [ ] Switch to Poetry for project management
@@ -83,14 +85,15 @@
 - [ ] Support IPv6 remote hosts on windows, and IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
 - [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
 - [ ] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
-
+- [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
 ## Py3-related stuff for 1.0.0
 - [ ] Drop support for python 2.7, 3.4, and 3.5
 - [ ] BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES (especially pytest...)
 - [ ] Use Enums for platforms and method types instead of strings?
 - [ ] cache package imports done during test for use during `get()`, reuse
 - [ ] rewrite strings to f-strings
-- [ ] Move to using setup.cfg/pyproject.toml instead of setup.py: https://packaging.python.org/tutorials/packaging-projects/
+- [ ] Use `pyproject.toml` instead of `setup.py`
+  - https://packaging.python.org/tutorials/packaging-projects/
 - [ ] update classifiers in setup.py
 - [ ] add inline type annotations for method arguments. remove types from docstrings?
 - [ ] Remove `shutilwhich.py` and `.coveragerc`

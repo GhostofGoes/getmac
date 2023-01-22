@@ -1685,16 +1685,27 @@ def get_mac_address(
             mac = get_by_method("iface", "Ethernet")
         else:
             global DEFAULT_IFACE
+
             if not DEFAULT_IFACE:
                 DEFAULT_IFACE = get_by_method("default_iface")  # noqa: T484
+
                 if DEFAULT_IFACE:
                     DEFAULT_IFACE = str(DEFAULT_IFACE).strip()
+
                 # TODO: better fallback if default iface lookup fails
                 if not DEFAULT_IFACE and BSD:
                     DEFAULT_IFACE = "em0"
-                elif not DEFAULT_IFACE:  # OSX, maybe?
+                elif not DEFAULT_IFACE and DARWIN:  # OSX, maybe?
                     DEFAULT_IFACE = "en0"
+                elif not DEFAULT_IFACE:
+                    DEFAULT_IFACE = "eth0"
+
             mac = get_by_method("iface", DEFAULT_IFACE)
+
+            # TODO: hack to fallback to loopback if lookup fails
+            if not mac:
+                mac = get_by_method("iface", "lo")
+
     log.debug("Raw MAC found: %s", mac)
 
     # Log how long it took
