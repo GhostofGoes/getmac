@@ -8,7 +8,7 @@ on:
 jobs:
   lint:
     name: Run lint checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -35,19 +35,20 @@ jobs:
           - "pypy-3.6"
           - "pypy-3.7"
           - "pypy-3.8"
+          - "pypy-3.9"
         architecture:
           - x86
           - x64
         platform:
-          - ubuntu-latest
+          - ubuntu-20.04
           - windows-latest
           - macos-latest
         exclude:
-          - platform: ubuntu-latest
+          - platform: ubuntu-20.04
             architecture: x86
           - platform: macos-latest
             architecture: x86
-          - platform: ubuntu-latest
+          - platform: ubuntu-20.04
             python-version: "3.4"
           - platform: macos-latest
             python-version: "3.4"
@@ -83,14 +84,14 @@ jobs:
         with:
           fail_ci_if_error: true
       - name: Coveralls
-        if: ${{ matrix.platform == 'ubuntu-latest' && github.event_name != 'pull_request' }}
+        if: ${{ matrix.platform == 'ubuntu-20.04' && github.event_name != 'pull_request' }}
         uses: AndreMiras/coveralls-python-action@develop
         with:
           parallel: true
           flag-name: ${{ matrix.python-version }}-${{ matrix.platform }}
   coveralls_finish:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Coveralls Finished
       if: ${{ github.event_name != 'pull_request' }}
@@ -114,7 +115,7 @@ jobs:
 # jobs:
 #   publish:
 #     name: "📦 Publish Python distributions"
-#     runs-on: "ubuntu-latest"
+#     runs-on: "ubuntu-20.04"
 #     strategy:
 #       matrix:
 #         python-version:
