@@ -190,21 +190,94 @@ def test_initialize_method_cache_no_network_request(mocker):
     assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.ArpFile)
 
 
-# TODO (rewrite): unit tests for get_by_method() directly
-# TODO (rewrite): unit tests for FORCE_METHOD
-# def test_get_by_method_force_method(mocker):
-#     pass
+def test_get_by_method(mocker, get_sample):
+    mocker.patch(
+        "getmac.getmac.METHOD_CACHE",
+        {
+            "ip4": getmac.ArpExe(),
+            "ip6": getmac.IpNeighborShow(),
+            "iface": getmac.WmicExe(),
+            "default_iface": getmac.DefaultIfaceOpenBsd(),
+        },
+    )
+
+    # ip4
+    content = get_sample("windows_10/arp_-a_10.0.0.175.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert getmac.get_by_method("ip4", "10.0.0.175") == "78-28-ca-c4-66-fe"
+
+    # ip6
+    content = get_sample("android_9/ip_neighbor.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert (
+        getmac.get_by_method("ip6", "fe80::8c8f:aaff:fec9:d28b") == "8e:8f:aa:c9:d2:8b"
+    )
+
+    # iface
+    content = get_sample("windows_10/wmic_nic.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert getmac.get_by_method("iface", "Ethernet 3") == "00:FF:17:15:F8:C8"
+
+    # default_iface
+    content = get_sample("openbsd_6/route_nq_show_inet_gateway_priority_1.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+    assert getmac.get_by_method("default_iface") == "em0"
+
+
+def test_get_by_method_errors(mocker):
+    assert getmac.get_by_method("iface", arg="") is None
+
+    mocker.patch(
+        "getmac.getmac.METHOD_CACHE",
+        {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
+    )
+    mocker.patch("getmac.getmac.initialize_method_cache", return_value=False)
+    assert getmac.get_by_method("iface", arg="ens33") is None
+
+    mocker.patch("getmac.getmac.initialize_method_cache", return_value=True)
+    assert getmac.get_by_method("iface", arg="ens33") is None
+
+    mocker.patch(
+        "getmac.getmac.METHOD_CACHE",
+        {
+            "ip4": None,
+            "ip6": None,
+            "iface": getmac.SysIfaceFile(),
+            "default_iface": None,
+        },
+    )
+    mocker.patch("getmac.getmac._read_file", return_value="")
+    mocker.patch("getmac.getmac.DEBUG", 1)
+    assert getmac.get_by_method("iface", arg="ens33") is None
+
+
+def test_get_by_method_force_method(mocker):
+    mocker.patch("getmac.getmac.FORCE_METHOD", "testing123")
+    assert getmac.get_by_method("iface", arg="some_arg") is None
+
+    mocker.patch("getmac.getmac._read_file", return_value="00:0c:29:b5:72:37\n")
+    mocker.patch("getmac.getmac.FORCE_METHOD", "SysIfaceFile")
+    assert getmac.get_by_method("iface", "ens33") == "00:0c:29:b5:72:37\n"
+
+
+def test_get_mac_address_force_method(mocker):
+    mocker.patch("getmac.getmac._read_file", return_value="00:0c:29:b5:72:37\n")
+    mocker.patch("getmac.getmac.FORCE_METHOD", "SysIfaceFile")
+    assert getmac.get_mac_address(interface="ens33") == "00:0c:29:b5:72:37"
 
 
 def test_get_mac_address_localhost():
     assert get_mac_address(hostname="localhost") == "00:00:00:00:00:00"
     assert get_mac_address(ip="127.0.0.1") == "00:00:00:00:00:00"
+
     result = get_mac_address(hostname="localhost", network_request=False)
     assert result == "00:00:00:00:00:00"
 
 
 def test_get_mac_address_interface(mocker):
-    pass  # TODO (rewrite)
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:0c:29:b5:72:37")
+    assert getmac.get_mac_address(interface="ens33") == "00:0c:29:b5:72:37"
+    getmac.get_by_method.assert_called_once_with("iface", "ens33")
 
 
 def test_get_mac_address_ip(mocker):
@@ -236,5 +309,21 @@ def test_get_mac_address_hostname(mocker):
     getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.22")
 
 
-def test_get_mac_address_network_request(mocker):
-    pass  # TODO (rewrite)
+def test_get_mac_address_default_args_windows_net_request_true(mocker):
+    mocker.patch("getmac.getmac.WINDOWS", True)
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:FF:17:15:F8:C8")
+    assert getmac.get_mac_address(network_request=False) == "00:ff:17:15:f8:c8"
+    getmac.get_by_method.assert_called_once_with("iface", "Ethernet")
+
+    mocker.patch("getmac.getmac.get_by_method", return_value="78:28:ca:c4:66:fe")
+    mocker.patch("getmac.getmac._fetch_ip_using_dns", return_value="10.0.0.175")
+    assert getmac.get_mac_address(network_request=True) == "78:28:ca:c4:66:fe"
+    getmac.get_by_method.assert_called_once_with("ip4", "10.0.0.175")
+
+
+def test_get_mac_address_default_args_fallback_global(mocker):
+    mocker.patch("getmac.getmac.WINDOWS", False)
+    mocker.patch("getmac.getmac.DEFAULT_IFACE", "eth0")
+    mocker.patch("getmac.getmac.get_by_method", return_value="08:00:27:e8:81:6f")
+    assert getmac.get_mac_address() == "08:00:27:e8:81:6f"
+    getmac.get_by_method.assert_called_once_with("iface", "eth0")

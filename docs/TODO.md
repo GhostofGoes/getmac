@@ -12,7 +12,7 @@
 - [x] Combine and parameterize tests that are testing the same method with different samples as input
 - [x] Reorganize order of classes and group related ones together in the code
 - [x] Add ability to force a specific method to be used via a CLI argument (for testing)
-- [ ] Add unit tests calling `getmac.get_mac_address()` directly using samples
+- [x] Add unit tests calling `getmac.get_mac_address()` directly using samples
 - [ ] Address any remaining "TODO (rewrite)" TODOs
 - [ ] Update README:
     - refresh various sections post-rewrite
@@ -21,6 +21,7 @@
   - use first non-loopback interface. if no non-loopback interfaces, and there's a loopback interface, then use that.
 
 # 1.0.0 release
+- [ ] Create 0.9.0 branch from master/main so we can submit patch releases if needed
 - [ ] Switch to Poetry for project management
     - [ ] Also, add `isort`
 - [ ] Support Python 3.10
