@@ -220,7 +220,7 @@ The Python standard library has a robust set of networking functionality, such a
 
 In Fall 2018 the package name changed to `getmac` from `get-mac`. This affected the package name, the CLI script, and some of the documentation. There were no changes to the core library code. While both package names will updated on PyPI, the use of `getmac` is preferred.
 
-In Summer 2020, the code was significantly refactored, moving to a class-based structure and signficantly improving performance and accuracy. See [docs/rewrite.md](docs/rewrite.md) for details.
+In Summer 2020, the code was significantly refactored, moving to a class-based structure and significantly improving performance and accuracy. See [docs/rewrite.md](docs/rewrite.md) for details.
 
 ## Contributing
 Contributors are more than welcome! See the [contribution guide](CONTRIBUTING.md) to get started, and checkout the [todo list](TODO.md) for a full list of tasks and bugs.

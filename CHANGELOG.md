@@ -38,7 +38,7 @@ The new system has a number of benefits
 * Improved the reliability and performance of many methods
 * Fixed `netstat` on older Linux distros (such as Ubuntu 12.04)
 * Overhauled `ifconfig` parsing. It should now be far more reliable and accurate across all platforms.
-* Improved Android support. Note that newer devices are locked down and the amount of information that's obtainable by an unpriviledged process is quite limited (Android 7/9 and newer, not sure exactly when they changed this, I'm not an Android guy). That being said, the normal Linux methods should work fine, provided you have the proper permissions (usually, `root`).
+* Improved Android support. Note that newer devices are locked down and the amount of information that's obtainable by an unprivileged process is quite limited (Android 7/9 and newer, not sure exactly when they changed this, I'm not an Android guy). That being said, the normal Linux methods should work fine, provided you have the proper permissions (usually, `root`).
 * Fixed bug with `/proc/net/route` parsing (this affected Android and potentially other platforms)
 * Improve default interface detection for FreeBSD (command: `route get default`)
 

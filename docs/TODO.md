@@ -94,6 +94,9 @@
 - [ ] rewrite strings to f-strings
 - [ ] Use `pyproject.toml` instead of `setup.py`
   - https://packaging.python.org/tutorials/packaging-projects/
+  - Move configurations for tools out of `tox.ini` and into `pyproject.toml`
+  - Add codespell configuration, remove CLI arguments
+  - Add linting of pyproject.toml, remove checking of setup.py
 - [ ] update classifiers in setup.py
 - [ ] add inline type annotations for method arguments. remove types from docstrings?
 - [ ] Remove `shutilwhich.py` and `.coveragerc`

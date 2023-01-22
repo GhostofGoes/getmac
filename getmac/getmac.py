@@ -329,7 +329,7 @@ class Method:
     #: error indicating the method won't work on the current platform.
     unusable = False  # type: bool
 
-    def test(self):  # type: () -> bool
+    def test(self):  # type: () -> bool  # noqa: T484
         """Low-impact test that the method is feasible, e.g. command exists."""
         pass  # pragma: no cover
 
