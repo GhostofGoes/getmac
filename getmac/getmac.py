@@ -536,10 +536,20 @@ class ArpVariousArgs(Method):
 
 
 class ArpExe(Method):
+    """
+    Query the Windows ARP table using ``arp.exe`` to find the MAC address of a remote host.
+    This only works for IPv4, since the ARP table is IPv4-only.
+
+    Microsoft Documentation: `arp <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/arp>`
+    """  # noqa: E501
+
     platforms = {"windows", "wsl"}
     method_type = "ip4"
 
     def test(self):  # type: () -> bool
+        # NOTE: specifying "arp.exe" instead of "arp" lets this work
+        # seamlessly on WSL1 as well. On WSL2 it doesn't matter, since
+        # it's basically just a Linux VM with some lipstick.
         return check_command("arp.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
@@ -614,7 +624,9 @@ class CtypesHost(Method):
     """
     Uses ``SendARP`` from the Windows ``Iphlpapi`` to get the MAC address
     of a remote IPv4 host.
-    """
+
+    Microsoft Documentation: `SendARP function (iphlpapi.h) <https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp>`__
+    """  # noqa: E501
 
     platforms = {"windows"}
     method_type = "ip4"
@@ -757,6 +769,12 @@ class FcntlIface(Method):
 
 
 class GetmacExe(Method):
+    """
+    Uses Windows-builtin ``getmac.exe`` to get a interface's MAC address.
+
+    Microsoft Documentation: `getmac <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/getmac>`__
+    """  # noqa: E501
+
     platforms = {"windows"}
     method_type = "iface"
     _regexes = [
@@ -768,10 +786,15 @@ class GetmacExe(Method):
     _champ = ()  # type: Union[tuple, Tuple[str, str]]
 
     def test(self):  # type: () -> bool
+        # NOTE: the scripts from this library (getmac) are excluded from the
+        # path used for checking variables, in getmac.getmac.PATH (defined
+        # at the top of this file). Otherwise, this would get messy quickly :)
         return check_command("getmac.exe")
 
     def get(self, arg):  # type: (str) -> Optional[str]
         try:
+            # /nh: Suppresses table headers
+            # /v:  Verbose
             command_output = _popen("getmac.exe", "/NH /V")
         except CalledProcessError as ex:
             # This shouldn't cause an exception if it's valid command
@@ -792,6 +815,15 @@ class GetmacExe(Method):
 
 
 class IpconfigExe(Method):
+    """
+    Uses ``ipconfig.exe`` to find interface MAC addresses on Windows.
+
+    This is generally pretty reliable and works across a wide array of
+    versions and releases. I'm not sure if it works pre-XP though.
+
+    Microsoft Documentation: `ipconfig <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ipconfig>`__
+    """  # noqa: E501
+
     platforms = {"windows"}
     method_type = "iface"
     _regex = (
@@ -806,6 +838,17 @@ class IpconfigExe(Method):
 
 
 class WmicExe(Method):
+    """
+    Use ``wmic.exe`` on Windows to find the MAC address of a network interface.
+
+    Microsoft Documentation: `wmic <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wmic>`__
+
+    .. warning::
+       WMIC is deprecated as of Windows 10 21H1. This method may not work on
+       Windows 11 and may stop working at some point on Windows 10 (unlikely,
+       but possible).
+    """
+
     platforms = {"windows"}
     method_type = "iface"
 
@@ -825,8 +868,20 @@ class WmicExe(Method):
         return command_output.strip().partition("=")[2]
 
 
-# TODO (rewrite): "ipconfig getifaddr <iface>" on darwin
 class DarwinNetworksetupIface(Method):
+    """
+    Use ``networksetup`` on MacOS (Darwin) to get the MAC address of a specific interface.
+
+    I think that this is or was a BSD utility, but I haven't seen it on other BSDs
+    (FreeBSD, OpenBSD, etc.). So, I'm treating it as a Darwin-specific utility
+    until further notice. If you know otherwise, please open a PR :)
+
+    If the command is present, it should always work, though naturally that is contingent
+    upon the whims of Apple in newer MacOS releases.
+
+    Man page: `networksetup (8) <https://www.manpagez.com/man/8/networksetup/>`__
+    """
+
     platforms = {"darwin"}
     method_type = "iface"
 
@@ -839,7 +894,7 @@ class DarwinNetworksetupIface(Method):
 
 
 # This only took 15-20 hours of throwing my brain against a wall multiple times
-# over the span of 1-2 years to figure out. It works for almost all concievable
+# over the span of 1-2 years to figure out. It works for almost all conceivable
 # output from "ifconfig", and probably netstat too. It can probably be made more
 # efficient by someone who actually knows how to write regex.
 # [: ]\s?(?:flags=|\s).*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr|hwaddr|lladdr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))  # noqa: E501
