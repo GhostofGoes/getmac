@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import platform
 import sys
 from subprocess import PIPE, Popen
@@ -8,7 +6,6 @@ import pytest
 
 from getmac import __version__, get_mac_address
 
-PY2 = sys.version_info[0] == 2
 BASE_CMD = [sys.executable, "-m", "getmac"]
 
 
@@ -38,11 +35,6 @@ def test_cli_help():
     assert run_cmd(BASE_CMD + ["--help"]) != ""
 
 
-@pytest.mark.skipif(
-    PY2,
-    reason="This doesn't work in Python 2.7 "
-    "and I don't care enough to figure out why",
-)
 def test_cli_version():
     assert __version__ in run_cmd(BASE_CMD + ["--version"])
 

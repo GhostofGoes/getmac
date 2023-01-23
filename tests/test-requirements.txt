@@ -1,8 +1,7 @@
-pytest<5
-pytest-randomly==1.2.3
-pytest-mock==1.10.4
-pytest-benchmark==3.2.2
-pytest-cov==2.7.1
-# TODO: older pytest-xdist isn't working on windows
-# pytest-xdist==1.34.0
-# psutil
+pytest
+pytest-randomly
+pytest-mock
+pytest-benchmark
+pytest-cov
+pytest-xdist
+psutil

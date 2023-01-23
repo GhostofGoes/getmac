@@ -1,6 +1,0 @@
-# Temporary hack until we remove shutilwhich with removal of Python 2
-# TODO: move relative_files into tox.ini
-[run]
-relative_files = True
-omit =
-    getmac/shutilwhich.py

@@ -2,9 +2,12 @@
 - [x] rename "master" branch to "main"
 - [x] Create 0.9.0 branch from master/main so we can submit patch releases if needed
 - [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
+- [ ] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
+  - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
+  - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
 - [ ] Switch to Poetry for project management
     - [ ] Also, add `isort`
-- [ ] Support Python 3.10
+- [ ] Support Python 3.10 and 3.11
     - [ ] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
     - [ ] add tests + setup.py classifier
 - [ ] **API changes** (technically speaking)
@@ -76,7 +79,7 @@
 - [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
 
 ## Py3-related stuff for 1.0.0
-- [ ] Drop support for python 2.7, 3.4, and 3.5
+- [x] Drop support for python 2.7, 3.4, and 3.5
 - [ ] BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES (especially pytest...)
 - [ ] Use Enums for platforms and method types instead of strings?
 - [ ] cache package imports done during test for use during `get()`, reuse
@@ -86,9 +89,9 @@
   - Move configurations for tools out of `tox.ini` and into `pyproject.toml`
   - Add codespell configuration, remove CLI arguments
   - Add linting of pyproject.toml, remove checking of setup.py
-- [ ] update classifiers in setup.py
+- [x] update classifiers in setup.py
 - [ ] add inline type annotations for method arguments. remove types from docstrings?
-- [ ] Remove `shutilwhich.py` and `.coveragerc`
+- [x] Remove `shutilwhich.py` and `.coveragerc`
 
 
 # Etc

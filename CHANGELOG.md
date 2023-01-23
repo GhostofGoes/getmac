@@ -2,13 +2,30 @@
 
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
+## UNRELEASED
+
+### Added
+* Added support for Python 3.10 and 3.11
+* Added tentative support for Python 3.12
+
+### Changed
+* TBD
+
+### Removed
+* Removed support for Python 2.7. It's time. Supporting 2.7 has become an onerous burden on the project, and has prevented fully supporting 3.10 and 3.11 due to having to stay on an ancient version of pytest. I'm done supporting a 13 year old version of a language.
+* Removed support for Python 3.4 and 3.5. These are quite old and there were a number of essential features added in 3.6 that I'd like to use (f-strings, type annotations, mature `pathlib`, etc.)
+* Removed support for Jython. As of Jan 23rd, 2023, [Jython](https://github.com/jython/jython) still does not support Python3, only 2.7. If and when it supports Python 3, I'll re-add support for it.
+* Removed explicit support for IronPython. [IronPython3 exists](https://github.com/IronLanguages/ironpython3), however I don't have a way to test it in CI. If someone knows of a way to test it in GitHub actions, let me know, and I'm happy to re-add explicit support.
+
+### Dev
+* Renamed `master` branch to `main`
 
 ## 0.9.0 (01/23/2023)
 **Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.
 
 This release is a *complete rewrite of getmac from the ground up*. The public API of `getmac` is **unchanged** as part of this rewrite. `get_mac_address()` is still the primary way of getting a MAC address, it's just the "under the hood" internals that have changed completely.
 
- It's passing tests and seems to be operable. However, with a change this large there are ineviteably issues that the tests or I don't catch, so I'm doing a series of pre-releases until I'm 99% confident in it's stability. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes.
+ It's passing tests and seems to be operable. However, with a change this large there are inevitably issues that the tests or I don't catch, so I'm doing a series of pre-releases until I'm 99% confident in it's stability. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes.
 
 The new system has a number of benefits
 - Reduction of false-positives and false-negatives by improving method selection accuracy (platform, validity, etc.)
@@ -28,7 +45,7 @@ The new system has a number of benefits
 * The amount of time taken to get a result (in seconds) will now be recorded and logged if debugging is enabled (`DEBUG>=1` or `-d`)
 * Added command line argument to override the UDP port for network requests: `--override-port` (this was already possible in Python via `getmac.getmac.PORT`, but wasn't configurable via the CLI. Now it is!).
 * Added ability to override the detected platform via `--override-platform` argument (CLI) or `getmac.getmac.OVERRIDE_PLATFORM` variable (Python). This will force methods for that platform to be used, regardless of the actual platform. Here's an example forcing `linux` to be used as the platform: `getmac -i eth0 --override-platform linux`. In version 1.0.0, this feature will added as an argument to `get_mac_address()`.
-* Added ability to force a specific method to be used via `--force-method` argument (CLI) or `getmac.getmac.FORCE_METHOD` variable (Python). This is useful for troubleshotting issues, general debugging, and testing changes. Example: `getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost`
+* Added ability to force a specific method to be used via `--force-method` argument (CLI) or `getmac.getmac.FORCE_METHOD` variable (Python). This is useful for troubleshooting issues, general debugging, and testing changes. Example: `getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost`
 
 ### Changed
 * **Complete rewrite of `getmac` from the ground up. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes**

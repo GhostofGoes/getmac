@@ -63,7 +63,6 @@ print(getmac.get_mac_address(ip="192.168.0.1", network_request=True))
 ```
 
 ## Terminal examples
-**Python 2 users**: use `getmac2` or `python -m getmac` instead of `getmac`.
 ```bash
 getmac --help
 getmac --version
@@ -130,10 +129,10 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 
 ## Features
 - Pure-Python (no compiled C-extensions required!)
-- Python 2.7 and 3.4+
-- Lightweight, with no dependencies and a small package size
-- Can be dropped into a project as a standalone .py file
-- Supports most interpreters: CPython, pypy, pypy3, IronPython 2.7, and Jython 2.7
+- Python 3.6+
+- Lightweight, with no dependencies and a relatively small package size (no binary extensions)
+- Supports most platforms with NO binary extensions required!
+- Supports CPython and [PyPy](https://www.pypy.org/)
 - Provides a simple command line tool (when installed as a package)
 - MIT licensed!
 
@@ -142,13 +141,15 @@ If you are running a old Python (2.6/3.3 and older) or interpreter, then you can
 
 - Python 2.5: get-mac 0.5.0
 - Python 2.6: getmac 0.6.0
+- Python 2.7: getmac 0.9.0
 - Python 3.2: get-mac 0.3.0
 - Python 3.3: get-mac 0.3.0
+- Python 3.4: getmac 0.9.0
+- Python 3.5: getmac 0.9.0
 
 NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
 
 ## Notes
-- Python 3.10 and 3.11 should work, but are not automatically tested at the moment due to having to support 2.7
 - If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined, then it will attempt to fallback to typical defaults for the platform (`Ethernet` on Windows, `em0` on BSD, `en0` on OSX/Darwin, and `eth0` otherwise). If that fails, then it will fallback to `lo` on POSIX systems.
 - "Remote hosts" refer to hosts in your local layer 2 network, also commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
 - The first four arguments are mutually exclusive. `network_request` does not have any functionality when the `interface` argument is specified, and can be safely set if using in a script.
@@ -187,7 +188,7 @@ All or almost all features should work on "supported" platforms. While other ver
     - Server: TBD
     - Partially supported (untested): 2000, XP, Vista
 - Linux distros
-    - CentOS/RHEL 6+ (Only with Python 2.7+)
+    - CentOS/RHEL 6+
     - Ubuntu 16.04+ (15.10 and older should work, but are untested)
     - Fedora (24+)
 - Mac OSX (Darwin)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import inspect
 import sys
 from subprocess import CalledProcessError
@@ -8,7 +6,6 @@ import pytest
 
 from getmac import get_mac_address, getmac
 
-PY2 = sys.version_info[0] == 2
 MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
 
 
@@ -84,10 +81,7 @@ def test_uuid_convert():
 def test_read_file_return(mocker, get_sample):
     data = get_sample("ifconfig.out")
     mock_open = mocker.mock_open(read_data=data)
-    if PY2:
-        mocker.patch("__builtin__.open", mock_open)
-    else:
-        mocker.patch("builtins.open", mock_open)
+    mocker.patch("builtins.open", mock_open)
     assert getmac._read_file("ifconfig.out") == data
     mock_open.assert_called_once_with("ifconfig.out")
 

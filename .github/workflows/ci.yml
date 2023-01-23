@@ -30,13 +30,13 @@ jobs:
       # OS images: https://github.com/actions/runner-images
       matrix:
         python-version:
-          - "2.7"
-          - "3.5"
           - "3.6"
           - "3.7"
           - "3.8"
           - "3.9"
-          - "pypy-2.7"
+          - "3.10"
+          - "3.11"
+          - "3.12"
           - "pypy-3.6"
           - "pypy-3.7"
           - "pypy-3.8"
@@ -49,24 +49,18 @@ jobs:
           - windows-latest
           - macos-latest
         exclude:
-          - platform: ubuntu-20.04
-            architecture: x86
+          # - platform: ubuntu-20.04
+          #   architecture: x86
           - platform: macos-latest
             architecture: x86
-          - platform: ubuntu-20.04
-            python-version: "3.4"
-          - platform: macos-latest
-            python-version: "3.4"
-          - platform: macos-latest
-            python-version: "pypy-2.7"
           - platform: macos-latest
             python-version: "pypy-3.6"
           - platform: macos-latest
             python-version: "pypy-3.7"
           - platform: macos-latest
             python-version: "pypy-3.8"
-          - platform: windows-latest
-            python-version: "pypy-2.7"
+          - platform: macos-latest
+            python-version: "pypy-3.9"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3

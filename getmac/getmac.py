@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# http://web.archive.org/web/20140718071917/http://multivax.com/last_question.html
-
 """
 Get the MAC address of remote hosts or network interfaces.
 
@@ -23,6 +20,7 @@ It provides one function: ``get_mac_address()``
     updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
 """
+
 import ctypes
 import logging
 import os
@@ -34,12 +32,8 @@ import struct
 import sys
 import traceback
 import warnings
-from subprocess import CalledProcessError, check_output
-
-try:  # Python 3
-    from subprocess import DEVNULL  # type: ignore
-except ImportError:  # Python 2
-    DEVNULL = open(os.devnull, "wb")  # type: ignore
+from shutil import which
+from subprocess import CalledProcessError, DEVNULL, check_output
 
 # Used for mypy (a data type analysis tool)
 # If you're copying the code, this section can be safely removed
@@ -56,36 +50,15 @@ log = logging.getLogger("getmac")  # type: logging.Logger
 if not log.handlers:
     log.addHandler(logging.NullHandler())
 
-__version__ = "0.9.0"
-
-PY2 = sys.version_info[0] == 2  # type: bool
+__version__ = "1.0.0a0"
 
 # Configurable settings
 DEBUG = 0  # type: int
 PORT = 55555  # type: int
 
-# Monkeypatch shutil.which for python 2.7 (TODO(python3): remove shutilwhich.py)
-if PY2:
-    from .shutilwhich import which
-else:
-    from shutil import which
-
 # Platform identifiers
-if PY2:
-    _UNAME = platform.uname()  # type: Tuple[str, str, str, str, str, str]
-    _SYST = _UNAME[0]  # type: str
-else:
-    _UNAME = platform.uname()  # type: platform.uname_result
-    _SYST = _UNAME.system  # type: str
-if _SYST == "Java":
-    try:
-        import java.lang
-
-        _SYST = str(java.lang.System.getProperty("os.name"))
-    except ImportError:
-        _java_err_msg = "Can't determine OS: couldn't import java.lang on Jython"
-        log.critical(_java_err_msg)
-        warnings.warn(_java_err_msg, RuntimeWarning)
+_UNAME = platform.uname()  # type: platform.uname_result
+_SYST = _UNAME.system  # type: str
 
 WINDOWS = _SYST == "Windows"  # type: bool
 DARWIN = _SYST == "Darwin"  # type: bool
@@ -158,9 +131,6 @@ MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
 # This can also happen on other platforms, like Solaris
 MAC_RE_SHORT = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 
-# Ensure we only log the Python 2 warning once
-WARNED_UNSUPPORTED_PYTHONS = False
-
 # Cache of commands that have been checked for existence by check_command()
 CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
 
@@ -183,12 +153,13 @@ def _clean_mac(mac):
     if mac is None:
         return None
 
-    # Handle cases where it's bytes (which are the same as str in PY2)
-    mac = str(mac)
-    if not PY2:  # Strip bytestring conversion artifacts
-        # TODO(python3): check for bytes and decode instead of this weird hack
-        for garbage_string in ["b'", "'", "\\n", "\\r"]:
-            mac = mac.replace(garbage_string, "")
+    # Handle cases where it's bytes
+    if isinstance(mac, bytes):
+        mac = mac.decode("utf-8")
+
+    # Strip bad characters
+    for garbage_string in ["\\n", "\\r"]:
+        mac = mac.replace(garbage_string, "")
 
     # Remove trailing whitespace, make lowercase, remove spaces,
     # and replace dashes '-' with colons ':'.
@@ -230,8 +201,7 @@ def _read_file(filepath):
     try:
         with open(filepath) as f:
             return f.read()
-    # This is IOError on Python 2.7
-    except (OSError, IOError):  # noqa: B014
+    except OSError:  # noqa: B014
         log.debug("Could not find file: '%s'", filepath)
         return None
 
@@ -276,15 +246,15 @@ def _call_proc(executable, args):
     else:
         cmd = [executable] + shlex.split(args)  # type: ignore
 
-    output = check_output(cmd, stderr=DEVNULL, env=ENV)
+    output = check_output(cmd, stderr=DEVNULL, env=ENV)  # type: Union[bytes, str]
 
     if DEBUG >= 4:
         log.debug("Output from '%s' command: %s", executable, str(output))
 
-    if not PY2 and isinstance(output, bytes):
-        return str(output, "utf-8")
-    else:
-        return str(output)
+    if isinstance(output, bytes):
+        output = output.decode("utf-8")
+
+    return output
 
 
 def _uuid_convert(mac):
@@ -301,11 +271,9 @@ def _fetch_ip_using_dns():
     the default interface. This populates the source address of the socket,
     which we then inspect and return.
     """
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("1.1.1.1", 53))
-    ip = s.getsockname()[0]
-    s.close()  # NOTE: sockets don't have context manager in 2.7 :(
-    return ip
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.connect(("1.1.1.1", 53))
+        return s.getsockname()[0]
 
 
 class Method:
@@ -639,8 +607,8 @@ class CtypesHost(Method):
             return False
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        if not PY2:  # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
-            arg = arg.encode()  # type: ignore
+        # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
+        arg = arg.encode()  # type: ignore
 
         try:
             inetaddr = ctypes.windll.wsock32.inet_addr(arg)  # type: ignore
@@ -728,8 +696,7 @@ class UuidLanscan(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         from uuid import _find_mac  # type: ignore
 
-        if not PY2:
-            arg = bytes(arg, "utf-8")  # type: ignore
+        arg = bytes(arg, "utf-8")  # type: ignore
 
         mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)
 
@@ -754,18 +721,14 @@ class FcntlIface(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         import fcntl
 
-        if not PY2:
-            arg = arg.encode()  # type: ignore
+        arg = arg.encode()  # type: ignore
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # 0x8927 = SIOCGIFADDR
         info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", arg[:15]))
 
-        if PY2:
-            return ":".join(["%02x" % ord(char) for char in info[18:24]])
-        else:
-            return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
+        return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
 
 class GetmacExe(Method):
@@ -1712,19 +1675,6 @@ def get_mac_address(
         import timeit
 
         start_time = timeit.default_timer()
-
-    if PY2 or (sys.version_info[0] == 3 and sys.version_info[1] < 6):
-        global WARNED_UNSUPPORTED_PYTHONS
-        if not WARNED_UNSUPPORTED_PYTHONS:
-            warning_string = (
-                "Support for Python versions < 3.6 is deprecated and will be "
-                "removed in getmac 1.0.0. If you are stuck on an unsupported "
-                "Python, considor loosely pinning the version of this package "
-                'in your dependency list, e.g. "getmac<1".'
-            )
-            warnings.warn(warning_string, DeprecationWarning)
-            log.warning(warning_string)  # Ensure it appears in any logs
-            WARNED_UNSUPPORTED_PYTHONS = True
 
     if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
         return "00:00:00:00:00:00"
