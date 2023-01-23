@@ -10,11 +10,11 @@ import pytest
 
 from getmac import getmac
 
-# TODO (rewrite): freebsd11/netstat_-ia.out
-# TODO (rewrite): netstat_-ian_aix.out
-# TODO (rewrite): netstat_-ian_unknown.out
-# tests\samples\macos_10.12.6\netstat_-i.out
-# tests\samples\macos_10.12.6\netstat_-ia.out
+# TODO: freebsd11/netstat_-ia.out
+# TODO: netstat_-ian_aix.out
+# TODO: netstat_-ian_unknown.out
+# TODO: macos_10.12.6/netstat_-i.out
+# TODO: macos_10.12.6/netstat_-ia.out
 
 
 def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
@@ -60,7 +60,7 @@ def test_ifconfigether_darwin(benchmark, mocker, get_sample, mac, sample_file):
     assert not getmac.IfconfigEther().get("utun0")
 
 
-# TODO (rewrite): several of these should be a different method without a interface arg
+# TODO: several of these should be a different method without a interface arg
 ifconfig_samples = [
     ("74:d4:35:e9:45:71", "eth0", "ifconfig.out"),
     ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ifconfig_ens33.out"),
@@ -319,7 +319,7 @@ def test_netstatiface_samples(benchmark, mocker, get_sample, mac, iface, sample_
     assert getmac.NetstatIface().get("docker") is None
     assert getmac.NetstatIface().get("eth") is None
     assert getmac.NetstatIface().get("eth00") is None
-    # TODO (rewrite): improve netstat regex.
+    # TODO: improve netstat regex.
     #   On Linux, it uses the same source as ifconfig (the Kernel Interface Table),
     #   so we can just use the same regex that we use for Ifconfig* methods
     # assert getmac.NetstatIface().get("Kernel") is None

@@ -976,9 +976,8 @@ class IfconfigEther(Method):
         return _parse_ifconfig(arg, command_output)
 
 
-# TODO (rewrite): IfconfigNoArgs
-# TODO (rewrite): IfconfigVariousArgs
-# TODO (rewrite): unit tests
+# TODO: create new methods, IfconfigNoArgs and IfconfigVariousArgs
+# TODO: unit tests
 class IfconfigOther(Method):
     """
     Wild 'Shot in the Dark' attempt at ``ifconfig`` for unknown platforms.
@@ -1091,9 +1090,8 @@ class NetstatIface(Method):
         return None
 
 
-# TODO (rewrite):
-#   Add to IpLinkIface
-#   New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
+# TODO (rewrite): Add to IpLinkIface
+# TODO: New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 # (r"state UP.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
 # (r"wlan.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
 # (r"ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
@@ -1137,7 +1135,7 @@ class IpLinkIface(Method):
                 command_output = _popen("ip", "link show " + arg)
             return _search(arg + self._regex, command_output)
         else:
-            # TODO (rewrite): improve this regex to not need extra portion for no arg
+            # TODO: improve this regex to not need extra portion for no arg
             command_output = _popen("ip", "link")
             return _search(arg + r":" + self._regex, command_output)
 

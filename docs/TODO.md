@@ -84,7 +84,12 @@
     - `netstat` doesn't work with `-e`, but does work with no arguments, `-a` and `-i`. `-n` prevents hostnames from resolving, which is faster. `-i` gives the shortest output (and is fastest), but doesn't give us a MAC address. Providing the interface as an argument also doesn't work to get a MAC (`netstat -a -I e1000g0`).
     - default interface via `route get default`?
     - no `ip` command
-- [ ] combine IfconfigEther with IfconfigWithArg/IfconfigNoArg
+- [ ] Cleanup ifconfig methods
+  - [ ] Split IfconfigOther into IfconfigWithArg/IfconfigNoArg
+  - [ ] Combine IfconfigEther into other Ifconfig methods
+  - [ ] Improve unit test coverage and platform markers
+- [ ] IpLinkIface: improve regex to not need extra portion for no arg
+- [ ] New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 - [ ] Support IPv6 remote hosts on windows, and IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
 - [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
