@@ -242,9 +242,11 @@ def _search(regex, text, group_index=0, flags=0):
         if DEBUG:
             log.debug("No text to _search()")
         return None
+
     match = re.search(regex, text, flags)
     if match:
         return match.groups()[group_index]
+
     return None
 
 
@@ -260,8 +262,10 @@ def _popen(command, args):
             break
     else:
         executable = command
+
     if DEBUG >= 3:
         log.debug("Running: '%s %s'", executable, args)
+
     return _call_proc(executable, args)
 
 
@@ -271,9 +275,12 @@ def _call_proc(executable, args):
         cmd = executable + " " + args  # type: ignore
     else:
         cmd = [executable] + shlex.split(args)  # type: ignore
+
     output = check_output(cmd, stderr=DEVNULL, env=ENV)
+
     if DEBUG >= 4:
         log.debug("Output from '%s' command: %s", executable, str(output))
+
     if not PY2 and isinstance(output, bytes):
         return str(output, "utf-8")
     else:
@@ -390,6 +397,7 @@ class UuidArpGetNode(Method):
             raise
         finally:
             socket.gethostbyname = backup
+
         return None
 
 
@@ -404,14 +412,18 @@ class ArpFile(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         if not arg:
             return None
+
         data = _read_file(self._path)
+
         if data is None:
             self.unusable = True
             return None
+
         if data is not None and len(data) > 1:
             # Need a space, otherwise a search for 192.168.16.2
             # will match 192.168.16.254 if it comes first!
             return _search(re.escape(arg) + r" .+" + MAC_RE_COLON, data)
+
         return None
 
 
@@ -473,9 +485,11 @@ class ArpVariousArgs(Method):
             for pair_to_test in self._args:
                 try:
                     cmd_args = [pair_to_test[0]]
+
                     # if True, then include IP as a command argument
                     if pair_to_test[1]:
                         cmd_args.append(arg)
+
                     command_output = _popen("arp", " ".join(cmd_args))
                     self._good_pair = pair_to_test
                     break
@@ -487,6 +501,7 @@ class ArpVariousArgs(Method):
                             pair_to_test[1],
                             str(ex),
                         )
+
             if not self._good_pair:
                 self.unusable = True
                 return None
@@ -495,8 +510,10 @@ class ArpVariousArgs(Method):
         if not command_output:
             # if True, then include IP as a command argument
             cmd_args = [self._good_pair[0]]
+
             if self._good_pair[1]:
                 cmd_args.append(arg)
+
             command_output = _popen("arp", " ".join(cmd_args))
 
         escaped = re.escape(arg)
@@ -568,9 +585,11 @@ class ArpingHost(Method):
                 # iputils-arping returns 2 on invalid syntax (and other errors)
                 if ex.returncode == 2:
                     self._is_iputils = True
+
                 # habets returns 1 on invalid syntax. no need to check,
                 # we already threw an exception so mark as checked.
                 self._checked_type = True
+
         try:
             if self._is_iputils:
                 command_output = _popen("arping", "-f -c 1 %s" % arg)
@@ -587,6 +606,7 @@ class ArpingHost(Method):
             # TODO: verify return code isn't 2 for iputils? need to experiment
             #   with this some more to have a more reliable check.
             pass
+
         return None
 
 
@@ -609,6 +629,7 @@ class CtypesHost(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         if not PY2:  # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
             arg = arg.encode()  # type: ignore
+
         try:
             inetaddr = ctypes.windll.wsock32.inet_addr(arg)  # type: ignore
             if inetaddr in (0, -1):
@@ -636,6 +657,7 @@ class CtypesHost(Method):
             else:
                 replacestr = "x"
             macaddr = "".join([macaddr, hex(intval).replace(replacestr, "")])
+
         return macaddr
 
 
@@ -672,6 +694,7 @@ class SysIfaceFile(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         data = _read_file(self._path + arg + "/address")
+
         # NOTE: if "/sys/class/net/" exists, but interface file doesn't,
         # then that means the interface doesn't exist
         # Sometimes this can be empty or a single newline character
@@ -695,9 +718,12 @@ class UuidLanscan(Method):
 
         if not PY2:
             arg = bytes(arg, "utf-8")  # type: ignore
+
         mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)
+
         if mac:
             return _uuid_convert(mac)
+
         return None
 
 
@@ -718,9 +744,12 @@ class FcntlIface(Method):
 
         if not PY2:
             arg = arg.encode()  # type: ignore
+
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
         # 0x8927 = SIOCGIFADDR
         info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", arg[:15]))
+
         if PY2:
             return ":".join(["%02x" % ord(char) for char in info[18:24]])
         else:
@@ -749,13 +778,16 @@ class GetmacExe(Method):
             log.error("getmac.exe failed, marking unusable. Exception: %s", str(ex))
             self.unusable = True
             return None
+
         if self._champ:
             return _search(self._champ[0] + arg + self._champ[1], command_output)
+
         for pair in self._regexes:
             result = _search(pair[0] + arg + pair[1], command_output)
             if result:
                 self._champ = pair
                 return result
+
         return None
 
 
@@ -785,6 +817,7 @@ class WmicExe(Method):
             "wmic.exe",
             'nic where "NetConnectionID = \'%s\'" get "MACAddress" /value' % arg,
         )
+
         # Negative: "No Instance(s) Available"
         # Positive: "MACAddress=00:FF:E7:78:95:A0"
         # NOTE: .partition() always returns 3 parts,
@@ -822,10 +855,13 @@ def _parse_ifconfig(iface, command_output):
     # type: (str, str) -> Optional[str]
     if not iface or not command_output:
         return None
+
     # Sanity check on input e.g. if user does "eth0:" as argument
     iface = iface.strip(":")
+
     # "(?:^|\s)": prevent an input of "h0" from matching on "eth0"
     search_re = r"(?:^|\s)" + iface + IFCONFIG_REGEX
+
     return _search(search_re, command_output, flags=re.DOTALL)
 
 
@@ -850,6 +886,7 @@ class IfconfigWithIfaceArg(Method):
                 return None
             else:
                 raise err  # this will cause another method to be used
+
         return _parse_ifconfig(arg, command_output)
 
 
@@ -869,6 +906,7 @@ class IfconfigEther(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         # Check if this version of "ifconfig" accepts an interface argument
         command_output = ""
+
         if not self._tested_arg:
             try:
                 command_output = _popen("ifconfig", arg)
@@ -881,6 +919,7 @@ class IfconfigEther(Method):
             command_output = _popen("ifconfig", arg)
         else:
             command_output = _popen("ifconfig", "")
+
         return _parse_ifconfig(arg, command_output)
 
 
@@ -888,7 +927,9 @@ class IfconfigEther(Method):
 # TODO (rewrite): IfconfigVariousArgs
 # TODO (rewrite): unit tests
 class IfconfigOther(Method):
-    """Wild 'Shot in the Dark' attempt at ``ifconfig`` for unknown platforms."""
+    """
+    Wild 'Shot in the Dark' attempt at ``ifconfig`` for unknown platforms.
+    """
 
     platforms = {"linux", "other"}
     method_type = "iface"
@@ -908,8 +949,10 @@ class IfconfigOther(Method):
     def get(self, arg):  # type: (str) -> Optional[str]
         if not arg:
             return None
-        # Ensure output from testing command on first call isn't wasted
+
+        # Cache output from testing command so first call isn't wasted
         command_output = ""
+
         # Test which arguments are valid to the command
         if not self._args_tested:
             for pair_to_test in self._args:
@@ -927,17 +970,22 @@ class IfconfigOther(Method):
                             pair_to_test[1],
                             str(ex),
                         )
+
             if not self._good_pair:
                 self.unusable = True
                 return None
+
             self._args_tested = True
+
         if not command_output and isinstance(self._good_pair[0], str):
             command_output = _popen("ifconfig", self._good_pair[0])
+
         # Handle the two possible search terms
         if isinstance(self._good_pair[1], tuple):
             for term in self._good_pair[1]:
                 regex = term + MAC_RE_COLON
                 result = _search(re.escape(arg) + regex, command_output)
+
                 if result:
                     # changes type from tuple to str, so the else statement
                     # will be hit on the next call to this method
@@ -974,16 +1022,19 @@ class NetstatIface(Method):
             log.warning("no netstat output, marking unusable")
             self.unusable = True
             return None
+
         if self._working_regex:
             # Use regex that worked previously. This can still return None in
             # the case of interface not existing, but at least it's a bit faster.
             return _search(arg + self._working_regex, command_output, flags=re.DOTALL)
+
         # See if either regex matches
         for regex in self._regexes:
             result = _search(arg + regex, command_output, flags=re.DOTALL)
             if result:
                 self._working_regex = regex
                 return result
+
         return None
 
 
@@ -1017,6 +1068,7 @@ class IpLinkIface(Method):
         # Not accepting one is a quirk of older versions of 'iproute2'
         # TODO: is it "ip link <arg>" on some platforms and "ip link show <arg>" on others?
         command_output = ""
+
         if not self._tested_arg:
             try:
                 command_output = _popen("ip", "link show " + arg)
@@ -1026,6 +1078,7 @@ class IpLinkIface(Method):
                 if err.returncode != 255:
                     raise err
             self._tested_arg = True
+
         if self._iface_arg:
             if not command_output:  # Don't repeat work on first run
                 command_output = _popen("ip", "link show " + arg)
@@ -1054,6 +1107,7 @@ class DefaultIfaceLinuxRouteFile(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         data = _read_file("/proc/net/route")
+
         if data is not None and len(data) > 1:
             for line in data.split("\n")[1:-1]:
                 line = line.strip()
@@ -1070,6 +1124,7 @@ class DefaultIfaceLinuxRouteFile(Method):
 
                 if dest == "00000000":
                     return iface_name
+
             if DEBUG:
                 log.debug(
                     "Failed to find default interface in data from "
@@ -1077,6 +1132,7 @@ class DefaultIfaceLinuxRouteFile(Method):
                 )
         elif DEBUG:
             log.warning("No data from /proc/net/route")
+
         return None
 
 
@@ -1089,6 +1145,7 @@ class DefaultIfaceRouteCommand(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("route", "-n")
+
         try:
             return output.partition("0.0.0.0")[2].partition("\n")[0].split()[-1]
         except IndexError as ex:  # index errors means no default route in output?
@@ -1105,8 +1162,10 @@ class DefaultIfaceRouteGetCommand(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("route", "get default")
+
         if not output:
             return None
+
         try:
             return output.partition("interface: ")[2].strip().split()[0].strip()
         except IndexError as ex:
@@ -1125,10 +1184,12 @@ class DefaultIfaceIpRoute(Method):
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
         output = _popen("ip", "route list 0/0")
+
         if not output:
             if DEBUG:
                 log.debug("DefaultIfaceIpRoute failed: no output")
             return None
+
         return output.partition("dev")[2].partition("proto")[0].strip()
 
 
@@ -1218,6 +1279,7 @@ def get_method_by_name(method_name):
     for method in METHODS:
         if method.__name__.lower() == method_name.lower():
             return method
+
     return None
 
 
@@ -1225,17 +1287,21 @@ def _swap_method_fallback(method_type, swap_with):
     # type: (str, str) -> bool
     if str(METHOD_CACHE[method_type]) == swap_with:
         return True
+
     found = None  # type: Optional[Method]
     for f_meth in FALLBACK_CACHE[method_type]:
         if str(f_meth) == swap_with:
             found = f_meth
             break
+
     if not found:
         return False
+
     curr = METHOD_CACHE[method_type]
     FALLBACK_CACHE[method_type].remove(found)
     METHOD_CACHE[method_type] = found
     FALLBACK_CACHE[method_type].insert(0, curr)  # noqa: T484
+
     return True
 
 
@@ -1267,6 +1333,7 @@ def initialize_method_cache(
                 "Method cache already initialized for method type '%s'", method_type
             )
         return True
+
     log.debug("Initializing '%s' method cache (platform: '%s')", method_type, PLATFORM)
 
     if OVERRIDE_PLATFORM:
@@ -1311,6 +1378,7 @@ def initialize_method_cache(
     platform_methods = [
         method for method in type_methods if platform in method.platforms
     ]  # type: List[Type[Method]]
+
     if not platform_methods:
         # If there isn't a method for the current platform,
         # then fallback to the generic platform "other".
@@ -1323,6 +1391,7 @@ def initialize_method_cache(
         platform_methods = [
             method for method in type_methods if "other" in method.platforms
         ]
+
     if DEBUG >= 2:
         plat_strs = ", ".join(pm.__name__ for pm in platform_methods)  # type: str
         log.debug(
@@ -1348,6 +1417,7 @@ def initialize_method_cache(
 
     # Determine which methods work on the current system
     tested_methods = []  # type: List[Method]
+
     for method_class in filtered_methods:
         method_instance = method_class()  # type: Method
         try:
@@ -1380,6 +1450,7 @@ def initialize_method_cache(
     # Populate fallback cache with all the tested methods, minus the currently active method
     if METHOD_CACHE[method_type] and METHOD_CACHE[method_type] in tested_methods:
         tested_methods.remove(METHOD_CACHE[method_type])  # noqa: T484
+
     FALLBACK_CACHE[method_type] = tested_methods
 
     if DEBUG:
@@ -1392,6 +1463,7 @@ def initialize_method_cache(
             str({k: str(v) for k, v in FALLBACK_CACHE.items()}),
         )
     log.debug("Finished initializing '%s' method cache", method_type)
+
     return True
 
 
@@ -1406,13 +1478,16 @@ def _remove_unusable(method, method_type):  # type: (Method, str) -> Optional[Me
             str(METHOD_CACHE[method_type]),
             str(method),
         )
+
     return METHOD_CACHE[method_type]
 
 
 def _attempt_method_get(
     method, method_type, arg
 ):  # type: (Method, str, str) -> Optional[str]
-    """Attempt to use methods, and if they fail, fallback to the next method in the cache."""
+    """
+    Attempt to use methods, and if they fail, fallback to the next method in the cache.
+    """
     if not METHOD_CACHE[method_type] and not FALLBACK_CACHE[method_type]:
         _warn_critical("No usable methods found for MAC type '%s'" % method_type)
         return None
@@ -1460,8 +1535,10 @@ def _attempt_method_get(
     # the method from the cache and reinitialize with next candidate.
     if not result and method.unusable:
         new_method = _remove_unusable(method, method_type)
+
         if not new_method:
             return None
+
         return _attempt_method_get(new_method, method_type, arg)
 
     return result
@@ -1490,10 +1567,13 @@ def get_by_method(method_type, arg="", network_request=True):
             method_type,
             arg,
         )
+
         forced_method = get_method_by_name(FORCE_METHOD)
+
         if not forced_method:
             log.error("Invalid FORCE_METHOD method name '%s'", FORCE_METHOD)
             return None
+
         return forced_method().get(arg)
 
     method = METHOD_CACHE.get(method_type)  # type: Optional[Method]
@@ -1507,6 +1587,7 @@ def get_by_method(method_type, arg="", network_request=True):
                 arg,
             )
             return None
+
         method = METHOD_CACHE[method_type]
 
     if not method:
@@ -1525,6 +1606,7 @@ def get_by_method(method_type, arg="", network_request=True):
     # Log normal get() failures if debugging is enabled
     if DEBUG and not result:
         log.debug("Method '%s' failed for '%s' lookup", str(method), method_type)
+
     return result
 
 
@@ -1628,6 +1710,7 @@ def get_mac_address(
         if ip:
             if not METHOD_CACHE["ip4"]:
                 initialize_method_cache("ip4", network_request)
+
             for arp_meth in ["CtypesHost", "ArpingHost"]:
                 if arp_meth == str(METHOD_CACHE["ip4"]):
                     send_udp_packet = False
@@ -1646,10 +1729,12 @@ def get_mac_address(
                     ip if ip else ip6,
                     PORT,
                 )
+
             if ip:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             else:
                 sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+
             try:
                 if ip:
                     sock.sendto(b"", (ip, PORT))

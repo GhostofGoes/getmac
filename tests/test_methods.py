@@ -13,6 +13,8 @@ from getmac import getmac
 # TODO (rewrite): freebsd11/netstat_-ia.out
 # TODO (rewrite): netstat_-ian_aix.out
 # TODO (rewrite): netstat_-ian_unknown.out
+# tests\samples\macos_10.12.6\netstat_-i.out
+# tests\samples\macos_10.12.6\netstat_-ia.out
 
 
 def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
