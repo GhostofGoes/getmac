@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import platform
 import sys
 from subprocess import PIPE, Popen
 
@@ -12,6 +13,7 @@ BASE_CMD = [sys.executable, "-m", "getmac"]
 
 
 def run_cmd(command):
+    # type: (list) -> str
     stdout, _ = Popen(command, stdout=PIPE, stderr=PIPE).communicate()
     return stdout.decode("utf-8").strip()
 
@@ -57,8 +59,21 @@ def test_cli_no_net():
     )
 
 
+def test_cli_override_port():
+    assert (
+        run_cmd(BASE_CMD + ["-v", "-dd", "-4", "127.0.0.1", "--override-port", "44444"])
+        != ""
+    )
+
+
 def test_cli_localhost():
     assert run_cmd(BASE_CMD + ["-4", "127.0.0.1"]) != ""
     assert run_cmd(BASE_CMD + ["-n", "localhost"]) != ""
     assert run_cmd(BASE_CMD + ["--no-network-requests", "-4", "127.0.0.1"]) != ""
     assert run_cmd(BASE_CMD + ["--no-network-requests", "-n", "localhost"]) != ""
+
+
+# TODO: figure out how to properly test CLI commands and isolate platform-specific behavior
+def test_cli_override_platform():
+    plat = platform.system().lower()
+    assert run_cmd(BASE_CMD + ["-v", "-dd", "--override-platform", plat]) != ""

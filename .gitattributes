@@ -6,8 +6,9 @@
 *.md        text eol=lf
 
 # Samples
-tests/samples/windows*/*.out   text eol=crlf
+tests/samples/**/*.out         text eol=lf
 tests/samples/*.out            text eol=lf
+tests/samples/windows*/*.out   text eol=crlf
 
 # Windows
 *.ps1       text eol=crlf
@@ -16,7 +17,6 @@ tests/samples/*.out            text eol=lf
 # POSIX
 *.sh        text eol=lf
 *.bash      text eol=lf
-.travis-osx text eol=lf
 *.1         text eol=lf
 packaging/*.spec text eol=lf
 Makefile    text eol=lf

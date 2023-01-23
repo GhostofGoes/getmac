@@ -1,22 +1,25 @@
-check-manifest
-codespell
-flake8
-flake8-bugbear;python_version>='3.5'
-flake8-import-order
-flake8-tidy-imports
-flake8-print
-flake8-builtins
-flake8-blind-except
-flake8-comprehensions
-flake8-debugger
-pep8-naming
-flake8-string-format
-flake8-broken-line
-flake8-mutable
+check-manifest==0.49
+codespell==2.2.2
+flake8>=5.0.0
+flake8-bugbear==23.1.20;python_version>='3.5'
+flake8-import-order==0.18.2
+flake8-tidy-imports==4.8.0
+flake8-print==5.0.0
+flake8-builtins==2.1.0
+flake8-blind-except==0.2.1
+flake8-comprehensions==3.10.1
+flake8-debugger==4.1.2
+pep8-naming==0.13.3
+flake8-string-format==0.3.0
+flake8-broken-line==0.6.0
+flake8-mutable==1.2.0
+flake8-pytest-style==1.6.0
+# flake8-annotations 3.0.0 removes support for PEP-484 type comments
+flake8-annotations<3.0.0
 flake8-black;python_version>='3.6'
 # NOTE: the released version of flake8-mypy is buggy on Windows (17.8.0)
 # flake8-mypy;python_version>='3.5'
 https://github.com/ambv/flake8-mypy/archive/master.tar.gz
 bandit>=1.6.0
-black;python_version>='3.6'
-vulture
+black==22.12.0;python_version>='3.6'
+vulture==2.7

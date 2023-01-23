@@ -1,0 +1,247 @@
+
+Interface 1: Loopback Pseudo-Interface 1
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+ff02::2                                                          Permanent
+ff02::c                                                          Permanent
+ff02::16                                                         Permanent
+ff02::fb                                                         Permanent
+ff02::1:2                                                        Permanent
+ff02::1:3                                                        Permanent
+ff02::1:ff50:9b3c                                                Permanent
+ff02::1:fff7:3628                                                Permanent
+
+Interface 13: Local Area Connection 2
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+fe80::42b0:34ff:fe74:afdd                     00-00-00-00-00-00  Unreachable
+fe80::53a9:a35:d347:49b3                      00-00-00-00-00-00  Unreachable
+fe80::5c07:67a6:7f15:9bab                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1bc                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1d8                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66f0                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66fe                     00-00-00-00-00-00  Unreachable
+fe80::a12b:835:ea84:a256                      00-00-00-00-00-00  Unreachable
+fe80::a8e9:ed20:c1ca:2689                     00-00-00-00-00-00  Unreachable
+fe80::bae9:37ff:fe46:ff76                     00-00-00-00-00-00  Unreachable
+fe80::ca6c:3dff:fe76:48a5                     00-00-00-00-00-00  Unreachable
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:3                                     33-33-00-01-00-03  Permanent
+ff02::1:ff50:9b3c                             33-33-ff-50-9b-3c  Permanent
+ff02::1:fff7:3628                             33-33-ff-f7-36-28  Permanent
+
+Interface 5: Ethernet 4
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+fe80::42b0:34ff:fe74:afdd                     00-00-00-00-00-00  Unreachable
+fe80::53a9:a35:d347:49b3                      00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1bc                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1d8                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66f0                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66fe                     00-00-00-00-00-00  Unreachable
+fe80::a8e9:ed20:c1ca:2689                     00-00-00-00-00-00  Unreachable
+fe80::bae9:37ff:fe46:ff76                     00-00-00-00-00-00  Unreachable
+fe80::ca6c:3dff:fe76:48a5                     00-00-00-00-00-00  Unreachable
+ff02::1                                       33-33-00-00-00-01  Permanent
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:3                                     33-33-00-01-00-03  Permanent
+ff02::1:ff36:db2f                             33-33-ff-36-db-2f  Permanent
+ff02::1:fff7:3628                             33-33-ff-f7-36-28  Permanent
+
+Interface 16: VMware Network Adapter VMnet1
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+fe80::42b0:34ff:fe74:afdd                     00-00-00-00-00-00  Unreachable
+fe80::53a9:a35:d347:49b3                      00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1bc                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1d8                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66f0                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66fe                     00-00-00-00-00-00  Unreachable
+fe80::a8e9:ed20:c1ca:2689                     00-00-00-00-00-00  Unreachable
+fe80::bae9:37ff:fe46:ff76                     00-00-00-00-00-00  Unreachable
+fe80::ca6c:3dff:fe76:48a5                     00-00-00-00-00-00  Unreachable
+ff02::1                                       33-33-00-00-00-01  Permanent
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:3                                     33-33-00-01-00-03  Permanent
+ff02::1:ff15:9bab                             33-33-ff-15-9b-ab  Permanent
+ff02::1:fff7:3628                             33-33-ff-f7-36-28  Permanent
+
+Interface 28: VMware Network Adapter VMnet8
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+fe80::42b0:34ff:fe74:afdd                     00-00-00-00-00-00  Unreachable
+fe80::53a9:a35:d347:49b3                      00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1bc                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1d8                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66f0                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66fe                     00-00-00-00-00-00  Unreachable
+fe80::a8e9:ed20:c1ca:2689                     00-00-00-00-00-00  Unreachable
+fe80::bae9:37ff:fe46:ff76                     00-00-00-00-00-00  Unreachable
+fe80::ca6c:3dff:fe76:48a5                     00-00-00-00-00-00  Unreachable
+ff02::1                                       33-33-00-00-00-01  Permanent
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:3                                     33-33-00-01-00-03  Permanent
+ff02::1:ff84:a256                             33-33-ff-84-a2-56  Permanent
+ff02::1:fff7:3628                             33-33-ff-f7-36-28  Permanent
+
+Interface 15: Ethernet 5
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+fe80::42b0:34ff:fe74:afdd                     00-00-00-00-00-00  Unreachable
+fe80::53a9:a35:d347:49b3                      00-00-00-00-00-00  Unreachable
+fe80::5c07:67a6:7f15:9bab                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1bc                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1d8                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66f0                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66fe                     00-00-00-00-00-00  Unreachable
+fe80::a12b:835:ea84:a256                      00-00-00-00-00-00  Unreachable
+fe80::a8e9:ed20:c1ca:2689                     00-00-00-00-00-00  Unreachable
+fe80::bae9:37ff:fe46:ff76                     00-00-00-00-00-00  Unreachable
+fe80::ca6c:3dff:fe76:48a5                     00-00-00-00-00-00  Unreachable
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:3                                     33-33-00-01-00-03  Permanent
+ff02::1:ff50:9b3c                             33-33-ff-50-9b-3c  Permanent
+ff02::1:fff7:3628                             33-33-ff-f7-36-28  Permanent
+
+Interface 12: Ethernet 6
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+fe80::42b0:34ff:fe74:afdd                     00-00-00-00-00-00  Unreachable
+fe80::53a9:a35:d347:49b3                      00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1bc                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1d8                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66f0                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66fe                     00-00-00-00-00-00  Unreachable
+fe80::a8e9:ed20:c1ca:2689                     00-00-00-00-00-00  Unreachable
+fe80::bae9:37ff:fe46:ff76                     00-00-00-00-00-00  Unreachable
+fe80::ca6c:3dff:fe76:48a5                     00-00-00-00-00-00  Unreachable
+ff02::1                                       33-33-00-00-00-01  Permanent
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:3                                     33-33-00-01-00-03  Permanent
+ff02::1:ff6d:350d                             33-33-ff-6d-35-0d  Permanent
+ff02::1:fff7:3628                             33-33-ff-f7-36-28  Permanent
+
+Interface 72: vEthernet (WSL)
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+ff02::1                                       33-33-00-00-00-01  Permanent
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:ff76:c285                             33-33-ff-76-c2-85  Permanent
+
+Interface 24: VirtualBox Host-Only Network #2
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+fe80::42b0:34ff:fe74:afdd                     00-00-00-00-00-00  Unreachable
+fe80::53a9:a35:d347:49b3                      00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1bc                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1d8                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66f0                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66fe                     00-00-00-00-00-00  Unreachable
+fe80::a8e9:ed20:c1ca:2689                     00-00-00-00-00-00  Unreachable
+fe80::bae9:37ff:fe46:ff76                     00-00-00-00-00-00  Unreachable
+fe80::ca6c:3dff:fe76:48a5                     00-00-00-00-00-00  Unreachable
+ff02::1                                       33-33-00-00-00-01  Permanent
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:3                                     33-33-00-01-00-03  Permanent
+ff02::1:ff08:bc45                             33-33-ff-08-bc-45  Permanent
+ff02::1:fff7:3628                             33-33-ff-f7-36-28  Permanent
+
+Interface 23: VirtualBox Host-Only Network
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+fe80::42b0:34ff:fe74:afdd                     00-00-00-00-00-00  Unreachable
+fe80::53a9:a35:d347:49b3                      00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1bc                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1d8                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66f0                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66fe                     00-00-00-00-00-00  Unreachable
+fe80::a8e9:ed20:c1ca:2689                     00-00-00-00-00-00  Unreachable
+fe80::bae9:37ff:fe46:ff76                     00-00-00-00-00-00  Unreachable
+fe80::ca6c:3dff:fe76:48a5                     00-00-00-00-00-00  Unreachable
+ff02::1                                       33-33-00-00-00-01  Permanent
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:3                                     33-33-00-01-00-03  Permanent
+ff02::1:ff1d:7928                             33-33-ff-1d-79-28  Permanent
+ff02::1:fff7:3628                             33-33-ff-f7-36-28  Permanent
+
+Interface 2: Bluetooth Network Connection 2
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+fe80::42b0:34ff:fe74:afdd                     00-00-00-00-00-00  Unreachable
+fe80::53a9:a35:d347:49b3                      00-00-00-00-00-00  Unreachable
+fe80::5c07:67a6:7f15:9bab                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1bc                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:feae:b1d8                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66f0                     00-00-00-00-00-00  Unreachable
+fe80::7a28:caff:fec4:66fe                     00-00-00-00-00-00  Unreachable
+fe80::a12b:835:ea84:a256                      00-00-00-00-00-00  Unreachable
+fe80::a8e9:ed20:c1ca:2689                     00-00-00-00-00-00  Unreachable
+fe80::bae9:37ff:fe46:ff76                     00-00-00-00-00-00  Unreachable
+fe80::ca6c:3dff:fe76:48a5                     00-00-00-00-00-00  Unreachable
+ff02::2                                       33-33-00-00-00-02  Permanent
+ff02::c                                       33-33-00-00-00-0c  Permanent
+ff02::16                                      33-33-00-00-00-16  Permanent
+ff02::fb                                      33-33-00-00-00-fb  Permanent
+ff02::1:2                                     33-33-00-01-00-02  Permanent
+ff02::1:3                                     33-33-00-01-00-03  Permanent
+ff02::1:ff50:9b3c                             33-33-ff-50-9b-3c  Permanent
+ff02::1:fff7:3628                             33-33-ff-f7-36-28  Permanent
+

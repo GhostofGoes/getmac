@@ -1,0 +1,9 @@
+
+TCP: IPv4
+   Local Address        Remote Address    Swind Send-Q Rwind Recv-Q    State
+-------------------- -------------------- ----- ------ ----- ------ -----------
+vagrant-solaris10.dev.ssh 10.0.2.2.62701       65535      0 49640      0 ESTABLISHED
+
+Active UNIX domain sockets
+Address  Type          Vnode     Conn  Local Addr      Remote Addr
+ffffffff85fc6cb8 stream-ord ffffffff85fc5d80 00000000    /var/run/.inetd.uds

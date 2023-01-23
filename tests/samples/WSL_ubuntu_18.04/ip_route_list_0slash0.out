@@ -1,0 +1,1 @@
+none default via 10.0.0.1 dev eth0 proto unspec metric 0

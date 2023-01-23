@@ -3,8 +3,62 @@
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
 
-## NEXT (XX/XX/XXXX)
-* TBD
+## 0.9.0 (01/23/2023)
+**Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.
+
+This release is a *complete rewrite of getmac from the ground up*. The public API of `getmac` is **unchanged** as part of this rewrite. `get_mac_address()` is still the primary way of getting a MAC address, it's just the "under the hood" internals that have changed completely.
+
+ It's passing tests and seems to be operable. However, with a change this large there are ineviteably issues that the tests or I don't catch, so I'm doing a series of pre-releases until I'm 99% confident in it's stability. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes.
+
+The new system has a number of benefits
+- Reduction of false-positives and false-negatives by improving method selection accuracy (platform, validity, etc.)
+- *Significantly* faster overall
+- "Misses" have the same performance as "Hits"
+- Easier to test, since each method can be tested directly via it's class
+- Easier to type annotate and analyze with mypy
+- Easier to read, improving reviewability and ease of contributing for newcomers
+- Extensible! Custom methods can be defined and added at runtime (which is perfect if you have some particular edge case but aren't able to open-source it).
+
+### Added
+* Fully support Python 3.9 (automated tests in CI)
+* Tentatively support Python 3.10 and 3.11 (unable to test due to the need to be able to still test 2.7)
+* Added default interface detection for MacOS (command: `route get default`)
+* Added initial support for Solaris/SunOS. There were a few existing methods that worked as-is, so just added indicators that those methods support `sunos` (Which applies to any system where `platform.system() == SunOS`).
+* `arping` (POSIX) or `SendARP` (Windows) will now *always* be used instead of sending a UDP packet when looking for the MAC of a IPv4 host, if they're available and operable (otherwise, UDP + ARP table check will be used like before).
+* The amount of time taken to get a result (in seconds) will now be recorded and logged if debugging is enabled (`DEBUG>=1` or `-d`)
+* Added command line argument to override the UDP port for network requests: `--override-port` (this was already possible in Python via `getmac.getmac.PORT`, but wasn't configurable via the CLI. Now it is!).
+* Added ability to override the detected platform via `--override-platform` argument (CLI) or `getmac.getmac.OVERRIDE_PLATFORM` variable (Python). This will force methods for that platform to be used, regardless of the actual platform. Here's an example forcing `linux` to be used as the platform: `getmac -i eth0 --override-platform linux`. In version 1.0.0, this feature will added as an argument to `get_mac_address()`.
+* Added ability to force a specific method to be used via `--force-method` argument (CLI) or `getmac.getmac.FORCE_METHOD` variable (Python). This is useful for troubleshotting issues, general debugging, and testing changes. Example: `getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost`
+
+### Changed
+* **Complete rewrite of `getmac` from the ground up. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes**
+* Fixed a failure to look up a hostname now returns `None`, as expected, instead of raising an exception (`socket.gaierror`).
+* Fixed numerous false-negative and false-positive bugs
+* Improved overall performance
+* Performance for cases where no MAC is found is now the same as cases where a MAC is found (speed of "misses" now equals that of "hits")
+* Improved the reliability and performance of many methods
+* Fixed `netstat` on older Linux distros (such as Ubuntu 12.04)
+* Overhauled `ifconfig` parsing. It should now be far more reliable and accurate across all platforms.
+* Improved Android support. Note that newer devices are locked down and the amount of information that's obtainable by an unprivileged process is quite limited (Android 7/9 and newer, not sure exactly when they changed this, I'm not an Android guy). That being said, the normal Linux methods should work fine, provided you have the proper permissions (usually, `root`).
+* Fixed bug with `/proc/net/route` parsing (this affected Android and potentially other platforms)
+* Improve default interface detection for FreeBSD (command: `route get default`)
+
+### Removed
+* Removed man pages from distribution (`getmac.1`/`getmac2.1`). They were severely out of date and unused. May re-add at a later date.
+
+### Dev
+* Migrate CI to GitHub Actions, remove TravisCI and Appveyor
+* Add flake8 plugins: `flake8-pytest-style` and `flake8-annotations`
+* Add additional samples and tests for WSL1 (with the Ubuntu 18.04 distro)
+* Add additional samples for Windows 10
+* Add additional samples for MacOS
+* Add samples and tests for Ubuntu 12.04
+* Add samples for NetBSD 8 (support coming in a future release)
+* Add samples for Solaris 10 (support TBD)
+* Add samples for several versions of Android
+* Add new tests
+* Improve existing tests
+* Consolidate everything related to RPM packaging to `packaging/rpm/`. This stuff hasn't been updated since 0.6.0, may remove in the future and leave distro packaging to distro maintainers.
 
 
 ## 0.8.3 (12/10/2021)

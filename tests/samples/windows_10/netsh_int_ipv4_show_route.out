@@ -1,0 +1,51 @@
+
+Publish  Type      Met  Prefix                    Idx  Gateway/Interface Name
+-------  --------  ---  ------------------------  ---  ------------------------
+No       Manual    0    0.0.0.0/0                   5  10.0.0.1
+No       System    256  10.0.0.0/24                 5  Ethernet 4
+No       System    256  10.0.0.185/32               5  Ethernet 4
+No       System    256  10.0.0.255/32               5  Ethernet 4
+No       System    256  127.0.0.0/8                 1  Loopback Pseudo-Interface 1
+No       System    256  127.0.0.1/32                1  Loopback Pseudo-Interface 1
+No       System    256  127.255.255.255/32          1  Loopback Pseudo-Interface 1
+No       System    256  172.17.112.0/20            72  vEthernet (WSL)
+No       System    256  172.17.112.1/32            72  vEthernet (WSL)
+No       System    256  172.17.127.255/32          72  vEthernet (WSL)
+No       System    256  192.168.17.0/24            16  VMware Network Adapter VMnet1
+No       System    256  192.168.17.1/32            16  VMware Network Adapter VMnet1
+No       System    256  192.168.17.255/32          16  VMware Network Adapter VMnet1
+No       System    256  192.168.38.0/24            24  VirtualBox Host-Only Network #2
+No       System    256  192.168.38.1/32            24  VirtualBox Host-Only Network #2
+No       System    256  192.168.38.255/32          24  VirtualBox Host-Only Network #2
+No       System    256  192.168.56.0/24            23  VirtualBox Host-Only Network
+No       System    256  192.168.56.1/32            23  VirtualBox Host-Only Network
+No       System    256  192.168.56.255/32          23  VirtualBox Host-Only Network
+No       System    256  192.168.84.0/24            12  Ethernet 6
+No       System    256  192.168.84.1/32            12  Ethernet 6
+No       System    256  192.168.84.255/32          12  Ethernet 6
+No       System    256  192.168.235.0/24           28  VMware Network Adapter VMnet8
+No       System    256  192.168.235.1/32           28  VMware Network Adapter VMnet8
+No       System    256  192.168.235.255/32         28  VMware Network Adapter VMnet8
+No       System    256  224.0.0.0/4                 1  Loopback Pseudo-Interface 1
+No       System    256  224.0.0.0/4                12  Ethernet 6
+No       System    256  224.0.0.0/4                23  VirtualBox Host-Only Network
+No       System    256  224.0.0.0/4                24  VirtualBox Host-Only Network #2
+No       System    256  224.0.0.0/4                13  Local Area Connection 2
+No       System    256  224.0.0.0/4                 5  Ethernet 4
+No       System    256  224.0.0.0/4                15  Ethernet 5
+No       System    256  224.0.0.0/4                 2  Bluetooth Network Connection 2
+No       System    256  224.0.0.0/4                28  VMware Network Adapter VMnet8
+No       System    256  224.0.0.0/4                16  VMware Network Adapter VMnet1
+No       System    256  224.0.0.0/4                72  vEthernet (WSL)
+No       System    256  255.255.255.255/32          1  Loopback Pseudo-Interface 1
+No       System    256  255.255.255.255/32         12  Ethernet 6
+No       System    256  255.255.255.255/32         23  VirtualBox Host-Only Network
+No       System    256  255.255.255.255/32         24  VirtualBox Host-Only Network #2
+No       System    256  255.255.255.255/32         13  Local Area Connection 2
+No       System    256  255.255.255.255/32          5  Ethernet 4
+No       System    256  255.255.255.255/32         15  Ethernet 5
+No       System    256  255.255.255.255/32          2  Bluetooth Network Connection 2
+No       System    256  255.255.255.255/32         28  VMware Network Adapter VMnet8
+No       System    256  255.255.255.255/32         16  VMware Network Adapter VMnet1
+No       System    256  255.255.255.255/32         72  vEthernet (WSL)
+

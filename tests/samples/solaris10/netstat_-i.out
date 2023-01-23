@@ -1,0 +1,4 @@
+Name  Mtu  Net/Dest      Address        Ipkts  Ierrs Opkts  Oerrs Collis Queue
+lo0   8232 loopback      localhost      253    0     253    0     0      0
+e1000g0 1500 vagrant-solaris10.dev vagrant-solaris10.dev 27630  0     14952  0     0      0
+

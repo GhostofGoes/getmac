@@ -1,0 +1,43 @@
+
+UDP: IPv4
+   Local Address        Remote Address      State
+-------------------- -------------------- ----------
+      *.bootpc                            Idle
+      *.dhcpv6-client                      Idle
+vagrant-solaris10.dev.bootpc                      Idle
+      *.sunrpc                            Idle
+      *.*                                 Unbound
+      *.32771                             Idle
+
+UDP: IPv6
+   Local Address                     Remote Address                   State      If
+--------------------------------- --------------------------------- ---------- -----
+      *.dhcpv6-client                                               Idle
+
+TCP: IPv4
+   Local Address        Remote Address    Swind Send-Q Rwind Recv-Q    State
+-------------------- -------------------- ----- ------ ----- ------ -----------
+      *.*                  *.*                0      0 49152      0 IDLE
+localhost.4999             *.*                0      0 49152      0 LISTEN
+      *.sunrpc             *.*                0      0 49152      0 LISTEN
+      *.*                  *.*                0      0 49152      0 IDLE
+      *.ssh                *.*                0      0 49152      0 LISTEN
+vagrant-solaris10.dev.32831 162.255.119.217.smtp     0      0 49640      0 SYN_SENT
+localhost.smtp             *.*                0      0 49152      0 LISTEN
+localhost.submission       *.*                0      0 49152      0 LISTEN
+vagrant-solaris10.dev.ssh 10.0.2.2.62701       65535     35 49640      0 ESTABLISHED
+
+TCP: IPv6
+   Local Address                     Remote Address                 Swind Send-Q Rwind Recv-Q   State      If
+--------------------------------- --------------------------------- ----- ------ ----- ------ ----------- -----
+      *.*                               *.*                             0      0 49152      0 IDLE
+      *.ssh                             *.*                             0      0 49152      0 LISTEN
+
+SCTP:
+        Local Address                   Remote Address          Swind  Send-Q Rwind  Recv-Q StrsI/O  State
+------------------------------- ------------------------------- ------ ------ ------ ------ ------- -----------
+0.0.0.0                         0.0.0.0                              0      0 102400      0  32/32  CLOSED
+
+Active UNIX domain sockets
+Address  Type          Vnode     Conn  Local Addr      Remote Addr
+ffffffff85fc6cb8 stream-ord ffffffff85fc5d80 00000000    /var/run/.inetd.uds

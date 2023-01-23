@@ -10,8 +10,7 @@ import sys
 from . import getmac
 
 
-def main():
-    # type: () -> None
+def main():  # type: () -> None
     parser = argparse.ArgumentParser(
         "getmac",
         description="Get the MAC address of system network "
@@ -36,7 +35,32 @@ def main():
         "--no-network-requests",
         action="store_true",
         dest="NO_NET",
-        help="Do not send a UDP packet to refresh the ARP table",
+        help="Do not use arping or send a UDP packet to refresh the ARP table",
+    )
+    parser.add_argument(
+        "--override-port",
+        type=int,
+        metavar="PORT",
+        help="Override the default UDP port used to refresh the ARP table "
+        "if network requests are enabled and arping is unavailable",
+    )
+    parser.add_argument(
+        "--override-platform",
+        type=str,
+        default=None,
+        metavar="PLATFORM",
+        help="Override the platform detection with the given value "
+        "(e.g. 'linux', 'windows', 'freebsd', etc.'). "
+        "Any values returned by platform.system() are valid.",
+    )
+    parser.add_argument(
+        "--force-method",
+        type=str,
+        default=None,
+        metavar="METHOD",
+        help="Force a specific method to be used, e.g. 'IpNeighborShow'. "
+        "This will be used regardless of it's method type or platform "
+        "compatibility, and Method.test() will NOT be checked!",
     )
 
     group = parser.add_mutually_exclusive_group(required=False)
@@ -63,8 +87,22 @@ def main():
         logging.basicConfig(
             format="%(levelname)-8s %(message)s", level=logging.DEBUG, stream=sys.stderr
         )
+
     if args.debug:
         getmac.DEBUG = args.debug
+
+    if args.override_port:
+        port = int(args.override_port)
+        getmac.log.debug(
+            "Using UDP port %d (overriding the default port %d)", port, getmac.PORT
+        )
+        getmac.PORT = port
+
+    if args.override_platform:
+        getmac.OVERRIDE_PLATFORM = args.override_platform.strip().lower()
+
+    if args.force_method:
+        getmac.FORCE_METHOD = args.force_method.strip().lower()
 
     mac = getmac.get_mac_address(
         interface=args.interface,
@@ -75,7 +113,7 @@ def main():
     )
 
     if mac is not None:
-        print(mac)  # noqa: T001
+        print(mac)  # noqa: T001, T201
         sys.exit(0)  # Exit success!
     else:
         sys.exit(1)  # Exit with error since it failed to find a MAC

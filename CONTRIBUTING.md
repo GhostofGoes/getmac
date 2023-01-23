@@ -16,7 +16,7 @@ to bring new members into the community, and can always use the help.
 (cursing/swearing), NSFW text/content, or racism are NOT ok.
 
 ## Checklist before submitting a pull request
-* [ ] Code is formatted with Black: `black getmac tests`
+* [ ] Code is formatted using `black` (`black getmac tests`)
 * [ ] All tests run and pass locally
     * [ ] `tox`
     * [ ] `tox -e check`
@@ -24,8 +24,7 @@ to bring new members into the community, and can always use the help.
 * [ ] Add your name to the contributors list in the [README](README.md)
 
 ## Checklist before a Pull Request will be merged
-* [ ] *All* TravisCI tests pass
-* [ ] Appveyor tests pass
+* [ ] *All* tests pass in GitHub Actions
 * [ ] Code has been reviewed by at least one maintainer
 
 
@@ -106,6 +105,17 @@ Filing a bug report:
 **NOTE**: If the issue is a potential security vulnerability, do *NOT* open an issue!
 Instead, email: ghostofgoes(at)gmail(dot)com
 
+
 # Features and ideas
 Ideas for features or other things are welcomed. Open an issue on GitHub
 detailing the idea, and tag it appropriately (e.g. "Feature" for a new feature).
+
+
+# Resources
+
+## Regex resources (regular expressions)
+- https://pythex.org/
+- https://regex101.com/
+- [Python's `re` documentation](https://docs.python.org/3/library/re.html)
+- [Python's guide to regex](https://docs.python.org/3/howto/regex.html) (this is actually really helpful)
+- https://ultrapico.com/Expresso.htm (I haven't used this but it looks useful)

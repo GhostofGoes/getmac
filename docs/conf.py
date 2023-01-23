@@ -13,6 +13,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
+from datetime import datetime
 DOCDIR = os.path.pardir(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.pardir(DOCDIR), 'getmac'))
 
@@ -24,7 +25,7 @@ import getmac  # noqa: E402
 # -- Project information -----------------------------------------------------
 
 project = 'getmac'
-copyright = '2019, Christopher Goes'
+copyright = '2017 - %i, Christopher Goes' % datetime.today().year
 author = 'Christopher Goes'
 version = getmac.__version__
 release = getmac.__version__
@@ -32,11 +33,17 @@ release = getmac.__version__
 
 # -- General configuration ---------------------------------------------------
 
+# TODO: sphinx-copybutton
+# TODO: sphinx-tabs (or another extension) to provide tabbed command
+#   examples for different platforms (e.g. for developer docs and CLI usage)
+# TODO(python3): sphinx-autodoc-typehints
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
 ]
 
+# TODO: setup ReadTheDocs
+# TODO: convert docs to RST format
 source_parsers = {
     '.md': 'recommonmark.parser.CommonMarkParser',
 }
@@ -61,6 +68,7 @@ pygments_style = 'sphinx'  # None
 
 # -- Options for HTML output -------------------------------------------------
 
+# TODO: furo theme? (like the pip documentation)
 html_theme = 'sphinx_rtd_theme'
 # html_theme_options = {}
 
@@ -97,6 +105,7 @@ html_context = {
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
+# TODO: auto-build and include the man page in the release archive
 man_pages = [
     (master_doc, 'getmac', 'Cross-platform Python package to get MAC addresses',
      [author], 1)

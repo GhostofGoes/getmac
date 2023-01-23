@@ -1,0 +1,142 @@
+name: CI
+
+on:
+- release
+- push
+- pull_request
+
+jobs:
+  lint:
+    name: Run lint checks
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.8"
+      - name: Install tox
+        run: python -m pip install tox
+      - name: Run lint checks
+        run: tox -e check
+  test:
+    name: Run tests
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      # Versions available:
+      # pypy: https://downloads.python.org/pypy/versions.json
+      # Python: https://github.com/actions/python-versions/blob/main/versions-manifest.json
+      # Additional info: https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md
+      # OS images: https://github.com/actions/runner-images
+      matrix:
+        python-version:
+          - "2.7"
+          - "3.5"
+          - "3.6"
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "pypy-2.7"
+          - "pypy-3.6"
+          - "pypy-3.7"
+          - "pypy-3.8"
+          - "pypy-3.9"
+        architecture:
+          - x86
+          - x64
+        platform:
+          - ubuntu-20.04
+          - windows-latest
+          - macos-latest
+        exclude:
+          - platform: ubuntu-20.04
+            architecture: x86
+          - platform: macos-latest
+            architecture: x86
+          - platform: ubuntu-20.04
+            python-version: "3.4"
+          - platform: macos-latest
+            python-version: "3.4"
+          - platform: macos-latest
+            python-version: "pypy-2.7"
+          - platform: macos-latest
+            python-version: "pypy-3.6"
+          - platform: macos-latest
+            python-version: "pypy-3.7"
+          - platform: macos-latest
+            python-version: "pypy-3.8"
+          - platform: windows-latest
+            python-version: "pypy-2.7"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.architecture }}
+      - name: Display platform and environment information
+        run: |
+          python --version
+          python -c "import sys; print('sys.version: %s' % str(sys.version))"
+          python -c "import sys; print('sys.platform: %s' % str(sys.platform))"
+          python -c "import os; print('os.name: %s' % str(os.name))"
+          python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
+      - name: Install dependencies
+        run: python -m pip install tox coveralls tox-gh-actions
+      # TODO: fix benchmark results (maybe a separate Job?)
+      - name: Run tests
+        run: tox
+      - uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
+      - name: Coveralls
+        if: ${{ matrix.platform == 'ubuntu-20.04' && github.event_name != 'pull_request' }}
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          parallel: true
+          flag-name: ${{ matrix.python-version }}-${{ matrix.platform }}
+  coveralls_finish:
+    needs: test
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Coveralls Finished
+      if: ${{ github.event_name != 'pull_request' }}
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        parallel-finished: true
+
+
+# TODO: publish
+# TODO: need to do this for both "getmac" and "get-mac" packages
+# TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
+
+# https://github.com/marketplace/actions/upload-a-build-artifact
+
+# name: "Build and publish a release"
+
+# on:
+#   release:
+#     types: [released]
+
+# jobs:
+#   publish:
+#     name: "📦 Publish Python distributions"
+#     runs-on: "ubuntu-20.04"
+#     strategy:
+#       matrix:
+#         python-version:
+#           - "3.8"
+#     steps:
+#       - uses: "actions/checkout@master"
+#       - name: "🐍 Set up Python ${{ matrix.python-version }}"
+#         uses: "actions/setup-python@v2"
+#         with:
+#           python-version: "${{ matrix.python-version }}"
+#       - name: "🐍 Install wheel"
+#         run: "python -m pip install wheel --user"
+#       - name: "🐍 Build a binary wheel and a source tarball"
+#         run: "python setup.py sdist bdist_wheel"
+#       - name: "📦 Publish distribution to PyPI"
+#         uses: "pypa/gh-action-pypi-publish@master"
+#         if: "startsWith(github.ref, 'refs/tags')"
+#         with:
+#           password: "${{ secrets.pypi_password }}"

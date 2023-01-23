@@ -1,16 +1,15 @@
 include LICENSE README.md CHANGELOG.md CONTRIBUTING.md
-prune docs
-include docs/man/getmac.1
-include docs/man/getmac2.1
+
 graft getmac
 graft tests
 
+prune docs
 prune .github
 prune packaging
 prune scripts
 
 global-exclude *.py[cod] __pycache__ *.so *.class
 exclude *-getmac.spec *.yml
-exclude tox.ini Dockerfile Vagrantfile .editorconfig
-exclude conf.py index.md make.bat Makefile packaging.md
-exclude releasing.md style-requirements.txt requirements.txt TODO.md CODE_OF_CONDUCT.md SECURITY.md
+exclude tox.ini Dockerfile Vagrantfile .editorconfig .coveragerc
+exclude conf.py index.md make.bat Makefile rewrite.md releasing.md
+exclude style-requirements.txt requirements.txt TODO.md CODE_OF_CONDUCT.md SECURITY.md

@@ -27,21 +27,20 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/GhostofGoes/getmac",
     project_urls={
-        "Discord server": "https://discord.gg/python",
-        "Issue tracker": "https://github.com/GhostofGoes/getmac/issues",
+        "Documentation": "https://getmac.readthedocs.io/en/latest/",
         "Changelog": "https://github.com/GhostofGoes/getmac/blob/master/CHANGELOG.md",
+        "Issue tracker": "https://github.com/GhostofGoes/getmac/issues",
+        "Source": "https://github.com/GhostofGoes/getmac",
+        "Discord server": "https://discord.gg/python",
     },
     license="MIT",
-    data_files=[
-        ("share/man/man1", ["docs/man/getmac2.1"])
-        if sys.version_info[:2] <= (2, 7)
-        else ("share/man/man1", ["docs/man/getmac.1"])
-    ],
+    data_files=[],
     packages=["getmac"],
     zip_safe=True,
     entry_points={"console_scripts": ["getmac2 = getmac.__main__:main"]}
     if sys.version_info[:2] <= (2, 7)
     else {"console_scripts": ["getmac = getmac.__main__:main"]},
+    install_requires=[],
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     keywords=[
         "getmac",
@@ -58,7 +57,8 @@ setup(
         "layer-2",
         "802.3",
     ],
-    classifiers=[
+    classifiers=[  # TODO(python3): update classifiers
+        # TODO(1.0.0): change to 5 - Production/Stable
         "Development Status :: 4 - Beta",
         "Environment :: Console",
         "License :: OSI Approved :: MIT License",
@@ -73,6 +73,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: Implementation :: CPython",

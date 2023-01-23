@@ -7,15 +7,6 @@ Windows IP Configuration
    IP Routing Enabled. . . . . . . . : No
    WINS Proxy Enabled. . . . . . . . : No
 
-Ethernet adapter PIA:
-
-   Media State . . . . . . . . . . . : Media disconnected
-   Connection-specific DNS Suffix  . :
-   Description . . . . . . . . . . . : TAP-Windows Adapter V9
-   Physical Address. . . . . . . . . : 00-FF-55-4D-4A-3B
-   DHCP Enabled. . . . . . . . . . . : Yes
-   Autoconfiguration Enabled . . . . : Yes
-
 Ethernet adapter Ethernet 3:
 
    Connection-specific DNS Suffix  . :
