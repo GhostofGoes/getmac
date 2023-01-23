@@ -22,7 +22,7 @@ It provides one function: `get_mac_address()`
 
 
 ## Should you use this package?
-If you only need the addresses of network interfaces, have a limited set of platforms to support, and are able to handle C-extension modules, then you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/) package by Alastair Houghton. It is significantly faster, well-maintained, and has been around much longer than this has. Another great option that fits these requirements is the well-known and battle-hardened [psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola.
+If you only need the addresses of network interfaces, have a limited set of platforms to support, and are able to handle C-extension modules, then you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/) package by Alastair Houghton ([@al45tair](https://github.com/al45tair)). It's significantly faster (thanks to it being C-code) and has been around a long time and seen widespread usage. However, unfortunately it is no longer maintained as of [May 2021](https://github.com/al45tair/netifaces/commit/ec55b59e27542776f55e0f9e3213a75bf8e0f367), so it may not be a great choice for new projects. Another great option that fits these requirements is the well-known and battle-hardened [psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola.
 
 If the only system you need to run on is Linux, you can run as root, and C-extensions modules are fine, then you should instead check out the [arpreq](https://pypi.org/project/arpreq/) package by Sebastian Schrader. In some cases it can be significantly faster.
 
@@ -126,7 +126,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - `getmac.getmac.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get.
 - `getmac.getmac.PORT`: UDP port used to populate the ARP/NDP table (see the documentation of the `network_request` argument in `get_mac_address()` for details)
 - `getmac.getmac.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. `"linux"`, `"windows"`, `"freebsd"`, etc.'). Any values returned by `platform.system()` are valid.
-- `getmac.getmac.FORCE_METHOD`: Force a specific method to be used, e.g. 'IpNeighborShow'. This will be used regardless of it's method type or platform compatibility, and `Method.test()` will NOT be checked!
+- `getmac.getmac.FORCE_METHOD`: Force a specific method to be used, e.g. 'IpNeighborShow'. This will be used regardless of it's method type or platform compatibility, and `Method.test()` will NOT be checked! The list of available methods is in `getmac.getmac.METHODS`.
 
 ## Features
 - Pure-Python (no compiled C-extensions required!)
@@ -148,7 +148,8 @@ If you are running a old Python (2.6/3.3 and older) or interpreter, then you can
 NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
 
 ## Notes
-- If none of the arguments are selected, the default network interface for the system will be used.
+- Python 3.10 and 3.11 should work, but are not automatically tested at the moment due to having to support 2.7
+- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined, then it will attempt to fallback to typical defaults for the platform (`Ethernet` on Windows, `em0` on BSD, `en0` on OSX/Darwin, and `eth0` otherwise). If that fails, then it will fallback to `lo` on POSIX systems.
 - "Remote hosts" refer to hosts in your local layer 2 network, also commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
 - The first four arguments are mutually exclusive. `network_request` does not have any functionality when the `interface` argument is specified, and can be safely set if using in a script.
 - The physical transport is assumed to be Ethernet (802.3). Others, such as Wi-Fi (802.11), are currently not tested or considered. I plan to address this in the future, and am definitely open to pull requests or issues related to this, including error reports.
@@ -175,6 +176,8 @@ NOTE: these versions do not have many of the performance improvements, platform 
 - FreeBSD
     - Commands: `ifconfig`, `arp`
     - Default interfaces: `netstat`
+- Android
+    - Commands: `ip link`
 
 ## Platforms currently supported
 All or almost all features should work on "supported" platforms. While other versions of the same family or distro may work, they are untested and may have bugs or missing features.
@@ -189,6 +192,7 @@ All or almost all features should work on "supported" platforms. While other ver
     - Fedora (24+)
 - Mac OSX (Darwin)
     - The latest two versions probably (TBD)
+- Android (6+)
 - Windows Subsystem for Linux (WSL)
 - FreeBSD (11+)
 - OpenBSD

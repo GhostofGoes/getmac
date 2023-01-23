@@ -23,6 +23,11 @@ jobs:
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
+      # Versions available:
+      # pypy: https://downloads.python.org/pypy/versions.json
+      # Python: https://github.com/actions/python-versions/blob/main/versions-manifest.json
+      # Additional info: https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md
+      # OS images: https://github.com/actions/runner-images
       matrix:
         python-version:
           - "2.7"

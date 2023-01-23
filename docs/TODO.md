@@ -14,14 +14,16 @@
 - [x] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [x] Add unit tests calling `getmac.get_mac_address()` directly using samples
 - [ ] Address any remaining "TODO (rewrite)" TODOs
-- [ ] Update README:
-    - refresh various sections post-rewrite
-    - add a word of warning about Netifaces being unmaintained for a while (which makes me sad, but that's the current unfortunate state of affairs)
+- [x] Update README:
+    - [x] refresh various sections post-rewrite
+    - [x] add a word of warning about Netifaces being unmaintained for a while (which makes me sad, but that's the current unfortunate state of affairs)
 - [x] Fix interface fallback if default route not found: https://github.com/GhostofGoes/getmac/issues/78
   - use first non-loopback interface. if no non-loopback interfaces, and there's a loopback interface, then use that.
 
 # 1.0.0 release
+- [ ] rename "master" branch to "main"
 - [ ] Create 0.9.0 branch from master/main so we can submit patch releases if needed
+- [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
 - [ ] Switch to Poetry for project management
     - [ ] Also, add `isort`
 - [ ] Support Python 3.10
