@@ -945,10 +945,8 @@ class IfconfigWithIfaceArg(Method):
         return _parse_ifconfig(arg, command_output)
 
 
-# TODO (rewrite): combine this with IfconfigWithArg/IfconfigNoArg
-#   (need to do live testing on Darwin)
-#
-# TODO (rewrite): add unit test using new samples
+# TODO: combine this with IfconfigWithArg/IfconfigNoArg
+#       (need to do live testing on Darwin)
 class IfconfigEther(Method):
     platforms = {"darwin"}
     method_type = "iface"

@@ -34,13 +34,28 @@ def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
     getmac.check_command.assert_called_once_with("networksetup")
 
 
-def test_ifconfigether_darwin(benchmark, mocker, get_sample):
-    content = get_sample("OSX/ifconfig.out")
+ifconfigether_samples = [
+    ("2c:f0:ee:2f:c7:de", "OSX/ifconfig.out"),
+    ("08:00:27:2b:c2:ed", "macos_10.12.6/ifconfig.out"),
+    ("08:00:27:2b:c2:ed", "macos_10.12.6/ifconfig_en0.out"),
+]
+
+
+@pytest.mark.parametrize(("mac", "sample_file"), ifconfigether_samples)
+def test_ifconfigether_darwin(benchmark, mocker, get_sample, mac, sample_file):
+    content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
-    assert "2c:f0:ee:2f:c7:de" == benchmark(getmac.IfconfigEther().get, arg="en0")
-    assert "b2:eb:94:59:0b:d4" == getmac.IfconfigEther().get("awdl0")
-    assert "32:00:10:bf:60:00" == getmac.IfconfigEther().get("bridge0")
+    assert mac == benchmark(getmac.IfconfigEther().get, arg="en0")
+
+    if sample_file == "OSX/ifconfig.out":
+        assert "b2:eb:94:59:0b:d4" == getmac.IfconfigEther().get("awdl0")
+        assert "32:00:10:bf:60:00" == getmac.IfconfigEther().get("bridge0")
+
+    assert not getmac.IfconfigEther().get("en")
+    assert not getmac.IfconfigEther().get("lo")
     assert not getmac.IfconfigEther().get("lo0")
+    assert not getmac.IfconfigEther().get("gif0")
+    assert not getmac.IfconfigEther().get("stf0")
     assert not getmac.IfconfigEther().get("XHC20")
     assert not getmac.IfconfigEther().get("utun0")
 
