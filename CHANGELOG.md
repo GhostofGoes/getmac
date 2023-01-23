@@ -3,7 +3,7 @@
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
 
-## 0.9.0 (TBD)
+## 0.9.0 (01/23/2023)
 **Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.
 
 This release is a *complete rewrite of getmac from the ground up*. The public API of `getmac` is **unchanged** as part of this rewrite. `get_mac_address()` is still the primary way of getting a MAC address, it's just the "under the hood" internals that have changed completely.
@@ -20,7 +20,8 @@ The new system has a number of benefits
 - Extensible! Custom methods can be defined and added at runtime (which is perfect if you have some particular edge case but aren't able to open-source it).
 
 ### Added
-* Support Python 3.9
+* Fully support Python 3.9 (automated tests in CI)
+* Tentatively support Python 3.10 and 3.11 (unable to test due to the need to be able to still test 2.7)
 * Added default interface detection for MacOS (command: `route get default`)
 * Added initial support for Solaris/SunOS. There were a few existing methods that worked as-is, so just added indicators that those methods support `sunos` (Which applies to any system where `platform.system() == SunOS`).
 * `arping` (POSIX) or `SendARP` (Windows) will now *always* be used instead of sending a UDP packet when looking for the MAC of a IPv4 host, if they're available and operable (otherwise, UDP + ARP table check will be used like before).
