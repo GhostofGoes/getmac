@@ -91,7 +91,7 @@ def test_read_file_not_exist():
 
 
 def test_fetch_ip_using_dns(mocker):
-    m = mocker.patch("socket.socket")
+    m = mocker.patch("socket.socket.__enter__")
     m.return_value.getsockname.return_value = ("1.2.3.4", 51327)
     assert getmac._fetch_ip_using_dns() == "1.2.3.4"
 
