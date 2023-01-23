@@ -13,7 +13,7 @@
 - [x] Reorganize order of classes and group related ones together in the code
 - [x] Add ability to force a specific method to be used via a CLI argument (for testing)
 - [x] Add unit tests calling `getmac.get_mac_address()` directly using samples
-- [ ] Address any remaining "TODO (rewrite)" TODOs
+- [x] Address any remaining "TODO (rewrite)" TODOs
 - [x] Update README:
     - [x] refresh various sections post-rewrite
     - [x] add a word of warning about Netifaces being unmaintained for a while (which makes me sad, but that's the current unfortunate state of affairs)
@@ -84,17 +84,19 @@
     - `netstat` doesn't work with `-e`, but does work with no arguments, `-a` and `-i`. `-n` prevents hostnames from resolving, which is faster. `-i` gives the shortest output (and is fastest), but doesn't give us a MAC address. Providing the interface as an argument also doesn't work to get a MAC (`netstat -a -I e1000g0`).
     - default interface via `route get default`?
     - no `ip` command
-- [ ] Cleanup ifconfig methods
-  - [ ] Split IfconfigOther into IfconfigWithArg/IfconfigNoArg
-  - [ ] Combine IfconfigEther into other Ifconfig methods
+- [ ] Cleanup `ifconfig` methods
+  - [ ] Split `IfconfigOther` into IfconfigWithArg/IfconfigNoArg
+  - [ ] Combine `IfconfigEther` into other Ifconfig methods
   - [ ] Improve unit test coverage and platform markers
-- [ ] IpLinkIface: improve regex to not need extra portion for no arg
+- [ ] `IpLinkIface`: improve regex to not need extra portion for no arg
 - [ ] New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
+- [ ] Add new regexes to `IpLinkIface` and improve it's parsing so it's more robust, especially on Android
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 - [ ] Support IPv6 remote hosts on windows, and IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
 - [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
 - [ ] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
 - [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
+
 ## Py3-related stuff for 1.0.0
 - [ ] Drop support for python 2.7, 3.4, and 3.5
 - [ ] BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES (especially pytest...)

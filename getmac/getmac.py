@@ -847,7 +847,7 @@ class WmicExe(Method):
        WMIC is deprecated as of Windows 10 21H1. This method may not work on
        Windows 11 and may stop working at some point on Windows 10 (unlikely,
        but possible).
-    """
+    """  # noqa: E501
 
     platforms = {"windows"}
     method_type = "iface"
@@ -1090,7 +1090,7 @@ class NetstatIface(Method):
         return None
 
 
-# TODO (rewrite): Add to IpLinkIface
+# TODO: Add to IpLinkIface
 # TODO: New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 # (r"state UP.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
 # (r"wlan.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
