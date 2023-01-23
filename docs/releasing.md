@@ -19,7 +19,7 @@ pip install -U stdeb
     d) OSX
 5. Ensure a pip install from source works on the main platforms:
 ```bash
-pip install https://github.com/ghostofgoes/getmac/archive/master.tar.gz
+pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
 6. Clean the environment: `bash ./scripts/clean.sh`
 7. Build the sdist and wheel (`.whl`)

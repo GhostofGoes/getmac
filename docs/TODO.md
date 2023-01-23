@@ -1,6 +1,6 @@
 # 1.0.0 release
-- [ ] rename "master" branch to "main"
-- [ ] Create 0.9.0 branch from master/main so we can submit patch releases if needed
+- [x] rename "master" branch to "main"
+- [x] Create 0.9.0 branch from master/main so we can submit patch releases if needed
 - [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
 - [ ] Switch to Poetry for project management
     - [ ] Also, add `isort`

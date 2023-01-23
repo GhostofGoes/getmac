@@ -72,8 +72,8 @@ The new system has a number of benefits
 * Fixed code quality test suite errors (includes changes by Daniel Flanagan (@FlantasticDan) in [#67](https://github.com/GhostofGoes/getmac/pull/67))
 * Improved Android support (contributed by @emadmahdi in [#71](https://github.com/GhostofGoes/getmac/pull/71))
 * Minor code quality fixes (2 years of neglecting master branch)
-* Add [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/master/CODE_OF_CONDUCT.md) for project contributors
-* Add [SECURITY.md](https://github.com/GhostofGoes/getmac/blob/master/SECURITY.md) for reporting security issues (e.g. vulnerabilities)
+* Add [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/main/CODE_OF_CONDUCT.md) for project contributors
+* Add [SECURITY.md](https://github.com/GhostofGoes/getmac/blob/main/SECURITY.md) for reporting security issues (e.g. vulnerabilities)
 * Deprecate Python 3.4 and 3.5
 * Issue deprecation message as a warning in addition to a log message
 

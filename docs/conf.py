@@ -96,7 +96,7 @@ html_context = {
     "display_github": True,  # Integrate GitHub
     "github_user": "GhostofGoes",  # Username
     "github_repo": "getmac",  # Repo name
-    "github_version": "master",  # Version
+    "github_version": "main",  # Version
     "conf_py_path": "/",  # Path in the checkout to the docs root
 }
 

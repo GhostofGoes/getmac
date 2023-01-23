@@ -1,6 +1,6 @@
 
 [![Latest version on PyPI](https://badge.fury.io/py/getmac.svg)](https://pypi.org/project/getmac/)
-[![Coverage Status](https://coveralls.io/repos/github/GhostofGoes/getmac/badge.svg?branch=master)](https://coveralls.io/github/GhostofGoes/getmac?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/GhostofGoes/getmac/badge.svg?branch=main)](https://coveralls.io/github/GhostofGoes/getmac?branch=main)
 [![GitHub Actions Pipeline Status](https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostofGoes/getmac/actions)
 [![Weekly PyPI downloads](https://pepy.tech/badge/getmac/week)](https://pepy.tech/project/getmac)
 [![PyPI downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
@@ -38,7 +38,7 @@ pip install getmac
 Latest development version
 
 ```bash
-pip install https://github.com/ghostofgoes/getmac/archive/master.tar.gz
+pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
 
 ## Python examples

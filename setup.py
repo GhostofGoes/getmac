@@ -28,7 +28,7 @@ setup(
     url="https://github.com/GhostofGoes/getmac",
     project_urls={
         "Documentation": "https://getmac.readthedocs.io/en/latest/",
-        "Changelog": "https://github.com/GhostofGoes/getmac/blob/master/CHANGELOG.md",
+        "Changelog": "https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md",
         "Issue tracker": "https://github.com/GhostofGoes/getmac/issues",
         "Source": "https://github.com/GhostofGoes/getmac",
         "Discord server": "https://discord.gg/python",
