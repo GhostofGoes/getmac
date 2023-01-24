@@ -129,7 +129,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 
 ## Features
 - Pure-Python (no compiled C-extensions required!)
-- Python 3.6+
+- Python 3.7+
 - Lightweight, with no dependencies and a relatively small package size (no binary extensions)
 - Supports most platforms with NO binary extensions required!
 - Supports CPython and [PyPy](https://www.pypy.org/)

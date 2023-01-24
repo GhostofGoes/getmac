@@ -5,7 +5,7 @@
 ## UNRELEASED
 
 ### Added
-* Added support for Python 3.10 and 3.11
+* Added full support for Python 3.10 and 3.11
 * Added tentative support for Python 3.12
 
 ### Changed
@@ -13,7 +13,8 @@
 
 ### Removed
 * Removed support for Python 2.7. It's time. Supporting 2.7 has become an onerous burden on the project, and has prevented fully supporting 3.10 and 3.11 due to having to stay on an ancient version of pytest. I'm done supporting a 13 year old version of a language.
-* Removed support for Python 3.4 and 3.5. These are quite old and there were a number of essential features added in 3.6 that I'd like to use (f-strings, type annotations, mature `pathlib`, etc.)
+* Removed support for Python 3.4 and 3.5. These are quite old and there were a number of essential features added in 3.6+ that I'd like to use (f-strings, type annotations, mature `pathlib`, etc.)
+* Removed support for Python 3.6. setuptools added pyproject.toml support in version 61.0.0, however only version 59 is supported for Python 3.6. This means a choice had to be made between moving to pyproject.toml or supporting Python 3.6. Given 3.6 has been EOL for over a year, I've decided to drop support.
 * Removed support for Jython. As of Jan 23rd, 2023, [Jython](https://github.com/jython/jython) still does not support Python3, only 2.7. If and when it supports Python 3, I'll re-add support for it.
 * Removed explicit support for IronPython. [IronPython3 exists](https://github.com/IronLanguages/ironpython3), however I don't have a way to test it in CI. If someone knows of a way to test it in GitHub actions, let me know, and I'm happy to re-add explicit support.
 * Removed RPM packaging. This wasn't being used anywhere, and hasn't been updated since version 0.6.0. Way back when, I dreamt of putting this in OS package repositories. However, I've now learned that's up to the maintainers of those repos (e.g., Ubuntu or Fedora maintainers), not me.
@@ -21,6 +22,7 @@
 ### Dev
 * Renamed `master` branch to `main`
 * Use `pyproject.toml` instead of `setup.py`. Move most tool configurations to `pyproject.toml` from `tox.ini`.
+
 ## 0.9.1 (01/24/2023)
 **Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
 
