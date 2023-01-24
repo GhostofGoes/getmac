@@ -187,7 +187,7 @@ All or almost all features should work on "supported" platforms. While other ver
     - Server: TBD
     - Partially supported (untested): 2000, XP, Vista
 - Linux distros
-    - CentOS/RHEL 6+ (Only with Python 2.7+)
+    - CentOS/RHEL 6+
     - Ubuntu 16.04+ (15.10 and older should work, but are untested)
     - Fedora (24+)
 - Mac OSX (Darwin)
