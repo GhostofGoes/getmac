@@ -49,8 +49,8 @@ jobs:
           - windows-latest
           - macos-latest
         exclude:
-          # - platform: ubuntu-20.04
-          #   architecture: x86
+          - platform: ubuntu-20.04
+            architecture: x86
           - platform: macos-latest
             architecture: x86
           - platform: macos-latest

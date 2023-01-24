@@ -7,9 +7,9 @@
   - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
 - [ ] Switch to Poetry for project management
     - [ ] Also, add `isort`
-- [ ] Support Python 3.10 and 3.11
-    - [ ] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
-    - [ ] add tests + setup.py classifier
+- [x] Support Python 3.10 and 3.11
+    - [x] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
+    - [x] add tests + setup.py classifier
 - [ ] **API changes** (technically speaking)
     - Add argument to `get_mac_address()` to force the platform used (e.g. `platform_override="linux"`)
         - Also add CLI argument to configure this
@@ -32,6 +32,7 @@
     - [ ] return data cleanup and validation
 - [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 - [ ] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping"). Document this behavior!
+- [ ] [issue 77](https://github.com/GhostofGoes/getmac/issues/77): Feature: get all mac addresses
 - [ ] Documentation
     - [ ] Single page on RTD/publish with GitHub actions built with Sphinx and Furo
   - [ ] Update docs/usage examples for `get_mac_address()`
@@ -80,7 +81,7 @@
 
 ## Py3-related stuff for 1.0.0
 - [x] Drop support for python 2.7, 3.4, and 3.5
-- [ ] BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES (especially pytest...)
+- [x] BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES (especially pytest...)
 - [ ] Use Enums for platforms and method types instead of strings?
 - [ ] cache package imports done during test for use during `get()`, reuse
 - [ ] rewrite strings to f-strings
@@ -153,6 +154,7 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Add ability to get the mac address of a Python socket's interface (`socket.socket`)
 - [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
 - [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
+- [ ] Use [ruff](https://github.com/charliermarsh/ruff) instead of `flake8`? FastAPI, Scikit learn, [PyPA build](https://github.com/pypa/build/pull/565/), and other major projects are moving to it
 
 
 # Post-1.0.0
