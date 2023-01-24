@@ -27,7 +27,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/GhostofGoes/getmac",
     project_urls={
-        "Documentation": "https://getmac.readthedocs.io/en/latest/",
+        # "Documentation": "https://getmac.readthedocs.io/en/latest/",
         "Changelog": "https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md",
         "Issue tracker": "https://github.com/GhostofGoes/getmac/issues",
         "Source": "https://github.com/GhostofGoes/getmac",
@@ -74,6 +74,8 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: Implementation :: CPython",

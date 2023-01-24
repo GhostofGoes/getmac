@@ -2,13 +2,23 @@
 
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
+## 0.9.1 (01/24/2023)
+**Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
+
+### Changed
+* Deprecate Python 3.6 support (support will be removed in getmac 1.0.0)
+
+### Dev
+* Fix links in README and PyPI metadata to use "main" instead of "master" for primary branch
+* Remove "Documentation" link from PyPI (the ReadTheDocs site is broken and hasn't been updated since 0.5.0)
+* Add PyPI classifiers for 3.10 and 3.11
+* Some cleanup of CHANGELOG
+
 
 ## 0.9.0 (01/23/2023)
-**Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.
-
 This release is a *complete rewrite of getmac from the ground up*. The public API of `getmac` is **unchanged** as part of this rewrite. `get_mac_address()` is still the primary way of getting a MAC address, it's just the "under the hood" internals that have changed completely.
 
- It's passing tests and seems to be operable. However, with a change this large there are ineviteably issues that the tests or I don't catch, so I'm doing a series of pre-releases until I'm 99% confident in it's stability. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes.
+ It's passing tests and seems to be operable. However, with a change this large there are inevitably issues that the tests or I don't catch, so I'm doing a series of pre-releases until I'm 99% confident in it's stability. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes.
 
 The new system has a number of benefits
 - Reduction of false-positives and false-negatives by improving method selection accuracy (platform, validity, etc.)
@@ -28,7 +38,7 @@ The new system has a number of benefits
 * The amount of time taken to get a result (in seconds) will now be recorded and logged if debugging is enabled (`DEBUG>=1` or `-d`)
 * Added command line argument to override the UDP port for network requests: `--override-port` (this was already possible in Python via `getmac.getmac.PORT`, but wasn't configurable via the CLI. Now it is!).
 * Added ability to override the detected platform via `--override-platform` argument (CLI) or `getmac.getmac.OVERRIDE_PLATFORM` variable (Python). This will force methods for that platform to be used, regardless of the actual platform. Here's an example forcing `linux` to be used as the platform: `getmac -i eth0 --override-platform linux`. In version 1.0.0, this feature will added as an argument to `get_mac_address()`.
-* Added ability to force a specific method to be used via `--force-method` argument (CLI) or `getmac.getmac.FORCE_METHOD` variable (Python). This is useful for troubleshotting issues, general debugging, and testing changes. Example: `getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost`
+* Added ability to force a specific method to be used via `--force-method` argument (CLI) or `getmac.getmac.FORCE_METHOD` variable (Python). This is useful for troubleshooting issues, general debugging, and testing changes. Example: `getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost`
 
 ### Changed
 * **Complete rewrite of `getmac` from the ground up. Refer to `docs/rewrite.md` for a in-depth explanation of the rewrite changes**
@@ -63,8 +73,6 @@ The new system has a number of benefits
 
 ## 0.8.3 (12/10/2021)
 
-**Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.
-
 ### Changed
 * Added support for Thomas Habets' version of `arping` in addition to the existing iputils one (contributed by Ville Skyttä (@scop) in [#52](https://github.com/GhostofGoes/getmac/pull/52) and [#54](https://github.com/GhostofGoes/getmac/pull/54))
 * Added support for docker in network bridge mode (contributed by Tomasz Duda (@tomaszduda23) in [#57](https://github.com/GhostofGoes/getmac/pull/57))
@@ -79,8 +87,6 @@ The new system has a number of benefits
 
 
 ## 0.8.2 (12/07/2019)
-
-**Announcement**: Python 2 compatibility will be dropped in getmac 1.0.0, which will be finished sometime in 2020. If you are stuck on Python 2, consider loosely pinning the version in your dependencies list, e.g. `getmac<1`. I will continue to fix reported bugs and accept patches for the last release before 1.0.0, however active development will cease and new features will not be backported.
 
 ### Changed
 * Added warning about Python 2 compatibility being dropped in 1.0.0

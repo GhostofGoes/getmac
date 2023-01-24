@@ -56,7 +56,7 @@ log = logging.getLogger("getmac")  # type: logging.Logger
 if not log.handlers:
     log.addHandler(logging.NullHandler())
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 PY2 = sys.version_info[0] == 2  # type: bool
 
@@ -1713,14 +1713,14 @@ def get_mac_address(
 
         start_time = timeit.default_timer()
 
-    if PY2 or (sys.version_info[0] == 3 and sys.version_info[1] < 6):
+    if PY2 or (sys.version_info[0] == 3 and sys.version_info[1] < 7):
         global WARNED_UNSUPPORTED_PYTHONS
         if not WARNED_UNSUPPORTED_PYTHONS:
             warning_string = (
-                "Support for Python versions < 3.6 is deprecated and will be "
+                "Support for Python versions < 3.7 is deprecated and will be "
                 "removed in getmac 1.0.0. If you are stuck on an unsupported "
                 "Python, considor loosely pinning the version of this package "
-                'in your dependency list, e.g. "getmac<1".'
+                'in your dependency list, e.g. "getmac<1.0.0" or "getmac~=0.9.0".'
             )
             warnings.warn(warning_string, DeprecationWarning)
             log.warning(warning_string)  # Ensure it appears in any logs
