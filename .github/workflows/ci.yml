@@ -70,7 +70,7 @@ jobs:
           python -c "import os; print('os.name: %s' % str(os.name))"
           python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
       - name: Install dependencies
-        run: python -m pip install 'tox>4' coveralls tox-gh-actions
+        run: python -m pip install 'tox>4' coveralls tox-gh-actions tomli
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
         run: tox
