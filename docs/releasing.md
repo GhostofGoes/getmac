@@ -1,42 +1,29 @@
-
 ## Requirements
-**NOTE**: Linux is required to build the `.deb` package.
-
 ```bash
 python -m pip install -U pip
-pip install -U setuptools twine wheel
-pip install -U stdeb
+python -m pip install -U setuptools twine wheel build
 ```
 
 ## Cutting a release
 1. Increment version number in `getmac/getmac.py`
 2. Update CHANGELOG header from UNRELEASED to the version and add the date
 3. Run static analysis checks (`tox -e check`)
-4. Run the test suite on the main supported platforms (`tox`)
-    a) Windows
-    b) Ubuntu
-    c) CentOS
-    d) OSX
+4. Ensure CI ([GitHub Actions](https://github.com/GhostofGoes/getmac/actions)) is passing on all checks and on all platforms
 5. Ensure a pip install from source works on the main platforms:
 ```bash
 pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
-6. Clean the environment: `bash ./scripts/clean.sh`
-7. Build the sdist and wheel (`.whl`)
+1. Clean the environment: `bash ./scripts/clean.sh`
+2. Build the sdist and wheel (`.whl`)
 ```bash
-python setup.py sdist bdist_wheel --universal
+python -m build
 ```
-8. Upload the sdist and wheel (`.whl`)
+1. Upload the sdist and wheel (`.whl`)
 ```bash
 twine upload dist/*
 ```
-9. Build the Debian package
-```bash
-python setup.py --command-packages=stdeb.command bdist_deb
-```
-10. Create a tagged release on GitHub including:
+1.  Create a tagged release on GitHub including:
     a) The relevant section of the CHANGELOG in the body
     b) The source and binary wheels
-    c) The `.deb` package (which will be in `./deb_dist`)
-11. Edit the package name in `setup.py` to `get-mac`, and re-run steps 7 and 8 (build and upload), since people apparently don't check their dependencies and ignore runtime warnings.
-12. Announce the release in the normal places
+2.   Edit the package name in `pyproject.toml` to `get-mac`, and re-run steps 7 and 8 (build and upload), since people apparently don't check their dependencies and ignore runtime warnings.
+3.   Announce the release in the normal places

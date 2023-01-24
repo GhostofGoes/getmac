@@ -20,6 +20,7 @@
 
 ### Dev
 * Renamed `master` branch to `main`
+* Use `pyproject.toml` instead of `setup.py`. Move most tool configurations to `pyproject.toml` from `tox.ini`.
 
 ## 0.9.0 (01/23/2023)
 **Announcement**: Compatibility with Python versions older than 3.6 (2.7, 3.4, and 3.5) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, considor loosely pinning the version of this package in your dependency list, e.g. `getmac<1`.

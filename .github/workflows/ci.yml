@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
-          python-version: "3.8"
+          python-version: "3.11"
       - name: Install tox
         run: python -m pip install tox
       - name: Run lint checks
@@ -124,10 +124,10 @@ jobs:
 #         uses: "actions/setup-python@v2"
 #         with:
 #           python-version: "${{ matrix.python-version }}"
-#       - name: "🐍 Install wheel"
-#         run: "python -m pip install wheel --user"
+#       - name: "🐍 Install wheel and build"
+#         run: "python -m pip install wheel build --user"
 #       - name: "🐍 Build a binary wheel and a source tarball"
-#         run: "python setup.py sdist bdist_wheel"
+#         run: "python -m build"
 #       - name: "📦 Publish distribution to PyPI"
 #         uses: "pypa/gh-action-pypi-publish@master"
 #         if: "startsWith(github.ref, 'refs/tags')"

@@ -25,6 +25,7 @@
 - [ ] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
 - [ ] Move method classes into a separate file
 - [ ] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
+- [ ] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
 - [ ] Split utils into a separate file
 - [ ] move more logic out of `get_mac_address()` into individual methods:
     - [ ] interface
@@ -85,7 +86,7 @@
 - [ ] Use Enums for platforms and method types instead of strings?
 - [ ] cache package imports done during test for use during `get()`, reuse
 - [ ] rewrite strings to f-strings
-- [ ] Use `pyproject.toml` instead of `setup.py`
+- [x] Use `pyproject.toml` instead of `setup.py`
   - https://packaging.python.org/tutorials/packaging-projects/
   - Move configurations for tools out of `tox.ini` and into `pyproject.toml`
   - Add codespell configuration, remove CLI arguments

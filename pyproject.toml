@@ -1,0 +1,131 @@
+[build-system]
+requires = ["setuptools>=62.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "getmac"
+dynamic = ["version", "readme"]
+authors = [
+    { name="Christopher Goes", email="ghostofgoes@gmail.com" }
+]
+description = "Get MAC addresses of remote hosts and local interfaces"
+license = { file = "LICENSE" }
+requires-python = ">=3.6"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: POSIX :: BSD",
+    "Operating System :: POSIX :: BSD :: FreeBSD",
+    "Operating System :: POSIX :: BSD :: NetBSD",
+    "Operating System :: POSIX :: BSD :: OpenBSD",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: POSIX :: Other",
+    "Operating System :: MacOS",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Information Technology",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Systems Administration",
+    "Topic :: System :: Networking",
+    "Topic :: Utilities",
+    "Typing :: Typed"
+]
+keywords=[
+    "getmac",
+    "get-mac",
+    "macaddress",
+    "mac-address",
+    "mac",
+    "ethernet",
+    "mac-48",
+    "networking",
+    "network",
+    "networking",
+    "layer2",
+    "layer-2",
+    "802.3"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/GhostofGoes/getmac"
+# TODO: get ReadTheDocs working
+# "Documentation" = "https://getmac.readthedocs.io/en/latest/"
+"Changelog" = "https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md"
+"Issue tracker" = "https://github.com/GhostofGoes/getmac/issues"
+"Source" = "https://github.com/GhostofGoes/getmac"
+"Discord server" = "https://discord.gg/python"
+
+[project.scripts]
+getmac = "getmac.__main__:main"
+
+# TODO: move from requirement files to optional deps managed by poetry
+# [project.optional-dependencies]
+# tests = [
+#     "coverage[toml]",
+#     "pytest>=6.0",
+#     ...
+# ]
+# docs = [
+#     "furo",
+#     "myst-parser",
+#     "sphinx",
+#     "sphinx-notfound-page",
+#     "sphinxcontrib-mermaid",
+#     ...
+# ]
+# dev = [
+#     "pre-commit",
+#     ...
+# ]
+
+
+[tool.setuptools]
+platforms = ["any"]
+zip-safe = true
+packages = ["getmac"]
+
+[tool.setuptools.dynamic]
+version = { attr = "getmac.getmac.__version__" }
+# Build the page that will be displayed on PyPI from the README and CHANGELOG
+readme = { file = ["README.md", "CHANGELOG.md"], content-type = "text/markdown" }
+
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+norecursedirs = ".github getmac samples scripts .git .tox .vagrant .idea .vscode dist build *.egg .* .venv"
+addopts = "--tb=short"
+# filterwarnings = [
+#     "ignore::DeprecationWarning"
+# ]
+
+[tool.coverage.run]
+relative_files = true
+
+[tool.codespell]
+check-filenames = true
+skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.idea,*.vscode,_build,.doctrees,htmlcov,.venv,.mypy_cache,deb_dist'
+ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso'
+
+[tool.bandit]
+recursive = true
+targets = ["getmac"]
+skips = ["B404", "B603", "B104"]
+
+[tool.black]
+target-version = ["py36", "py37", "py38", "py39", "py310", "py311"]
