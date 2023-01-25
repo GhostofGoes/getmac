@@ -18,7 +18,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - name: Install dependencies (poetry)
-        run: poetry install --only=main,lint --no-interaction
+        run: poetry install --only=main,lint,ci --no-interaction
       - name: Run lint checks
         run: poetry run tox -e check
   test:
