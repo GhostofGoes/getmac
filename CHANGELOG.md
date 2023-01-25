@@ -1,3 +1,4 @@
+
 # Changelog
 
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
@@ -9,7 +10,7 @@
 * Added tentative support for Python 3.12
 
 ### Changed
-* TBD
+* Reduce wheel file size (`.whl`)
 
 ### Removed
 * Removed support for Python 2.7. It's time. Supporting 2.7 has become an onerous burden on the project, and has prevented fully supporting 3.10 and 3.11 due to having to stay on an ancient version of pytest. I'm done supporting a 13 year old version of a language.
@@ -21,7 +22,12 @@
 
 ### Dev
 * Renamed `master` branch to `main`
-* Use `pyproject.toml` instead of `setup.py`. Move most tool configurations to `pyproject.toml` from `tox.ini`.
+* Switch to the excellent and elegant [Poetry](https://python-poetry.org/) for project management
+  * Add `pyproject.toml`
+  * Move most tool configurations to `pyproject.toml` from `tox.ini`
+  * Remove all `requirement.txt` files
+  * Remove `setup.py` and `MANIFEST.in`
+
 
 ## 0.9.1 (01/24/2023)
 **Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.

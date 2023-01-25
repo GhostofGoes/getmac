@@ -5,7 +5,7 @@
 - [ ] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
   - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
   - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
-- [ ] Switch to Poetry for project management
+- [x] Switch to Poetry for project management
     - [ ] Also, add `isort`
 - [x] Support Python 3.10 and 3.11
     - [x] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
@@ -80,6 +80,9 @@
 - [ ] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
 - [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
 - [ ] Replace `flake8-mypy` with proper execution of mypy in tests (the project is dead and archived, https://github.com/ambv/flake8-mypy)
+- [ ] Add a deprecation warning to `get-mac` package, don't publish it for 1.0.0
+- [ ] Add all project contributors to list of Authors in package metadata in `pyproject.toml` (and the documentation)
+- [ ] Update supported versions table in [SECURITY.md](../SECURITY.md)
 
 ## Py3-related stuff for 1.0.0
 - [x] Drop support for python 2.7, 3.4, and 3.5
@@ -170,7 +173,6 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Cache method checks (maybe move this to 1.1.0 release?) Save a string with the names of methods. Save to: file (location configurable via environment variable or option). Read from: file, environment variable, file pointed to by environment variable. Add a flag to control this behavior and location of the cache. Document the behavior.
 - [ ] Add a "net_ok" argument, check network_request attribute on method in CACHE, if not then keep checking for method in FALLBACK_CACHE that has network_request.
 - [ ] Add ability to specify what methods to use via function argument and CLI argument
-  - [ ] Function arguments
 - [ ] Add ability to force platform name (e.g. `linux`) via function argument and CLI argument
 ```
 methods=None

@@ -1,7 +1,0 @@
-pytest
-pytest-randomly
-pytest-mock
-pytest-benchmark
-pytest-cov
-pytest-xdist
-psutil

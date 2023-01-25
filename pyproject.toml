@@ -1,10 +1,11 @@
 [build-system]
-requires = ["setuptools>=62.0"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.2.0"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "getmac"
 dynamic = ["version", "readme"]
+# TODO: add contributors to authors?
 authors = [
     { name="Christopher Goes", email="ghostofgoes@gmail.com" }
 ]
@@ -73,25 +74,159 @@ keywords=[
 [project.scripts]
 getmac = "getmac.__main__:main"
 
-# TODO: move from requirement files to optional deps managed by poetry
-# [project.optional-dependencies]
-# tests = [
-#     "coverage[toml]",
-#     "pytest>=6.0",
-#     ...
-# ]
-# docs = [
-#     "furo",
-#     "myst-parser",
-#     "sphinx",
-#     "sphinx-notfound-page",
-#     "sphinxcontrib-mermaid",
-#     ...
-# ]
-# dev = [
-#     "pre-commit",
-#     ...
-# ]
+
+[tool.poetry]
+name = "getmac"
+version = "1.0.0a0"
+description = ""
+license = "MIT"
+# TODO: add contributors to authors?
+authors = [
+    "Christopher Goes <ghostofgoes@gmail.com>"
+]
+maintainers = [
+    "Christopher Goes <ghostofgoes@gmail.com>"
+]
+# TODO (before 1.0.0 is released): change to ["README.md", "CHANGELOG.md"] once poetry updates
+# https://github.com/python-poetry/poetry/issues/6633
+readme = "README.md"
+repository = "https://github.com/GhostofGoes/getmac"
+# documentation = ""  # TODO
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: POSIX :: BSD",
+    "Operating System :: POSIX :: BSD :: FreeBSD",
+    "Operating System :: POSIX :: BSD :: NetBSD",
+    "Operating System :: POSIX :: BSD :: OpenBSD",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: POSIX :: Other",
+    "Operating System :: MacOS",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Information Technology",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Systems Administration",
+    "Topic :: System :: Networking",
+    "Topic :: Utilities",
+    "Typing :: Typed"
+]
+keywords=[
+    "getmac",
+    "get-mac",
+    "macaddress",
+    "mac-address",
+    "mac",
+    "ethernet",
+    "mac-48",
+    "networking",
+    "network",
+    "networking",
+    "layer2",
+    "layer-2",
+    "802.3"
+]
+packages = [
+    { include = "getmac" }
+]
+include = [
+    { path = "tests", format = "sdist" },
+    { path = "CHANGELOG.md", format = "sdist" },
+    { path = "CONTRIBUTING.md", format = "sdist"},
+    { path = "SECURITY.md", format = "sdist" },
+    { path = "pyproject.toml", format = "sdist" },
+    { path = "tox.ini", format = "sdist" },
+    { path = "getmac" },
+    { path = "LICENSE" },
+    { path = "README.md" },
+]
+
+[tool.poetry.scripts]
+getmac = 'getmac.__main__:main'
+
+[tool.poetry.urls]
+"Homepage" = "https://github.com/GhostofGoes/getmac"
+# TODO: get ReadTheDocs working
+# "Documentation" = "https://getmac.readthedocs.io/en/latest/"
+"Changelog" = "https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md"
+"Issue tracker" = "https://github.com/GhostofGoes/getmac/issues"
+"Source" = "https://github.com/GhostofGoes/getmac"
+"Discord server" = "https://discord.gg/python"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.group.dev.dependencies]
+tox = "^4"
+
+[tool.poetry.group.ci.dependencies]
+tox = "^4"
+tox-gh-actions = "*"
+coveralls = "*"
+tomli = { version = "*", python = "<3.12" }
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7"
+pytest-randomly = "*"
+pytest-mock = "*"
+pytest-benchmark = "*"
+pytest-cov = "*"
+pytest-xdist = "*"
+psutil = "*"
+
+[tool.poetry.group.lint.dependencies]
+check-manifest = "^0.49"
+codespell = ">=2.2.2"
+tomli = { version = "*", python = "<3.12" }
+flake8 = { version = "*", python = ">=3.8.1,<4.0" }
+flake8-bugbear = "^23.1.20"
+flake8-import-order = "^0.18.2"
+flake8-tidy-imports = "^4.8.0"
+flake8-print = "^5.0.0"
+flake8-builtins = "^2.1.0"
+flake8-blind-except = "^0.2.1"
+flake8-comprehensions = "^3.10.1"
+flake8-debugger = "^4.1.2"
+pep8-naming = "^0.13.3"
+flake8-string-format = "^0.3.0"
+flake8-mutable = "^1.2.0"
+flake8-pytest-style = "^1.6.0"
+# TODO: flake8-annotations 3.0.0 removes support for PEP-484 type comments
+flake8-annotations = "<3.0.0"
+flake8-black = "*"
+# TODO: replace flake8-mypy with proper execution of mypy
+# NOTE: the released version of flake8-mypy is buggy on Windows (17.8.0)
+flake8-mypy = { git = "https://github.com/ambv/flake8-mypy.git" }
+bandit = "^1.6.0"
+black = "^22.12.0"
+vulture = "^2.7"
+validate-pyproject = "*"
+mypy = "*"
+
+
+[tool.poetry.group.docs.dependencies]
+furo = {version = "*", python = ">=3.8,<4.0"}
+sphinx = {version = "^6.1.3", python = ">=3.8,<4.0"}
+recommonmark = {version = "^0.7.1", python = ">=3.8,<4.0"}
+sphinx-autodoc-typehints = {version = "^1.21.8", python = ">=3.8,<4.0"}
+sphinx-copybutton = {version = "^0.5.1", python = ">=3.8,<4.0"}
+sphinx-inline-tabs = {version = "^2022.1.2b11", python = ">=3.8,<4.0"}
+sphinx-tabs = {version = "^3.4.1", python = ">=3.8,<4.0"}
 
 
 [tool.setuptools]
@@ -109,9 +244,6 @@ readme = { file = ["README.md", "CHANGELOG.md"], content-type = "text/markdown" 
 testpaths = "tests"
 norecursedirs = ".github getmac samples scripts .git .tox .vagrant .idea .vscode dist build *.egg .* .venv"
 addopts = "--tb=short"
-# filterwarnings = [
-#     "ignore::DeprecationWarning"
-# ]
 
 [tool.coverage.run]
 relative_files = true
