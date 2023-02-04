@@ -2,8 +2,14 @@
 
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
-## 0.9.1 (01/24/2023)
 **Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
+
+## 0.9.2 (02/03/2023)
+
+### Changed
+* Fix flakyness with UuidArpGetNode on MacOS by making it the last method attempted (Fixes issue [#82](https://github.com/GhostofGoes/getmac/issues/82))
+
+## 0.9.1 (01/24/2023)
 
 ### Changed
 * Deprecate Python 3.6 support (support will be removed in getmac 1.0.0)
