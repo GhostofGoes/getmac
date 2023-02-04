@@ -7,7 +7,7 @@
 ## 0.9.2 (02/03/2023)
 
 ### Changed
-* Fix flakyness with UuidArpGetNode on MacOS by making it the last method attempted (Fixes issue [#82](https://github.com/GhostofGoes/getmac/issues/82))
+* Fix flakiness with UuidArpGetNode on MacOS by making it the last method attempted (Fixes issue [#82](https://github.com/GhostofGoes/getmac/issues/82))
 
 ## 0.9.1 (01/24/2023)
 
