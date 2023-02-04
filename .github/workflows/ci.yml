@@ -75,6 +75,9 @@ jobs:
             python-version: "pypy-3.8"
           - platform: windows-latest
             python-version: "pypy-2.7"
+          - platform: windows-latest
+            python-version: "pypy-3.6"
+            architecture: x64
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
