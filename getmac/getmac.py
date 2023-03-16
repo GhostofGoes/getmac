@@ -56,7 +56,7 @@ log = logging.getLogger("getmac")  # type: logging.Logger
 if not log.handlers:
     log.addHandler(logging.NullHandler())
 
-__version__ = "0.9.2"
+__version__ = "0.9.3"
 
 PY2 = sys.version_info[0] == 2  # type: bool
 
