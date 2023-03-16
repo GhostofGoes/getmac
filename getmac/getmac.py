@@ -403,7 +403,7 @@ class UuidArpGetNode(Method):
 
 class ArpFile(Method):
     platforms = {"linux"}
-    method_type = "ip"
+    method_type = "ip4"
     _path = os.environ.get("ARP_PATH", "/proc/net/arp")  # type: str
 
     def test(self):  # type: () -> bool
