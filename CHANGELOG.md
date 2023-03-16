@@ -4,6 +4,11 @@
 
 **Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
 
+## 0.9.3 (03/16/2023)
+
+### Changed
+* Fix `ArpFile` method being used for IPv6 (`/proc/net/arp`, and ARP in general, is IPv4-only)
+
 ## 0.9.2 (02/03/2023)
 
 ### Changed
