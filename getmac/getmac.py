@@ -1273,8 +1273,8 @@ class DefaultIfaceFreeBsd(Method):
 METHODS = [
     # NOTE: CtypesHost is faster than ArpExe because of sub-process startup times :)
     CtypesHost,
-    ArpingHost,
     ArpFile,
+    ArpingHost,
     SysIfaceFile,
     FcntlIface,
     UuidLanscan,
