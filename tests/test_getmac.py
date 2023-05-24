@@ -109,6 +109,18 @@ def test_get_method_by_name():
     assert getmac.get_method_by_name("getmacexe") == getmac.GetmacExe
 
 
+def test_get_instance_from_cache(mocker):
+    with pytest.raises(KeyError):
+        getmac.get_instance_from_cache("", "")
+
+    inst = getmac.ArpFile()
+    mocker.patch("getmac.getmac.METHOD_CACHE", {"ip4": inst})
+    assert getmac.get_instance_from_cache("ip4", "ArpFile") is inst
+
+    mocker.patch("getmac.getmac.METHOD_CACHE", {"ip4": None})
+    assert getmac.get_instance_from_cache("ip4", "ArpFile") is None
+
+
 def test_swap_method_fallback(mocker):
     mocker.patch("getmac.getmac.METHOD_CACHE", {"ip4": getmac.ArpExe()})
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {"ip4": [getmac.CtypesHost()]})
