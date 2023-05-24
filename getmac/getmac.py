@@ -1334,6 +1334,30 @@ def get_method_by_name(method_name):
     return None
 
 
+def get_instance_from_cache(method_type, method_name):
+    """
+    Get the class for a named Method from the caches.
+
+    METHOD_CACHE is checked first, and if that fails,
+    then any entries in FALLBACK_CACHE are checked.
+    If both fail, None is returned.
+
+    Args:
+        method_type: method type to initialize the cache for.
+            Allowed values are:  ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
+    """
+    # type: (str, str) -> Optional[Method]
+
+    if str(METHOD_CACHE[method_type]) == method_name:
+        return METHOD_CACHE[method_type]
+
+    for f_meth in FALLBACK_CACHE[method_type]:
+        if str(f_meth) == method_name:
+            return f_meth
+
+    return None
+
+
 def _swap_method_fallback(method_type, swap_with):
     # type: (str, str) -> bool
     if str(METHOD_CACHE[method_type]) == swap_with:
