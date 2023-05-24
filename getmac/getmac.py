@@ -589,6 +589,7 @@ class ArpingHost(Method):
         #   the performance impact is only on the first request of a run, but
         #   this is a common case for CLI programs and other one-off sorts of things.
         if not self._checked_type:
+            # TODO: check if busybox, and if it is, then invalidate the method
             try:
                 _popen("arping", "--ridiculous-garbage-string")
             except CalledProcessError as ex:
@@ -1776,6 +1777,8 @@ def get_mac_address(
             log.error("Invalid IPv6 address (no ':'): %s", ip6)
             return None
 
+    mac = None
+
     if network_request and (ip or ip6):
         send_udp_packet = True  # type: bool
 
@@ -1786,18 +1789,36 @@ def get_mac_address(
             if not METHOD_CACHE["ip4"]:
                 initialize_method_cache("ip4", network_request)
 
-            for arp_meth in ["CtypesHost", "ArpingHost"]:
-                if arp_meth == str(METHOD_CACHE["ip4"]):
-                    send_udp_packet = False
-                    break
-                elif any(
-                    arp_meth == str(x) for x in FALLBACK_CACHE["ip4"]
-                ) and _swap_method_fallback("ip4", arp_meth):
-                    send_udp_packet = False
-                    break
+            # If ArpFile succeeds, just use that, since it's
+            # significantly faster than arping (file read vs.
+            # spawning a process).
+            af_meth = get_instance_from_cache("ip4", "ArpFile")
+            if af_meth:
+                mac = _attempt_method_get(af_meth, "ip4", ip)
+
+            # TODO: invalidate ArpingHost if we don't know it works
+            # Use method.unusable
+
+            # TODO: add support for busybox arping
+
+            # TODO: add tests for this logic (arpfile => fallback)
+            # This seems to be a common course of GitHub issues,
+            # so fixing it for good and adding robust tests is
+            # probably a good idea.
+
+            if not mac:
+                for arp_meth in ["CtypesHost", "ArpingHost"]:
+                    if arp_meth == str(METHOD_CACHE["ip4"]):
+                        send_udp_packet = False
+                        break
+                    elif any(
+                        arp_meth == str(x) for x in FALLBACK_CACHE["ip4"]
+                    ) and _swap_method_fallback("ip4", arp_meth):
+                        send_udp_packet = False
+                        break
 
         # Populate the ARP table by sending an empty UDP packet to a high port
-        if send_udp_packet:
+        if send_udp_packet and not mac:
             if DEBUG:
                 log.debug(
                     "Attempting to populate ARP table with UDP packet to %s:%d",
@@ -1828,43 +1849,44 @@ def get_mac_address(
             )
 
     # Setup the address hunt based on the arguments specified
-    if ip6:
-        mac = get_by_method("ip6", ip6)
-    elif ip:
-        mac = get_by_method("ip4", ip)
-    elif interface:
-        mac = get_by_method("iface", interface)
-    else:  # Default to searching for interface
-        # Default to finding MAC of the interface with the default route
-        if WINDOWS and network_request:
-            default_iface_ip = _fetch_ip_using_dns()
-            mac = get_by_method("ip4", default_iface_ip)
-        elif WINDOWS:
-            # TODO: implement proper default interface detection on windows
-            #   (add a Method subclass to implement DefaultIface on Windows)
-            mac = get_by_method("iface", "Ethernet")
-        else:
-            global DEFAULT_IFACE
+    if not mac:
+        if ip6:
+            mac = get_by_method("ip6", ip6)
+        elif ip:
+            mac = get_by_method("ip4", ip)
+        elif interface:
+            mac = get_by_method("iface", interface)
+        else:  # Default to searching for interface
+            # Default to finding MAC of the interface with the default route
+            if WINDOWS and network_request:
+                default_iface_ip = _fetch_ip_using_dns()
+                mac = get_by_method("ip4", default_iface_ip)
+            elif WINDOWS:
+                # TODO: implement proper default interface detection on windows
+                #   (add a Method subclass to implement DefaultIface on Windows)
+                mac = get_by_method("iface", "Ethernet")
+            else:
+                global DEFAULT_IFACE
 
-            if not DEFAULT_IFACE:
-                DEFAULT_IFACE = get_by_method("default_iface")  # noqa: T484
+                if not DEFAULT_IFACE:
+                    DEFAULT_IFACE = get_by_method("default_iface")  # noqa: T484
 
-                if DEFAULT_IFACE:
-                    DEFAULT_IFACE = str(DEFAULT_IFACE).strip()
+                    if DEFAULT_IFACE:
+                        DEFAULT_IFACE = str(DEFAULT_IFACE).strip()
 
-                # TODO: better fallback if default iface lookup fails
-                if not DEFAULT_IFACE and BSD:
-                    DEFAULT_IFACE = "em0"
-                elif not DEFAULT_IFACE and DARWIN:  # OSX, maybe?
-                    DEFAULT_IFACE = "en0"
-                elif not DEFAULT_IFACE:
-                    DEFAULT_IFACE = "eth0"
+                    # TODO: better fallback if default iface lookup fails
+                    if not DEFAULT_IFACE and BSD:
+                        DEFAULT_IFACE = "em0"
+                    elif not DEFAULT_IFACE and DARWIN:  # OSX, maybe?
+                        DEFAULT_IFACE = "en0"
+                    elif not DEFAULT_IFACE:
+                        DEFAULT_IFACE = "eth0"
 
-            mac = get_by_method("iface", DEFAULT_IFACE)
+                mac = get_by_method("iface", DEFAULT_IFACE)
 
-            # TODO: hack to fallback to loopback if lookup fails
-            if not mac:
-                mac = get_by_method("iface", "lo")
+                # TODO: hack to fallback to loopback if lookup fails
+                if not mac:
+                    mac = get_by_method("iface", "lo")
 
     log.debug("Raw MAC found: %s", mac)
 
