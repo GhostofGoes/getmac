@@ -4,6 +4,16 @@
 
 **Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
 
+## 0.9.4 (06/01/2023)
+
+### Added
+* Support BusyBox's ``arping``
+
+### Changed
+* Improve how ARP is handled. If ``ArpFile`` method succeeds, use it instead of ``ArpingHost`` (this should fix [#86](https://github.com/GhostofGoes/getmac/issues/86), for realsies this time).
+* Speed up the first call to ``ArpingHost``
+* Fix FORCE_METHOD not being respected for IPv4 macs
+
 ## 0.9.3 (03/16/2023)
 
 ### Changed
