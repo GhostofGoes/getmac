@@ -1352,6 +1352,7 @@ def get_method_by_name(method_name):
 
 
 def get_instance_from_cache(method_type, method_name):
+    # type: (str, str) -> Optional[Method]
     """
     Get the class for a named Method from the caches.
 
@@ -1363,7 +1364,6 @@ def get_instance_from_cache(method_type, method_name):
         method_type: method type to initialize the cache for.
             Allowed values are:  ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
     """
-    # type: (str, str) -> Optional[Method]
 
     if str(METHOD_CACHE[method_type]) == method_name:
         return METHOD_CACHE[method_type]
@@ -1702,7 +1702,7 @@ def get_by_method(method_type, arg="", network_request=True):
     return result
 
 
-def get_mac_address(
+def get_mac_address(  # noqa: C901
     interface=None, ip=None, ip6=None, hostname=None, network_request=True
 ):
     # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
