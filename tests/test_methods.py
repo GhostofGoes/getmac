@@ -132,24 +132,33 @@ def test_ifconfigwithifacearg_bad_exits(mocker):
 
 def test_arping_host_habets(benchmark, mocker, get_sample):
     content = get_sample("ubuntu_18.04/arping-habets.out")
-    cpe = CalledProcessError(cmd="", returncode=1)
-    mocker.patch("getmac.getmac._popen", side_effect=cpe)
+    mocker.patch("getmac.getmac._popen", return_value=content)
 
     ap = getmac.ArpingHost()
+    ap._is_iputils = False
     ap.get("192.168.16.254")
-    mocker.patch("getmac.getmac._popen", return_value=content)
+
     assert "00:50:56:e8:32:3c" == benchmark(ap.get, arg="192.168.16.254")
 
 
 def test_arping_host_iputils(benchmark, mocker, get_sample):
     content = get_sample("ubuntu_18.04/arping-iputils.out")
-    cpe = CalledProcessError(cmd="", returncode=2)
-    mocker.patch("getmac.getmac._popen", side_effect=cpe)
+    mocker.patch("getmac.getmac._popen", return_value=content)
 
     ap = getmac.ArpingHost()
     ap.get("192.168.16.254")
-    mocker.patch("getmac.getmac._popen", return_value=content)
+
     assert "00:50:56:E8:32:3C" == benchmark(ap.get, arg="192.168.16.254")
+
+
+def test_arping_host_busybox(benchmark, mocker, get_sample):
+    content = get_sample("WSL2_kali_2023.1/busybox_arping_-f_-c_1_172-29-16-1.out")
+    mocker.patch("getmac.getmac._popen", return_value=content)
+
+    ap = getmac.ArpingHost()
+    ap.get("172.29.16.1")
+
+    assert "00:15:5d:20:f2:73" == benchmark(ap.get, arg="172.29.16.1")
 
 
 def test_windows_10_iface_getmac_exe(benchmark, mocker, get_sample):
