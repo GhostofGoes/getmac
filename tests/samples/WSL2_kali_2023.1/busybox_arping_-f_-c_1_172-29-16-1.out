@@ -1,0 +1,4 @@
+ARPING 172.29.16.1 from 172.29.17.66 eth0
+Unicast reply from 172.29.16.1 [00:15:5d:20:f2:73] 0.175ms
+Sent 1 probe(s) (0 broadcast(s))
+Received 1 response(s) (0 request(s), 0 broadcast(s))
