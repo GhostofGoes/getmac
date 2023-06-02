@@ -135,20 +135,17 @@ MAC_RE_SHORT = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
 
 
-def check_command(command):
-    # type: (str) -> bool
+def check_command(command: str) -> bool:
     if command not in CHECK_COMMAND_CACHE:
         CHECK_COMMAND_CACHE[command] = bool(which(command, path=PATH_STR))
     return CHECK_COMMAND_CACHE[command]
 
 
-def check_path(filepath):
-    # type: (str) -> bool
+def check_path(filepath: str) -> bool:
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
-def _clean_mac(mac):
-    # type: (Optional[str]) -> Optional[str]
+def _clean_mac(mac: Optional[str]) -> Optional[str]:
     """Check and format a string result to be lowercase colon-separated MAC."""
     if mac is None:
         return None
@@ -196,8 +193,7 @@ def _clean_mac(mac):
     return mac
 
 
-def _read_file(filepath):
-    # type: (str) -> Optional[str]
+def _read_file(filepath: str) -> Optional[str]:
     try:
         with open(filepath) as f:
             return f.read()
@@ -206,8 +202,9 @@ def _read_file(filepath):
         return None
 
 
-def _search(regex, text, group_index=0, flags=0):
-    # type: (str, str, int, int) -> Optional[str]
+def _search(
+    regex: str, text: str, group_index: int = 0, flags: int = 0
+) -> Optional[str]:
     if not text:
         if DEBUG:
             log.debug("No text to _search()")
@@ -220,8 +217,7 @@ def _search(regex, text, group_index=0, flags=0):
     return None
 
 
-def _popen(command, args):
-    # type: (str, str) -> str
+def _popen(command: str, args: str) -> str:
     for directory in PATH:
         executable = os.path.join(directory, command)
         if (
@@ -239,8 +235,7 @@ def _popen(command, args):
     return _call_proc(executable, args)
 
 
-def _call_proc(executable, args):
-    # type: (str, str) -> str
+def _call_proc(executable: str, args: str) -> str:
     if WINDOWS:
         cmd = executable + " " + args  # type: ignore
     else:
@@ -259,13 +254,11 @@ def _call_proc(executable, args):
     return output
 
 
-def _uuid_convert(mac):
-    # type: (int) -> str
+def _uuid_convert(mac: int) -> str:
     return ":".join(("%012X" % mac)[i : i + 2] for i in range(0, 12, 2))
 
 
-def _fetch_ip_using_dns():
-    # type: () -> str
+def _fetch_ip_using_dns() -> str:
     """
     Determines the IP address of the default network interface.
 
@@ -293,25 +286,27 @@ class Method:
     }
 
     #: Platforms supported by a method
-    platforms = set()  # type: Set[str]
+    platforms: Set[str] = set()
 
     #: The type of method, e.g. does it get the MAC of a interface?
     #: Allowed values: {ip, ip4, ip6, iface, default_iface}
-    method_type = ""  # type: str
+    method_type: str = ""
 
     #: If the method makes a network request as part of the check
-    network_request = False  # type: bool
+    network_request: bool = False
 
     #: Marks the method as unable to be used, e.g. if there was a runtime
     #: error indicating the method won't work on the current platform.
-    unusable = False  # type: bool
+    unusable: bool = False
 
-    def test(self):  # type: () -> bool
-        """Low-impact test that the method is feasible, e.g. command exists."""
+    def test(self) -> bool:
+        """
+        Low-impact test that the method is feasible, e.g. command exists.
+        """
         return False  # pragma: no cover
 
     # TODO: automatically clean MAC on return
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:  # noqa: ARG002
         """
         Core logic of the method that performs the lookup.
 
@@ -329,10 +324,10 @@ class Method:
             Lowercase colon-separated MAC address, or None if one could
             not be found.
         """
-        pass  # pragma: no cover
+        return None  # pragma: no cover
 
     @classmethod
-    def __str__(cls):  # type: () -> str
+    def __str__(cls) -> str:
         return cls.__name__
 
 
@@ -342,7 +337,7 @@ class UuidArpGetNode(Method):
     platforms = {"linux", "darwin", "sunos", "other"}
     method_type = "ip"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         try:
             from uuid import _arp_getnode  # type: ignore  # noqa: F401
 
@@ -350,7 +345,7 @@ class UuidArpGetNode(Method):
         except Exception:
             return False
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         from uuid import _arp_getnode  # type: ignore
 
         backup = socket.gethostbyname
@@ -376,10 +371,10 @@ class ArpFile(Method):
     method_type = "ip4"
     _path = os.environ.get("ARP_PATH", "/proc/net/arp")  # type: str
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_path(self._path)
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         if not arg:
             return None
 
@@ -401,10 +396,10 @@ class ArpFreebsd(Method):
     platforms = {"freebsd"}
     method_type = "ip"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("arp")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + MAC_RE_COLON
         return _search(regex, _popen("arp", arg))
 
@@ -414,10 +409,10 @@ class ArpOpenbsd(Method):
     method_type = "ip"
     _regex = r"[ ]+" + MAC_RE_COLON  # type: str
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("arp")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
 
 
@@ -439,10 +434,10 @@ class ArpVariousArgs(Method):
     _good_pair = ()  # type: Union[Tuple, Tuple[str, bool]]
     _good_regex = ""  # type: str
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("arp")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         if not arg:
             return None
 
@@ -516,13 +511,13 @@ class ArpExe(Method):
     platforms = {"windows", "wsl"}
     method_type = "ip4"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         # NOTE: specifying "arp.exe" instead of "arp" lets this work
         # seamlessly on WSL1 as well. On WSL2 it doesn't matter, since
         # it's basically just a Linux VM with some lipstick.
         return check_command("arp.exe")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         return _search(MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
 
 
@@ -560,10 +555,10 @@ class ArpingHost(Method):
     _habets_args = "-r -C 1 -c 1 %s"  # type: str
     _iputils_args = "-f -c 1 %s"  # type: str
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("arping")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         # If busybox or iputils, this will just work, and if host ping fails,
         # then it'll exit with code 1 and this function will return None.
         #
@@ -597,7 +592,7 @@ class ArpingHost(Method):
 
         return None
 
-    def _call_habets(self, arg):  # type: (str) -> Optional[str]
+    def _call_habets(self, arg: str) -> Optional[str]:
         command_output = _popen("arping", self._habets_args % arg)
         if command_output:
             return command_output.strip()
@@ -617,13 +612,13 @@ class CtypesHost(Method):
     method_type = "ip4"
     network_request = True
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         try:
             return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0
         except Exception:
             return False
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
         arg = arg.encode()  # type: ignore
 
@@ -662,10 +657,10 @@ class IpNeighborShow(Method):
     platforms = {"linux", "other"}
     method_type = "ip"  # IPv6 and IPv4
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("ip")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         output = _popen("ip", "neighbor show %s" % arg)
         if not output:
             return None
@@ -685,11 +680,11 @@ class SysIfaceFile(Method):
     method_type = "iface"
     _path = "/sys/class/net/"  # type: str
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         # Imperfect, but should work well enough
         return check_path(self._path)
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         data = _read_file(self._path + arg + "/address")
 
         # NOTE: if "/sys/class/net/" exists, but interface file doesn't,
@@ -702,7 +697,7 @@ class UuidLanscan(Method):
     platforms = {"other"}
     method_type = "iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         try:
             from uuid import _find_mac  # type: ignore  # noqa: F401
 
@@ -710,7 +705,7 @@ class UuidLanscan(Method):
         except Exception:
             return False
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         from uuid import _find_mac  # type: ignore
 
         arg = bytes(arg, "utf-8")  # type: ignore
@@ -727,7 +722,7 @@ class FcntlIface(Method):
     platforms = {"linux", "wsl"}
     method_type = "iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         try:
             import fcntl  # noqa: F401
 
@@ -735,7 +730,7 @@ class FcntlIface(Method):
         except Exception:  # Broad except to handle unknown effects
             return False
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         import fcntl
 
         arg = arg.encode()  # type: ignore
@@ -765,13 +760,13 @@ class GetmacExe(Method):
     ]  # type: List[Tuple[str, str]]
     _champ = ()  # type: Union[tuple, Tuple[str, str]]
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         # NOTE: the scripts from this library (getmac) are excluded from the
         # path used for checking variables, in getmac.getmac.PATH (defined
         # at the top of this file). Otherwise, this would get messy quickly :)
         return check_command("getmac.exe")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         try:
             # /nh: Suppresses table headers
             # /v:  Verbose
@@ -810,10 +805,10 @@ class IpconfigExe(Method):
         r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"
     )  # type: str
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("ipconfig.exe")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         return _search(arg + self._regex, _popen("ipconfig.exe", "/all"))
 
 
@@ -832,10 +827,10 @@ class WmicExe(Method):
     platforms = {"windows"}
     method_type = "iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("wmic.exe")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         command_output = _popen(
             "wmic.exe",
             'nic where "NetConnectionID = \'%s\'" get "MACAddress" /value' % arg,
@@ -865,10 +860,10 @@ class DarwinNetworksetupIface(Method):
     platforms = {"darwin"}
     method_type = "iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("networksetup")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         command_output = _popen("networksetup", "-getmacaddress %s" % arg)
         return _search(MAC_RE_COLON, command_output)
 
@@ -886,8 +881,7 @@ IFCONFIG_REGEX = (
 )
 
 
-def _parse_ifconfig(iface, command_output):
-    # type: (str, str) -> Optional[str]
+def _parse_ifconfig(iface: str, command_output: str) -> Optional[str]:
     if not iface or not command_output:
         return None
 
@@ -909,10 +903,10 @@ class IfconfigWithIfaceArg(Method):
     platforms = {"linux", "wsl", "freebsd", "openbsd", "other"}
     method_type = "iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("ifconfig")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         try:
             command_output = _popen("ifconfig", arg)
         except CalledProcessError as err:
@@ -933,10 +927,10 @@ class IfconfigEther(Method):
     _tested_arg = False  # type: bool
     _iface_arg = False  # type: bool
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("ifconfig")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         # Check if this version of "ifconfig" accepts an interface argument
         command_output = ""
 
@@ -975,10 +969,10 @@ class IfconfigOther(Method):
     _args_tested = False  # type: bool
     _good_pair = []  # type: List[Union[str, Tuple[str, str]]]
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("ifconfig")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         if not arg:
             return None
 
@@ -1034,19 +1028,19 @@ class NetstatIface(Method):
 
     # ".*?": non-greedy
     # https://docs.python.org/3/howto/regex.html#greedy-versus-non-greedy
-    _regexes = [
+    _regexes: List[str] = [
         r": .*?ether " + MAC_RE_COLON,
         r": .*?HWaddr " + MAC_RE_COLON,
         # Ubuntu 12.04 and other older kernels
         r" .*?Link encap:Ethernet  HWaddr " + MAC_RE_COLON,
-    ]  # type: List[str]
-    _working_regex = ""  # type: str
+    ]
+    _working_regex: str = ""
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("netstat")
 
     # TODO: consolidate the parsing logic between IfconfigOther and netstat
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         # NOTE: netstat and ifconfig pull from the same kernel source and
         # therefore have the same output format on the same platform.
         command_output = _popen("netstat", "-iae")
@@ -1091,10 +1085,10 @@ class IpLinkIface(Method):
     _tested_arg = False  # type: bool
     _iface_arg = False  # type: bool
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("ip")
 
-    def get(self, arg):  # type: (str) -> Optional[str]
+    def get(self, arg: str) -> Optional[str]:
         # Check if this version of "ip link" accepts an interface argument
         # Not accepting one is a quirk of older versions of 'iproute2'
         # TODO: is it "ip link <arg>" on some platforms and "ip link show <arg>" on others?
@@ -1133,10 +1127,10 @@ class DefaultIfaceLinuxRouteFile(Method):
     platforms = {"linux", "wsl"}
     method_type = "default_iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_path("/proc/net/route")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]  # noqa: ARG002
+    def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
         data = _read_file("/proc/net/route")
 
         if data is not None and len(data) > 1:
@@ -1171,10 +1165,10 @@ class DefaultIfaceRouteCommand(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "default_iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("route")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]
+    def get(self, arg: str = "") -> Optional[str]:
         output = _popen("route", "-n")
 
         try:
@@ -1192,10 +1186,10 @@ class DefaultIfaceRouteGetCommand(Method):
     platforms = {"darwin", "freebsd", "other"}
     method_type = "default_iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("route")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]
+    def get(self, arg: str = "") -> Optional[str]:
         output = _popen("route", "get default")
 
         if not output:
@@ -1214,10 +1208,10 @@ class DefaultIfaceIpRoute(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "default_iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("ip")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]  # noqa: ARG002
+    def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
         output = _popen("ip", "route list 0/0")
 
         if not output:
@@ -1232,10 +1226,10 @@ class DefaultIfaceOpenBsd(Method):
     platforms = {"openbsd"}
     method_type = "default_iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("route")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]  # noqa: ARG002
+    def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
         output = _popen("route", "-nq show -inet -gateway -priority 1")
         return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
 
@@ -1244,10 +1238,10 @@ class DefaultIfaceFreeBsd(Method):
     platforms = {"freebsd"}
     method_type = "default_iface"
 
-    def test(self):  # type: () -> bool
+    def test(self) -> bool:
         return check_command("netstat")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]  # noqa: ARG002
+    def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
         output = _popen("netstat", "-r")
         return _search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", output)
 
@@ -1286,31 +1280,30 @@ METHODS = [
 ]  # type: List[Type[Method]]
 
 # Primary method to use for a given method type
-METHOD_CACHE = {
+METHOD_CACHE: Dict[str, Optional[Method]] = {
     "ip4": None,
     "ip6": None,
     "iface": None,
     "default_iface": None,
-}  # type: Dict[str, Optional[Method]]
+}
 
 
 # Order of methods is determined by:
 #   Platform + version
 #   Performance (file read > command)
 #   Reliability (how well I know/understand the command to work)
-FALLBACK_CACHE = {
+FALLBACK_CACHE: Dict[str, List[Method]] = {
     "ip4": [],
     "ip6": [],
     "iface": [],
     "default_iface": [],
-}  # type: Dict[str, List[Method]]
+}
 
 
 DEFAULT_IFACE = ""  # type: str
 
 
-def get_method_by_name(method_name):
-    # type: (str) -> Optional[Type[Method]]
+def get_method_by_name(method_name: str) -> Optional[Type[Method]]:
     for method in METHODS:
         if method.__name__.lower() == method_name.lower():
             return method
@@ -1318,8 +1311,7 @@ def get_method_by_name(method_name):
     return None
 
 
-def get_instance_from_cache(method_type, method_name):
-    # type: (str, str) -> Optional[Method]
+def get_instance_from_cache(method_type: str, method_name: str) -> Optional[Method]:
     """
     Get the class for a named Method from the caches.
 
@@ -1342,8 +1334,7 @@ def get_instance_from_cache(method_type, method_name):
     return None
 
 
-def _swap_method_fallback(method_type, swap_with):
-    # type: (str, str) -> bool
+def _swap_method_fallback(method_type: str, swap_with: str) -> bool:
     if str(METHOD_CACHE[method_type]) == swap_with:
         return True
 
@@ -1364,8 +1355,7 @@ def _swap_method_fallback(method_type, swap_with):
     return True
 
 
-def _warn_critical(err_msg):
-    # type: (str) -> None
+def _warn_critical(err_msg: str) -> None:
     log.critical(err_msg)
     warnings.warn(  # noqa: B028
         "%s. NOTICE: this warning will likely turn into a raised exception in getmac 1.0.0!"
@@ -1374,9 +1364,7 @@ def _warn_critical(err_msg):
     )
 
 
-def initialize_method_cache(
-    method_type, network_request=True
-):  # type: (str, bool) -> bool
+def initialize_method_cache(method_type: str, network_request: bool = True) -> bool:
     """
     Initialize the method cache for the given method type.
 
@@ -1526,7 +1514,7 @@ def initialize_method_cache(
     return True
 
 
-def _remove_unusable(method, method_type):  # type: (Method, str) -> Optional[Method]
+def _remove_unusable(method: Method, method_type: str) -> Optional[Method]:
     if not FALLBACK_CACHE[method_type]:
         log.warning("No fallback method for unusable method '%s'!", str(method))
         METHOD_CACHE[method_type] = None
@@ -1541,9 +1529,7 @@ def _remove_unusable(method, method_type):  # type: (Method, str) -> Optional[Me
     return METHOD_CACHE[method_type]
 
 
-def _attempt_method_get(
-    method, method_type, arg
-):  # type: (Method, str, str) -> Optional[str]
+def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[str]:
     """
     Attempt to use methods, and if they fail, fallback to the next method in the cache.
     """
@@ -1603,8 +1589,9 @@ def _attempt_method_get(
     return result
 
 
-def get_by_method(method_type, arg="", network_request=True):
-    # type: (str, str, bool) -> Optional[str]
+def get_by_method(
+    method_type: str, arg: str = "", network_request: bool = True
+) -> Optional[str]:
     """
     Query for a MAC using a specific method.
 
@@ -1670,9 +1657,12 @@ def get_by_method(method_type, arg="", network_request=True):
 
 
 def get_mac_address(
-    interface=None, ip=None, ip6=None, hostname=None, network_request=True
-):
-    # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
+    interface: Optional[str] = None,
+    ip: Optional[str] = None,
+    ip6: Optional[str] = None,
+    hostname: Optional[str] = None,
+    network_request: bool = True,
+) -> Optional[str]:
     """
     Get an Unicast IEEE 802 MAC-48 address from a local interface or remote host.
 

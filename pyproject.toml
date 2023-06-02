@@ -250,8 +250,8 @@ select = [
     "F",    # Pyflakes
     "E",    # pycodestyle
     "W",    # Warning
-    "N",
-    # "ANN",  # flake8-annotations  # TODO: move to python3 type annotations
+    "N",    # pep8-naming
+    "ANN",  # flake8-annotations
     "S",    # flake8-bandit
     "B",    # flake8-bugbear
     "A",    # flake8-builtins
@@ -273,8 +273,6 @@ select = [
     "PLE",  # Pylint Errors
     "PLW",  # Pylint Warnings
     "RUF",  # Ruff-specific rules
-    # TODO: move to pathlib?
-    # "PTH",  # flake8-use-pathlib
 ]
 
 # Files to exclude from linting
@@ -291,11 +289,10 @@ extend-exclude = [
     "scripts",
 ]
 
-# ignore = E203, W503, E401, F401, E226, B902, ANN101, ANN102, T499
 # Linting error codes to ignore
 ignore = [
-    "ANN001",
-    "ANN102",
+    "ANN101",  # missing-type-self
+    "ANN102",  # missing-type-cls
     "RET505",  # unnecessary 'else' after 'return' statement
     "PLW0603", # Using the global statement to update is discouraged
     "PLW2901", # for loop variable overwritten by assignment target

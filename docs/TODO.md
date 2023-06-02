@@ -6,7 +6,6 @@
   - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
   - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
 - [x] Switch to Poetry for project management
-    - [ ] Also, add `isort`
 - [x] Support Python 3.10 and 3.11
     - [x] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
     - [x] add tests + setup.py classifier
@@ -23,7 +22,6 @@
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
     - Combine `--ip` and `--ip6` CLI arguments into `--ip`
 - [ ] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
-- [ ] Move method classes into a separate file
 - [ ] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
 - [ ] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
 - [ ] Split utils into a separate file
@@ -79,7 +77,7 @@
 - [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
 - [ ] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
 - [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
-- [ ] Replace `flake8-mypy` with proper execution of mypy in tests (the project is dead and archived, https://github.com/ambv/flake8-mypy)
+- [x] Replace `flake8-mypy` with proper execution of mypy in tests (the project is dead and archived, https://github.com/ambv/flake8-mypy)
 - [ ] Add a deprecation warning to `get-mac` package, don't publish it for 1.0.0
 - [ ] Add all project contributors to list of Authors in package metadata in `pyproject.toml` (and the documentation)
 - [ ] Update supported versions table in [SECURITY.md](../SECURITY.md)
@@ -87,15 +85,10 @@
 ## Py3-related stuff for 1.0.0
 - [x] Drop support for python 2.7, 3.4, and 3.5
 - [x] BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES (especially pytest...)
-- [ ] cache package imports done during test for use during `get()`, reuse
 - [ ] rewrite strings to f-strings
 - [x] Use `pyproject.toml` instead of `setup.py`
-  - https://packaging.python.org/tutorials/packaging-projects/
-  - Move configurations for tools out of `tox.ini` and into `pyproject.toml`
-  - Add codespell configuration, remove CLI arguments
-  - Add linting of pyproject.toml, remove checking of setup.py
 - [x] update classifiers in setup.py
-- [ ] add inline type annotations for method arguments. remove types from docstrings?
+- [x] add inline type annotations for method arguments. remove types from docstrings?
 - [x] Remove `shutilwhich.py` and `.coveragerc`
 
 
@@ -103,6 +96,7 @@
 - [ ] Refactor the default interface code. Combine the functions into 
 one, move the default fallback logic into the function.
 - TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
+- [ ] Move method classes into a separate file
 
 # Bugs or potential issues
 - [ ] Fix lookup of a IPv4 address of a local interface on Linux
