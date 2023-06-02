@@ -188,36 +188,16 @@ pytest-benchmark = "*"
 pytest-cov = "*"
 pytest-xdist = "*"
 psutil = "*"
+pygments = "^2.13"
 
 [tool.poetry.group.lint.dependencies]
-check-manifest = "^0.49"
-codespell = ">=2.2.2"
+codespell = ">=2.2.4"
 tomli = { version = "*", python = "<3.12" }
-flake8 = { version = "*", python = ">=3.8.1,<4.0" }
-flake8-bugbear = "^23.1.20"
-flake8-import-order = "^0.18.2"
-flake8-tidy-imports = "^4.8.0"
-flake8-print = "^5.0.0"
-flake8-builtins = "^2.1.0"
-flake8-blind-except = "^0.2.1"
-flake8-comprehensions = "^3.10.1"
-flake8-debugger = "^4.1.2"
-pep8-naming = "^0.13.3"
-flake8-string-format = "^0.3.0"
-flake8-mutable = "^1.2.0"
-flake8-pytest-style = "^1.6.0"
-# TODO: flake8-annotations 3.0.0 removes support for PEP-484 type comments
-flake8-annotations = "<3.0.0"
-flake8-black = "*"
-# TODO: replace flake8-mypy with proper execution of mypy
-# NOTE: the released version of flake8-mypy is buggy on Windows (17.8.0)
-flake8-mypy = { git = "https://github.com/ambv/flake8-mypy.git" }
-bandit = "^1.6.0"
-black = "^22.12.0"
-vulture = "^2.7"
-validate-pyproject = "*"
-mypy = "*"
-
+ruff = "*"
+vulture = "*"
+validate-pyproject = {extras = ["all"], version = "^0.13"}
+black = "^23.3.0"
+mypy = "^1.3.0"
 
 [tool.poetry.group.docs.dependencies]
 furo = {version = "*", python = ">=3.8,<4.0"}
@@ -253,10 +233,77 @@ check-filenames = true
 skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.idea,*.vscode,_build,.doctrees,htmlcov,.venv,.mypy_cache,deb_dist'
 ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso'
 
-[tool.bandit]
-recursive = true
-targets = ["getmac"]
-skips = ["B404", "B603", "B104"]
 
-[tool.black]
-target-version = ["py36", "py37", "py38", "py39", "py310", "py311"]
+# https://beta.ruff.rs/docs
+[tool.ruff]
+line-length = 99
+# show-source = true
+
+# Rules: https://beta.ruff.rs/docs/rules
+# If you violate a rule, lookup the rule on the Rules page in ruff docs.
+# Many rules have links you can click with a explanation of the rule and how to fix it.
+# If there isn't a link, go to the project the rule was source from (e.g. flake8-bugbear)
+# and review it's docs for the corresponding rule.
+# If you're still confused, ask a fellow developer for assistance.
+# You can also run "ruff rule <rule>" to explain a rule on the command line, without a browser or internet access.
+select = [
+    "F",    # Pyflakes
+    "E",    # pycodestyle
+    "W",    # Warning
+    "N",
+    # "ANN",  # flake8-annotations  # TODO: move to python3 type annotations
+    "S",    # flake8-bandit
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins
+    "C4",   # flake8-comprehensions
+    "DTZ",  # flake8-datetimez
+    "T10",  # flake8-debugger
+    "EXE",  # flake8-executable,
+    "ISC",  # flake8-implicit-str-concat
+    "G",    # flake8-logging-format
+    "PIE",  # flake8-pie
+    "T20",  # flake8-print
+    "PT",   # flake8-pytest-style
+    "RSE",  # flake8-raise
+    "RET",  # flake8-return
+    "TID",  # flake8-tidy-imports
+    "ARG",  # flake8-unused-arguments
+    "PGH",  # pygrep-hooks
+    "PLC",  # Pylint Convention
+    "PLE",  # Pylint Errors
+    "PLW",  # Pylint Warnings
+    "RUF",  # Ruff-specific rules
+    # TODO: move to pathlib?
+    # "PTH",  # flake8-use-pathlib
+]
+
+# Files to exclude from linting
+extend-exclude = [
+    "*.pyc",
+    "__pycache__",
+    ".tox",
+    ".venv",
+    ".github",
+    ".vagrant",
+    "docs",
+    "packaging",
+    "samples",
+    "scripts",
+]
+
+# ignore = E203, W503, E401, F401, E226, B902, ANN101, ANN102, T499
+# Linting error codes to ignore
+ignore = [
+    "ANN001",
+    "ANN102",
+    "RET505",  # unnecessary 'else' after 'return' statement
+    "PLW0603", # Using the global statement to update is discouraged
+    "PLW2901", # for loop variable overwritten by assignment target
+    "G004",    # Logging statement uses f-string
+    "PIE790",  # no-unnecessary-pass
+    "PGH003",  # Use specific rule codes when ignoring type issues
+    "PLC1901", # compare-to-empty-string
+]
+
+[tool.ruff.per-file-ignores]
+"tests/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S101", "S104", "S603"]

@@ -110,7 +110,7 @@ def main():  # type: () -> None
     )
 
     if mac is not None:
-        print(mac)  # noqa: T001, T201
+        print(mac)  # noqa: T201
         sys.exit(0)  # Exit success!
     else:
         sys.exit(1)  # Exit with error since it failed to find a MAC

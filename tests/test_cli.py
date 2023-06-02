@@ -2,8 +2,6 @@ import platform
 import sys
 from subprocess import PIPE, Popen
 
-import pytest
-
 from getmac import __version__, get_mac_address
 
 BASE_CMD = [sys.executable, "-m", "getmac"]
@@ -20,52 +18,52 @@ def test_cli_main_basic():
 
 
 def test_cli_main_verbose():
-    assert get_mac_address() in run_cmd(BASE_CMD + ["--verbose"])
+    assert get_mac_address() in run_cmd([*BASE_CMD, "--verbose"])
 
 
 def test_cli_main_debug():
-    assert get_mac_address() in run_cmd(BASE_CMD + ["--verbose", "--debug"])
+    assert get_mac_address() in run_cmd([*BASE_CMD, "--verbose", "--debug"])
 
 
 def test_cli_main_invalid_interface():
-    assert run_cmd(BASE_CMD + ["--interface", "INVALIDTESTINTERFACE"]) == ""
+    assert run_cmd([*BASE_CMD, "--interface", "INVALIDTESTINTERFACE"]) == ""
 
 
 def test_cli_help():
-    assert run_cmd(BASE_CMD + ["--help"]) != ""
+    assert run_cmd([*BASE_CMD, "--help"]) != ""
 
 
 def test_cli_version():
-    assert __version__ in run_cmd(BASE_CMD + ["--version"])
+    assert __version__ in run_cmd([*BASE_CMD, "--version"])
 
 
 def test_cli_multiple_debug_levels():
-    assert get_mac_address() in run_cmd(BASE_CMD + ["-v", "-dd"])
-    assert get_mac_address() in run_cmd(BASE_CMD + ["-v", "-ddd"])
-    assert get_mac_address() in run_cmd(BASE_CMD + ["-v", "-dddd"])
+    assert get_mac_address() in run_cmd([*BASE_CMD, "-v", "-dd"])
+    assert get_mac_address() in run_cmd([*BASE_CMD, "-v", "-ddd"])
+    assert get_mac_address() in run_cmd([*BASE_CMD, "-v", "-dddd"])
 
 
 def test_cli_no_net():
     assert get_mac_address(hostname="localhost") in run_cmd(
-        BASE_CMD + ["-n", "localhost", "--no-network-requests"]
+        [*BASE_CMD, "-n", "localhost", "--no-network-requests"]
     )
 
 
 def test_cli_override_port():
     assert (
-        run_cmd(BASE_CMD + ["-v", "-dd", "-4", "127.0.0.1", "--override-port", "44444"])
+        run_cmd([*BASE_CMD, "-v", "-dd", "-4", "127.0.0.1", "--override-port", "44444"])
         != ""
     )
 
 
 def test_cli_localhost():
-    assert run_cmd(BASE_CMD + ["-4", "127.0.0.1"]) != ""
-    assert run_cmd(BASE_CMD + ["-n", "localhost"]) != ""
-    assert run_cmd(BASE_CMD + ["--no-network-requests", "-4", "127.0.0.1"]) != ""
-    assert run_cmd(BASE_CMD + ["--no-network-requests", "-n", "localhost"]) != ""
+    assert run_cmd([*BASE_CMD, "-4", "127.0.0.1"]) != ""
+    assert run_cmd([*BASE_CMD, "-n", "localhost"]) != ""
+    assert run_cmd([*BASE_CMD, "--no-network-requests", "-4", "127.0.0.1"]) != ""
+    assert run_cmd([*BASE_CMD, "--no-network-requests", "-n", "localhost"]) != ""
 
 
 # TODO: figure out how to properly test CLI commands and isolate platform-specific behavior
 def test_cli_override_platform():
     plat = platform.system().lower()
-    assert run_cmd(BASE_CMD + ["-v", "-dd", "--override-platform", plat]) != ""
+    assert run_cmd([*BASE_CMD, "-v", "-dd", "--override-platform", plat]) != ""

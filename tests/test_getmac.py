@@ -1,5 +1,4 @@
 import inspect
-import sys
 from subprocess import CalledProcessError
 
 import pytest
@@ -65,7 +64,7 @@ def test_call_proc(mocker):
     mocker.patch("getmac.getmac.WINDOWS", True)
     m = mocker.patch("getmac.getmac.check_output", return_value="WINSUCCESS")
     assert getmac._call_proc("CMD", "arg") == "WINSUCCESS"
-    m.assert_called_once_with("CMD" + " " + "arg", stderr="DEVNULL", env="ENV")
+    m.assert_called_once_with("CMD arg", stderr="DEVNULL", env="ENV")
 
     mocker.patch("getmac.getmac.WINDOWS", False)
     m = mocker.patch("getmac.getmac.check_output", return_value="YAY")

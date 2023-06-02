@@ -41,7 +41,7 @@ try:
     from typing import TYPE_CHECKING
 
     if TYPE_CHECKING:
-        from typing import Dict, List, Optional, Set, Tuple, Type, Union
+        from typing import Dict, List, Optional, Set, Tuple, Type, Union  # noqa: F401
 except ImportError:
     pass
 
@@ -201,7 +201,7 @@ def _read_file(filepath):
     try:
         with open(filepath) as f:
             return f.read()
-    except OSError:  # noqa: B014
+    except OSError:
         log.debug("Could not find file: '%s'", filepath)
         return None
 
@@ -244,9 +244,11 @@ def _call_proc(executable, args):
     if WINDOWS:
         cmd = executable + " " + args  # type: ignore
     else:
-        cmd = [executable] + shlex.split(args)  # type: ignore
+        cmd = [executable, *shlex.split(args)]  # type: ignore
 
-    output = check_output(cmd, stderr=DEVNULL, env=ENV)  # type: Union[bytes, str]
+    output = check_output(
+        cmd, stderr=DEVNULL, env=ENV  # noqa: S603
+    )  # type: Union[bytes, str]
 
     if DEBUG >= 4:
         log.debug("Output from '%s' command: %s", executable, str(output))
@@ -304,9 +306,9 @@ class Method:
     #: error indicating the method won't work on the current platform.
     unusable = False  # type: bool
 
-    def test(self):  # type: () -> bool  # noqa: T484
+    def test(self):  # type: () -> bool
         """Low-impact test that the method is feasible, e.g. command exists."""
-        pass  # pragma: no cover
+        return False  # pragma: no cover
 
     # TODO: automatically clean MAC on return
     def get(self, arg):  # type: (str) -> Optional[str]
@@ -342,7 +344,7 @@ class UuidArpGetNode(Method):
 
     def test(self):  # type: () -> bool
         try:
-            from uuid import _arp_getnode  # type: ignore
+            from uuid import _arp_getnode  # type: ignore  # noqa: F401
 
             return True
         except Exception:
@@ -353,7 +355,7 @@ class UuidArpGetNode(Method):
 
         backup = socket.gethostbyname
         try:
-            socket.gethostbyname = lambda x: arg  # noqa: F841
+            socket.gethostbyname = lambda x: arg  # noqa: ARG005
             mac1 = _arp_getnode()
             if mac1 is not None:
                 mac1 = _uuid_convert(mac1)
@@ -509,7 +511,7 @@ class ArpExe(Method):
     This only works for IPv4, since the ARP table is IPv4-only.
 
     Microsoft Documentation: `arp <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/arp>`
-    """  # noqa: E501
+    """
 
     platforms = {"windows", "wsl"}
     method_type = "ip4"
@@ -609,7 +611,7 @@ class CtypesHost(Method):
     of a remote IPv4 host.
 
     Microsoft Documentation: `SendARP function (iphlpapi.h) <https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp>`__
-    """  # noqa: E501
+    """
 
     platforms = {"windows"}
     method_type = "ip4"
@@ -617,7 +619,7 @@ class CtypesHost(Method):
 
     def test(self):  # type: () -> bool
         try:
-            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # noqa: T484
+            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0
         except Exception:
             return False
 
@@ -702,7 +704,7 @@ class UuidLanscan(Method):
 
     def test(self):  # type: () -> bool
         try:
-            from uuid import _find_mac  # noqa: T484
+            from uuid import _find_mac  # type: ignore  # noqa: F401
 
             return check_command("lanscan")
         except Exception:
@@ -713,7 +715,7 @@ class UuidLanscan(Method):
 
         arg = bytes(arg, "utf-8")  # type: ignore
 
-        mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)
+        mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)  # noqa: ARG005
 
         if mac:
             return _uuid_convert(mac)
@@ -727,7 +729,7 @@ class FcntlIface(Method):
 
     def test(self):  # type: () -> bool
         try:
-            import fcntl
+            import fcntl  # noqa: F401
 
             return True
         except Exception:  # Broad except to handle unknown effects
@@ -741,7 +743,7 @@ class FcntlIface(Method):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # 0x8927 = SIOCGIFADDR
-        info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", arg[:15]))
+        info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", arg[:15]))  # type: ignore
 
         return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
@@ -751,7 +753,7 @@ class GetmacExe(Method):
     Uses Windows-builtin ``getmac.exe`` to get a interface's MAC address.
 
     Microsoft Documentation: `getmac <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/getmac>`__
-    """  # noqa: E501
+    """
 
     platforms = {"windows"}
     method_type = "iface"
@@ -800,7 +802,7 @@ class IpconfigExe(Method):
     versions and releases. I'm not sure if it works pre-XP though.
 
     Microsoft Documentation: `ipconfig <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ipconfig>`__
-    """  # noqa: E501
+    """
 
     platforms = {"windows"}
     method_type = "iface"
@@ -825,7 +827,7 @@ class WmicExe(Method):
        WMIC is deprecated as of Windows 10 21H1. This method may not work on
        Windows 11 and may stop working at some point on Windows 10 (unlikely,
        but possible).
-    """  # noqa: E501
+    """
 
     platforms = {"windows"}
     method_type = "iface"
@@ -988,7 +990,7 @@ class IfconfigOther(Method):
             for pair_to_test in self._args:
                 try:
                     command_output = _popen("ifconfig", pair_to_test[0])
-                    self._good_pair = list(pair_to_test)  # noqa: T484
+                    self._good_pair = list(pair_to_test)  # type: ignore
                     if isinstance(self._good_pair[1], str):
                         self._good_pair[1] += MAC_RE_COLON
                     break
@@ -1134,7 +1136,7 @@ class DefaultIfaceLinuxRouteFile(Method):
     def test(self):  # type: () -> bool
         return check_path("/proc/net/route")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]
+    def get(self, arg=""):  # type: (str) -> Optional[str]  # noqa: ARG002
         data = _read_file("/proc/net/route")
 
         if data is not None and len(data) > 1:
@@ -1176,7 +1178,11 @@ class DefaultIfaceRouteCommand(Method):
         output = _popen("route", "-n")
 
         try:
-            return output.partition("0.0.0.0")[2].partition("\n")[0].split()[-1]
+            return (
+                output.partition("0.0.0.0")[2]  # noqa: S104
+                .partition("\n")[0]
+                .split()[-1]
+            )
         except IndexError as ex:  # index errors means no default route in output?
             log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
             return None
@@ -1211,7 +1217,7 @@ class DefaultIfaceIpRoute(Method):
     def test(self):  # type: () -> bool
         return check_command("ip")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]
+    def get(self, arg=""):  # type: (str) -> Optional[str]  # noqa: ARG002
         output = _popen("ip", "route list 0/0")
 
         if not output:
@@ -1229,7 +1235,7 @@ class DefaultIfaceOpenBsd(Method):
     def test(self):  # type: () -> bool
         return check_command("route")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]
+    def get(self, arg=""):  # type: (str) -> Optional[str]  # noqa: ARG002
         output = _popen("route", "-nq show -inet -gateway -priority 1")
         return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
 
@@ -1241,7 +1247,7 @@ class DefaultIfaceFreeBsd(Method):
     def test(self):  # type: () -> bool
         return check_command("netstat")
 
-    def get(self, arg=""):  # type: (str) -> Optional[str]
+    def get(self, arg=""):  # type: (str) -> Optional[str]  # noqa: ARG002
         output = _popen("netstat", "-r")
         return _search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", output)
 
@@ -1353,7 +1359,7 @@ def _swap_method_fallback(method_type, swap_with):
     curr = METHOD_CACHE[method_type]
     FALLBACK_CACHE[method_type].remove(found)
     METHOD_CACHE[method_type] = found
-    FALLBACK_CACHE[method_type].insert(0, curr)  # noqa: T484
+    FALLBACK_CACHE[method_type].insert(0, curr)  # type: ignore
 
     return True
 
@@ -1502,7 +1508,7 @@ def initialize_method_cache(
 
     # Populate fallback cache with all the tested methods, minus the currently active method
     if METHOD_CACHE[method_type] and METHOD_CACHE[method_type] in tested_methods:
-        tested_methods.remove(METHOD_CACHE[method_type])  # noqa: T484
+        tested_methods.remove(METHOD_CACHE[method_type])  # type: ignore
 
     FALLBACK_CACHE[method_type] = tested_methods
 
@@ -1663,7 +1669,7 @@ def get_by_method(method_type, arg="", network_request=True):
     return result
 
 
-def get_mac_address(  # noqa: C901
+def get_mac_address(
     interface=None, ip=None, ip6=None, hostname=None, network_request=True
 ):
     # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
@@ -1708,7 +1714,7 @@ def get_mac_address(  # noqa: C901
     Returns:
         Lowercase colon-separated MAC address, or :obj:`None` if one could not be
         found or there was an error.
-    """  # noqa: E501
+    """
 
     if DEBUG:
         import timeit
@@ -1774,7 +1780,8 @@ def get_mac_address(  # noqa: C901
                     if arp_meth == str(METHOD_CACHE["ip4"]):
                         send_udp_packet = False
                         break
-                    elif any(
+
+                    if any(
                         arp_meth == str(x) for x in FALLBACK_CACHE["ip4"]
                     ) and _swap_method_fallback("ip4", arp_meth):
                         send_udp_packet = False
@@ -1832,7 +1839,7 @@ def get_mac_address(  # noqa: C901
                 global DEFAULT_IFACE
 
                 if not DEFAULT_IFACE:
-                    DEFAULT_IFACE = get_by_method("default_iface")  # noqa: T484
+                    DEFAULT_IFACE = get_by_method("default_iface")  # type: ignore
 
                     if DEFAULT_IFACE:
                         DEFAULT_IFACE = str(DEFAULT_IFACE).strip()
