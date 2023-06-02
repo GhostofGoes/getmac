@@ -3,6 +3,8 @@
 
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
+**Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
+
 ## UNRELEASED
 
 ### Added
@@ -28,9 +30,27 @@
   * Remove all `requirement.txt` files
   * Remove `setup.py` and `MANIFEST.in`
 
+## 0.9.4 (06/01/2023)
+
+### Added
+* Support BusyBox's ``arping``
+
+### Changed
+* Improve how ARP is handled. If ``ArpFile`` method succeeds, use it instead of ``ArpingHost`` (this should fix [#86](https://github.com/GhostofGoes/getmac/issues/86), for realsies this time).
+* Speed up the first call to ``ArpingHost``
+* Fix FORCE_METHOD not being respected for IPv4 macs
+
+## 0.9.3 (03/16/2023)
+
+### Changed
+* Fix `ArpFile` method being used for IPv6 (`/proc/net/arp`, and ARP in general, is IPv4-only)
+
+## 0.9.2 (02/03/2023)
+
+### Changed
+* Fix flakiness with UuidArpGetNode on MacOS by making it the last method attempted (Fixes issue [#82](https://github.com/GhostofGoes/getmac/issues/82))
 
 ## 0.9.1 (01/24/2023)
-**Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
 
 ### Changed
 * Deprecate Python 3.6 support (support will be removed in getmac 1.0.0)

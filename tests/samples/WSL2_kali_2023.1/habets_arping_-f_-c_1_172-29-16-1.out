@@ -1,0 +1,7 @@
+arping: invalid option -- 'f'
+ARPing 2.23, by Thomas Habets <thomas@habets.se>
+usage: arping [ -0aAbdDeFpPqrRuUvzZ ] [ -w <sec> ] [ -W <sec> ] [ -S <host/ip> ]
+              [ -T <host/ip ] [ -s <MAC> ] [ -t <MAC> ] [ -c <count> ]
+              [ -C <count> ] [ -i <interface> ] [ -m <type> ] [ -g <group> ]
+              [ -V <vlan> ] [ -Q <priority> ] <host/ip/MAC | -B>
+For complete usage info, use --help or check the manpage.

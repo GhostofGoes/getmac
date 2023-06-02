@@ -9,6 +9,10 @@ jobs:
   lint:
     name: Run lint checks
     runs-on: ubuntu-20.04
+    # Workaround to disable pip upgrade warnings until fixed in setup-python
+    # See: https://github.com/actions/setup-python/issues/532
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: 1
     steps:
       - uses: actions/checkout@v3
       - name: Install Python
@@ -24,6 +28,10 @@ jobs:
   test:
     name: Run tests
     runs-on: ${{ matrix.platform }}
+    # Workaround to disable pip upgrade warnings until fixed in setup-python
+    # See: https://github.com/actions/setup-python/issues/532
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: 1
     strategy:
       fail-fast: false
       # Versions available:
@@ -59,6 +67,9 @@ jobs:
             python-version: "pypy3.8"
           - platform: macos-latest
             python-version: "pypy3.9"
+          - platform: windows-latest
+            python-version: "pypy-3.6"
+            architecture: x64
     steps:
       - uses: actions/checkout@v3
       - name: Install Python
@@ -80,9 +91,12 @@ jobs:
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
         run: poetry run tox
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3
         with:
-          fail_ci_if_error: true
+          # codecov is annoying. Not sure why I'm still using it, 
+          # may need to look at something that has less heisenbugs.
+          # https://community.codecov.com/t/ci-failure-due-to-too-many-uploads-to-this-commit/2587/12
+          fail_ci_if_error: false
       - name: Coveralls
         if: ${{ matrix.platform == 'ubuntu-20.04' && github.event_name != 'pull_request' }}
         uses: AndreMiras/coveralls-python-action@develop
@@ -121,9 +135,9 @@ jobs:
 #         python-version:
 #           - "3.8"
 #     steps:
-#       - uses: "actions/checkout@master"
+#       - uses: actions/checkout@v3
 #       - name: "🐍 Set up Python ${{ matrix.python-version }}"
-#         uses: "actions/setup-python@v2"
+#         uses: actions/setup-python@v4
 #         with:
 #           python-version: "${{ matrix.python-version }}"
 #       - name: "🐍 Install wheel and build"

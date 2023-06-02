@@ -371,7 +371,7 @@ class UuidArpGetNode(Method):
 
 class ArpFile(Method):
     platforms = {"linux"}
-    method_type = "ip"
+    method_type = "ip4"
     _path = os.environ.get("ARP_PATH", "/proc/net/arp")  # type: str
 
     def test(self):  # type: () -> bool
@@ -528,64 +528,81 @@ class ArpingHost(Method):
     """
     Use ``arping`` command to determine the MAC of a host.
 
-    Supports two variants of ``arping``
+    Supports three variants of ``arping``
 
     - "habets" arping by Thomas Habets
         (`GitHub <https://github.com/ThomasHabets/arping>`__)
+        On Debian-based distros, ``apt install arping`` will install
+        Habets arping.
     - "iputils" arping, from the ``iputils-arping``
         `package <https://packages.debian.org/sid/iputils-arping>`__
+    - "busybox" arping, included with BusyBox (a small executable "distro")
+        (`further reading <https://boxmatrix.info/wiki/Property:arping>`__)
+
+    BusyBox's arping quite similar to iputils-arping. The arguments for
+    our purposes are the same, and the output is also the same.
+    There's even a TODO in busybox's arping code referencing iputils arping.
+    There are several differences:
+    - The return code from bad arguments is 1, not 2 like for iputils-arping
+    - The MAC address in output is lowercase (vs. uppercase in iputils-arping)
+
+    This was a pain to obtain samples for busybox on Windows. I recommend
+    using WSL and arping'ing the Docker gateway (for WSL2 distros).
+    NOTE: it must be run as root using ``sudo busybox arping``.
     """
 
     platforms = {"linux", "darwin"}
     method_type = "ip4"
     network_request = True
-    _checked_type = False  # type: bool
-    _is_iputils = False  # type: bool
-    _habets = "-r -C 1 -c 1 %s"
-    _iputils = "-f -c 1 %s"
+    _is_iputils = True  # type: bool
+    _habets_args = "-r -C 1 -c 1 %s"  # type: str
+    _iputils_args = "-f -c 1 %s"  # type: str
 
     def test(self):  # type: () -> bool
         return check_command("arping")
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        # First execution we check which command it is. Adds a bit of time.
-        # TODO: is there a more efficient way to do this check than running a command?
-        #   maybe try to just run it, if we get unlucky then mark as the proper type,
-        #   then try again with the proper type. e.g. try it as iputils, if get
-        #   return code of 2, then mark it as habets and retry with habets.
-        #   slightly more efficient than running it, then running it again.
-        #   the performance impact is only on the first request of a run, but
-        #   this is a common case for CLI programs and other one-off sorts of things.
-        if not self._checked_type:
-            try:
-                _popen("arping", "--ridiculous-garbage-string")
-            except CalledProcessError as ex:
-                # iputils-arping returns 2 on invalid syntax (and other errors)
-                if ex.returncode == 2:
-                    self._is_iputils = True
-
-                # habets returns 1 on invalid syntax. no need to check,
-                # we already threw an exception so mark as checked.
-                self._checked_type = True
-
+        # If busybox or iputils, this will just work, and if host ping fails,
+        # then it'll exit with code 1 and this function will return None.
+        #
+        # If it's Habets, then it'll exit code 1 and have "invalid option"
+        # and/or the help message in the output.
+        # In the case of Habets, set self._is_iputils to False,
+        # then re-try with Habets args.
         try:
             if self._is_iputils:
-                command_output = _popen("arping", "-f -c 1 %s" % arg)
+                command_output = _popen("arping", self._iputils_args % arg)
                 if command_output:
                     return _search(
                         r" from %s \[(%s)\]" % (re.escape(arg), MAC_RE_COLON),
                         command_output,
                     )
             else:
-                command_output = _popen("arping", "-r -C 1 -c 1 %s" % arg)
-                if command_output:
-                    return command_output.strip()
-        except CalledProcessError:
-            # TODO: verify return code isn't 2 for iputils? need to experiment
-            #   with this some more to have a more reliable check.
-            pass
+                return self._call_habets(arg)
+        except CalledProcessError as ex:
+            if ex.output and self._is_iputils:
+                if not PY2 and isinstance(ex.output, bytes):
+                    output = str(ex.output, "utf-8").lower()
+                else:
+                    output = str(ex.output).lower()
+
+                if "habets" in output or "invalid option" in output:
+                    if DEBUG:
+                        log.debug("Falling back to Habets arping")
+                    self._is_iputils = False
+                    try:
+                        return self._call_habets(arg)
+                    except CalledProcessError:
+                        pass
 
         return None
+
+    def _call_habets(self, arg):  # type: (str) -> Optional[str]
+        command_output = _popen("arping", self._habets_args % arg)
+        if command_output:
+            return command_output.strip()
+        else:
+            return None
 
 
 class CtypesHost(Method):
@@ -1236,11 +1253,10 @@ class DefaultIfaceFreeBsd(Method):
 METHODS = [
     # NOTE: CtypesHost is faster than ArpExe because of sub-process startup times :)
     CtypesHost,
-    ArpingHost,
     ArpFile,
+    ArpingHost,
     SysIfaceFile,
     FcntlIface,
-    UuidArpGetNode,
     UuidLanscan,
     GetmacExe,
     IpconfigExe,
@@ -1256,6 +1272,7 @@ METHODS = [
     NetstatIface,
     IpNeighborShow,
     ArpVariousArgs,
+    UuidArpGetNode,
     DefaultIfaceLinuxRouteFile,
     DefaultIfaceIpRoute,
     DefaultIfaceRouteCommand,
@@ -1293,6 +1310,30 @@ def get_method_by_name(method_name):
     for method in METHODS:
         if method.__name__.lower() == method_name.lower():
             return method
+
+    return None
+
+
+def get_instance_from_cache(method_type, method_name):
+    # type: (str, str) -> Optional[Method]
+    """
+    Get the class for a named Method from the caches.
+
+    METHOD_CACHE is checked first, and if that fails,
+    then any entries in FALLBACK_CACHE are checked.
+    If both fail, None is returned.
+
+    Args:
+        method_type: method type to initialize the cache for.
+            Allowed values are:  ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
+    """
+
+    if str(METHOD_CACHE[method_type]) == method_name:
+        return METHOD_CACHE[method_type]
+
+    for f_meth in FALLBACK_CACHE[method_type]:
+        if str(f_meth) == method_name:
+            return f_meth
 
     return None
 
@@ -1624,7 +1665,7 @@ def get_by_method(method_type, arg="", network_request=True):
     return result
 
 
-def get_mac_address(
+def get_mac_address(  # noqa: C901
     interface=None, ip=None, ip6=None, hostname=None, network_request=True
 ):
     # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
@@ -1702,6 +1743,8 @@ def get_mac_address(
             log.error("Invalid IPv6 address (no ':'): %s", ip6)
             return None
 
+    mac = None
+
     if network_request and (ip or ip6):
         send_udp_packet = True  # type: bool
 
@@ -1712,18 +1755,35 @@ def get_mac_address(
             if not METHOD_CACHE["ip4"]:
                 initialize_method_cache("ip4", network_request)
 
-            for arp_meth in ["CtypesHost", "ArpingHost"]:
-                if arp_meth == str(METHOD_CACHE["ip4"]):
-                    send_udp_packet = False
-                    break
-                elif any(
-                    arp_meth == str(x) for x in FALLBACK_CACHE["ip4"]
-                ) and _swap_method_fallback("ip4", arp_meth):
-                    send_udp_packet = False
-                    break
+            # If ArpFile succeeds, just use that, since it's
+            # significantly faster than arping (file read vs.
+            # spawning a process).
+            if not FORCE_METHOD or FORCE_METHOD.lower() == "arpfile":
+                af_meth = get_instance_from_cache("ip4", "ArpFile")
+                if af_meth:
+                    mac = _attempt_method_get(af_meth, "ip4", ip)
+
+            # TODO: add tests for this logic (arpfile => fallback)
+            # This seems to be a common course of GitHub issues,
+            # so fixing it for good and adding robust tests is
+            # probably a good idea.
+
+            if not mac:
+                for arp_meth in ["CtypesHost", "ArpingHost"]:
+                    if FORCE_METHOD and FORCE_METHOD.lower() != arp_meth:
+                        continue
+
+                    if arp_meth == str(METHOD_CACHE["ip4"]):
+                        send_udp_packet = False
+                        break
+                    elif any(
+                        arp_meth == str(x) for x in FALLBACK_CACHE["ip4"]
+                    ) and _swap_method_fallback("ip4", arp_meth):
+                        send_udp_packet = False
+                        break
 
         # Populate the ARP table by sending an empty UDP packet to a high port
-        if send_udp_packet:
+        if send_udp_packet and not mac:
             if DEBUG:
                 log.debug(
                     "Attempting to populate ARP table with UDP packet to %s:%d",
@@ -1754,43 +1814,44 @@ def get_mac_address(
             )
 
     # Setup the address hunt based on the arguments specified
-    if ip6:
-        mac = get_by_method("ip6", ip6)
-    elif ip:
-        mac = get_by_method("ip4", ip)
-    elif interface:
-        mac = get_by_method("iface", interface)
-    else:  # Default to searching for interface
-        # Default to finding MAC of the interface with the default route
-        if WINDOWS and network_request:
-            default_iface_ip = _fetch_ip_using_dns()
-            mac = get_by_method("ip4", default_iface_ip)
-        elif WINDOWS:
-            # TODO: implement proper default interface detection on windows
-            #   (add a Method subclass to implement DefaultIface on Windows)
-            mac = get_by_method("iface", "Ethernet")
-        else:
-            global DEFAULT_IFACE
+    if not mac:
+        if ip6:
+            mac = get_by_method("ip6", ip6)
+        elif ip:
+            mac = get_by_method("ip4", ip)
+        elif interface:
+            mac = get_by_method("iface", interface)
+        else:  # Default to searching for interface
+            # Default to finding MAC of the interface with the default route
+            if WINDOWS and network_request:
+                default_iface_ip = _fetch_ip_using_dns()
+                mac = get_by_method("ip4", default_iface_ip)
+            elif WINDOWS:
+                # TODO: implement proper default interface detection on windows
+                #   (add a Method subclass to implement DefaultIface on Windows)
+                mac = get_by_method("iface", "Ethernet")
+            else:
+                global DEFAULT_IFACE
 
-            if not DEFAULT_IFACE:
-                DEFAULT_IFACE = get_by_method("default_iface")  # noqa: T484
+                if not DEFAULT_IFACE:
+                    DEFAULT_IFACE = get_by_method("default_iface")  # noqa: T484
 
-                if DEFAULT_IFACE:
-                    DEFAULT_IFACE = str(DEFAULT_IFACE).strip()
+                    if DEFAULT_IFACE:
+                        DEFAULT_IFACE = str(DEFAULT_IFACE).strip()
 
-                # TODO: better fallback if default iface lookup fails
-                if not DEFAULT_IFACE and BSD:
-                    DEFAULT_IFACE = "em0"
-                elif not DEFAULT_IFACE and DARWIN:  # OSX, maybe?
-                    DEFAULT_IFACE = "en0"
-                elif not DEFAULT_IFACE:
-                    DEFAULT_IFACE = "eth0"
+                    # TODO: better fallback if default iface lookup fails
+                    if not DEFAULT_IFACE and BSD:
+                        DEFAULT_IFACE = "em0"
+                    elif not DEFAULT_IFACE and DARWIN:  # OSX, maybe?
+                        DEFAULT_IFACE = "en0"
+                    elif not DEFAULT_IFACE:
+                        DEFAULT_IFACE = "eth0"
 
-            mac = get_by_method("iface", DEFAULT_IFACE)
+                mac = get_by_method("iface", DEFAULT_IFACE)
 
-            # TODO: hack to fallback to loopback if lookup fails
-            if not mac:
-                mac = get_by_method("iface", "lo")
+                # TODO: hack to fallback to loopback if lookup fails
+                if not mac:
+                    mac = get_by_method("iface", "lo")
 
     log.debug("Raw MAC found: %s", mac)
 
