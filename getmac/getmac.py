@@ -581,10 +581,8 @@ class ArpingHost(Method):
                 return self._call_habets(arg)
         except CalledProcessError as ex:
             if ex.output and self._is_iputils:
-                if not PY2 and isinstance(ex.output, bytes):
-                    output = str(ex.output, "utf-8").lower()
-                else:
-                    output = str(ex.output).lower()
+                if isinstance(ex.output, bytes):
+                    output = ex.output.decode("utf-8").lower()
 
                 if "habets" in output or "invalid option" in output:
                     if DEBUG:
@@ -1363,7 +1361,7 @@ def _swap_method_fallback(method_type, swap_with):
 def _warn_critical(err_msg):
     # type: (str) -> None
     log.critical(err_msg)
-    warnings.warn(
+    warnings.warn(  # noqa: B028
         "%s. NOTICE: this warning will likely turn into a raised exception in getmac 1.0.0!"
         % err_msg,
         RuntimeWarning,
@@ -1442,7 +1440,7 @@ def initialize_method_cache(
             "Falling back to platform 'other'." % platform
         )
         log.warning(warn_msg)
-        warnings.warn(warn_msg, RuntimeWarning)
+        warnings.warn(warn_msg, RuntimeWarning, stacklevel=2)
         platform_methods = [
             method for method in type_methods if "other" in method.platforms
         ]
