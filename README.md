@@ -113,7 +113,7 @@ getmac --ip 192.168.0.1 --override-platform windows
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 ```
 
-## Function: get_mac_address()
+## `get_mac_address()`
 - `interface`: Name of a network interface on the system
 - `ip`: IPv4 address of a remote host
 - `ip6`: IPv6 address of a remote host
@@ -136,19 +136,6 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - Provides a simple command line tool (when installed as a package)
 - MIT licensed!
 
-## Legacy Python versions
-If you are running a old Python (2.6/3.3 and older) or interpreter, then you can install an older version of `getmac` that supported that version. The wheels are available in the [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or from PyPI with a current version of `pip` and some special arguments.
-
-- Python 2.5: get-mac 0.5.0
-- Python 2.6: getmac 0.6.0
-- Python 2.7: getmac 0.9.0
-- Python 3.2: get-mac 0.3.0
-- Python 3.3: get-mac 0.3.0
-- Python 3.4: getmac 0.9.0
-- Python 3.5: getmac 0.9.0
-
-NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
-
 ## Notes
 - If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined, then it will attempt to fallback to typical defaults for the platform (`Ethernet` on Windows, `em0` on BSD, `en0` on OSX/Darwin, and `eth0` otherwise). If that fails, then it will fallback to `lo` on POSIX systems.
 - "Remote hosts" refer to hosts in your local layer 2 network, also commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
@@ -161,13 +148,13 @@ NOTE: these versions do not have many of the performance improvements, platform 
     - Commands: `getmac.exe`, `ipconfig.exe`, `arp.exe`, `wmic.exe`
     - Libraries: `uuid`, `ctypes`, `socket`
 - Linux/Unix
-    - Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`, `lanscan`
+    - Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`, `lanscan`, `arping` (both iputils and Habet's variants)
     - Libraries: `uuid`, `fcntl`, `socket`
     - Files: `/sys/class/net/{iface}/address`, `/proc/net/arp`
     - Default interfaces: `/proc/net/route`, `route`, `ip route list`
 - Mac OSX (Darwin)
-    - `networksetup`
-    - Same commands as Linux
+    - `networksetup`, `arping`
+    - Many of the same commands as Linux
 - WSL
     - Windows commands are used for remote hosts
     - Unix commands are used for interfaces
@@ -198,6 +185,21 @@ All or almost all features should work on "supported" platforms. While other ver
 - FreeBSD (11+)
 - OpenBSD
 - Docker
+- BusyBox (not technically a platform, but several of the methods work on this platform)
+
+## Legacy Python versions
+If you are running a old Python (2.6/3.3 and older) or interpreter, then you can install an older version of `getmac` that supported that version. The wheels are available in the [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or from PyPI with a current version of `pip` and some special arguments.
+
+- Python 2.5: `get-mac==0.5.0`
+- Python 2.6: `getmac==0.6.0`
+- Python 2.7: `getmac<1.0.0`
+- Python 3.2: `get-mac==0.3.0`
+- Python 3.3: `get-mac==0.3.0`
+- Python 3.4: `getmac<1.0.0`
+- Python 3.5: `getmac<1.0.0`
+- Python 3.6: `getmac<1.0.0`
+
+NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
 
 ## Docker
 Add `-v /proc/1/net/arp:/host/arp -e ARP_PATH=/host/arp` to access arp table of host inside container in bridge network mode.
