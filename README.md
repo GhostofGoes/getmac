@@ -16,8 +16,6 @@ It provides a platform-independent interface to get the MAC addresses of:
 
 It provides one function: `get_mac_address()`
 
-[![asciicast](https://asciinema.org/a/rk6dUACUcZY18taCuIBE5Ssus.png)](https://asciinema.org/a/rk6dUACUcZY18taCuIBE5Ssus)
-
 [![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.png)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
 
 
