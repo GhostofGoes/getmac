@@ -606,11 +606,9 @@ class CtypesHost(Method):
             return False
 
     def get(self, arg: str) -> Optional[str]:
-        # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
-        encoded_arg = arg.encode()
-
         try:
-            inetaddr = ctypes.windll.wsock32.inet_addr(encoded_arg)
+            # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
+            inetaddr = ctypes.windll.wsock32.inet_addr(arg.encode())  # type: ignore
             if inetaddr in (0, -1):
                 raise Exception
         except Exception:
@@ -618,19 +616,19 @@ class CtypesHost(Method):
             #   We should be explicit about only accepting ipv4 addresses
             #   and handle any hostname resolution in calling code
             hostip = socket.gethostbyname(arg)
-            inetaddr = ctypes.windll.wsock32.inet_addr(hostip)
+            inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
 
         buffer = ctypes.c_buffer(6)
         addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
 
         # https://docs.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp
-        send_arp = ctypes.windll.Iphlpapi.SendARP
+        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
         if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
             return None
 
         # Convert binary data into a string.
         macaddr = ""
-        for intval in struct.unpack("BBBBBB", buffer):
+        for intval in struct.unpack("BBBBBB", buffer):  # type: ignore
             if intval > 15:
                 replacestr = "0x"
             else:
