@@ -20,7 +20,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        # uses: snok/install-poetry@v1
+        uses: Gr1N/setup-poetry@v8
       - name: Install dependencies (poetry)
         run: poetry install --only=main,lint,ci --no-interaction
       - name: Run lint checks
@@ -32,11 +33,11 @@ jobs:
     # See: https://github.com/actions/setup-python/issues/532
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: 1
-    # Required for snok/install-poetry
-    # https://github.com/snok/install-poetry/tree/v1/#running-on-windows
-    defaults:
-      run:
-        shell: bash
+    # # Required for snok/install-poetry
+    # # https://github.com/snok/install-poetry/tree/v1/#running-on-windows
+    # defaults:
+    #   run:
+    #     shell: bash
     strategy:
       fail-fast: false
       # Versions available:
@@ -71,7 +72,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        # uses: snok/install-poetry@v1
+        uses: Gr1N/setup-poetry@v8
       - name: Display platform and environment information
         run: |
           python --version
