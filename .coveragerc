@@ -1,0 +1,5 @@
+# TODO: this works around a issue in coveralls-python-action
+# Once the fix is merged (it's been 2 years, I don't have high hopes), then this file can be removed
+# https://github.com/AndreMiras/coveralls-python-action/pull/16
+[run]
+relative_files = True

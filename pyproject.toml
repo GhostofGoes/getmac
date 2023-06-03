@@ -226,7 +226,7 @@ norecursedirs = ".github getmac samples scripts .git .tox .vagrant .idea .vscode
 addopts = "--tb=short"
 
 [tool.coverage.run]
-relative_files = true
+relative_files = true  # required for coveralls
 
 [tool.codespell]
 check-filenames = true
