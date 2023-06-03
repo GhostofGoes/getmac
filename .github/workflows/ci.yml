@@ -23,9 +23,9 @@ jobs:
         # uses: snok/install-poetry@v1
         uses: Gr1N/setup-poetry@v8
       - name: Install dependencies (poetry)
-        run: poetry install --only=main,lint,ci --no-interaction
+        run: poetry install --no-interaction --only=main,ci,lint
       - name: Run lint checks
-        run: poetry run tox -e check
+        run: poetry run tox --quiet -e check
   test:
     name: Run tests
     runs-on: ${{ matrix.platform }}
@@ -33,11 +33,6 @@ jobs:
     # See: https://github.com/actions/setup-python/issues/532
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: 1
-    # # Required for snok/install-poetry
-    # # https://github.com/snok/install-poetry/tree/v1/#running-on-windows
-    # defaults:
-    #   run:
-    #     shell: bash
     strategy:
       fail-fast: false
       # Versions available:
@@ -82,10 +77,10 @@ jobs:
           python -c "import os; print('os.name: %s' % str(os.name))"
           python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
       - name: Install dependencies (poetry)
-        run: poetry install --no-interaction
+        run: poetry install --no-interaction --only=main,ci,test
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
-        run: poetry run tox
+        run: poetry run tox --quiet
       - uses: codecov/codecov-action@v3
         with:
           # codecov is annoying. Not sure why I'm still using it,
