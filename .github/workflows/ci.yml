@@ -32,6 +32,11 @@ jobs:
     # See: https://github.com/actions/setup-python/issues/532
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: 1
+    # Required for snok/install-poetry
+    # https://github.com/snok/install-poetry/tree/v1/#running-on-windows
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       # Versions available:
@@ -93,7 +98,7 @@ jobs:
         run: poetry run tox
       - uses: codecov/codecov-action@v3
         with:
-          # codecov is annoying. Not sure why I'm still using it, 
+          # codecov is annoying. Not sure why I'm still using it,
           # may need to look at something that has less heisenbugs.
           # https://community.codecov.com/t/ci-failure-due-to-too-many-uploads-to-this-commit/2587/12
           fail_ci_if_error: false
