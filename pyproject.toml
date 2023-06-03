@@ -258,7 +258,6 @@ select = [
     "C4",   # flake8-comprehensions
     "DTZ",  # flake8-datetimez
     "T10",  # flake8-debugger
-    "EXE",  # flake8-executable,
     "ISC",  # flake8-implicit-str-concat
     "G",    # flake8-logging-format
     "PIE",  # flake8-pie

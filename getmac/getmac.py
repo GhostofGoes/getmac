@@ -33,17 +33,8 @@ import sys
 import traceback
 import warnings
 from shutil import which
-from subprocess import CalledProcessError, DEVNULL, check_output
-
-# Used for mypy (a data type analysis tool)
-# If you're copying the code, this section can be safely removed
-try:
-    from typing import TYPE_CHECKING
-
-    if TYPE_CHECKING:
-        from typing import Dict, List, Optional, Set, Tuple, Type, Union  # noqa: F401
-except ImportError:
-    pass
+from subprocess import DEVNULL, CalledProcessError, check_output
+from typing import Dict, List, Optional, Set, Tuple, Type, Union
 
 # Configure logging
 log = logging.getLogger("getmac")  # type: logging.Logger
@@ -53,27 +44,27 @@ if not log.handlers:
 __version__ = "1.0.0a0"
 
 # Configurable settings
-DEBUG = 0  # type: int
-PORT = 55555  # type: int
+DEBUG: int = 0
+PORT: int = 55555
 
 # Platform identifiers
-_UNAME = platform.uname()  # type: platform.uname_result
-_SYST = _UNAME.system  # type: str
+_UNAME: platform.uname_result = platform.uname()
+_SYST: str = _UNAME.system
 
-WINDOWS = _SYST == "Windows"  # type: bool
-DARWIN = _SYST == "Darwin"  # type: bool
+WINDOWS: bool = _SYST == "Windows"
+DARWIN: bool = _SYST == "Darwin"
 
-OPENBSD = _SYST == "OpenBSD"  # type: bool
-FREEBSD = _SYST == "FreeBSD"  # type: bool
-NETBSD = _SYST == "NetBSD"  # type: bool
-SOLARIS = _SYST == "SunOS"  # type: bool
+OPENBSD: bool = _SYST == "OpenBSD"
+FREEBSD: bool = _SYST == "FreeBSD"
+NETBSD: bool = _SYST == "NetBSD"
+SOLARIS: bool = _SYST == "SunOS"
 
 # Not including Darwin or Solaris as a "BSD"
-BSD = OPENBSD or FREEBSD or NETBSD  # type: bool
+BSD: bool = OPENBSD or FREEBSD or NETBSD
 
 # Windows Subsystem for Linux (WSL)
-WSL = False  # type: bool
-LINUX = False  # type: bool
+WSL: bool = False
+LINUX: bool = False
 if _SYST == "Linux":
     if "Microsoft" in platform.version():
         WSL = True
@@ -83,26 +74,24 @@ if _SYST == "Linux":
 # NOTE: "Linux" methods apply to Android without modifications
 # If there's Android-specific stuff then we can add a platform
 # identifier for it.
-ANDROID = (
-    hasattr(sys, "getandroidapilevel") or "ANDROID_STORAGE" in os.environ
-)  # type: bool
+ANDROID: bool = hasattr(sys, "getandroidapilevel") or "ANDROID_STORAGE" in os.environ
 
 # Generic platform identifier used for filtering methods
-PLATFORM = _SYST.lower()  # type: str
+PLATFORM: str = _SYST.lower()
 if PLATFORM == "linux" and "Microsoft" in platform.version():
     PLATFORM = "wsl"
 
 # User-configurable override to force a specific platform
 # This will change to a function argument in 1.0.0
-OVERRIDE_PLATFORM = ""  # type: str
+OVERRIDE_PLATFORM: str = ""
 
 # Force a specific method to be used for all lookups
 # Used for debugging and testing
-FORCE_METHOD = ""  # type: str
+FORCE_METHOD: str = ""
 
 # Get and cache the configured system PATH on import
 # The process environment does not change after a process is started
-PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)  # type: List[str]
+PATH: List[str] = os.environ.get("PATH", os.defpath).split(os.pathsep)
 if not WINDOWS:
     PATH.extend(("/sbin", "/usr/sbin"))
 else:
@@ -111,28 +100,28 @@ else:
     #   This just handles case where it's in a virtualenv, won't work /w global scripts
     PATH = [p for p in PATH if "\\getmac\\Scripts" not in p]
 # Build the str after modifications are made
-PATH_STR = os.pathsep.join(PATH)  # type: str
+PATH_STR: str = os.pathsep.join(PATH)
 
 # Use a copy of the environment so we don't
 # modify the process's current environment.
-ENV = dict(os.environ)  # type: Dict[str, str]
+ENV: Dict[str, str] = dict(os.environ)
 ENV["LC_ALL"] = "C"  # Ensure ASCII output so we parse correctly
 
 # Constants
-IP4 = 0
-IP6 = 1
-INTERFACE = 2
-HOSTNAME = 3
+IP4: int = 0
+IP6: int = 1
+INTERFACE: int = 2
+HOSTNAME: int = 3
 
-MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
-MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
+MAC_RE_COLON: str = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
+MAC_RE_DASH: str = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
 # On OSX, some MACs in arp output may have a single digit instead of two
 # Examples: "18:4f:32:5a:64:5", "14:cc:20:1a:99:0"
 # This can also happen on other platforms, like Solaris
-MAC_RE_SHORT = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
+MAC_RE_SHORT: str = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 
 # Cache of commands that have been checked for existence by check_command()
-CHECK_COMMAND_CACHE = {}  # type: Dict[str, bool]
+CHECK_COMMAND_CACHE: Dict[str, bool] = {}
 
 
 def check_command(command: str) -> bool:
@@ -241,9 +230,7 @@ def _call_proc(executable: str, args: str) -> str:
     else:
         cmd = [executable, *shlex.split(args)]  # type: ignore
 
-    output = check_output(
-        cmd, stderr=DEVNULL, env=ENV  # noqa: S603
-    )  # type: Union[bytes, str]
+    output: Union[str, bytes] = check_output(cmd, stderr=DEVNULL, env=ENV)  # noqa: S603
 
     if DEBUG >= 4:
         log.debug("Output from '%s' command: %s", executable, str(output))
@@ -273,7 +260,7 @@ def _fetch_ip_using_dns() -> str:
 
 class Method:
     #: Valid platform identifier strings
-    VALID_PLATFORM_NAMES = {
+    VALID_PLATFORM_NAMES: Set[str] = {
         "android",
         "darwin",
         "linux",
@@ -369,7 +356,7 @@ class UuidArpGetNode(Method):
 class ArpFile(Method):
     platforms = {"linux"}
     method_type = "ip4"
-    _path = os.environ.get("ARP_PATH", "/proc/net/arp")  # type: str
+    _path: str = os.environ.get("ARP_PATH", "/proc/net/arp")
 
     def test(self) -> bool:
         return check_path(self._path)
@@ -407,7 +394,7 @@ class ArpFreebsd(Method):
 class ArpOpenbsd(Method):
     platforms = {"openbsd"}
     method_type = "ip"
-    _regex = r"[ ]+" + MAC_RE_COLON  # type: str
+    _regex: str = r"[ ]+" + MAC_RE_COLON
 
     def test(self) -> bool:
         return check_command("arp")
@@ -419,8 +406,8 @@ class ArpOpenbsd(Method):
 class ArpVariousArgs(Method):
     platforms = {"linux", "darwin", "freebsd", "sunos", "other"}
     method_type = "ip"
-    _regex_std = r"\)\s+at\s+" + MAC_RE_COLON  # type: str
-    _regex_darwin = r"\)\s+at\s+" + MAC_RE_SHORT  # type: str
+    _regex_std: str = r"\)\s+at\s+" + MAC_RE_COLON
+    _regex_darwin: str = r"\)\s+at\s+" + MAC_RE_SHORT
     _args = (
         ("", True),  # "arp 192.168.1.1"
         # Linux
@@ -430,9 +417,9 @@ class ArpVariousArgs(Method):
         ("-a", False),  # "arp -a"
         ("-a", True),  # "arp -a 192.168.1.1"
     )
-    _args_tested = False  # type: bool
-    _good_pair = ()  # type: Union[Tuple, Tuple[str, bool]]
-    _good_regex = ""  # type: str
+    _args_tested: bool = False
+    _good_pair: Union[Tuple, Tuple[str, bool]] = ()
+    _good_regex: str = ""
 
     def test(self) -> bool:
         return check_command("arp")
@@ -551,9 +538,9 @@ class ArpingHost(Method):
     platforms = {"linux", "darwin"}
     method_type = "ip4"
     network_request = True
-    _is_iputils = True  # type: bool
-    _habets_args = "-r -C 1 -c 1 %s"  # type: str
-    _iputils_args = "-f -c 1 %s"  # type: str
+    _is_iputils: bool = True
+    _habets_args: str = "-r -C 1 -c 1 %s"
+    _iputils_args: str = "-f -c 1 %s"
 
     def test(self) -> bool:
         return check_command("arping")
@@ -620,10 +607,10 @@ class CtypesHost(Method):
 
     def get(self, arg: str) -> Optional[str]:
         # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
-        arg = arg.encode()  # type: ignore
+        encoded_arg = arg.encode()
 
         try:
-            inetaddr = ctypes.windll.wsock32.inet_addr(arg)  # type: ignore
+            inetaddr = ctypes.windll.wsock32.inet_addr(encoded_arg)
             if inetaddr in (0, -1):
                 raise Exception
         except Exception:
@@ -631,19 +618,19 @@ class CtypesHost(Method):
             #   We should be explicit about only accepting ipv4 addresses
             #   and handle any hostname resolution in calling code
             hostip = socket.gethostbyname(arg)
-            inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
+            inetaddr = ctypes.windll.wsock32.inet_addr(hostip)
 
         buffer = ctypes.c_buffer(6)
         addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
 
         # https://docs.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp
-        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
+        send_arp = ctypes.windll.Iphlpapi.SendARP
         if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
             return None
 
         # Convert binary data into a string.
         macaddr = ""
-        for intval in struct.unpack("BBBBBB", buffer):  # type: ignore
+        for intval in struct.unpack("BBBBBB", buffer):
             if intval > 15:
                 replacestr = "0x"
             else:
@@ -678,7 +665,7 @@ class IpNeighborShow(Method):
 class SysIfaceFile(Method):
     platforms = {"linux", "wsl"}
     method_type = "iface"
-    _path = "/sys/class/net/"  # type: str
+    _path: str = "/sys/class/net/"
 
     def test(self) -> bool:
         # Imperfect, but should work well enough
@@ -708,9 +695,7 @@ class UuidLanscan(Method):
     def get(self, arg: str) -> Optional[str]:
         from uuid import _find_mac  # type: ignore
 
-        arg = bytes(arg, "utf-8")  # type: ignore
-
-        mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)  # noqa: ARG005
+        mac = _find_mac("lanscan", "-ai", [arg.encode()], lambda i: 0)  # noqa: ARG005
 
         if mac:
             return _uuid_convert(mac)
@@ -733,12 +718,14 @@ class FcntlIface(Method):
     def get(self, arg: str) -> Optional[str]:
         import fcntl
 
-        arg = arg.encode()  # type: ignore
+        encoded_arg = arg.encode()
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # 0x8927 = SIOCGIFADDR
-        info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", arg[:15]))  # type: ignore
+        info = fcntl.ioctl(  # type: ignore
+            s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15])
+        )
 
         return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
@@ -752,13 +739,13 @@ class GetmacExe(Method):
 
     platforms = {"windows"}
     method_type = "iface"
-    _regexes = [
+    _regexes: List[Tuple[str, str]] = [
         # Connection Name
         (r"\r\n", r".*" + MAC_RE_DASH + r".*\r\n"),
         # Network Adapter (the human-readable name)
         (r"\r\n.*", r".*" + MAC_RE_DASH + r".*\r\n"),
-    ]  # type: List[Tuple[str, str]]
-    _champ = ()  # type: Union[tuple, Tuple[str, str]]
+    ]
+    _champ: Union[tuple, Tuple[str, str]] = ()
 
     def test(self) -> bool:
         # NOTE: the scripts from this library (getmac) are excluded from the
@@ -801,9 +788,7 @@ class IpconfigExe(Method):
 
     platforms = {"windows"}
     method_type = "iface"
-    _regex = (
-        r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"
-    )  # type: str
+    _regex: str = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"
 
     def test(self) -> bool:
         return check_command("ipconfig.exe")
@@ -924,8 +909,8 @@ class IfconfigWithIfaceArg(Method):
 class IfconfigEther(Method):
     platforms = {"darwin"}
     method_type = "iface"
-    _tested_arg = False  # type: bool
-    _iface_arg = False  # type: bool
+    _tested_arg: bool = False
+    _iface_arg: bool = False
 
     def test(self) -> bool:
         return check_command("ifconfig")
@@ -966,8 +951,8 @@ class IfconfigOther(Method):
         ("-v", r".*?HWaddr\s"),
         ("-av", r".*?Ether\s"),
     )
-    _args_tested = False  # type: bool
-    _good_pair = []  # type: List[Union[str, Tuple[str, str]]]
+    _args_tested: bool = False
+    _good_pair: List[Union[str, Tuple[str, str]]] = []
 
     def test(self) -> bool:
         return check_command("ifconfig")
@@ -1081,9 +1066,9 @@ class NetstatIface(Method):
 class IpLinkIface(Method):
     platforms = {"linux", "wsl", "android", "other"}
     method_type = "iface"
-    _regex = r".*\n.*link/ether " + MAC_RE_COLON  # type: str
-    _tested_arg = False  # type: bool
-    _iface_arg = False  # type: bool
+    _regex: str = r".*\n.*link/ether " + MAC_RE_COLON
+    _tested_arg: bool = False
+    _iface_arg: bool = False
 
     def test(self) -> bool:
         return check_command("ip")
@@ -1300,7 +1285,7 @@ FALLBACK_CACHE: Dict[str, List[Method]] = {
 }
 
 
-DEFAULT_IFACE = ""  # type: str
+DEFAULT_IFACE: str = ""
 
 
 def get_method_by_name(method_name: str) -> Optional[Type[Method]]:
@@ -1395,7 +1380,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         platform = PLATFORM
 
     if DEBUG >= 4:
-        meth_strs = ", ".join(m.__name__ for m in METHODS)  # type: str
+        meth_strs = ", ".join(m.__name__ for m in METHODS)
         log.debug("%d methods available: %s", len(METHODS), meth_strs)
 
     # Filter methods by the type of MAC we're looking for, such as "ip"
@@ -1413,7 +1398,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         return False
 
     if DEBUG >= 2:
-        type_strs = ", ".join(tm.__name__ for tm in type_methods)  # type: str
+        type_strs = ", ".join(tm.__name__ for tm in type_methods)
         log.debug(
             "%d type-filtered methods for '%s': %s",
             len(type_methods),
@@ -1440,7 +1425,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         ]
 
     if DEBUG >= 2:
-        plat_strs = ", ".join(pm.__name__ for pm in platform_methods)  # type: str
+        plat_strs = ", ".join(pm.__name__ for pm in platform_methods)
         log.debug(
             "%d platform-filtered methods for '%s' (method_type='%s'): %s",
             len(platform_methods),
@@ -1468,7 +1453,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
     for method_class in filtered_methods:
         method_instance = method_class()  # type: Method
         try:
-            test_result = method_instance.test()  # type: bool
+            test_result = method_instance.test()
         except Exception:
             test_result = False
         if test_result:
@@ -1486,7 +1471,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         return False
 
     if DEBUG >= 2:
-        tested_strs = ", ".join(str(ts) for ts in tested_methods)  # type: str
+        tested_strs = ", ".join(str(ts) for ts in tested_methods)
         log.debug(
             "%d tested methods for '%s': %s",
             len(tested_methods),
@@ -1740,7 +1725,7 @@ def get_mac_address(
     mac = None
 
     if network_request and (ip or ip6):
-        send_udp_packet = True  # type: bool
+        send_udp_packet = True
 
         # If IPv4, use ArpingHost or CtypesHost if they're available instead
         # of populating the ARP table. This provides more reliable results
