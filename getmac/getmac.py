@@ -601,7 +601,7 @@ class CtypesHost(Method):
 
     def test(self) -> bool:
         try:
-            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0
+            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # type: ignore
         except Exception:
             return False
 
