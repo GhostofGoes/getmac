@@ -59,6 +59,12 @@ jobs:
             architecture: x86
           - platform: macos-latest
             architecture: x86
+          # Not sure why, but 3.7 on x86 windows is cursed in CI
+          # It passes (for now), however it's quite slow,
+          # and I'm ADHD.
+          - platform: windows-latest
+            architecture: x86
+            python-version: 3.7
     steps:
       - uses: actions/checkout@v3
       - name: Install Python
@@ -104,18 +110,13 @@ jobs:
         parallel-finished: true
 
 
-# TODO: publish
-# TODO: need to do this for both "getmac" and "get-mac" packages
+# TODO: publish releases using CI
 # TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
-
 # https://github.com/marketplace/actions/upload-a-build-artifact
-
 # name: "Build and publish a release"
-
 # on:
 #   release:
 #     types: [released]
-
 # jobs:
 #   publish:
 #     name: "📦 Publish Python distributions"
