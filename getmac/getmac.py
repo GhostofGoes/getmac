@@ -372,6 +372,12 @@ class ArpFile(Method):
             return None
 
         if data is not None and len(data) > 1:
+            # TODO: handle flags column, 0x0 entries are incomplete and should be ignored
+            # https://github.com/GhostofGoes/getmac/issues/76
+            # Need to get some samples, probably by doing wifi schennigans
+            # Not sure if worth addressing for arp command parsers,
+            # thought maybe it's a use case for Android? (ArpFile no work?)
+
             # Need a space, otherwise a search for 192.168.16.2
             # will match 192.168.16.254 if it comes first!
             return _search(re.escape(arg) + r" .+" + MAC_RE_COLON, data)
