@@ -6,6 +6,7 @@
 [![PyPI downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
 [![PyPI downloadss of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 
