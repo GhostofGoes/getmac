@@ -5,7 +5,6 @@ build-backend = "poetry.core.masonry.api"
 [project]
 name = "getmac"
 dynamic = ["version", "readme"]
-# TODO: add contributors to authors?
 authors = [
     { name="Christopher Goes", email="ghostofgoes@gmail.com" }
 ]
@@ -80,7 +79,6 @@ name = "getmac"
 version = "1.0.0a0"
 description = ""
 license = "MIT"
-# TODO: add contributors to authors?
 authors = [
     "Christopher Goes <ghostofgoes@gmail.com>"
 ]
