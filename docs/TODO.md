@@ -46,8 +46,9 @@
 - [ ] rewrite strings to f-strings
 - [ ] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
 - [ ] Split getmac.py into separate files for methods, utils, etc.
-- [ ] Refactor how global variables are handled
+- [x] Refactor how global variables are handled
 - [ ] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping"). Document this behavior!
+- [ ] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient, and doesn't exist in Python 3.9+. We should just take the methods and use directly.
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
     - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
 - [ ] **API changes** (technically speaking)

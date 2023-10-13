@@ -40,17 +40,26 @@ __version__ = "1.0.0a0"
 
 
 def check_command(command: str) -> bool:
+    """
+    Check if a command exists using `shutil.which()`. The result of the check
+    is cached in a global dict to speed up subsequent lookups.
+    """
     if command not in gvars.CHECK_COMMAND_CACHE:
         gvars.CHECK_COMMAND_CACHE[command] = bool(which(command, path=gvars.PATH_STR))
     return gvars.CHECK_COMMAND_CACHE[command]
 
 
 def check_path(filepath: str) -> bool:
+    """
+    Check if the file pointed to by `filepath` exists and is readable.
+    """
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
 def _clean_mac(mac: Optional[str]) -> Optional[str]:
-    """Check and format a string result to be lowercase colon-separated MAC."""
+    """
+    Check and format a string result to be lowercase colon-separated MAC.
+    """
     if mac is None:
         return None
 
@@ -1613,7 +1622,7 @@ def get_mac_address(
             MAC of a remote host. If the ``arping`` command is available, this will be used.
             If not, a UDP packet will be sent to the remote host to populate
             the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
-            be configured using the module variable ``getmac.PORT``.
+            be configured using the setting ``getmac.settings.PORT``.
 
     Returns:
         Lowercase colon-separated MAC address, or :obj:`None` if one could not be
