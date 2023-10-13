@@ -193,7 +193,6 @@ codespell = ">=2.2.4"
 tomli = { version = "*", python = "<3.12" }
 ruff = "*"
 vulture = "*"
-validate-pyproject = {extras = ["all"], version = "^0.13"}
 black = "^23.3.0"
 mypy = "^1.3.0"
 

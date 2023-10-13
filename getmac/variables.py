@@ -118,7 +118,7 @@ class Variables(VarsClass):
             # Prevent edge case on Windows where our script "getmac.exe"
             # gets added to the path ahead of the actual Windows getmac.exe.
             # This also prevents Python Scripts folders from being added, e.g.
-            # ...\\Python\\Python38\\Scripts. This prevents the aformentioned edge
+            # ...\\Python\\Python38\\Scripts. This prevents the aforementioned edge
             # case, and also prevents stuff like a pip-installed "ping.exe" from
             # being used instead of the Windows ping.exe.
             new_path = []
