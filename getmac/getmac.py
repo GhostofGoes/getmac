@@ -77,15 +77,13 @@ def _clean_mac(mac: Optional[str]) -> Optional[str]:
 
     # Fix cases where there are no colons
     if ":" not in mac and len(mac) == 12:
-        gvars.log.debug("Adding colons to MAC %s", mac)
+        gvars.log.debug(f"Adding colons to MAC {mac}")
         mac = ":".join(mac[i : i + 2] for i in range(0, len(mac), 2))
 
     # Pad single-character octets with a leading zero (e.g. Darwin's ARP output)
     elif len(mac) < 17:
         gvars.log.debug(
-            "Length of MAC %s is %d, padding single-character octets with zeros",
-            mac,
-            len(mac),
+            f"Length of MAC {mac} is {len(mac)}, padding single-character octets with zeros"
         )
         parts = mac.split(":")
         new_mac = []
@@ -98,10 +96,10 @@ def _clean_mac(mac: Optional[str]) -> Optional[str]:
 
     # MAC address should ALWAYS be 17 characters before being returned
     if len(mac) != 17:
-        gvars.log.warning("MAC address %s is not 17 characters long!", mac)
+        gvars.log.warning(f"MAC address {mac} is not 17 characters long!")
         mac = None
     elif mac.count(":") != 5:
-        gvars.log.warning("MAC address %s is missing colon (':') characters", mac)
+        gvars.log.warning(f"MAC address {mac} is missing colon (':') characters")
         mac = None
     return mac
 
@@ -111,7 +109,7 @@ def _read_file(filepath: str) -> Optional[str]:
         with open(filepath) as f:
             return f.read()
     except OSError:
-        gvars.log.debug("Could not find file: '%s'", filepath)
+        gvars.log.debug(f"Could not find file: '{filepath}'")
         return None
 
 
@@ -143,7 +141,7 @@ def _popen(command: str, args: str) -> str:
         executable = command
 
     if settings.DEBUG >= 3:
-        gvars.log.debug("Running: '%s %s'", executable, args)
+        gvars.log.debug(f"Running: '{executable} {args}'")
 
     return _call_proc(executable, args)
 
@@ -159,7 +157,7 @@ def _call_proc(executable: str, args: str) -> str:
     )
 
     if settings.DEBUG >= 4:
-        gvars.log.debug("Output from '%s' command: %s", executable, str(output))
+        gvars.log.debug(f"Output from '{executable}' command: {str(output)}")
 
     if isinstance(output, bytes):
         output = output.decode("utf-8")
@@ -380,10 +378,8 @@ class ArpVariousArgs(Method):
                 except CalledProcessError as ex:
                     if settings.DEBUG:
                         gvars.log.debug(
-                            "ArpVariousArgs pair test failed for (%s, %s): %s",
-                            pair_to_test[0],
-                            pair_to_test[1],
-                            str(ex),
+                            f"ArpVariousArgs pair test failed for "
+                            f"({pair_to_test[0]}, {pair_to_test[1]}): {ex}"
                         )
 
             if not self._good_pair:
@@ -437,7 +433,7 @@ class ArpExe(Method):
         return check_command("arp.exe")
 
     def get(self, arg: str) -> Optional[str]:
-        return _search(consts.MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
+        return _search(consts.MAC_RE_DASH, _popen("arp.exe", f"-a {arg}"))
 
 
 class ArpingHost(Method):
@@ -471,8 +467,8 @@ class ArpingHost(Method):
     method_type = "ip4"
     network_request = True
     _is_iputils: bool = True
-    _habets_args: str = "-r -C 1 -c 1 %s"
-    _iputils_args: str = "-f -c 1 %s"
+    _habets_args: str = "-r -C 1 -c 1"
+    _iputils_args: str = "-f -c 1"
 
     def test(self) -> bool:
         return check_command("arping")
@@ -487,7 +483,7 @@ class ArpingHost(Method):
         # then re-try with Habets args.
         try:
             if self._is_iputils:
-                command_output = _popen("arping", self._iputils_args % arg)
+                command_output = _popen("arping", f"{self._iputils_args} {arg}")
                 if command_output:
                     return _search(
                         r" from %s \[(%s)\]" % (re.escape(arg), consts.MAC_RE_COLON),
@@ -512,7 +508,7 @@ class ArpingHost(Method):
         return None
 
     def _call_habets(self, arg: str) -> Optional[str]:
-        command_output = _popen("arping", self._habets_args % arg)
+        command_output = _popen("arping", f"{self._habets_args} {arg}")
         if command_output:
             return command_output.strip()
         else:
@@ -578,7 +574,7 @@ class IpNeighborShow(Method):
         return check_command("ip")
 
     def get(self, arg: str) -> Optional[str]:
-        output = _popen("ip", "neighbor show %s" % arg)
+        output = _popen("ip", f"neighbor show {arg}")
         if not output:
             return None
 
@@ -588,7 +584,7 @@ class IpNeighborShow(Method):
                 output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
             )
         except IndexError as ex:
-            gvars.log.debug("IpNeighborShow failed with exception: %s", str(ex))
+            gvars.log.debug(f"IpNeighborShow failed with exception: {ex}")
             return None
 
 
@@ -690,9 +686,7 @@ class GetmacExe(Method):
             command_output = _popen("getmac.exe", "/NH /V")
         except CalledProcessError as ex:
             # This shouldn't cause an exception if it's valid command
-            gvars.log.error(
-                "getmac.exe failed, marking unusable. Exception: %s", str(ex)
-            )
+            gvars.log.error(f"getmac.exe failed, marking unusable. Exception: {ex}")
             self.unusable = True
             return None
 
@@ -752,7 +746,7 @@ class WmicExe(Method):
     def get(self, arg: str) -> Optional[str]:
         command_output = _popen(
             "wmic.exe",
-            'nic where "NetConnectionID = \'%s\'" get "MACAddress" /value' % arg,
+            f'nic where "NetConnectionID = \'{arg}\'" get "MACAddress" /value',
         )
 
         # Negative: "No Instance(s) Available"
@@ -783,7 +777,7 @@ class DarwinNetworksetupIface(Method):
         return check_command("networksetup")
 
     def get(self, arg: str) -> Optional[str]:
-        command_output = _popen("networksetup", "-getmacaddress %s" % arg)
+        command_output = _popen("networksetup", f"-getmacaddress {arg}")
         return _search(consts.MAC_RE_COLON, command_output)
 
 
@@ -910,10 +904,8 @@ class IfconfigOther(Method):
                 except CalledProcessError as ex:
                     if settings.DEBUG:
                         gvars.log.debug(
-                            "IfconfigOther pair test failed for (%s, %s): %s",
-                            pair_to_test[0],
-                            pair_to_test[1],
-                            str(ex),
+                            f"IfconfigOther pair test failed for "
+                            f"({pair_to_test[0]}, {pair_to_test[1]}): {ex}"
                         )
 
             if not self._good_pair:
@@ -1097,7 +1089,7 @@ class DefaultIfaceRouteCommand(Method):
                 .split()[-1]
             )
         except IndexError as ex:  # index errors means no default route in output?
-            gvars.log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
+            gvars.log.debug(f"DefaultIfaceRouteCommand failed for {arg}: {ex}")
             return None
 
 
@@ -1117,7 +1109,7 @@ class DefaultIfaceRouteGetCommand(Method):
         try:
             return output.partition("interface: ")[2].strip().split()[0].strip()
         except IndexError as ex:
-            gvars.log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
+            gvars.log.debug(f"DefaultIfaceRouteCommand failed for {arg}: {ex}")
             return None
 
 
@@ -1275,8 +1267,7 @@ def _swap_method_fallback(method_type: str, swap_with: str) -> bool:
 def _warn_critical(err_msg: str) -> None:
     gvars.log.critical(err_msg)
     warnings.warn(  # noqa: B028
-        "%s. NOTICE: this warning will likely turn into a raised exception in getmac 1.0.0!"
-        % err_msg,
+        f"{err_msg}. NOTICE: this warning my turn into a raised exception in a future release",
         RuntimeWarning,
     )
 
@@ -1294,20 +1285,18 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
     if METHOD_CACHE.get(method_type):
         if settings.DEBUG:
             gvars.log.debug(
-                "Method cache already initialized for method type '%s'", method_type
+                f"Method cache already initialized for method type '{method_type}'"
             )
         return True
 
     gvars.log.debug(
-        "Initializing '%s' method cache (platform: '%s')", method_type, consts.PLATFORM
+        f"Initializing '{method_type}' method cache (platform: '{consts.PLATFORM}')"
     )
 
     if settings.OVERRIDE_PLATFORM:
         gvars.log.warning(
-            "Platform override is set, using '%s' as platform "
-            "instead of detected platform '%s'",
-            settings.OVERRIDE_PLATFORM,
-            consts.PLATFORM,
+            f"Platform override is set, using '{settings.OVERRIDE_PLATFORM}' as platform "
+            f"instead of detected platform '{consts.PLATFORM}'"
         )
         platform = settings.OVERRIDE_PLATFORM
     else:
@@ -1315,7 +1304,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
 
     if settings.DEBUG >= 4:
         meth_strs = ", ".join(m.__name__ for m in METHODS)
-        gvars.log.debug("%d methods available: %s", len(METHODS), meth_strs)
+        gvars.log.debug(f"{len(METHODS)} methods available: {meth_strs}")
 
     # Filter methods by the type of MAC we're looking for, such as "ip"
     # for remote host methods or "iface" for local interface methods.
@@ -1328,16 +1317,13 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
     ]  # type: List[Type[Method]]
 
     if not type_methods:
-        _warn_critical("No valid methods matching MAC type '%s'" % method_type)
+        _warn_critical(f"No valid methods matching MAC type '{method_type}'")
         return False
 
     if settings.DEBUG >= 2:
         type_strs = ", ".join(tm.__name__ for tm in type_methods)
         gvars.log.debug(
-            "%d type-filtered methods for '%s': %s",
-            len(type_methods),
-            method_type,
-            type_strs,
+            f"{len(type_methods)} type-filtered methods for '{method_type}': {type_strs}"
         )
 
     # Filter methods by the platform we're running on
@@ -1349,8 +1335,9 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         # If there isn't a method for the current platform,
         # then fallback to the generic platform "other".
         warn_msg = (
-            "No methods for platform '%s'! Your system may not be supported. "
-            "Falling back to platform 'other'." % platform
+            f"No methods for platform '{platform}'! "
+            "Your system may not be supported. "
+            "Falling back to platform 'other'."
         )
         gvars.log.warning(warn_msg)
         warnings.warn(warn_msg, RuntimeWarning, stacklevel=2)
@@ -1361,17 +1348,13 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
     if settings.DEBUG >= 2:
         plat_strs = ", ".join(pm.__name__ for pm in platform_methods)
         gvars.log.debug(
-            "%d platform-filtered methods for '%s' (method_type='%s'): %s",
-            len(platform_methods),
-            platform,
-            method_type,
-            plat_strs,
+            f"{len(platform_methods)} platform-filtered methods for '{platform}' "
+            f"(method_type='{method_type}'): {plat_strs}"
         )
 
     if not platform_methods:
         _warn_critical(
-            "No valid methods found for MAC type '%s' and platform '%s'"
-            % (method_type, platform)
+            f"No valid methods found for MAC type '{method_type}' and platform '{platform}'"
         )
         return False
 
@@ -1396,21 +1379,18 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
             if not METHOD_CACHE[method_type]:
                 METHOD_CACHE[method_type] = method_instance
         elif settings.DEBUG:
-            gvars.log.debug("Test failed for method '%s'", str(method_instance))
+            gvars.log.debug(f"Test failed for method '{method_instance!s}'")
 
     if not tested_methods:
         _warn_critical(
-            "All %d '%s' methods failed to test!" % (len(filtered_methods), method_type)
+            f"All {len(filtered_methods)} '{method_type}' methods failed to test!"
         )
         return False
 
     if settings.DEBUG >= 2:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)
         gvars.log.debug(
-            "%d tested methods for '%s': %s",
-            len(tested_methods),
-            method_type,
-            tested_strs,
+            f"{len(tested_methods)} tested methods for '{method_type}': {tested_strs}"
         )
 
     # Populate fallback cache with all the tested methods, minus the currently active method
@@ -1428,21 +1408,19 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
             "Current fallback cache: %s",
             str({k: str(v) for k, v in FALLBACK_CACHE.items()}),
         )
-    gvars.log.debug("Finished initializing '%s' method cache", method_type)
+    gvars.log.debug(f"Finished initializing '{method_type}' method cache")
 
     return True
 
 
 def _remove_unusable(method: Method, method_type: str) -> Optional[Method]:
     if not FALLBACK_CACHE[method_type]:
-        gvars.log.warning("No fallback method for unusable method '%s'!", str(method))
+        gvars.log.warning(f"No fallback method for unusable method '{method!s}'!")
         METHOD_CACHE[method_type] = None
     else:
         METHOD_CACHE[method_type] = FALLBACK_CACHE[method_type].pop(0)
         gvars.log.warning(
-            "Falling back to '%s' for unusable method '%s'",
-            str(METHOD_CACHE[method_type]),
-            str(method),
+            f"Falling back to '{METHOD_CACHE[method_type]!s}' for unusable method '{method!s}'"
         )
 
     return METHOD_CACHE[method_type]
@@ -1453,15 +1431,12 @@ def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[
     Attempt to use methods, and if they fail, fallback to the next method in the cache.
     """
     if not METHOD_CACHE[method_type] and not FALLBACK_CACHE[method_type]:
-        _warn_critical("No usable methods found for MAC type '%s'" % method_type)
+        _warn_critical(f"No usable methods found for MAC type '{method_type}'")
         return None
 
     if settings.DEBUG:
         gvars.log.debug(
-            "Attempting get() (method='%s', method_type='%s', arg='%s')",
-            str(method),
-            method_type,
-            arg,
+            f"Attempting get() (method='{method!s}', method_type='{method_type}', arg='{arg}')"
         )
 
     result = None
@@ -1478,20 +1453,14 @@ def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[
         # CalledProcessError, inspect the return code, and set self.unusable = True
         if ex.returncode != 1:
             gvars.log.warning(
-                "Cached Method '%s' failed for '%s' lookup with process exit "
-                "code '%d' != 1, marking unusable. Exception: %s",
-                str(method),
-                method_type,
-                ex.returncode,
-                str(ex),
+                f"Cached Method '{method!s}' failed for '{method_type}' lookup with process exit "
+                f"code '{ex.returncode}' != 1, marking unusable. Exception: {ex}"
             )
             method.unusable = True
     except Exception as ex:
         gvars.log.warning(
-            "Cached Method '%s' failed for '%s' lookup with unhandled exception: %s",
-            str(method),
-            method_type,
-            str(ex),
+            f"Cached Method '{method!s}' failed for '{method_type}' "
+            f"lookup with unhandled exception: {ex}"
         )
         method.unusable = True
 
@@ -1522,24 +1491,20 @@ def get_by_method(
             (those methods that have the attribute ``network_request`` set to ``True``)
     """
     if not arg and method_type != "default_iface":
-        gvars.log.error(
-            "Empty arg for method '%s' (raw value: %s)", method_type, repr(arg)
-        )
+        gvars.log.error(f"Empty arg for method '{method_type}' (raw value: {arg!r})")
         return None
 
     if settings.FORCE_METHOD:
         gvars.log.warning(
-            "Forcing method '%s' to be used for '%s' lookup (arg: '%s')",
-            settings.FORCE_METHOD,
-            method_type,
-            arg,
+            f"Forcing method '{settings.FORCE_METHOD}' to be used for "
+            f"'{method_type}' lookup (arg: '{arg}')"
         )
 
         forced_method = get_method_by_name(settings.FORCE_METHOD)
 
         if not forced_method:
             gvars.log.error(
-                "Invalid settings.FORCE_METHOD method name '%s'", settings.FORCE_METHOD
+                f"Invalid FORCE_METHOD method name '{settings.FORCE_METHOD}'"
             )
             return None
 
@@ -1551,9 +1516,7 @@ def get_by_method(
         # Initialize the cache if it hasn't been already
         if not initialize_method_cache(method_type, network_request):
             gvars.log.error(
-                "Failed to initialize method cache for method '%s' (arg: '%s')",
-                method_type,
-                arg,
+                f"Failed to initialize method cache for method '{method_type}' (arg: '{arg}')"
             )
             return None
 
@@ -1561,9 +1524,8 @@ def get_by_method(
 
     if not method:
         gvars.log.error(
-            "Initialization failed for method '%s'. It may not be supported "
-            "on this platform or another issue occurred.",
-            method_type,
+            f"Initialization failed for method '{method_type}'. "
+            f"It may not be supported on this platform or another issue occurred."
         )
         return None
 
@@ -1574,7 +1536,7 @@ def get_by_method(
 
     # Log normal get() failures if debugging is enabled
     if settings.DEBUG and not result:
-        gvars.log.debug("Method '%s' failed for '%s' lookup", str(method), method_type)
+        gvars.log.debug(f"Method '{method!s}' failed for '{method_type}' lookup")
 
     return result
 
@@ -1644,7 +1606,7 @@ def get_mac_address(
             # TODO: can this return a IPv6 address? If so, handle that!
             ip = socket.gethostbyname(hostname)
         except Exception as ex:
-            gvars.log.error("Could not resolve hostname '%s': %s", hostname, ex)
+            gvars.log.error(f"Could not resolve hostname '{hostname}': {ex}")
             if settings.DEBUG:
                 gvars.log.debug(traceback.format_exc())
             return None
@@ -1657,7 +1619,7 @@ def get_mac_address(
             )
             return None
         elif ":" not in ip6:
-            gvars.log.error("Invalid IPv6 address (no ':'): %s", ip6)
+            gvars.log.error(f"Invalid IPv6 address (no ':'): {ip6}")
             return None
 
     mac = None
@@ -1707,9 +1669,8 @@ def get_mac_address(
         if send_udp_packet and not mac:
             if settings.DEBUG:
                 gvars.log.debug(
-                    "Attempting to populate ARP table with UDP packet to %s:%d",
-                    ip if ip else ip6,
-                    settings.PORT,
+                    f"Attempting to populate ARP table with UDP packet "
+                    f"to {ip if ip else ip6}:{settings.PORT}"
                 )
 
             if ip:
@@ -1730,8 +1691,8 @@ def get_mac_address(
                 sock.close()
         elif settings.DEBUG:
             gvars.log.debug(
-                "Not sending UDP packet, using network request method '%s' instead",
-                str(METHOD_CACHE["ip4"]),
+                f"Not sending UDP packet, using network request "
+                f"method '{METHOD_CACHE['ip4']!s}' instead"
             )
 
     # Setup the address hunt based on the arguments specified
@@ -1772,11 +1733,11 @@ def get_mac_address(
                 if not mac:
                     mac = get_by_method("iface", "lo")
 
-    gvars.log.debug("Raw MAC found: %s", mac)
+    gvars.log.debug(f"Raw MAC found: {mac}")
 
     # Log how long it took
     if settings.DEBUG:
         duration = timeit.default_timer() - start_time
-        gvars.log.debug("getmac took %.4f seconds", duration)
+        gvars.log.debug(f"getmac took {duration:0.4f} seconds")
 
     return _clean_mac(mac)

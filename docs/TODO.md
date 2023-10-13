@@ -43,7 +43,7 @@
 
 
 ## Breaking changes (or potentially breaking)
-- [ ] rewrite strings to f-strings
+- [x] rewrite strings to f-strings
 - [ ] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
 - [ ] Split getmac.py into separate files for methods, utils, etc.
 - [x] Refactor how global variables are handled

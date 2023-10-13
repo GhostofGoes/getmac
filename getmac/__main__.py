@@ -15,7 +15,7 @@ def main() -> None:
         "interfaces or remote hosts on the LAN",
     )
     parser.add_argument(
-        "--version", action="version", version="getmac %s" % getmac.__version__
+        "--version", action="version", version=f"getmac {getmac.__version__}"
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable output messages"
