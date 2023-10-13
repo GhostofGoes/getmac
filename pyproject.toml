@@ -295,7 +295,8 @@ ignore = [
     "G004",    # Logging statement uses f-string
     "PIE790",  # no-unnecessary-pass
     "PGH003",  # Use specific rule codes when ignoring type issues
-    "PLC1901", # compare-to-empty-string
+    # "PLC1901", # compare-to-empty-string
+    "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
 ]
 
 [tool.ruff.per-file-ignores]

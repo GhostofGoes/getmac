@@ -157,7 +157,7 @@ def _call_proc(executable: str, args: str) -> str:
     )
 
     if settings.DEBUG >= 4:
-        gvars.log.debug(f"Output from '{executable}' command: {str(output)}")
+        gvars.log.debug(f"Output from '{executable}' command: {output!s}")
 
     if isinstance(output, bytes):
         output = output.decode("utf-8")
