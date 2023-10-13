@@ -88,7 +88,6 @@ class Variables(VarsClass):
 
     #: Get and cache the configured system PATH on import
     #: The process environment does not change after a process is started
-    # TODO: move to Constants?
     PATH: List[str] = os.environ.get("PATH", os.defpath).split(os.pathsep)
     PATH_STR: str = os.pathsep.join(PATH)
 
@@ -116,12 +115,23 @@ class Variables(VarsClass):
         if not Constants.WINDOWS:
             self.PATH.extend(("/sbin", "/usr/sbin"))
         else:
-            # TODO: Prevent edge case on Windows where our script "getmac.exe"
-            #   gets added to the path ahead of the actual Windows getmac.exe
-            #   This just handles case where it's in a virtualenv, won't work /w global scripts
-            self.PATH = [p for p in self.PATH if "\\getmac\\Scripts" not in p]
+            # Prevent edge case on Windows where our script "getmac.exe"
+            # gets added to the path ahead of the actual Windows getmac.exe.
+            # This also prevents Python Scripts folders from being added, e.g.
+            # ...\\Python\\Python38\\Scripts. This prevents the aformentioned edge
+            # case, and also prevents stuff like a pip-installed "ping.exe" from
+            # being used instead of the Windows ping.exe.
+            new_path = []
+            for path in self.PATH:
+                if "\\getmac\\Scripts" not in path and not (
+                    "\\Python" in path and "\\Scripts" in path
+                ):
+                    new_path.append(path)
 
-        # Build the str after modifications are made
+            self.PATH = new_path
+
+        # Rebuild the combined PATH string after modifications are made
+        # This will be used with shutil.which() for PATH lookups
         self.PATH_STR = os.pathsep.join(self.PATH)
 
 

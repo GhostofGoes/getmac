@@ -43,14 +43,11 @@
 
 
 ## Breaking changes (or potentially breaking)
-- [x] rewrite strings to f-strings
-- [x] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
 - [ ] Split getmac.py into separate files for methods, utils, etc.
-- [x] Refactor how global variables are handled
-- [ ] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping"). Document this behavior!
 - [ ] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient, and doesn't exist in Python 3.9+. We should just take the methods and use directly.
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
     - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
+    - keep `-4,`, `-6`, and `--ip6` arguments for backwards-compatibility until 1.1.0
 - [ ] **API changes** (technically speaking)
     - Add argument to `get_mac_address()` to force the platform used (e.g. `platform_override="linux"`)
         - Also add CLI argument to configure this
@@ -100,6 +97,10 @@
 - [x] Support Python 3.10 and 3.11
     - [x] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
     - [x] add tests + setup.py classifier
+- [x] Refactor how global variables are handled
+- [x] rewrite strings to f-strings
+- [x] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
+- [x] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping").
 
 
 # Etc
