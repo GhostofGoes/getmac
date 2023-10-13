@@ -3,9 +3,9 @@ from os import path
 
 import pytest
 
-import getmac
+from getmac.variables import settings
 
-getmac.getmac.DEBUG = 4
+settings.DEBUG = 4
 
 
 @pytest.fixture()

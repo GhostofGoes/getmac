@@ -5,6 +5,7 @@ import logging
 import sys
 
 from . import getmac
+from .variables import settings, gvars
 
 
 def main() -> None:
@@ -86,20 +87,20 @@ def main() -> None:
         )
 
     if args.debug:
-        getmac.DEBUG = args.debug
+        settings.DEBUG = args.debug
 
     if args.override_port:
         port = int(args.override_port)
-        getmac.log.debug(
-            "Using UDP port %d (overriding the default port %d)", port, getmac.PORT
+        gvars.log.debug(
+            "Using UDP port %d (overriding the default port %d)", port, settings.PORT
         )
-        getmac.PORT = port
+        settings.PORT = port
 
     if args.override_platform:
-        getmac.OVERRIDE_PLATFORM = args.override_platform.strip().lower()
+        settings.OVERRIDE_PLATFORM = args.override_platform.strip().lower()
 
     if args.force_method:
-        getmac.FORCE_METHOD = args.force_method.strip().lower()
+        settings.FORCE_METHOD = args.force_method.strip().lower()
 
     mac = getmac.get_mac_address(
         interface=args.interface,

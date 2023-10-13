@@ -88,6 +88,7 @@ class Variables(VarsClass):
 
     #: Get and cache the configured system PATH on import
     #: The process environment does not change after a process is started
+    # TODO: move to Constants?
     PATH: List[str] = os.environ.get("PATH", os.defpath).split(os.pathsep)
     PATH_STR: str = os.pathsep.join(PATH)
 
@@ -100,11 +101,15 @@ class Variables(VarsClass):
 
     #: Configure logging
     log = logging.getLogger("getmac")  # type: logging.Logger
-    if not log.handlers:
-        log.addHandler(logging.NullHandler())
+
+    #: Default interface
+    DEFAULT_IFACE: str = ""
 
     def __init__(self) -> None:
         super().__init__()
+
+        if not self.log.handlers:
+            self.log.addHandler(logging.NullHandler())
 
         self.ENV["LC_ALL"] = "C"  # Ensure ASCII output so we parse correctly
 

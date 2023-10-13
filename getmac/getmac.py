@@ -22,112 +22,27 @@ It provides one function: ``get_mac_address()``
 """
 
 import ctypes
-import logging
 import os
-import platform
 import re
 import shlex
 import socket
 import struct
-import sys
 import traceback
 import warnings
 from shutil import which
 from subprocess import DEVNULL, CalledProcessError, check_output
 from typing import Dict, List, Optional, Set, Tuple, Type, Union
 
-# Configure logging
-log = logging.getLogger("getmac")  # type: logging.Logger
-if not log.handlers:
-    log.addHandler(logging.NullHandler())
+from .variables import settings, consts, gvars
 
+#: Current version of getmac package
 __version__ = "1.0.0a0"
-
-# Configurable settings
-DEBUG: int = 0
-PORT: int = 55555
-
-# Platform identifiers
-_UNAME: platform.uname_result = platform.uname()
-_SYST: str = _UNAME.system
-
-WINDOWS: bool = _SYST == "Windows"
-DARWIN: bool = _SYST == "Darwin"
-
-OPENBSD: bool = _SYST == "OpenBSD"
-FREEBSD: bool = _SYST == "FreeBSD"
-NETBSD: bool = _SYST == "NetBSD"
-SOLARIS: bool = _SYST == "SunOS"
-
-# Not including Darwin or Solaris as a "BSD"
-BSD: bool = OPENBSD or FREEBSD or NETBSD
-
-# Windows Subsystem for Linux (WSL)
-WSL: bool = False
-LINUX: bool = False
-if _SYST == "Linux":
-    if "Microsoft" in platform.version():
-        WSL = True
-    else:
-        LINUX = True
-
-# NOTE: "Linux" methods apply to Android without modifications
-# If there's Android-specific stuff then we can add a platform
-# identifier for it.
-ANDROID: bool = hasattr(sys, "getandroidapilevel") or "ANDROID_STORAGE" in os.environ
-
-# Generic platform identifier used for filtering methods
-PLATFORM: str = _SYST.lower()
-if PLATFORM == "linux" and "Microsoft" in platform.version():
-    PLATFORM = "wsl"
-
-# User-configurable override to force a specific platform
-# This will change to a function argument in 1.0.0
-OVERRIDE_PLATFORM: str = ""
-
-# Force a specific method to be used for all lookups
-# Used for debugging and testing
-FORCE_METHOD: str = ""
-
-# Get and cache the configured system PATH on import
-# The process environment does not change after a process is started
-PATH: List[str] = os.environ.get("PATH", os.defpath).split(os.pathsep)
-if not WINDOWS:
-    PATH.extend(("/sbin", "/usr/sbin"))
-else:
-    # TODO: Prevent edge case on Windows where our script "getmac.exe"
-    #   gets added to the path ahead of the actual Windows getmac.exe
-    #   This just handles case where it's in a virtualenv, won't work /w global scripts
-    PATH = [p for p in PATH if "\\getmac\\Scripts" not in p]
-# Build the str after modifications are made
-PATH_STR: str = os.pathsep.join(PATH)
-
-# Use a copy of the environment so we don't
-# modify the process's current environment.
-ENV: Dict[str, str] = dict(os.environ)
-ENV["LC_ALL"] = "C"  # Ensure ASCII output so we parse correctly
-
-# Constants
-IP4: int = 0
-IP6: int = 1
-INTERFACE: int = 2
-HOSTNAME: int = 3
-
-MAC_RE_COLON: str = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
-MAC_RE_DASH: str = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
-# On OSX, some MACs in arp output may have a single digit instead of two
-# Examples: "18:4f:32:5a:64:5", "14:cc:20:1a:99:0"
-# This can also happen on other platforms, like Solaris
-MAC_RE_SHORT: str = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
-
-# Cache of commands that have been checked for existence by check_command()
-CHECK_COMMAND_CACHE: Dict[str, bool] = {}
 
 
 def check_command(command: str) -> bool:
-    if command not in CHECK_COMMAND_CACHE:
-        CHECK_COMMAND_CACHE[command] = bool(which(command, path=PATH_STR))
-    return CHECK_COMMAND_CACHE[command]
+    if command not in gvars.CHECK_COMMAND_CACHE:
+        gvars.CHECK_COMMAND_CACHE[command] = bool(which(command, path=gvars.PATH_STR))
+    return gvars.CHECK_COMMAND_CACHE[command]
 
 
 def check_path(filepath: str) -> bool:
@@ -153,12 +68,12 @@ def _clean_mac(mac: Optional[str]) -> Optional[str]:
 
     # Fix cases where there are no colons
     if ":" not in mac and len(mac) == 12:
-        log.debug("Adding colons to MAC %s", mac)
+        gvars.log.debug("Adding colons to MAC %s", mac)
         mac = ":".join(mac[i : i + 2] for i in range(0, len(mac), 2))
 
     # Pad single-character octets with a leading zero (e.g. Darwin's ARP output)
     elif len(mac) < 17:
-        log.debug(
+        gvars.log.debug(
             "Length of MAC %s is %d, padding single-character octets with zeros",
             mac,
             len(mac),
@@ -174,10 +89,10 @@ def _clean_mac(mac: Optional[str]) -> Optional[str]:
 
     # MAC address should ALWAYS be 17 characters before being returned
     if len(mac) != 17:
-        log.warning("MAC address %s is not 17 characters long!", mac)
+        gvars.log.warning("MAC address %s is not 17 characters long!", mac)
         mac = None
     elif mac.count(":") != 5:
-        log.warning("MAC address %s is missing colon (':') characters", mac)
+        gvars.log.warning("MAC address %s is missing colon (':') characters", mac)
         mac = None
     return mac
 
@@ -187,7 +102,7 @@ def _read_file(filepath: str) -> Optional[str]:
         with open(filepath) as f:
             return f.read()
     except OSError:
-        log.debug("Could not find file: '%s'", filepath)
+        gvars.log.debug("Could not find file: '%s'", filepath)
         return None
 
 
@@ -195,8 +110,8 @@ def _search(
     regex: str, text: str, group_index: int = 0, flags: int = 0
 ) -> Optional[str]:
     if not text:
-        if DEBUG:
-            log.debug("No text to _search()")
+        if settings.DEBUG:
+            gvars.log.debug("No text to _search()")
         return None
 
     match = re.search(regex, text, flags)
@@ -207,7 +122,7 @@ def _search(
 
 
 def _popen(command: str, args: str) -> str:
-    for directory in PATH:
+    for directory in gvars.PATH:
         executable = os.path.join(directory, command)
         if (
             os.path.exists(executable)
@@ -218,22 +133,24 @@ def _popen(command: str, args: str) -> str:
     else:
         executable = command
 
-    if DEBUG >= 3:
-        log.debug("Running: '%s %s'", executable, args)
+    if settings.DEBUG >= 3:
+        gvars.log.debug("Running: '%s %s'", executable, args)
 
     return _call_proc(executable, args)
 
 
 def _call_proc(executable: str, args: str) -> str:
-    if WINDOWS:
+    if consts.WINDOWS:
         cmd = executable + " " + args  # type: ignore
     else:
         cmd = [executable, *shlex.split(args)]  # type: ignore
 
-    output: Union[str, bytes] = check_output(cmd, stderr=DEVNULL, env=ENV)  # noqa: S603
+    output: Union[str, bytes] = check_output(
+        cmd, stderr=DEVNULL, env=gvars.ENV  # noqa: S603
+    )
 
-    if DEBUG >= 4:
-        log.debug("Output from '%s' command: %s", executable, str(output))
+    if settings.DEBUG >= 4:
+        gvars.log.debug("Output from '%s' command: %s", executable, str(output))
 
     if isinstance(output, bytes):
         output = output.decode("utf-8")
@@ -380,7 +297,7 @@ class ArpFile(Method):
 
             # Need a space, otherwise a search for 192.168.16.2
             # will match 192.168.16.254 if it comes first!
-            return _search(re.escape(arg) + r" .+" + MAC_RE_COLON, data)
+            return _search(re.escape(arg) + r" .+" + consts.MAC_RE_COLON, data)
 
         return None
 
@@ -393,14 +310,14 @@ class ArpFreebsd(Method):
         return check_command("arp")
 
     def get(self, arg: str) -> Optional[str]:
-        regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + MAC_RE_COLON
+        regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + consts.MAC_RE_COLON
         return _search(regex, _popen("arp", arg))
 
 
 class ArpOpenbsd(Method):
     platforms = {"openbsd"}
     method_type = "ip"
-    _regex: str = r"[ ]+" + MAC_RE_COLON
+    _regex: str = r"[ ]+" + consts.MAC_RE_COLON
 
     def test(self) -> bool:
         return check_command("arp")
@@ -412,8 +329,8 @@ class ArpOpenbsd(Method):
 class ArpVariousArgs(Method):
     platforms = {"linux", "darwin", "freebsd", "sunos", "other"}
     method_type = "ip"
-    _regex_std: str = r"\)\s+at\s+" + MAC_RE_COLON
-    _regex_darwin: str = r"\)\s+at\s+" + MAC_RE_SHORT
+    _regex_std: str = r"\)\s+at\s+" + consts.MAC_RE_COLON
+    _regex_darwin: str = r"\)\s+at\s+" + consts.MAC_RE_SHORT
     _args = (
         ("", True),  # "arp 192.168.1.1"
         # Linux
@@ -452,8 +369,8 @@ class ArpVariousArgs(Method):
                     self._good_pair = pair_to_test
                     break
                 except CalledProcessError as ex:
-                    if DEBUG:
-                        log.debug(
+                    if settings.DEBUG:
+                        gvars.log.debug(
                             "ArpVariousArgs pair test failed for (%s, %s): %s",
                             pair_to_test[0],
                             pair_to_test[1],
@@ -511,7 +428,7 @@ class ArpExe(Method):
         return check_command("arp.exe")
 
     def get(self, arg: str) -> Optional[str]:
-        return _search(MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
+        return _search(consts.MAC_RE_DASH, _popen("arp.exe", "-a %s" % arg))
 
 
 class ArpingHost(Method):
@@ -564,7 +481,7 @@ class ArpingHost(Method):
                 command_output = _popen("arping", self._iputils_args % arg)
                 if command_output:
                     return _search(
-                        r" from %s \[(%s)\]" % (re.escape(arg), MAC_RE_COLON),
+                        r" from %s \[(%s)\]" % (re.escape(arg), consts.MAC_RE_COLON),
                         command_output,
                     )
             else:
@@ -575,8 +492,8 @@ class ArpingHost(Method):
                     output = ex.output.decode("utf-8").lower()
 
                 if "habets" in output or "invalid option" in output:
-                    if DEBUG:
-                        log.debug("Falling back to Habets arping")
+                    if settings.DEBUG:
+                        gvars.log.debug("Falling back to Habets arping")
                     self._is_iputils = False
                     try:
                         return self._call_habets(arg)
@@ -662,7 +579,7 @@ class IpNeighborShow(Method):
                 output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
             )
         except IndexError as ex:
-            log.debug("IpNeighborShow failed with exception: %s", str(ex))
+            gvars.log.debug("IpNeighborShow failed with exception: %s", str(ex))
             return None
 
 
@@ -745,9 +662,9 @@ class GetmacExe(Method):
     method_type = "iface"
     _regexes: List[Tuple[str, str]] = [
         # Connection Name
-        (r"\r\n", r".*" + MAC_RE_DASH + r".*\r\n"),
+        (r"\r\n", r".*" + consts.MAC_RE_DASH + r".*\r\n"),
         # Network Adapter (the human-readable name)
-        (r"\r\n.*", r".*" + MAC_RE_DASH + r".*\r\n"),
+        (r"\r\n.*", r".*" + consts.MAC_RE_DASH + r".*\r\n"),
     ]
     _champ: Union[tuple, Tuple[str, str]] = ()
 
@@ -764,7 +681,9 @@ class GetmacExe(Method):
             command_output = _popen("getmac.exe", "/NH /V")
         except CalledProcessError as ex:
             # This shouldn't cause an exception if it's valid command
-            log.error("getmac.exe failed, marking unusable. Exception: %s", str(ex))
+            gvars.log.error(
+                "getmac.exe failed, marking unusable. Exception: %s", str(ex)
+            )
             self.unusable = True
             return None
 
@@ -792,7 +711,9 @@ class IpconfigExe(Method):
 
     platforms = {"windows"}
     method_type = "iface"
-    _regex: str = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + MAC_RE_DASH + r"\r\n"
+    _regex: str = (
+        r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + consts.MAC_RE_DASH + r"\r\n"
+    )
 
     def test(self) -> bool:
         return check_command("ipconfig.exe")
@@ -854,7 +775,7 @@ class DarwinNetworksetupIface(Method):
 
     def get(self, arg: str) -> Optional[str]:
         command_output = _popen("networksetup", "-getmacaddress %s" % arg)
-        return _search(MAC_RE_COLON, command_output)
+        return _search(consts.MAC_RE_COLON, command_output)
 
 
 # This only took 15-20 hours of throwing my brain against a wall multiple times
@@ -975,11 +896,11 @@ class IfconfigOther(Method):
                     command_output = _popen("ifconfig", pair_to_test[0])
                     self._good_pair = list(pair_to_test)  # type: ignore
                     if isinstance(self._good_pair[1], str):
-                        self._good_pair[1] += MAC_RE_COLON
+                        self._good_pair[1] += consts.MAC_RE_COLON
                     break
                 except CalledProcessError as ex:
-                    if DEBUG:
-                        log.debug(
+                    if settings.DEBUG:
+                        gvars.log.debug(
                             "IfconfigOther pair test failed for (%s, %s): %s",
                             pair_to_test[0],
                             pair_to_test[1],
@@ -998,7 +919,7 @@ class IfconfigOther(Method):
         # Handle the two possible search terms
         if isinstance(self._good_pair[1], tuple):
             for term in self._good_pair[1]:
-                regex = term + MAC_RE_COLON
+                regex = term + consts.MAC_RE_COLON
                 result = _search(re.escape(arg) + regex, command_output)
 
                 if result:
@@ -1018,10 +939,10 @@ class NetstatIface(Method):
     # ".*?": non-greedy
     # https://docs.python.org/3/howto/regex.html#greedy-versus-non-greedy
     _regexes: List[str] = [
-        r": .*?ether " + MAC_RE_COLON,
-        r": .*?HWaddr " + MAC_RE_COLON,
+        r": .*?ether " + consts.MAC_RE_COLON,
+        r": .*?HWaddr " + consts.MAC_RE_COLON,
         # Ubuntu 12.04 and other older kernels
-        r" .*?Link encap:Ethernet  HWaddr " + MAC_RE_COLON,
+        r" .*?Link encap:Ethernet  HWaddr " + consts.MAC_RE_COLON,
     ]
     _working_regex: str = ""
 
@@ -1034,7 +955,7 @@ class NetstatIface(Method):
         # therefore have the same output format on the same platform.
         command_output = _popen("netstat", "-iae")
         if not command_output:
-            log.warning("no netstat output, marking unusable")
+            gvars.log.warning("no netstat output, marking unusable")
             self.unusable = True
             return None
 
@@ -1055,22 +976,22 @@ class NetstatIface(Method):
 
 # TODO: Add to IpLinkIface
 # TODO: New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
-# (r"state UP.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
-# (r"wlan.*\n.*ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
-# (r"ether " + MAC_RE_COLON, 0, "ip", ["link","addr"]),
+# (r"state UP.*\n.*ether " + consts.MAC_RE_COLON, 0, "ip", ["link","addr"]),
+# (r"wlan.*\n.*ether " + consts.MAC_RE_COLON, 0, "ip", ["link","addr"]),
+# (r"ether " + consts.MAC_RE_COLON, 0, "ip", ["link","addr"]),
 # _regexes = (
-#     r".*\n.*link/ether " + MAC_RE_COLON,
+#     r".*\n.*link/ether " + consts.MAC_RE_COLON,
 #     # Android 6.0.1+ (and likely other platforms as well)
-#     r"state UP.*\n.*ether " + MAC_RE_COLON,
-#     r"wlan.*\n.*ether " + MAC_RE_COLON,
-#     r"ether " + MAC_RE_COLON,
+#     r"state UP.*\n.*ether " + consts.MAC_RE_COLON,
+#     r"wlan.*\n.*ether " + consts.MAC_RE_COLON,
+#     r"ether " + consts.MAC_RE_COLON,
 # )  # type: Tuple[str, str, str, str]
 
 
 class IpLinkIface(Method):
     platforms = {"linux", "wsl", "android", "other"}
     method_type = "iface"
-    _regex: str = r".*\n.*link/ether " + MAC_RE_COLON
+    _regex: str = r".*\n.*link/ether " + consts.MAC_RE_COLON
     _tested_arg: bool = False
     _iface_arg: bool = False
 
@@ -1139,13 +1060,13 @@ class DefaultIfaceLinuxRouteFile(Method):
                 if dest == "00000000":
                     return iface_name
 
-            if DEBUG:
-                log.debug(
+            if settings.DEBUG:
+                gvars.log.debug(
                     "Failed to find default interface in data from "
                     "'/proc/net/route', no destination of '00000000' was found"
                 )
-        elif DEBUG:
-            log.warning("No data from /proc/net/route")
+        elif settings.DEBUG:
+            gvars.log.warning("No data from /proc/net/route")
 
         return None
 
@@ -1167,7 +1088,7 @@ class DefaultIfaceRouteCommand(Method):
                 .split()[-1]
             )
         except IndexError as ex:  # index errors means no default route in output?
-            log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
+            gvars.log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
             return None
 
 
@@ -1187,7 +1108,7 @@ class DefaultIfaceRouteGetCommand(Method):
         try:
             return output.partition("interface: ")[2].strip().split()[0].strip()
         except IndexError as ex:
-            log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
+            gvars.log.debug("DefaultIfaceRouteCommand failed for %s: %s", arg, str(ex))
             return None
 
 
@@ -1204,8 +1125,8 @@ class DefaultIfaceIpRoute(Method):
         output = _popen("ip", "route list 0/0")
 
         if not output:
-            if DEBUG:
-                log.debug("DefaultIfaceIpRoute failed: no output")
+            if settings.DEBUG:
+                gvars.log.debug("DefaultIfaceIpRoute failed: no output")
             return None
 
         return output.partition("dev")[2].partition("proto")[0].strip()
@@ -1268,6 +1189,7 @@ METHODS = [
     DefaultIfaceFreeBsd,
 ]  # type: List[Type[Method]]
 
+# TODO: move to gvars class? gotta love import loops with type annotations
 # Primary method to use for a given method type
 METHOD_CACHE: Dict[str, Optional[Method]] = {
     "ip4": None,
@@ -1287,9 +1209,6 @@ FALLBACK_CACHE: Dict[str, List[Method]] = {
     "iface": [],
     "default_iface": [],
 }
-
-
-DEFAULT_IFACE: str = ""
 
 
 def get_method_by_name(method_name: str) -> Optional[Type[Method]]:
@@ -1345,7 +1264,7 @@ def _swap_method_fallback(method_type: str, swap_with: str) -> bool:
 
 
 def _warn_critical(err_msg: str) -> None:
-    log.critical(err_msg)
+    gvars.log.critical(err_msg)
     warnings.warn(  # noqa: B028
         "%s. NOTICE: this warning will likely turn into a raised exception in getmac 1.0.0!"
         % err_msg,
@@ -1364,28 +1283,30 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
             (those methods that have the attribute ``network_request`` set to ``True``)
     """
     if METHOD_CACHE.get(method_type):
-        if DEBUG:
-            log.debug(
+        if settings.DEBUG:
+            gvars.log.debug(
                 "Method cache already initialized for method type '%s'", method_type
             )
         return True
 
-    log.debug("Initializing '%s' method cache (platform: '%s')", method_type, PLATFORM)
+    gvars.log.debug(
+        "Initializing '%s' method cache (platform: '%s')", method_type, consts.PLATFORM
+    )
 
-    if OVERRIDE_PLATFORM:
-        log.warning(
+    if settings.OVERRIDE_PLATFORM:
+        gvars.log.warning(
             "Platform override is set, using '%s' as platform "
             "instead of detected platform '%s'",
-            OVERRIDE_PLATFORM,
-            PLATFORM,
+            settings.OVERRIDE_PLATFORM,
+            consts.PLATFORM,
         )
-        platform = OVERRIDE_PLATFORM
+        platform = settings.OVERRIDE_PLATFORM
     else:
-        platform = PLATFORM
+        platform = consts.PLATFORM
 
-    if DEBUG >= 4:
+    if settings.DEBUG >= 4:
         meth_strs = ", ".join(m.__name__ for m in METHODS)
-        log.debug("%d methods available: %s", len(METHODS), meth_strs)
+        gvars.log.debug("%d methods available: %s", len(METHODS), meth_strs)
 
     # Filter methods by the type of MAC we're looking for, such as "ip"
     # for remote host methods or "iface" for local interface methods.
@@ -1401,9 +1322,9 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         _warn_critical("No valid methods matching MAC type '%s'" % method_type)
         return False
 
-    if DEBUG >= 2:
+    if settings.DEBUG >= 2:
         type_strs = ", ".join(tm.__name__ for tm in type_methods)
-        log.debug(
+        gvars.log.debug(
             "%d type-filtered methods for '%s': %s",
             len(type_methods),
             method_type,
@@ -1422,15 +1343,15 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
             "No methods for platform '%s'! Your system may not be supported. "
             "Falling back to platform 'other'." % platform
         )
-        log.warning(warn_msg)
+        gvars.log.warning(warn_msg)
         warnings.warn(warn_msg, RuntimeWarning, stacklevel=2)
         platform_methods = [
             method for method in type_methods if "other" in method.platforms
         ]
 
-    if DEBUG >= 2:
+    if settings.DEBUG >= 2:
         plat_strs = ", ".join(pm.__name__ for pm in platform_methods)
-        log.debug(
+        gvars.log.debug(
             "%d platform-filtered methods for '%s' (method_type='%s'): %s",
             len(platform_methods),
             platform,
@@ -1465,8 +1386,8 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
             # First successful test goes in the cache
             if not METHOD_CACHE[method_type]:
                 METHOD_CACHE[method_type] = method_instance
-        elif DEBUG:
-            log.debug("Test failed for method '%s'", str(method_instance))
+        elif settings.DEBUG:
+            gvars.log.debug("Test failed for method '%s'", str(method_instance))
 
     if not tested_methods:
         _warn_critical(
@@ -1474,9 +1395,9 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         )
         return False
 
-    if DEBUG >= 2:
+    if settings.DEBUG >= 2:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)
-        log.debug(
+        gvars.log.debug(
             "%d tested methods for '%s': %s",
             len(tested_methods),
             method_type,
@@ -1489,27 +1410,27 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
 
     FALLBACK_CACHE[method_type] = tested_methods
 
-    if DEBUG:
-        log.debug(
+    if settings.DEBUG:
+        gvars.log.debug(
             "Current method cache: %s",
             str({k: str(v) for k, v in METHOD_CACHE.items()}),
         )
-        log.debug(
+        gvars.log.debug(
             "Current fallback cache: %s",
             str({k: str(v) for k, v in FALLBACK_CACHE.items()}),
         )
-    log.debug("Finished initializing '%s' method cache", method_type)
+    gvars.log.debug("Finished initializing '%s' method cache", method_type)
 
     return True
 
 
 def _remove_unusable(method: Method, method_type: str) -> Optional[Method]:
     if not FALLBACK_CACHE[method_type]:
-        log.warning("No fallback method for unusable method '%s'!", str(method))
+        gvars.log.warning("No fallback method for unusable method '%s'!", str(method))
         METHOD_CACHE[method_type] = None
     else:
         METHOD_CACHE[method_type] = FALLBACK_CACHE[method_type].pop(0)
-        log.warning(
+        gvars.log.warning(
             "Falling back to '%s' for unusable method '%s'",
             str(METHOD_CACHE[method_type]),
             str(method),
@@ -1526,8 +1447,8 @@ def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[
         _warn_critical("No usable methods found for MAC type '%s'" % method_type)
         return None
 
-    if DEBUG:
-        log.debug(
+    if settings.DEBUG:
+        gvars.log.debug(
             "Attempting get() (method='%s', method_type='%s', arg='%s')",
             str(method),
             method_type,
@@ -1547,7 +1468,7 @@ def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[
         # Methods where an exit code of 1 makes it invalid should handle the
         # CalledProcessError, inspect the return code, and set self.unusable = True
         if ex.returncode != 1:
-            log.warning(
+            gvars.log.warning(
                 "Cached Method '%s' failed for '%s' lookup with process exit "
                 "code '%d' != 1, marking unusable. Exception: %s",
                 str(method),
@@ -1557,7 +1478,7 @@ def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[
             )
             method.unusable = True
     except Exception as ex:
-        log.warning(
+        gvars.log.warning(
             "Cached Method '%s' failed for '%s' lookup with unhandled exception: %s",
             str(method),
             method_type,
@@ -1592,21 +1513,25 @@ def get_by_method(
             (those methods that have the attribute ``network_request`` set to ``True``)
     """
     if not arg and method_type != "default_iface":
-        log.error("Empty arg for method '%s' (raw value: %s)", method_type, repr(arg))
+        gvars.log.error(
+            "Empty arg for method '%s' (raw value: %s)", method_type, repr(arg)
+        )
         return None
 
-    if FORCE_METHOD:
-        log.warning(
+    if settings.FORCE_METHOD:
+        gvars.log.warning(
             "Forcing method '%s' to be used for '%s' lookup (arg: '%s')",
-            FORCE_METHOD,
+            settings.FORCE_METHOD,
             method_type,
             arg,
         )
 
-        forced_method = get_method_by_name(FORCE_METHOD)
+        forced_method = get_method_by_name(settings.FORCE_METHOD)
 
         if not forced_method:
-            log.error("Invalid FORCE_METHOD method name '%s'", FORCE_METHOD)
+            gvars.log.error(
+                "Invalid settings.FORCE_METHOD method name '%s'", settings.FORCE_METHOD
+            )
             return None
 
         return forced_method().get(arg)
@@ -1616,7 +1541,7 @@ def get_by_method(
     if not method:
         # Initialize the cache if it hasn't been already
         if not initialize_method_cache(method_type, network_request):
-            log.error(
+            gvars.log.error(
                 "Failed to initialize method cache for method '%s' (arg: '%s')",
                 method_type,
                 arg,
@@ -1626,7 +1551,7 @@ def get_by_method(
         method = METHOD_CACHE[method_type]
 
     if not method:
-        log.error(
+        gvars.log.error(
             "Initialization failed for method '%s'. It may not be supported "
             "on this platform or another issue occurred.",
             method_type,
@@ -1639,8 +1564,8 @@ def get_by_method(
     result = _attempt_method_get(method, method_type, arg)
 
     # Log normal get() failures if debugging is enabled
-    if DEBUG and not result:
-        log.debug("Method '%s' failed for '%s' lookup", str(method), method_type)
+    if settings.DEBUG and not result:
+        gvars.log.debug("Method '%s' failed for '%s' lookup", str(method), method_type)
 
     return result
 
@@ -1695,7 +1620,7 @@ def get_mac_address(
         found or there was an error.
     """
 
-    if DEBUG:
+    if settings.DEBUG:
         import timeit
 
         start_time = timeit.default_timer()
@@ -1710,20 +1635,20 @@ def get_mac_address(
             # TODO: can this return a IPv6 address? If so, handle that!
             ip = socket.gethostbyname(hostname)
         except Exception as ex:
-            log.error("Could not resolve hostname '%s': %s", hostname, ex)
-            if DEBUG:
-                log.debug(traceback.format_exc())
+            gvars.log.error("Could not resolve hostname '%s': %s", hostname, ex)
+            if settings.DEBUG:
+                gvars.log.debug(traceback.format_exc())
             return None
 
     if ip6:
         if not socket.has_ipv6:
-            log.error(
+            gvars.log.error(
                 "Cannot get the MAC address of a IPv6 host: "
                 "IPv6 is not supported on this system"
             )
             return None
         elif ":" not in ip6:
-            log.error("Invalid IPv6 address (no ':'): %s", ip6)
+            gvars.log.error("Invalid IPv6 address (no ':'): %s", ip6)
             return None
 
     mac = None
@@ -1741,7 +1666,7 @@ def get_mac_address(
             # If ArpFile succeeds, just use that, since it's
             # significantly faster than arping (file read vs.
             # spawning a process).
-            if not FORCE_METHOD or FORCE_METHOD.lower() == "arpfile":
+            if not settings.FORCE_METHOD or settings.FORCE_METHOD.lower() == "arpfile":
                 af_meth = get_instance_from_cache("ip4", "ArpFile")
                 if af_meth:
                     mac = _attempt_method_get(af_meth, "ip4", ip)
@@ -1753,7 +1678,10 @@ def get_mac_address(
 
             if not mac:
                 for arp_meth in ["CtypesHost", "ArpingHost"]:
-                    if FORCE_METHOD and FORCE_METHOD.lower() != arp_meth:
+                    if (
+                        settings.FORCE_METHOD
+                        and settings.FORCE_METHOD.lower() != arp_meth
+                    ):
                         continue
 
                     if arp_meth == str(METHOD_CACHE["ip4"]):
@@ -1768,11 +1696,11 @@ def get_mac_address(
 
         # Populate the ARP table by sending an empty UDP packet to a high port
         if send_udp_packet and not mac:
-            if DEBUG:
-                log.debug(
+            if settings.DEBUG:
+                gvars.log.debug(
                     "Attempting to populate ARP table with UDP packet to %s:%d",
                     ip if ip else ip6,
-                    PORT,
+                    settings.PORT,
                 )
 
             if ip:
@@ -1782,17 +1710,17 @@ def get_mac_address(
 
             try:
                 if ip:
-                    sock.sendto(b"", (ip, PORT))
+                    sock.sendto(b"", (ip, settings.PORT))
                 else:
-                    sock.sendto(b"", (ip6, PORT))
+                    sock.sendto(b"", (ip6, settings.PORT))
             except Exception:
-                log.error("Failed to send ARP table population packet")
-                if DEBUG:
-                    log.debug(traceback.format_exc())
+                gvars.log.error("Failed to send ARP table population packet")
+                if settings.DEBUG:
+                    gvars.log.debug(traceback.format_exc())
             finally:
                 sock.close()
-        elif DEBUG:
-            log.debug(
+        elif settings.DEBUG:
+            gvars.log.debug(
                 "Not sending UDP packet, using network request method '%s' instead",
                 str(METHOD_CACHE["ip4"]),
             )
@@ -1807,41 +1735,39 @@ def get_mac_address(
             mac = get_by_method("iface", interface)
         else:  # Default to searching for interface
             # Default to finding MAC of the interface with the default route
-            if WINDOWS and network_request:
+            if consts.WINDOWS and network_request:
                 default_iface_ip = _fetch_ip_using_dns()
                 mac = get_by_method("ip4", default_iface_ip)
-            elif WINDOWS:
+            elif consts.WINDOWS:
                 # TODO: implement proper default interface detection on windows
                 #   (add a Method subclass to implement DefaultIface on Windows)
                 mac = get_by_method("iface", "Ethernet")
             else:
-                global DEFAULT_IFACE
+                if not gvars.DEFAULT_IFACE:
+                    gvars.DEFAULT_IFACE = get_by_method("default_iface")  # type: ignore
 
-                if not DEFAULT_IFACE:
-                    DEFAULT_IFACE = get_by_method("default_iface")  # type: ignore
-
-                    if DEFAULT_IFACE:
-                        DEFAULT_IFACE = str(DEFAULT_IFACE).strip()
+                    if gvars.DEFAULT_IFACE:
+                        gvars.DEFAULT_IFACE = str(gvars.DEFAULT_IFACE).strip()
 
                     # TODO: better fallback if default iface lookup fails
-                    if not DEFAULT_IFACE and BSD:
-                        DEFAULT_IFACE = "em0"
-                    elif not DEFAULT_IFACE and DARWIN:  # OSX, maybe?
-                        DEFAULT_IFACE = "en0"
-                    elif not DEFAULT_IFACE:
-                        DEFAULT_IFACE = "eth0"
+                    if not gvars.DEFAULT_IFACE and consts.BSD:
+                        gvars.DEFAULT_IFACE = "em0"
+                    elif not gvars.DEFAULT_IFACE and consts.DARWIN:  # OSX, maybe?
+                        gvars.DEFAULT_IFACE = "en0"
+                    elif not gvars.DEFAULT_IFACE:
+                        gvars.DEFAULT_IFACE = "eth0"
 
-                mac = get_by_method("iface", DEFAULT_IFACE)
+                mac = get_by_method("iface", gvars.DEFAULT_IFACE)
 
                 # TODO: hack to fallback to loopback if lookup fails
                 if not mac:
                     mac = get_by_method("iface", "lo")
 
-    log.debug("Raw MAC found: %s", mac)
+    gvars.log.debug("Raw MAC found: %s", mac)
 
     # Log how long it took
-    if DEBUG:
+    if settings.DEBUG:
         duration = timeit.default_timer() - start_time
-        log.debug("getmac took %.4f seconds", duration)
+        gvars.log.debug("getmac took %.4f seconds", duration)
 
     return _clean_mac(mac)

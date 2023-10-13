@@ -4,6 +4,7 @@ from subprocess import CalledProcessError
 import pytest
 
 from getmac import get_mac_address, getmac
+from getmac.variables import settings, consts, gvars
 
 MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
 
@@ -51,7 +52,7 @@ def test_search(get_sample):
 
 
 def test_popen(mocker):
-    mocker.patch("getmac.getmac.PATH", [])
+    mocker.patch.object(gvars, "PATH", [])
     m = mocker.patch("getmac.getmac._call_proc", return_value="SUCCESS")
     assert getmac._popen("TESTCMD", "ARGS") == "SUCCESS"
     m.assert_called_once_with("TESTCMD", "ARGS")
@@ -59,14 +60,14 @@ def test_popen(mocker):
 
 def test_call_proc(mocker):
     mocker.patch("getmac.getmac.DEVNULL", "DEVNULL")
-    mocker.patch("getmac.getmac.ENV", "ENV")
+    mocker.patch.object(gvars, "ENV", "ENV")
 
-    mocker.patch("getmac.getmac.WINDOWS", True)
+    mocker.patch.object(consts, "WINDOWS", True)
     m = mocker.patch("getmac.getmac.check_output", return_value="WINSUCCESS")
     assert getmac._call_proc("CMD", "arg") == "WINSUCCESS"
     m.assert_called_once_with("CMD arg", stderr="DEVNULL", env="ENV")
 
-    mocker.patch("getmac.getmac.WINDOWS", False)
+    mocker.patch.object(consts, "WINDOWS", False)
     m = mocker.patch("getmac.getmac.check_output", return_value="YAY")
     assert getmac._call_proc("CMD", "arg1 arg2") == "YAY"
     m.assert_called_once_with(["CMD", "arg1", "arg2"], stderr="DEVNULL", env="ENV")
@@ -133,7 +134,7 @@ def test_initialize_method_cache_valid_types(mocker, method_type):
         {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
-    mocker.patch("getmac.getmac.PLATFORM", "linux")
+    mocker.patch.object(consts, "PLATFORM", "linux")
     assert getmac.initialize_method_cache(method_type)
     assert getmac.METHOD_CACHE[method_type] is not None
     if method_type in ["ip4", "ip6"]:
@@ -146,7 +147,7 @@ def test_initialize_method_cache_initialized(mocker):
         {"ip4": getmac.ArpFile(), "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
-    mocker.patch("getmac.getmac.PLATFORM", "linux")
+    mocker.patch.object(consts, "PLATFORM", "linux")
     assert getmac.initialize_method_cache("ip4")
     assert str(getmac.METHOD_CACHE["ip4"]) == "ArpFile"
     assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.Method)
@@ -158,7 +159,7 @@ def test_initialize_method_cache_bad_type(mocker):
         {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
-    mocker.patch("getmac.getmac.PLATFORM", "linux")
+    mocker.patch.object(consts, "PLATFORM", "linux")
     with pytest.warns(RuntimeWarning):
         assert not getmac.initialize_method_cache("invalid_method_type")
     with pytest.warns(RuntimeWarning):
@@ -172,12 +173,12 @@ def test_initialize_method_cache_platform_override(mocker):
         {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
-    mocker.patch("getmac.getmac.PLATFORM", "windows")
-    mocker.patch("getmac.getmac.OVERRIDE_PLATFORM", "darwin")
+    mocker.patch.object(consts, "PLATFORM", "windows")
+    mocker.patch.object(settings, "OVERRIDE_PLATFORM", "darwin")
     mocker.patch("getmac.getmac.check_command", return_value=True)
     assert getmac.initialize_method_cache("iface")
-    assert getmac.OVERRIDE_PLATFORM == "darwin"
-    assert getmac.PLATFORM == "windows"
+    assert settings.OVERRIDE_PLATFORM == "darwin"
+    assert consts.PLATFORM == "windows"
     assert isinstance(getmac.METHOD_CACHE["iface"], getmac.IfconfigEther)
 
 
@@ -187,11 +188,11 @@ def test_initialize_method_cache_no_network_request(mocker):
         {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
-    mocker.patch("getmac.getmac.PLATFORM", "linux")
+    mocker.patch.object(consts, "PLATFORM", "linux")
     mocker.patch("getmac.getmac.check_command", return_value=True)
     mocker.patch("getmac.getmac.check_path", return_value=True)
     assert getmac.initialize_method_cache("ip4", network_request=False)
-    assert getmac.PLATFORM == "linux"
+    assert consts.PLATFORM == "linux"
     assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.ArpFile)
 
 
@@ -252,22 +253,22 @@ def test_get_by_method_errors(mocker):
         },
     )
     mocker.patch("getmac.getmac._read_file", return_value="")
-    mocker.patch("getmac.getmac.DEBUG", 1)
+    mocker.patch.object(settings, "DEBUG", 1)
     assert getmac.get_by_method("iface", arg="ens33") is None
 
 
 def test_get_by_method_force_method(mocker):
-    mocker.patch("getmac.getmac.FORCE_METHOD", "testing123")
+    mocker.patch.object(settings, "FORCE_METHOD", "testing123")
     assert getmac.get_by_method("iface", arg="some_arg") is None
 
     mocker.patch("getmac.getmac._read_file", return_value="00:0c:29:b5:72:37\n")
-    mocker.patch("getmac.getmac.FORCE_METHOD", "SysIfaceFile")
+    mocker.patch.object(settings, "FORCE_METHOD", "SysIfaceFile")
     assert getmac.get_by_method("iface", "ens33") == "00:0c:29:b5:72:37\n"
 
 
 def test_get_mac_address_force_method(mocker):
     mocker.patch("getmac.getmac._read_file", return_value="00:0c:29:b5:72:37\n")
-    mocker.patch("getmac.getmac.FORCE_METHOD", "SysIfaceFile")
+    mocker.patch.object(settings, "FORCE_METHOD", "SysIfaceFile")
     assert getmac.get_mac_address(interface="ens33") == "00:0c:29:b5:72:37"
 
 
@@ -315,7 +316,7 @@ def test_get_mac_address_hostname(mocker):
 
 
 def test_get_mac_address_default_args_windows_net_request_true(mocker):
-    mocker.patch("getmac.getmac.WINDOWS", True)
+    mocker.patch.object(consts, "WINDOWS", True)
     mocker.patch("getmac.getmac.get_by_method", return_value="00:FF:17:15:F8:C8")
     assert getmac.get_mac_address(network_request=False) == "00:ff:17:15:f8:c8"
     getmac.get_by_method.assert_called_once_with("iface", "Ethernet")
@@ -327,8 +328,8 @@ def test_get_mac_address_default_args_windows_net_request_true(mocker):
 
 
 def test_get_mac_address_default_args_fallback_global(mocker):
-    mocker.patch("getmac.getmac.WINDOWS", False)
-    mocker.patch("getmac.getmac.DEFAULT_IFACE", "eth0")
+    mocker.patch.object(consts, "WINDOWS", False)
+    mocker.patch.object(gvars, "DEFAULT_IFACE", "eth0")
     mocker.patch("getmac.getmac.get_by_method", return_value="08:00:27:e8:81:6f")
     assert getmac.get_mac_address() == "08:00:27:e8:81:6f"
     getmac.get_by_method.assert_called_once_with("iface", "eth0")
