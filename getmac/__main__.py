@@ -10,55 +10,11 @@ from .variables import settings, gvars
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        "getmac",
-        description="Get the MAC address of system network "
-        "interfaces or remote hosts on the LAN",
+        prog="getmac",
+        description="Get MAC addresses of network interfaces or LAN hosts",
     )
     parser.add_argument(
         "--version", action="version", version=f"getmac {getmac.__version__}"
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable output messages"
-    )
-    parser.add_argument(
-        "-d",
-        "--debug",
-        action="count",
-        help="Enable debugging output. Add characters to "
-        "increase verbosity of output, e.g. '-dd'.",
-    )
-    parser.add_argument(
-        "-N",
-        "--no-net",
-        "--no-network-requests",
-        action="store_true",
-        dest="NO_NET",
-        help="Do not use arping or send a UDP packet to refresh the ARP table",
-    )
-    parser.add_argument(
-        "--override-port",
-        type=int,
-        metavar="PORT",
-        help="Override the default UDP port used to refresh the ARP table "
-        "if network requests are enabled and arping is unavailable",
-    )
-    parser.add_argument(
-        "--override-platform",
-        type=str,
-        default=None,
-        metavar="PLATFORM",
-        help="Override the platform detection with the given value "
-        "(e.g. 'linux', 'windows', 'freebsd', etc.'). "
-        "Any values returned by platform.system() are valid.",
-    )
-    parser.add_argument(
-        "--force-method",
-        type=str,
-        default=None,
-        metavar="METHOD",
-        help="Force a specific method to be used, e.g. 'IpNeighborShow'. "
-        "This will be used regardless of it's method type or platform "
-        "compatibility, and Method.test() will NOT be checked!",
     )
 
     group = parser.add_mutually_exclusive_group(required=False)
@@ -77,6 +33,55 @@ def main() -> None:
     )
     group.add_argument(
         "-n", "--hostname", type=str, default=None, help="Hostname of a remote host"
+    )
+
+    parser.add_argument(
+        "-N",
+        "--no-net",
+        "--no-network-requests",
+        action="store_true",
+        dest="NO_NET",
+        help="Do not use arping or send a UDP packet to refresh the ARP table",
+    )
+
+    tshooting = parser.add_argument_group("troubleshooting")
+    tshooting.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable logging messages (by default, only the MAC is printed to the terminal)",
+    )
+    tshooting.add_argument(
+        "-d",
+        "--debug",
+        action="count",
+        help="Enable debugging output. Add 'd' characters to "
+        "increase verbosity of output, e.g. '-dd' to set DEBUG=2.",
+    )
+    tshooting.add_argument(
+        "--override-port",
+        type=int,
+        metavar="PORT",
+        help="Override the default UDP port used to refresh the ARP table "
+        "if network requests are enabled and arping is unavailable",
+    )
+    tshooting.add_argument(
+        "--override-platform",
+        type=str,
+        default=None,
+        metavar="PLATFORM",
+        help="Override the platform detection with the given value "
+        "(e.g. 'linux', 'windows', 'freebsd', etc.'). "
+        "Any values returned by platform.system() are valid.",
+    )
+    tshooting.add_argument(
+        "--force-method",
+        type=str,
+        default=None,
+        metavar="METHOD",
+        help="Force a specific method to be used, e.g. 'IpNeighborShow'. "
+        "This will be used regardless of it's method type or platform "
+        "compatibility, and Method.test() will NOT be checked!",
     )
 
     args = parser.parse_args()

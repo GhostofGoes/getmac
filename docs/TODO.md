@@ -44,7 +44,7 @@
 
 ## Breaking changes (or potentially breaking)
 - [x] rewrite strings to f-strings
-- [ ] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
+- [x] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
 - [ ] Split getmac.py into separate files for methods, utils, etc.
 - [x] Refactor how global variables are handled
 - [ ] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping"). Document this behavior!
