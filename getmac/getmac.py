@@ -520,7 +520,6 @@ class ArpVariousArgs(Method):
         return _search(r"\(" + escaped + self._good_regex, command_output)
 
 
-
 class ArpExe(Method):
     """
     Query the Windows ARP table using ``arp.exe`` to find the MAC address of a remote host.
