@@ -516,7 +516,9 @@ class ArpVariousArgs(Method):
             command_output = _popen("arp", " ".join(cmd_args))
 
         escaped = re.escape(arg)
-        _good_regex = self._regex_darwin if DARWIN or SOLARIS else self._regex_std  # type: str
+        _good_regex = (
+            self._regex_darwin if DARWIN or SOLARIS else self._regex_std
+        )  # type: str
         return _search(r"\(" + escaped + _good_regex, command_output)
 
 
