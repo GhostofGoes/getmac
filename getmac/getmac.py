@@ -349,7 +349,7 @@ class ArpVariousArgs(Method):
     )
     _args_tested: bool = False
     _good_pair: Union[Tuple, Tuple[str, bool]] = ()
-    _good_regex: str = ""
+    _good_regex: str = _regex_darwin if DARWIN else _regex_std
 
     def test(self) -> bool:
         return check_command("arp")
@@ -397,22 +397,7 @@ class ArpVariousArgs(Method):
             command_output = _popen("arp", " ".join(cmd_args))
 
         escaped = re.escape(arg)
-        if self._good_regex:
-            return _search(r"\(" + escaped + self._good_regex, command_output)
-
-        # try linux regex first
-        # try darwin regex next
-        #   if a regex succeeds the first time, cache the successful regex
-        #   otherwise, don't bother, since it's a miss anyway
-        for regex in (self._regex_std, self._regex_darwin):
-            # NOTE: Darwin regex will return MACs without leading zeroes,
-            # e.g. "58:6d:8f:7:c9:94" instead of "58:6d:8f:07:c9:94"
-            found = _search(r"\(" + escaped + regex, command_output)
-            if found:
-                self._good_regex = regex
-                return found
-
-        return None
+        return _search(r"\(" + escaped + self._good_regex, command_output)
 
 
 class ArpExe(Method):

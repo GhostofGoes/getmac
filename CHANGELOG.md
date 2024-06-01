@@ -30,6 +30,11 @@
   * Remove all `requirement.txt` files
   * Remove `setup.py` and `MANIFEST.in`
 
+## 0.9.5 ()
+
+### Changed
+* Fixed macOS arp when MAC has one character sections in specific cases (Fixes issue #92)
+
 ## 0.9.4 (06/01/2023)
 
 ### Added
