@@ -58,11 +58,11 @@ jobs:
         exclude:
           - platform: ubuntu-20.04
             architecture: x86
-          - platform: macos-latest
+          - platform: macos-13
             architecture: x86
-          - platform: macos-latest
+          - platform: macos-13
             python-version: "pypy-3.7"
-          - platform: macos-latest
+          - platform: macos-13
             python-version: "pypy-3.8"
     steps:
       - uses: actions/checkout@v3
