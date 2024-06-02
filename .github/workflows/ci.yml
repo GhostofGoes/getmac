@@ -50,7 +50,11 @@ jobs:
         platform:
           - ubuntu-20.04
           - windows-latest
-          - macos-latest
+          # Fix tests failing on MacOS 14+ due to ARM architecture
+          # https://github.com/actions/setup-python/issues/825
+          # TODO: update tests to use ARM MacOS with 14+, add 
+          # architecture to the list of architectures above.
+          - macos-13
         exclude:
           - platform: ubuntu-20.04
             architecture: x86
