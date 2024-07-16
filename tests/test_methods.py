@@ -508,6 +508,10 @@ def test_defaultifaceroutegetcommand_samples(
 def test_arp_various_args(benchmark, mocker, get_sample, mac, ip, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.getmac._popen", return_value=content)
+    if "OSX" in sample_file:
+        mocker.patch("getmac.getmac.DARWIN", return_value=True)
+    elif "solaris" in sample_file:
+        mocker.patch("getmac.getmac.SOLARIS", return_value=True)
     result = benchmark(getmac.ArpVariousArgs().get, arg=ip)
 
     # NOTE: Darwin  and Solaris will return MACs without leading zeroes,
