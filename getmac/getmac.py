@@ -1482,10 +1482,12 @@ def get_mac_address(
     # Handle ipaddress objects
     # "is not None" check makes mypy happier
     if ip is not None and not isinstance(ip, str):
-        if isinstance(ip, IPv4Address):
-            ip = str(ip)
-        elif isinstance(ip, IPv4Interface):
+        # NOTE: IPv4Interface check must be done first,
+        # since it's a sub-class of IPv4Address.
+        if isinstance(ip, IPv4Interface):
             ip = str(ip.ip)
+        elif isinstance(ip, IPv4Address):
+            ip = str(ip)
         elif isinstance(ip, IPv4Network):
             raise ValueError(
                 "IPv4Network objects are not supported. getmac needs a host address, "
@@ -1494,11 +1496,13 @@ def get_mac_address(
         # If IPv6 objects are passed to the ip argument,
         # convert them to strings and assign to ip6, and
         # unassign ip.
-        elif isinstance(ip, IPv6Address):
-            ip6 = str(ip)
-            ip = None
+        # NOTE: IPv6Interface check must be done first,
+        # since it's a sub-class of IPv6Address.
         elif isinstance(ip, IPv6Interface):
             ip6 = str(ip.ip)
+            ip = None
+        elif isinstance(ip, IPv6Address):
+            ip6 = str(ip)
             ip = None
         elif isinstance(ip, IPv6Network):
             raise ValueError(
@@ -1534,10 +1538,12 @@ def get_mac_address(
             )
             return None
 
-        if isinstance(ip6, IPv6Address):
-            ip6 = str(ip6)
-        elif isinstance(ip6, IPv6Interface):
+        # NOTE: IPv6Interface check must be done first,
+        # since it's a sub-class of IPv6Address.
+        if isinstance(ip6, IPv6Interface):
             ip6 = str(ip6.ip)
+        elif isinstance(ip6, IPv6Address):
+            ip6 = str(ip6)
         elif isinstance(ip6, IPv6Network):
             raise ValueError(
                 "IPv6Network objects are not supported. getmac needs a host address, "
