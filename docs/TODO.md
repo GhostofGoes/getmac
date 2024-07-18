@@ -8,8 +8,8 @@
 - [x] Document possible values for `PLATFORM` variable
 - [x] Document Method (and subclass) attributes (use Sphinx "#:" comments)
 - [ ] Re-add Man pages (and auto-build them in CI and include in releases and the distributions)
-- [ ] Document `get_by_method()`
-- [ ] Document `initialize_method_cache()`
+- [x] Document `get_by_method()`
+- [x] Document `initialize_method_cache()`
 - [ ] Auto-generated API docs
 - [x] Add docstrings to all util methods
 - Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
@@ -23,7 +23,7 @@
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 
 ## Features
-- [ ] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
+- [x] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
 - [ ] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
 - [ ] FreeBSD default interface: `route get default`
 - [ ] Support NetBSD
@@ -45,6 +45,7 @@
 ## Breaking changes (or potentially breaking)
 - [x] Split getmac.py into separate files for methods, utils, etc.
 - [ ] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient, and doesn't exist in Python 3.9+. We should just take the methods and use directly.
+- [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
     - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
     - keep `-4,`, `-6`, and `--ip6` arguments for backwards-compatibility until 1.1.0
@@ -174,7 +175,6 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Support IPv6 remote hosts on windows, and IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
 - [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
 - [ ] New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
-- [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
 - [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 - [ ] Use `__import__()` or `importlib`?

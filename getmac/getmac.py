@@ -28,6 +28,14 @@ import socket
 import struct
 import traceback
 import warnings
+from ipaddress import (
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+)
 from subprocess import CalledProcessError
 from typing import Dict, List, Optional, Set, Tuple, Type, Union
 
@@ -1398,14 +1406,17 @@ def get_by_method(
 
 
 def get_mac_address(
-    interface: Optional[str] = None,
-    ip: Optional[str] = None,
-    ip6: Optional[str] = None,
-    hostname: Optional[str] = None,
+    interface: Union[str, bytes, None] = None,
+    ip: Union[str, bytes, IPv4Address, IPv4Interface, IPv6Address, IPv6Interface, None] = None,
+    ip6: Union[str, bytes, IPv6Address, IPv6Interface, None] = None,
+    hostname: Union[str, bytes, None] = None,
     network_request: bool = True,
 ) -> Optional[str]:
     """
-    Get an Unicast IEEE 802 MAC-48 address from a local interface or remote host.
+    Get a MAC from a local interface or remote host.
+
+    If you want to be pedantic, this is (probably)
+    a unicast IEEE 802 MAC-48 address.
 
     Only ONE of the first four arguments may be used
     (``interface``,``ip``, ``ip6``, or ``hostname``).
@@ -1415,9 +1426,6 @@ def get_mac_address(
     .. warning::
        In getmac 1.0.0, exceptions will be raised if the method cache initialization fails
        (in other words, if there are no valid methods found for the type of MAC requested).
-
-    .. warning::
-       You MUST provide :class:`str` typed arguments, REGARDLESS of Python version
 
     .. note::
        ``"localhost"`` or ``"127.0.0.1"`` will always return ``"00:00:00:00:00:00"``
@@ -1432,11 +1440,17 @@ def get_mac_address(
        Exceptions raised by methods are handled silently and returned as :obj:`None`.
 
     Args:
-        interface (str): Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
-        ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g ``192.168.0.1``)
-        ip6 (str): Canonical shortened IPv6 address of a remote host (e.g ``ff02::1:ffe7:7f19``)
-        hostname (str): DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
-        network_request (bool): If network requests should be made when attempting to find the
+        interface: Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
+        ip: Canonical dotted decimal IPv4 address of a remote host (e.g ``192.168.0.1``),
+            or a :mod:`ipaddress` object (:class:`~ipaddress.IPv4Address` or
+            :class:`~ipaddress.IPv4Interface`). This will also accept
+            :class:`~ipaddress.IPv6Address` and :class:`~ipaddress.IPv6Interface`,
+            and treat them as if ``ip6`` argument was set instead.
+        ip6: Canonical shortened IPv6 address of a remote host (e.g ``ff02::1:ffe7:7f19``),
+            or a :mod:`ipaddress` object (:class:`~ipaddress.IPv6Address`
+            and :class:`~ipaddress.IPv6Interface`).
+        hostname: DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
+        network_request: If network requests should be made when attempting to find the
             MAC of a remote host. If the ``arping`` command is available, this will be used.
             If not, a UDP packet will be sent to the remote host to populate
             the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
@@ -1447,13 +1461,11 @@ def get_mac_address(
         found or there was an error.
     """
 
+    # If debugging, start the timer
     if settings.DEBUG:
         import timeit
 
         start_time = timeit.default_timer()
-
-    if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
-        return "00:00:00:00:00:00"
 
     # Convert bytes to str
     if interface and isinstance(interface, bytes):
@@ -1464,6 +1476,37 @@ def get_mac_address(
         ip6 = ip6.decode("utf-8")
     if hostname and isinstance(hostname, bytes):
         hostname = hostname.decode("utf-8")
+
+    # Handle ipaddress objects
+    if ip and not isinstance(ip, str):
+        if isinstance(ip, IPv4Address):
+            ip = str(ip)
+        elif isinstance(ip, IPv4Interface):
+            ip = str(ip.ip)
+        elif isinstance(ip, IPv4Network):
+            raise ValueError(
+                "IPv4Network objects are not supported. getmac needs a host address, "
+                "not a network. Try IPv4Address or IPv4Interface instead."
+            )
+        # If IPv6 objects are passed to the ip argument,
+        # convert them to strings and assign to ip6, and
+        # unassign ip.
+        elif isinstance(ip, IPv6Address):
+            ip6 = str(ip)
+            ip = None
+        elif isinstance(ip, IPv6Interface):
+            ip6 = str(ip.ip)
+            ip = None
+        elif isinstance(ip, IPv6Network):
+            raise ValueError(
+                "IPv6Network objects are not supported. getmac needs a host address, "
+                "not a network. Try IPv6Address or IPv6Interface instead."
+            )
+        else:
+            raise ValueError(f"Unknown type for 'ip' argument: '{ip.__class__.__name__}'")
+
+    if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
+        return "00:00:00:00:00:00"
 
     # Resolve hostname to an IP address
     if hostname:
@@ -1479,14 +1522,26 @@ def get_mac_address(
 
     if ip6:
         if not socket.has_ipv6:
+            # TODO: raise exception instead of returning None?
             gvars.log.error(
                 "Cannot get the MAC address of a IPv6 host: "
                 "IPv6 is not supported on this system"
             )
             return None
+        elif isinstance(ip6, IPv6Address):
+            ip6 = str(ip6)
+        elif isinstance(ip6, IPv6Interface):
+            ip6 = str(ip6.ip)
+        elif isinstance(ip6, IPv6Network):
+            raise ValueError(
+                "IPv6Network objects are not supported. getmac needs a host address, "
+                "not a network. Try IPv6Address or IPv6Interface instead."
+            )
         elif ":" not in ip6:
             gvars.log.error(f"Invalid IPv6 address (no ':'): {ip6}")
             return None
+        elif not isinstance(ip6, str):
+            raise ValueError(f"Unknown type for 'ip6' argument: '{ip6.__class__.__name__}'")
 
     mac = None
 
