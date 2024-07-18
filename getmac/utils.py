@@ -17,8 +17,14 @@ from .variables import settings, consts, gvars
 
 def check_command(command: str) -> bool:
     """
-    Check if a command exists using `shutil.which()`. The result of the check
+    Check if a command exists using :func:`shutil.which`. The result of the check
     is cached in a global dict to speed up subsequent lookups.
+
+    Args:
+        command: command to check
+
+    Returns:
+        If the command exists
     """
     if command not in gvars.CHECK_COMMAND_CACHE:
         gvars.CHECK_COMMAND_CACHE[command] = bool(which(command, path=gvars.PATH_STR))
@@ -28,6 +34,12 @@ def check_command(command: str) -> bool:
 def check_path(filepath: str) -> bool:
     """
     Check if the file pointed to by `filepath` exists and is readable.
+
+    Args:
+        filepath: absolute path of file to check
+
+    Returns:
+        If the filepath exists and is readable
     """
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
@@ -35,6 +47,19 @@ def check_path(filepath: str) -> bool:
 def clean_mac(mac: Optional[str]) -> Optional[str]:
     """
     Check and format a string result to be lowercase colon-separated MAC.
+
+    It will clean out any garbage and ensure the length and colons are correct,
+    and replace ``-`` characters with ``:`` characters.
+
+    If string is invalid after as much cleanup as possible, then :obj:`None`
+    is returned. The specific issue is logged as a warning.
+
+    Args:
+        mac: MAC address string to clean
+
+    Returns:
+        Cleaned and formatted MAC address string, or :obj:`None` if
+        validation failed.
     """
     if mac is None:
         return None
@@ -81,6 +106,16 @@ def clean_mac(mac: Optional[str]) -> Optional[str]:
 
 
 def read_file(filepath: str) -> Optional[str]:
+    """
+    Open and read a file.
+
+    Args:
+        filepath: Absolute path of the file to read
+
+    Returns:
+        Text contents of the file, or :obj:`None` if opening
+        the file failed.
+    """
     try:
         with open(filepath) as f:
             return f.read()
@@ -92,6 +127,21 @@ def read_file(filepath: str) -> Optional[str]:
 def search(
     regex: str, text: str, group_index: int = 0, flags: int = 0
 ) -> Optional[str]:
+    """
+    Search for a regular expression in a string, and return the specified group.
+    This is thin wrapper around :func:`re.search` with some error handling.
+
+    Args:
+        regex: regular expression
+        text: data to search
+        group_index: what index in the ``groupdict`` to return,
+            if there are more than 1
+        flags: :mod:`re` flags
+
+    Returns:
+        The result, or :obj:`None` if the parsing failed
+        or nothing was specified to search.
+    """
     if not text:
         if settings.DEBUG:
             gvars.log.debug("No text to _search()")
@@ -105,8 +155,29 @@ def search(
 
 
 def popen(command: str, args: str) -> str:
+    """
+    Execute a command with arguments and return the stdout (stderr is discarded).
+
+    Wrapper around :func:`~getmac.utils.call_proc`, with checks
+    to ensure the command exists and is executable and some debug
+    logging. This should be used instead of
+    :func:`~getmac.utils.call_proc`.
+
+    Args:
+        command: command to run, e.g. ``ping`` or ``ping.exe``
+        args: arguments to pass to the command, or empty string
+            if there are no arguments.
+
+    Returns:
+        stdout from the command (stderr is discarded)
+
+    Raises:
+        CalledProcessError: the command failed to execute
+    """
     for directory in gvars.PATH:
         executable = os.path.join(directory, command)
+        # TODO: cache the result of these checks? these are system calls
+        # and they can add up.
         if (
             os.path.exists(executable)
             and os.access(executable, os.F_OK | os.X_OK)
@@ -123,6 +194,22 @@ def popen(command: str, args: str) -> str:
 
 
 def call_proc(executable: str, args: str) -> str:
+    """
+    Wrapper around :func:`subprocess.check_output` with some
+    logging and type conversion. The reason this and
+    :func:`~getmac.utils.popen` are separate functions is
+    for testability.
+
+    Args:
+        executable: command to run
+        args: arguments to the command
+
+    Returns:
+        stdout from the command (stderr is discarded)
+
+    Raises:
+        CalledProcessError: the command failed to execute
+    """
     if consts.WINDOWS:
         cmd = executable + " " + args  # type: ignore
     else:
@@ -142,6 +229,15 @@ def call_proc(executable: str, args: str) -> str:
 
 
 def uuid_convert(mac: int) -> str:
+    """
+    Convert value output from ``uuid`` internal function into a string.
+
+    Args:
+        mac: integer value returned from a ``uuid`` function
+
+    Returns:
+        String with colon-separated MAC address
+    """
     return ":".join(("%012X" % mac)[i : i + 2] for i in range(0, 12, 2))
 
 
@@ -152,6 +248,9 @@ def fetch_ip_using_dns() -> str:
     Sends a UDP packet to Cloudflare's DNS (``1.1.1.1``), which should go through
     the default interface. This populates the source address of the socket,
     which we then inspect and return.
+
+    Returns:
+        IP address of this system's default network interface as a string
     """
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.connect(("1.1.1.1", 53))

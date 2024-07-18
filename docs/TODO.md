@@ -5,13 +5,13 @@
 - [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
 - [ ] Single page on RTD/publish with GitHub actions built with Sphinx and Furo
 - [ ] Update docs/usage examples for `get_mac_address()`
-- [ ] Document possible values for `PLATFORM` variable
-- [ ] Document Method (and subclass) attributes (use Sphinx "#:" comments)
+- [x] Document possible values for `PLATFORM` variable
+- [x] Document Method (and subclass) attributes (use Sphinx "#:" comments)
 - [ ] Re-add Man pages (and auto-build them in CI and include in releases and the distributions)
 - [ ] Document `get_by_method()`
 - [ ] Document `initialize_method_cache()`
 - [ ] Auto-generated API docs
-- [ ] Add docstrings to all util methods
+- [x] Add docstrings to all util methods
 - Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
 
 ## Tests
@@ -43,7 +43,7 @@
 
 
 ## Breaking changes (or potentially breaking)
-- [ ] Split getmac.py into separate files for methods, utils, etc.
+- [x] Split getmac.py into separate files for methods, utils, etc.
 - [ ] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient, and doesn't exist in Python 3.9+. We should just take the methods and use directly.
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
     - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
@@ -104,6 +104,8 @@
 
 
 # Etc
+- [ ] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
+- [ ] cache the result of executable checks in `getmac.utils.popen()`
 - [ ] Refactor the default interface code. Combine the functions into 
 one, move the default fallback logic into the function.
 - TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)

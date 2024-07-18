@@ -69,12 +69,29 @@ class Constants(VarsClass):
         hasattr(sys, "getandroidapilevel") or "ANDROID_STORAGE" in os.environ
     )
 
-    #: Generic platform identifier used for filtering methods
+    #: Generic platform identifier used for filtering methods.
+    #:
+    #: Possible values:
+    #:
+    #: - wsl
+    #: - linux
+    #: - windows
+    #: - darwin
+    #: - openbsd
+    #: - freebsd
+    #: - netbsd
+    #: - sunos
+    #: - any other values that can be returned by :func:`platform.uname`,
+    #:      converted to lowercase.
     # TODO: change to "wsl1", since WSL2 method should just work like normal linux
     PLATFORM: str = "wsl" if (LINUX and WSL1) else _SYST.lower()
 
+    #: Regular expression pattern for MAC addresses with ':' characters
     MAC_RE_COLON: str = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
+
+    #: Regular expression pattern for MAC addresses with '-' characters
     MAC_RE_DASH: str = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
+
     #: On OSX, some MACs in arp output may have a single digit instead of two
     #: Examples: "18:4f:32:5a:64:5", "14:cc:20:1a:99:0"
     #: This can also happen on other platforms, like Solaris

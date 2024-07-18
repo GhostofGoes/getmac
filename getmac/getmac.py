@@ -11,13 +11,13 @@ It provides one function: ``get_mac_address()``
 .. code-block:: python
    :caption: Examples
 
-    from getmac import get_mac_address
-    eth_mac = get_mac_address(interface="eth0")
-    win_mac = get_mac_address(interface="Ethernet 3")
-    ip_mac = get_mac_address(ip="192.168.0.1")
-    ip6_mac = get_mac_address(ip6="::1")
-    host_mac = get_mac_address(hostname="localhost")
-    updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
+   from getmac import get_mac_address
+   eth_mac = get_mac_address(interface="eth0")
+   win_mac = get_mac_address(interface="Ethernet 3")
+   ip_mac = get_mac_address(ip="192.168.0.1")
+   ip6_mac = get_mac_address(ip6="::1")
+   host_mac = get_mac_address(hostname="localhost")
+   updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
 """
 
@@ -83,7 +83,7 @@ class Method:
            internal error with the command, or a bug in the code).
 
         Args:
-            arg (str): What the method should get, such as an IP address
+            arg: What the method should get, such as an IP address
                 or interface name. In the case of default_iface methods,
                 this is not used and defaults to an empty string.
 
@@ -1068,15 +1068,19 @@ def get_method_by_name(method_name: str) -> Optional[Type[Method]]:
 
 def get_instance_from_cache(method_type: str, method_name: str) -> Optional[Method]:
     """
-    Get the class for a named Method from the caches.
+    Get the class for a named :class:`~getmac.getmac.Method` from the caches.
 
-    METHOD_CACHE is checked first, and if that fails,
-    then any entries in FALLBACK_CACHE are checked.
-    If both fail, None is returned.
+    :data:`~getmac.getmac.METHOD_CACHE` is checked first, and if that fails,
+    then any entries in :data:`~getmac.getmac.FALLBACK_CACHE` are checked.
+    If both fail, :obj:`None` is returned.
 
     Args:
-        method_type: method type to initialize the cache for.
+        method_type: what cache should be checked.
             Allowed values are:  ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
+        method_name: name of the method to look for
+
+    Returns:
+        The cached method, or :obj:`None` if the method was not found
     """
 
     if str(METHOD_CACHE[method_type]) == method_name:
@@ -1126,7 +1130,10 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         method_type: method type to initialize the cache for.
             Allowed values are:  ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
         network_request: if methods that make network requests should be included
-            (those methods that have the attribute ``network_request`` set to ``True``)
+            (those methods that have the attribute ``network_request`` set to :obj:`True`)
+
+    Returns:
+        If the cache was initialized successfully
     """
     if METHOD_CACHE.get(method_type):
         if settings.DEBUG:
@@ -1334,7 +1341,10 @@ def get_by_method(
             Allowed values are: ``ip4``, ``ip6``, ``iface``, ``default_iface``
         arg: Argument to pass to the method, e.g. an interface name or IP address
         network_request: if methods that make network requests should be included
-            (those methods that have the attribute ``network_request`` set to ``True``)
+            (those methods that have the attribute ``network_request`` set to :obj:`True`)
+
+    Returns:
+        The MAC address string, or :obj:`None` if the operation failed
     """
     if not arg and method_type != "default_iface":
         gvars.log.error(f"Empty arg for method '{method_type}' (raw value: {arg!r})")
