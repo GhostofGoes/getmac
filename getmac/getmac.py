@@ -349,7 +349,7 @@ class ArpVariousArgs(Method):
     )
     _args_tested: bool = False
     _good_pair: Union[Tuple, Tuple[str, bool]] = ()
-    _good_regex: str = _regex_darwin if DARWIN else _regex_std
+    _good_regex: str = _regex_darwin if consts.DARWIN else _regex_std
 
     def test(self) -> bool:
         return check_command("arp")
@@ -398,7 +398,7 @@ class ArpVariousArgs(Method):
 
         escaped = re.escape(arg)
         _good_regex = (
-            self._regex_darwin if DARWIN or SOLARIS else self._regex_std
+            self._regex_darwin if consts.DARWIN or consts.SOLARIS else self._regex_std
         )  # type: str
         return _search(r"\(" + escaped + _good_regex, command_output)
 
