@@ -1455,6 +1455,16 @@ def get_mac_address(
     if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
         return "00:00:00:00:00:00"
 
+    # Convert bytes to str
+    if interface and isinstance(interface, bytes):
+        interface = interface.decode("utf-8")
+    if ip and isinstance(ip, bytes):
+        ip = ip.decode("utf-8")
+    if ip6 and isinstance(ip6, bytes):
+        ip6 = ip6.decode("utf-8")
+    if hostname and isinstance(hostname, bytes):
+        hostname = hostname.decode("utf-8")
+
     # Resolve hostname to an IP address
     if hostname:
         # Exceptions will be handled silently and returned as a None
