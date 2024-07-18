@@ -5,8 +5,6 @@ import sys
 from typing import Dict, List
 
 
-# TODO: methods to print, dump, etc variables
-# TODO: type validation?
 class VarsClass:
     pass
 

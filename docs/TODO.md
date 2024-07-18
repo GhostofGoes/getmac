@@ -12,7 +12,7 @@
 - [x] Document `initialize_method_cache()`
 - [ ] Auto-generated API docs
 - [x] Add docstrings to all util methods
-- Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
+- [ ] Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
 
 ## Tests
 - [ ] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
@@ -25,22 +25,8 @@
 ## Features
 - [x] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
 - [ ] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
-- [ ] FreeBSD default interface: `route get default`
-- [ ] Support NetBSD
-    - platform: `netbsd`
-    - default interface: `wm0`
-    - ip: "route -nq show", "netstat -r", arp -a
-    - default interface via `route get default`?
-- [ ] Support Solaris
-    - platform: `sunos`
-    - default interface; `e1000g0` (NOTE: likely because this is in Vagrant VM)
-    - `ifconfig` with no arguments DOES NOT work, need `ifconfig -a`
-    - `netstat` doesn't work with `-e`, but does work with no arguments, `-a` and `-i`. `-n` prevents hostnames from resolving, which is faster. `-i` gives the shortest output (and is fastest), but doesn't give us a MAC address. Providing the interface as an argument also doesn't work to get a MAC (`netstat -a -I e1000g0`).
-    - default interface via `route get default`?
-    - no `ip` command
 - [ ] [issue 77](https://github.com/GhostofGoes/getmac/issues/77): Feature: get all mac addresses
     - "As I was thinking of adding support to jaraco.net for supporting macOS devices (IP addresses and mac addresses), I thought getmac might be a helpful solution, but as I delved into it, I could see that getmac only returns a single mac, even though there may be multiple on a host. It would be nice if getmac could abstract some of its behaviors, mainly to allow a user to query for all mac addresses represented by the host."
-
 
 ## Breaking changes (or potentially breaking)
 - [x] Split getmac.py into separate files for methods, utils, etc.
@@ -62,10 +48,6 @@
 
 ## Enhancements/fixes/misc.
 - [ ] Properly support WSL2
-- [ ] move more logic out of `get_mac_address()` into individual methods:
-    - [ ] interface
-    - [ ] remote host
-    - [ ] return data cleanup and validation
 - [ ] address all TODOs in the code
 - [ ] implement proper default interface detection on Windows
 - [ ] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
@@ -171,6 +153,19 @@ This is going to be a bit more complicated since the highest metric routes are g
 
 
 # Post-1.0.0
+- [ ] FreeBSD default interface: `route get default`
+- [ ] Support NetBSD
+    - platform: `netbsd`
+    - default interface: `wm0`
+    - ip: "route -nq show", "netstat -r", arp -a
+    - default interface via `route get default`?
+- [ ] Support Solaris
+    - platform: `sunos`
+    - default interface; `e1000g0` (NOTE: likely because this is in Vagrant VM)
+    - `ifconfig` with no arguments DOES NOT work, need `ifconfig -a`
+    - `netstat` doesn't work with `-e`, but does work with no arguments, `-a` and `-i`. `-n` prevents hostnames from resolving, which is faster. `-i` gives the shortest output (and is fastest), but doesn't give us a MAC address. Providing the interface as an argument also doesn't work to get a MAC (`netstat -a -I e1000g0`).
+    - default interface via `route get default`?
+    - no `ip` command
 - [ ] Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
 - [ ] Support IPv6 remote hosts on windows, and IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
 - [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78

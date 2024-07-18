@@ -1,4 +1,12 @@
 import inspect
+from ipaddress import (
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+)
 from subprocess import CalledProcessError
 
 import pytest
@@ -213,7 +221,9 @@ def test_get_mac_address_force_method(mocker):
 
 def test_get_mac_address_localhost():
     assert get_mac_address(hostname="localhost") == "00:00:00:00:00:00"
+    assert get_mac_address(hostname=b"localhost") == "00:00:00:00:00:00"
     assert get_mac_address(ip="127.0.0.1") == "00:00:00:00:00:00"
+    assert get_mac_address(ip=b"127.0.0.1") == "00:00:00:00:00:00"
 
     result = get_mac_address(hostname="localhost", network_request=False)
     assert result == "00:00:00:00:00:00"
@@ -224,11 +234,41 @@ def test_get_mac_address_interface(mocker):
     assert getmac.get_mac_address(interface="ens33") == "00:0c:29:b5:72:37"
     getmac.get_by_method.assert_called_once_with("iface", "ens33")
 
+    # bytes
+    assert getmac.get_mac_address(interface=b"ens33") == "00:0c:29:b5:72:37"
+
 
 def test_get_mac_address_ip(mocker):
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:12")
     assert getmac.get_mac_address(ip="192.0.2.2") == "00:01:02:04:00:12"
     getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.2")
+
+    # bytes
+    assert getmac.get_mac_address(ip=b"192.0.2.2") == "00:01:02:04:00:12"
+
+    # IPv4Address
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:55")
+    assert getmac.get_mac_address(ip=IPv4Address("192.0.2.55")) == "00:01:02:04:00:55"
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.55")
+
+    # IPv4Interface
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:66")
+    assert (
+        getmac.get_mac_address(ip=IPv4Interface("192.0.2.66/24")) == "00:01:02:04:00:66"
+    )
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.66")
+
+    # IPv6Address
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:33")
+    assert getmac.get_mac_address(ip=IPv6Address("fe80::33")) == "00:01:02:04:00:33"
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::33")
+
+    # IPv6Interface
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:44")
+    assert (
+        getmac.get_mac_address(ip=IPv6Interface("fe80::44/24")) == "00:01:02:04:00:44"
+    )
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::44")
 
 
 def test_get_mac_address_ip6(mocker):
@@ -242,6 +282,21 @@ def test_get_mac_address_ip6(mocker):
     assert getmac.get_mac_address(ip6="fe80::1") == "00:01:02:04:00:00"
     getmac.get_by_method.assert_called_once_with("ip6", "fe80::1")
 
+    # bytes
+    assert getmac.get_mac_address(ip6=b"fe80::1") == "00:01:02:04:00:00"
+
+    # IPv6Address
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:11")
+    assert getmac.get_mac_address(ip6=IPv6Address("fe80::11")) == "00:01:02:04:00:11"
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::11")
+
+    # IPv6Interface
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:22")
+    assert (
+        getmac.get_mac_address(ip6=IPv6Interface("fe80::22/24")) == "00:01:02:04:00:22"
+    )
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::22")
+
 
 def test_get_mac_address_hostname(mocker):
     cpe = CalledProcessError(cmd="socket.gaierror", returncode=1)
@@ -252,6 +307,9 @@ def test_get_mac_address_hostname(mocker):
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:22")
     assert getmac.get_mac_address(hostname="test_hostname") == "00:01:02:04:00:22"
     getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.22")
+
+    # bytes
+    assert getmac.get_mac_address(hostname=b"test_hostname") == "00:01:02:04:00:22"
 
 
 def test_get_mac_address_default_args_windows_net_request_true(mocker):
@@ -272,3 +330,20 @@ def test_get_mac_address_default_args_fallback_global(mocker):
     mocker.patch("getmac.getmac.get_by_method", return_value="08:00:27:e8:81:6f")
     assert getmac.get_mac_address() == "08:00:27:e8:81:6f"
     getmac.get_by_method.assert_called_once_with("iface", "eth0")
+
+
+def test_get_mac_address_invalid_types():
+    with pytest.raises(ValueError, match="IPv4Network"):
+        getmac.get_mac_address(ip=IPv4Network("192.0.1.0/24"))
+
+    with pytest.raises(ValueError, match="IPv6Network"):
+        getmac.get_mac_address(ip=IPv6Network("2001:db00::0/24"))
+
+    with pytest.raises(ValueError, match="IPv6Network"):
+        getmac.get_mac_address(ip6=IPv6Network("2001:db00::0/24"))
+
+    with pytest.raises(ValueError, match="Unknown type for 'ip' argument"):
+        getmac.get_mac_address(ip=object())
+
+    with pytest.raises(ValueError, match="Unknown type for 'ip6' argument"):
+        getmac.get_mac_address(ip6=object())
