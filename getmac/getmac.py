@@ -1407,7 +1407,9 @@ def get_by_method(
 
 def get_mac_address(
     interface: Union[str, bytes, None] = None,
-    ip: Union[str, bytes, IPv4Address, IPv4Interface, IPv6Address, IPv6Interface, None] = None,
+    ip: Union[
+        str, bytes, IPv4Address, IPv4Interface, IPv6Address, IPv6Interface, None
+    ] = None,
     ip6: Union[str, bytes, IPv6Address, IPv6Interface, None] = None,
     hostname: Union[str, bytes, None] = None,
     network_request: bool = True,
@@ -1468,17 +1470,18 @@ def get_mac_address(
         start_time = timeit.default_timer()
 
     # Convert bytes to str
-    if interface and isinstance(interface, bytes):
+    if isinstance(interface, bytes):
         interface = interface.decode("utf-8")
-    if ip and isinstance(ip, bytes):
+    if isinstance(ip, bytes):
         ip = ip.decode("utf-8")
-    if ip6 and isinstance(ip6, bytes):
+    if isinstance(ip6, bytes):
         ip6 = ip6.decode("utf-8")
-    if hostname and isinstance(hostname, bytes):
+    if isinstance(hostname, bytes):
         hostname = hostname.decode("utf-8")
 
     # Handle ipaddress objects
-    if ip and not isinstance(ip, str):
+    # "is not None" check makes mypy happier
+    if ip is not None and not isinstance(ip, str):
         if isinstance(ip, IPv4Address):
             ip = str(ip)
         elif isinstance(ip, IPv4Interface):
@@ -1503,7 +1506,9 @@ def get_mac_address(
                 "not a network. Try IPv6Address or IPv6Interface instead."
             )
         else:
-            raise ValueError(f"Unknown type for 'ip' argument: '{ip.__class__.__name__}'")
+            raise ValueError(
+                f"Unknown type for 'ip' argument: '{ip.__class__.__name__}'"
+            )
 
     if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
         return "00:00:00:00:00:00"
@@ -1520,7 +1525,7 @@ def get_mac_address(
                 gvars.log.debug(traceback.format_exc())
             return None
 
-    if ip6:
+    if ip6 is not None:  # "is not None" check makes mypy happier
         if not socket.has_ipv6:
             # TODO: raise exception instead of returning None?
             gvars.log.error(
@@ -1528,7 +1533,8 @@ def get_mac_address(
                 "IPv6 is not supported on this system"
             )
             return None
-        elif isinstance(ip6, IPv6Address):
+
+        if isinstance(ip6, IPv6Address):
             ip6 = str(ip6)
         elif isinstance(ip6, IPv6Interface):
             ip6 = str(ip6.ip)
@@ -1537,11 +1543,14 @@ def get_mac_address(
                 "IPv6Network objects are not supported. getmac needs a host address, "
                 "not a network. Try IPv6Address or IPv6Interface instead."
             )
-        elif ":" not in ip6:
+        elif not isinstance(ip6, str):
+            raise ValueError(
+                f"Unknown type for 'ip6' argument: '{ip6.__class__.__name__}'"
+            )
+
+        if ":" not in ip6:
             gvars.log.error(f"Invalid IPv6 address (no ':'): {ip6}")
             return None
-        elif not isinstance(ip6, str):
-            raise ValueError(f"Unknown type for 'ip6' argument: '{ip6.__class__.__name__}'")
 
     mac = None
 
