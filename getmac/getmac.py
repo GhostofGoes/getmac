@@ -24,162 +24,18 @@ It provides one function: ``get_mac_address()``
 import ctypes
 import os
 import re
-import shlex
 import socket
 import struct
 import traceback
 import warnings
-from shutil import which
-from subprocess import DEVNULL, CalledProcessError, check_output
+from subprocess import CalledProcessError
 from typing import Dict, List, Optional, Set, Tuple, Type, Union
 
+from . import utils
 from .variables import settings, consts, gvars
 
 #: Current version of getmac package
 __version__ = "1.0.0a0"
-
-
-def check_command(command: str) -> bool:
-    """
-    Check if a command exists using `shutil.which()`. The result of the check
-    is cached in a global dict to speed up subsequent lookups.
-    """
-    if command not in gvars.CHECK_COMMAND_CACHE:
-        gvars.CHECK_COMMAND_CACHE[command] = bool(which(command, path=gvars.PATH_STR))
-    return gvars.CHECK_COMMAND_CACHE[command]
-
-
-def check_path(filepath: str) -> bool:
-    """
-    Check if the file pointed to by `filepath` exists and is readable.
-    """
-    return os.path.exists(filepath) and os.access(filepath, os.R_OK)
-
-
-def _clean_mac(mac: Optional[str]) -> Optional[str]:
-    """
-    Check and format a string result to be lowercase colon-separated MAC.
-    """
-    if mac is None:
-        return None
-
-    # Handle cases where it's bytes
-    if isinstance(mac, bytes):
-        mac = mac.decode("utf-8")
-
-    # Strip bad characters
-    for garbage_string in ["\\n", "\\r"]:
-        mac = mac.replace(garbage_string, "")
-
-    # Remove trailing whitespace, make lowercase, remove spaces,
-    # and replace dashes '-' with colons ':'.
-    mac = mac.strip().lower().replace(" ", "").replace("-", ":")
-
-    # Fix cases where there are no colons
-    if ":" not in mac and len(mac) == 12:
-        gvars.log.debug(f"Adding colons to MAC {mac}")
-        mac = ":".join(mac[i : i + 2] for i in range(0, len(mac), 2))
-
-    # Pad single-character octets with a leading zero (e.g. Darwin's ARP output)
-    elif len(mac) < 17:
-        gvars.log.debug(
-            f"Length of MAC {mac} is {len(mac)}, padding single-character octets with zeros"
-        )
-        parts = mac.split(":")
-        new_mac = []
-        for part in parts:
-            if len(part) == 1:
-                new_mac.append("0" + part)
-            else:
-                new_mac.append(part)
-        mac = ":".join(new_mac)
-
-    # MAC address should ALWAYS be 17 characters before being returned
-    if len(mac) != 17:
-        gvars.log.warning(f"MAC address {mac} is not 17 characters long!")
-        mac = None
-    elif mac.count(":") != 5:
-        gvars.log.warning(f"MAC address {mac} is missing colon (':') characters")
-        mac = None
-    return mac
-
-
-def _read_file(filepath: str) -> Optional[str]:
-    try:
-        with open(filepath) as f:
-            return f.read()
-    except OSError:
-        gvars.log.debug(f"Could not find file: '{filepath}'")
-        return None
-
-
-def _search(
-    regex: str, text: str, group_index: int = 0, flags: int = 0
-) -> Optional[str]:
-    if not text:
-        if settings.DEBUG:
-            gvars.log.debug("No text to _search()")
-        return None
-
-    match = re.search(regex, text, flags)
-    if match:
-        return match.groups()[group_index]
-
-    return None
-
-
-def _popen(command: str, args: str) -> str:
-    for directory in gvars.PATH:
-        executable = os.path.join(directory, command)
-        if (
-            os.path.exists(executable)
-            and os.access(executable, os.F_OK | os.X_OK)
-            and not os.path.isdir(executable)
-        ):
-            break
-    else:
-        executable = command
-
-    if settings.DEBUG >= 3:
-        gvars.log.debug(f"Running: '{executable} {args}'")
-
-    return _call_proc(executable, args)
-
-
-def _call_proc(executable: str, args: str) -> str:
-    if consts.WINDOWS:
-        cmd = executable + " " + args  # type: ignore
-    else:
-        cmd = [executable, *shlex.split(args)]  # type: ignore
-
-    output: Union[str, bytes] = check_output(
-        cmd, stderr=DEVNULL, env=gvars.ENV  # noqa: S603
-    )
-
-    if settings.DEBUG >= 4:
-        gvars.log.debug(f"Output from '{executable}' command: {output!s}")
-
-    if isinstance(output, bytes):
-        output = output.decode("utf-8")
-
-    return output
-
-
-def _uuid_convert(mac: int) -> str:
-    return ":".join(("%012X" % mac)[i : i + 2] for i in range(0, 12, 2))
-
-
-def _fetch_ip_using_dns() -> str:
-    """
-    Determines the IP address of the default network interface.
-
-    Sends a UDP packet to Cloudflare's DNS (``1.1.1.1``), which should go through
-    the default interface. This populates the source address of the socket,
-    which we then inspect and return.
-    """
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.connect(("1.1.1.1", 53))
-        return s.getsockname()[0]
 
 
 class Method:
@@ -264,9 +120,9 @@ class UuidArpGetNode(Method):
             socket.gethostbyname = lambda x: arg  # noqa: ARG005
             mac1 = _arp_getnode()
             if mac1 is not None:
-                mac1 = _uuid_convert(mac1)
+                mac1 = utils.uuid_convert(mac1)
                 mac2 = _arp_getnode()
-                mac2 = _uuid_convert(mac2)
+                mac2 = utils.uuid_convert(mac2)
                 if mac1 == mac2:
                     return mac1
         except Exception:
@@ -283,13 +139,13 @@ class ArpFile(Method):
     _path: str = os.environ.get("ARP_PATH", "/proc/net/arp")
 
     def test(self) -> bool:
-        return check_path(self._path)
+        return utils.check_path(self._path)
 
     def get(self, arg: str) -> Optional[str]:
         if not arg:
             return None
 
-        data = _read_file(self._path)
+        data = utils.read_file(self._path)
 
         if data is None:
             self.unusable = True
@@ -304,7 +160,7 @@ class ArpFile(Method):
 
             # Need a space, otherwise a search for 192.168.16.2
             # will match 192.168.16.254 if it comes first!
-            return _search(re.escape(arg) + r" .+" + consts.MAC_RE_COLON, data)
+            return utils.search(re.escape(arg) + r" .+" + consts.MAC_RE_COLON, data)
 
         return None
 
@@ -314,11 +170,11 @@ class ArpFreebsd(Method):
     method_type = "ip"
 
     def test(self) -> bool:
-        return check_command("arp")
+        return utils.check_command("arp")
 
     def get(self, arg: str) -> Optional[str]:
         regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + consts.MAC_RE_COLON
-        return _search(regex, _popen("arp", arg))
+        return utils.search(regex, utils.popen("arp", arg))
 
 
 class ArpOpenbsd(Method):
@@ -327,10 +183,10 @@ class ArpOpenbsd(Method):
     _regex: str = r"[ ]+" + consts.MAC_RE_COLON
 
     def test(self) -> bool:
-        return check_command("arp")
+        return utils.check_command("arp")
 
     def get(self, arg: str) -> Optional[str]:
-        return _search(re.escape(arg) + self._regex, _popen("arp", "-an"))
+        return utils.search(re.escape(arg) + self._regex, utils.popen("arp", "-an"))
 
 
 class ArpVariousArgs(Method):
@@ -352,7 +208,7 @@ class ArpVariousArgs(Method):
     _good_regex: str = _regex_darwin if consts.DARWIN else _regex_std
 
     def test(self) -> bool:
-        return check_command("arp")
+        return utils.check_command("arp")
 
     def get(self, arg: str) -> Optional[str]:
         if not arg:
@@ -372,7 +228,7 @@ class ArpVariousArgs(Method):
                     if pair_to_test[1]:
                         cmd_args.append(arg)
 
-                    command_output = _popen("arp", " ".join(cmd_args))
+                    command_output = utils.popen("arp", " ".join(cmd_args))
                     self._good_pair = pair_to_test
                     break
                 except CalledProcessError as ex:
@@ -394,13 +250,13 @@ class ArpVariousArgs(Method):
             if self._good_pair[1]:
                 cmd_args.append(arg)
 
-            command_output = _popen("arp", " ".join(cmd_args))
+            command_output = utils.popen("arp", " ".join(cmd_args))
 
         escaped = re.escape(arg)
         _good_regex = (
             self._regex_darwin if consts.DARWIN or consts.SOLARIS else self._regex_std
         )  # type: str
-        return _search(r"\(" + escaped + _good_regex, command_output)
+        return utils.search(r"\(" + escaped + _good_regex, command_output)
 
 
 class ArpExe(Method):
@@ -418,10 +274,10 @@ class ArpExe(Method):
         # NOTE: specifying "arp.exe" instead of "arp" lets this work
         # seamlessly on WSL1 as well. On WSL2 it doesn't matter, since
         # it's basically just a Linux VM with some lipstick.
-        return check_command("arp.exe")
+        return utils.check_command("arp.exe")
 
     def get(self, arg: str) -> Optional[str]:
-        return _search(consts.MAC_RE_DASH, _popen("arp.exe", f"-a {arg}"))
+        return utils.search(consts.MAC_RE_DASH, utils.popen("arp.exe", f"-a {arg}"))
 
 
 class ArpingHost(Method):
@@ -459,7 +315,7 @@ class ArpingHost(Method):
     _iputils_args: str = "-f -c 1"
 
     def test(self) -> bool:
-        return check_command("arping")
+        return utils.check_command("arping")
 
     def get(self, arg: str) -> Optional[str]:
         # If busybox or iputils, this will just work, and if host ping fails,
@@ -471,9 +327,9 @@ class ArpingHost(Method):
         # then re-try with Habets args.
         try:
             if self._is_iputils:
-                command_output = _popen("arping", f"{self._iputils_args} {arg}")
+                command_output = utils.popen("arping", f"{self._iputils_args} {arg}")
                 if command_output:
-                    return _search(
+                    return utils.search(
                         r" from %s \[(%s)\]" % (re.escape(arg), consts.MAC_RE_COLON),
                         command_output,
                     )
@@ -496,7 +352,7 @@ class ArpingHost(Method):
         return None
 
     def _call_habets(self, arg: str) -> Optional[str]:
-        command_output = _popen("arping", f"{self._habets_args} {arg}")
+        command_output = utils.popen("arping", f"{self._habets_args} {arg}")
         if command_output:
             return command_output.strip()
         else:
@@ -559,10 +415,10 @@ class IpNeighborShow(Method):
     method_type = "ip"  # IPv6 and IPv4
 
     def test(self) -> bool:
-        return check_command("ip")
+        return utils.check_command("ip")
 
     def get(self, arg: str) -> Optional[str]:
-        output = _popen("ip", f"neighbor show {arg}")
+        output = utils.popen("ip", f"neighbor show {arg}")
         if not output:
             return None
 
@@ -583,10 +439,10 @@ class SysIfaceFile(Method):
 
     def test(self) -> bool:
         # Imperfect, but should work well enough
-        return check_path(self._path)
+        return utils.check_path(self._path)
 
     def get(self, arg: str) -> Optional[str]:
-        data = _read_file(self._path + arg + "/address")
+        data = utils.read_file(self._path + arg + "/address")
 
         # NOTE: if "/sys/class/net/" exists, but interface file doesn't,
         # then that means the interface doesn't exist
@@ -602,7 +458,7 @@ class UuidLanscan(Method):
         try:
             from uuid import _find_mac  # type: ignore  # noqa: F401
 
-            return check_command("lanscan")
+            return utils.check_command("lanscan")
         except Exception:
             return False
 
@@ -612,7 +468,7 @@ class UuidLanscan(Method):
         mac = _find_mac("lanscan", "-ai", [arg.encode()], lambda i: 0)  # noqa: ARG005
 
         if mac:
-            return _uuid_convert(mac)
+            return utils.uuid_convert(mac)
 
         return None
 
@@ -665,13 +521,13 @@ class GetmacExe(Method):
         # NOTE: the scripts from this library (getmac) are excluded from the
         # path used for checking variables, in getmac.getmac.PATH (defined
         # at the top of this file). Otherwise, this would get messy quickly :)
-        return check_command("getmac.exe")
+        return utils.check_command("getmac.exe")
 
     def get(self, arg: str) -> Optional[str]:
         try:
             # /nh: Suppresses table headers
             # /v:  Verbose
-            command_output = _popen("getmac.exe", "/NH /V")
+            command_output = utils.popen("getmac.exe", "/NH /V")
         except CalledProcessError as ex:
             # This shouldn't cause an exception if it's valid command
             gvars.log.error(f"getmac.exe failed, marking unusable. Exception: {ex}")
@@ -679,10 +535,10 @@ class GetmacExe(Method):
             return None
 
         if self._champ:
-            return _search(self._champ[0] + arg + self._champ[1], command_output)
+            return utils.search(self._champ[0] + arg + self._champ[1], command_output)
 
         for pair in self._regexes:
-            result = _search(pair[0] + arg + pair[1], command_output)
+            result = utils.search(pair[0] + arg + pair[1], command_output)
             if result:
                 self._champ = pair
                 return result
@@ -707,10 +563,10 @@ class IpconfigExe(Method):
     )
 
     def test(self) -> bool:
-        return check_command("ipconfig.exe")
+        return utils.check_command("ipconfig.exe")
 
     def get(self, arg: str) -> Optional[str]:
-        return _search(arg + self._regex, _popen("ipconfig.exe", "/all"))
+        return utils.search(arg + self._regex, utils.popen("ipconfig.exe", "/all"))
 
 
 class WmicExe(Method):
@@ -729,10 +585,10 @@ class WmicExe(Method):
     method_type = "iface"
 
     def test(self) -> bool:
-        return check_command("wmic.exe")
+        return utils.check_command("wmic.exe")
 
     def get(self, arg: str) -> Optional[str]:
-        command_output = _popen(
+        command_output = utils.popen(
             "wmic.exe",
             f'nic where "NetConnectionID = \'{arg}\'" get "MACAddress" /value',
         )
@@ -762,11 +618,11 @@ class DarwinNetworksetupIface(Method):
     method_type = "iface"
 
     def test(self) -> bool:
-        return check_command("networksetup")
+        return utils.check_command("networksetup")
 
     def get(self, arg: str) -> Optional[str]:
-        command_output = _popen("networksetup", f"-getmacaddress {arg}")
-        return _search(consts.MAC_RE_COLON, command_output)
+        command_output = utils.popen("networksetup", f"-getmacaddress {arg}")
+        return utils.search(consts.MAC_RE_COLON, command_output)
 
 
 # This only took 15-20 hours of throwing my brain against a wall multiple times
@@ -792,7 +648,7 @@ def _parse_ifconfig(iface: str, command_output: str) -> Optional[str]:
     # "(?:^|\s)": prevent an input of "h0" from matching on "eth0"
     search_re = r"(?:^|\s)" + iface + IFCONFIG_REGEX
 
-    return _search(search_re, command_output, flags=re.DOTALL)
+    return utils.search(search_re, command_output, flags=re.DOTALL)
 
 
 class IfconfigWithIfaceArg(Method):
@@ -805,11 +661,11 @@ class IfconfigWithIfaceArg(Method):
     method_type = "iface"
 
     def test(self) -> bool:
-        return check_command("ifconfig")
+        return utils.check_command("ifconfig")
 
     def get(self, arg: str) -> Optional[str]:
         try:
-            command_output = _popen("ifconfig", arg)
+            command_output = utils.popen("ifconfig", arg)
         except CalledProcessError as err:
             # Return code of 1 means interface doesn't exist
             if err.returncode == 1:
@@ -829,7 +685,7 @@ class IfconfigEther(Method):
     _iface_arg: bool = False
 
     def test(self) -> bool:
-        return check_command("ifconfig")
+        return utils.check_command("ifconfig")
 
     def get(self, arg: str) -> Optional[str]:
         # Check if this version of "ifconfig" accepts an interface argument
@@ -837,16 +693,16 @@ class IfconfigEther(Method):
 
         if not self._tested_arg:
             try:
-                command_output = _popen("ifconfig", arg)
+                command_output = utils.popen("ifconfig", arg)
                 self._iface_arg = True
             except CalledProcessError:
                 self._iface_arg = False
             self._tested_arg = True
 
         if self._iface_arg and not command_output:  # Don't repeat work on first run
-            command_output = _popen("ifconfig", arg)
+            command_output = utils.popen("ifconfig", arg)
         else:
-            command_output = _popen("ifconfig", "")
+            command_output = utils.popen("ifconfig", "")
 
         return _parse_ifconfig(arg, command_output)
 
@@ -871,7 +727,7 @@ class IfconfigOther(Method):
     _good_pair: List[Union[str, Tuple[str, str]]] = []
 
     def test(self) -> bool:
-        return check_command("ifconfig")
+        return utils.check_command("ifconfig")
 
     def get(self, arg: str) -> Optional[str]:
         if not arg:
@@ -884,7 +740,7 @@ class IfconfigOther(Method):
         if not self._args_tested:
             for pair_to_test in self._args:
                 try:
-                    command_output = _popen("ifconfig", pair_to_test[0])
+                    command_output = utils.popen("ifconfig", pair_to_test[0])
                     self._good_pair = list(pair_to_test)  # type: ignore
                     if isinstance(self._good_pair[1], str):
                         self._good_pair[1] += consts.MAC_RE_COLON
@@ -903,13 +759,13 @@ class IfconfigOther(Method):
             self._args_tested = True
 
         if not command_output and isinstance(self._good_pair[0], str):
-            command_output = _popen("ifconfig", self._good_pair[0])
+            command_output = utils.popen("ifconfig", self._good_pair[0])
 
         # Handle the two possible search terms
         if isinstance(self._good_pair[1], tuple):
             for term in self._good_pair[1]:
                 regex = term + consts.MAC_RE_COLON
-                result = _search(re.escape(arg) + regex, command_output)
+                result = utils.search(re.escape(arg) + regex, command_output)
 
                 if result:
                     # changes type from tuple to str, so the else statement
@@ -918,7 +774,7 @@ class IfconfigOther(Method):
                     return result
             return None
         else:
-            return _search(re.escape(arg) + self._good_pair[1], command_output)
+            return utils.search(re.escape(arg) + self._good_pair[1], command_output)
 
 
 class NetstatIface(Method):
@@ -936,13 +792,13 @@ class NetstatIface(Method):
     _working_regex: str = ""
 
     def test(self) -> bool:
-        return check_command("netstat")
+        return utils.check_command("netstat")
 
     # TODO: consolidate the parsing logic between IfconfigOther and netstat
     def get(self, arg: str) -> Optional[str]:
         # NOTE: netstat and ifconfig pull from the same kernel source and
         # therefore have the same output format on the same platform.
-        command_output = _popen("netstat", "-iae")
+        command_output = utils.popen("netstat", "-iae")
         if not command_output:
             gvars.log.warning("no netstat output, marking unusable")
             self.unusable = True
@@ -951,11 +807,13 @@ class NetstatIface(Method):
         if self._working_regex:
             # Use regex that worked previously. This can still return None in
             # the case of interface not existing, but at least it's a bit faster.
-            return _search(arg + self._working_regex, command_output, flags=re.DOTALL)
+            return utils.search(
+                arg + self._working_regex, command_output, flags=re.DOTALL
+            )
 
         # See if either regex matches
         for regex in self._regexes:
-            result = _search(arg + regex, command_output, flags=re.DOTALL)
+            result = utils.search(arg + regex, command_output, flags=re.DOTALL)
             if result:
                 self._working_regex = regex
                 return result
@@ -985,7 +843,7 @@ class IpLinkIface(Method):
     _iface_arg: bool = False
 
     def test(self) -> bool:
-        return check_command("ip")
+        return utils.check_command("ip")
 
     def get(self, arg: str) -> Optional[str]:
         # Check if this version of "ip link" accepts an interface argument
@@ -995,7 +853,7 @@ class IpLinkIface(Method):
 
         if not self._tested_arg:
             try:
-                command_output = _popen("ip", "link show " + arg)
+                command_output = utils.popen("ip", "link show " + arg)
                 self._iface_arg = True
             except CalledProcessError as err:
                 # Output: 'Command "eth0" is unknown, try "ip link help"'
@@ -1005,12 +863,12 @@ class IpLinkIface(Method):
 
         if self._iface_arg:
             if not command_output:  # Don't repeat work on first run
-                command_output = _popen("ip", "link show " + arg)
-            return _search(arg + self._regex, command_output)
+                command_output = utils.popen("ip", "link show " + arg)
+            return utils.search(arg + self._regex, command_output)
         else:
             # TODO: improve this regex to not need extra portion for no arg
-            command_output = _popen("ip", "link")
-            return _search(arg + r":" + self._regex, command_output)
+            command_output = utils.popen("ip", "link")
+            return utils.search(arg + r":" + self._regex, command_output)
 
 
 class DefaultIfaceLinuxRouteFile(Method):
@@ -1027,10 +885,10 @@ class DefaultIfaceLinuxRouteFile(Method):
     method_type = "default_iface"
 
     def test(self) -> bool:
-        return check_path("/proc/net/route")
+        return utils.check_path("/proc/net/route")
 
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
-        data = _read_file("/proc/net/route")
+        data = utils.read_file("/proc/net/route")
 
         if data is not None and len(data) > 1:
             for line in data.split("\n")[1:-1]:
@@ -1065,10 +923,10 @@ class DefaultIfaceRouteCommand(Method):
     method_type = "default_iface"
 
     def test(self) -> bool:
-        return check_command("route")
+        return utils.check_command("route")
 
     def get(self, arg: str = "") -> Optional[str]:
-        output = _popen("route", "-n")
+        output = utils.popen("route", "-n")
 
         try:
             return (
@@ -1086,10 +944,10 @@ class DefaultIfaceRouteGetCommand(Method):
     method_type = "default_iface"
 
     def test(self) -> bool:
-        return check_command("route")
+        return utils.check_command("route")
 
     def get(self, arg: str = "") -> Optional[str]:
-        output = _popen("route", "get default")
+        output = utils.popen("route", "get default")
 
         if not output:
             return None
@@ -1108,10 +966,10 @@ class DefaultIfaceIpRoute(Method):
     method_type = "default_iface"
 
     def test(self) -> bool:
-        return check_command("ip")
+        return utils.check_command("ip")
 
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
-        output = _popen("ip", "route list 0/0")
+        output = utils.popen("ip", "route list 0/0")
 
         if not output:
             if settings.DEBUG:
@@ -1126,10 +984,10 @@ class DefaultIfaceOpenBsd(Method):
     method_type = "default_iface"
 
     def test(self) -> bool:
-        return check_command("route")
+        return utils.check_command("route")
 
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
-        output = _popen("route", "-nq show -inet -gateway -priority 1")
+        output = utils.popen("route", "-nq show -inet -gateway -priority 1")
         return output.partition("127.0.0.1")[0].strip().rpartition(" ")[2]
 
 
@@ -1138,11 +996,11 @@ class DefaultIfaceFreeBsd(Method):
     method_type = "default_iface"
 
     def test(self) -> bool:
-        return check_command("netstat")
+        return utils.check_command("netstat")
 
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
-        output = _popen("netstat", "-r")
-        return _search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", output)
+        output = utils.popen("netstat", "-r")
+        return utils.search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", output)
 
 
 # TODO: order methods by effectiveness/reliability
@@ -1694,7 +1552,7 @@ def get_mac_address(
         else:  # Default to searching for interface
             # Default to finding MAC of the interface with the default route
             if consts.WINDOWS and network_request:
-                default_iface_ip = _fetch_ip_using_dns()
+                default_iface_ip = utils.fetch_ip_using_dns()
                 mac = get_by_method("ip4", default_iface_ip)
             elif consts.WINDOWS:
                 # TODO: implement proper default interface detection on windows
@@ -1728,4 +1586,4 @@ def get_mac_address(
         duration = timeit.default_timer() - start_time
         gvars.log.debug(f"getmac took {duration:0.4f} seconds")
 
-    return _clean_mac(mac)
+    return utils.clean_mac(mac)
