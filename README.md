@@ -8,6 +8,9 @@
 [![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![pdm-managed](https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json)](https://pdm-project.org)
+<a href="https://trackgit.com">
+<img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/m074l5o81nl6lhv6w0xm" alt="trackgit-views" />
+</a>
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 
