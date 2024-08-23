@@ -15,7 +15,8 @@ jobs:
           python-version: "3.11"
           cache: true
       - name: Install dependencies
-        run: pdm sync -d -G lint
+        # NOTE: test is needed here to evaluate imports for pytest
+        run: pdm sync -d -G lint,test
       - name: Run lint checks
         run: pdm run lint
   test:
