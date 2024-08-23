@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup PDM
-        uses: actions/setup-pdm@v4
+        uses: pdm-project/setup-pdm@v4
         with:
           python-version: "3.11"
           cache: true
@@ -54,7 +54,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup PDM
-        uses: actions/setup-pdm@v4
+        uses: pdm-project/setup-pdm@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -114,7 +114,7 @@ jobs:
 #   steps:
 #     - uses: actions/checkout@v4
 #     - name: Setup PDM
-#       uses: actions/setup-pdm@v4
+#       uses: pdm-project/setup-pdm@v4
 #       with:
 #         python-version: "3.11"
 #     - name: Publish package distributions to PyPI
