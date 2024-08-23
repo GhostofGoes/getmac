@@ -63,7 +63,7 @@
 ## Before releasing
 - [ ] Add a deprecation warning to `get-mac` package, don't publish it for 1.0.0
 - [ ] Update supported versions table in [SECURITY.md](../SECURITY.md)
-- [ ] Automate publishing to PyPI in GitHub Actions?
+- [ ] Automate publishing to PyPI+GitHub Release in GitHub Actions
 - [ ] Edit README.md to append CHANGELOG before publishing to PyPI
 
 ## Notes
@@ -81,7 +81,6 @@ Removing Tox, maybe. Can do version enumeration in GitHub Actions, for all platf
 - [x] add inline type annotations for method arguments. remove types from docstrings?
 - [x] Remove `shutilwhich.py` and `.coveragerc`
 - [x] Replace `flake8-mypy` with proper execution of mypy in tests (the project is dead and archived, https://github.com/ambv/flake8-mypy)
-- [x] Switch to Poetry for project management
 - [x] Support Python 3.10 and 3.11
     - [x] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
     - [x] add tests + setup.py classifier

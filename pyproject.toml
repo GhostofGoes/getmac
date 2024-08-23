@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 name = "getmac"
 dynamic = ["version"]  # , "readme"
-description = "Pure-Python package to get the MAC address of network interfaces and hosts on the local network"
+description = "Platform-independent pure-Python module to get a MAC address"
 dependencies = []
 readme = "README.md"
 # readme = { file = "README.md", content-type = "text/markdown" }
@@ -80,14 +80,6 @@ getmac = "getmac.__main__:main"
 
 
 [tool.pdm.dev-dependencies]
-dev = [
-    "tox<5,>=4",
-]
-ci = [
-    "tox<5,>=4",
-    "tox-gh-actions",
-    "tomli; python_version < \"3.12\"",
-]
 test = [
     "pytest<8,>=7",
     "pytest-randomly",
@@ -124,7 +116,6 @@ source-includes = [
     "CONTRIBUTING.md",
     "SECURITY.md",
     "pyproject.toml",
-    "tox.ini",
 ]
 
 [tool.pdm.version]

@@ -68,7 +68,7 @@ jobs:
           python -c "import os; print('os.name: %s' % str(os.name))"
           python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
       - name: Install dependencies
-        run: pdm sync -d -G test,ci
+        run: pdm sync -d -G test
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
         run: pdm run test

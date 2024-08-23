@@ -8,22 +8,32 @@ Thanks for taking an interest in this awesome little project. We love to bring n
 
 
 # Code requirements
-* Must work under all supported Python versions (2.7 and 3.4+)
-* Must work on all supported platforms (if applicable)
-* Try to match the general code style (loosely PEP8)
-* Be respectful. Memes, references, and jokes are ok. Explicit language (cursing/swearing), NSFW text/content, or racism are NOT ok.
+
+Your code *must*:
+* Have tests
+* Work with all supported Python versions
+* Work on all supported platforms
+* Pass linting
+* Pass CI
+* Adhere to the [Code of Conduct](CODE_OF_CONDUCT.md)
+
+Most of these requirements are checked in CI (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Black](https://github.com/psf/black). You can write whatever format you want, as long as you run Black (`pdm run format`) before pushing, you're good. 
+
+Please be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Memes, references, and jokes are OK. Be nice, we're all human, and code is the great equalizer.
 
 ## Checklist before submitting a pull request
-* [ ] Code is formatted using `black` (`black getmac tests`)
+* [ ] Code is formatted using `black` (`pdm run format`)
 * [ ] All tests run and pass locally
-    * [ ] `poetry run tox`
-    * [ ] `poetry run tox -e check`
-* [ ] Update the [CHANGELOG](CHANGELOG.md) (For non-trivial changes, e.g. changing functionality or adding tests)
-* [ ] Add your name to the contributors list in the [README](README.md)
+    * [ ] Tests: `pdm run test`
+    * [ ] Benchmarks: `pdm run benchmark`
+    * [ ] Lint: `pdm run lint`
+* [ ] Update the [CHANGELOG](CHANGELOG.md) (if applicable, for non-trivial changes)
+* [ ] Add your name to the contributors list in the [README](README.md) (please include what your contribution was after your name)
 
 ## Checklist before a Pull Request will be merged
 * [ ] *All* tests pass in GitHub Actions
 * [ ] Code has been reviewed by at least one maintainer
+* [ ] Coverage has NOT decreased
 
 
 # Where to contribute
@@ -62,22 +72,22 @@ Examples of output of various commands is an easy way contribute that is still i
 1. Create your own fork of the code through GitHub web interface ([Here's a Guide](https://gist.github.com/Chaser324/ce0505fbed06b947d962))
 1. Clone the fork to your computer. This can be done using the [GitHub desktop](https://desktop.github.com/) GUI , `git clone <fork-url>`, or the Git tools in your favorite editor or IDE.
 1. Create and checkout a new branch in the fork with either your username (e.g. "ghostofgoes"), or the name of the feature or issue you're working on (e.g. "openbsd-support"). Again, this can be done using the GUI, your favorite editor, or `git checkout -b <branch> origin/<branch>`.
-1. Install Poetry: https://python-poetry.org/docs/
-1. Create local environment:
+2. Install PDM: https://pdm-project.org/en/latest/#installation
+3. Create local environment:
     ```bash
-    poetry install
+    pdm install -d
     ```
-1. Ensure tests work locally:
+4. Ensure tests work locally:
     ```bash
     # Run code quality checks
-    poetry run tox -e check
+    pdm run lint
 
     # Run the tests
-    poetry run tox
+    pdm run test
     ```
-1. Write some code! Git commit messages should information about what changed, and if it's relevant, the rationale (thinking) for the change.
-1. Follow the checklist in the pull request template
-1. Submit a pull request!
+5. Write some code! Git commit messages should information about what changed, and if it's relevant, the rationale (thinking) for the change.
+6. Follow the checklist in the pull request template
+7. Submit a pull request!
 
 
 # Bug reports
@@ -113,20 +123,17 @@ Ideas for features or other things are welcomed. Open an issue on GitHub detaili
 # Commands
 ```bash
 # Create development environment
-poetry install
+pdm install -d
 
-# Update poetry.lock
-poetry update
+# List scripts, these can be run with "pdm run"
+pdm run -l
 
 # Run tests
-poetry run tox
+pdm run test
 
 # Lint checks
-poetry run tox -e check
-
-# Run specific python tests (in this example, python 3.9)
-poetry run tox -e py39
+pdm run lint
 
 # Run getmac CLI
-poetry run getmac
+pdm run getmac
 ```
