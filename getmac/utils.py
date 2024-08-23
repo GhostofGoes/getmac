@@ -216,7 +216,7 @@ def call_proc(executable: str, args: str) -> str:
         cmd = [executable, *shlex.split(args)]  # type: ignore
 
     output: Union[str, bytes] = check_output(
-        cmd, stderr=DEVNULL, env=gvars.ENV  # noqa: S603
+        cmd, stderr=DEVNULL, env=gvars.ENV
     )
 
     if settings.DEBUG >= 4:

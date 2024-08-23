@@ -138,9 +138,13 @@ path = "getmac/getmac.py"
 help = "Check spelling using Codespell"
 cmd = "codespell --toml pyproject.toml"
 
-[tool.pdm.scripts.check_ruff]
+[tool.pdm.scripts.check]
 help = "Check for linting issues using ruff"
 cmd = "ruff check getmac tests"
+
+[tool.pdm.scripts.fix]
+help = "Check for linting issues and auto-fix"
+cmd = "ruff check --fix getmac tests"
 
 [tool.pdm.scripts.unused]
 help = "Check for unused code using Vulture"
@@ -161,7 +165,7 @@ cmd = "mypy getmac tests"
 help = "Run all linting checks (code quality)"
 composite = [
     "spelling",
-    "check_ruff",
+    "check",
     "unused",
     "check_format",
     "typing",
@@ -216,8 +220,21 @@ ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso'
 # https://docs.astral.sh/ruff/
 [tool.ruff]
 line-length = 99
-# show-source = true
+# Files to exclude from linting
+extend-exclude = [
+    "*.pyc",
+    "__pycache__",
+    ".tox",
+    ".venv",
+    ".github",
+    ".vagrant",
+    "docs",
+    "packaging",
+    "samples",
+    "scripts",
+]
 
+[tool.ruff.lint]
 # Rules: https://docs.astral.sh/ruff/rules/
 # If you violate a rule, lookup the rule on the Rules page in ruff docs.
 # Many rules have links you can click with a explanation of the rule and how to fix it.
@@ -253,20 +270,6 @@ select = [
     "RUF",  # Ruff-specific rules
 ]
 
-# Files to exclude from linting
-extend-exclude = [
-    "*.pyc",
-    "__pycache__",
-    ".tox",
-    ".venv",
-    ".github",
-    ".vagrant",
-    "docs",
-    "packaging",
-    "samples",
-    "scripts",
-]
-
 # Linting error codes to ignore
 ignore = [
     "ANN101",  # missing-type-self
@@ -279,7 +282,8 @@ ignore = [
     "PGH003",  # Use specific rule codes when ignoring type issues
     # "PLC1901", # compare-to-empty-string
     "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
+    "S603",    # subprocess-without-shell-equals-true
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S101", "S104", "S603"]
