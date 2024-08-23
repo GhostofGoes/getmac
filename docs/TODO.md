@@ -66,6 +66,8 @@
 - [ ] Automate publishing to PyPI in GitHub Actions?
 - [ ] Edit README.md to append CHANGELOG before publishing to PyPI
 
+## Notes
+Removing Tox, maybe. Can do version enumeration in GitHub Actions, for all platforms. No need for me to do locally.
 
 ## Done for 1.0.0
 - [x] Move to PDM from Poetry

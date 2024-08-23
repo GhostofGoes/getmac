@@ -1,38 +1,26 @@
 name: CI
-
 on:
-- release
-- push
-- pull_request
-
+  - release
+  - push
+  - pull_request
 jobs:
   lint:
     name: Run lint checks
-    runs-on: ubuntu-20.04
-    # Workaround to disable pip upgrade warnings until fixed in setup-python
-    # See: https://github.com/actions/setup-python/issues/532
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - name: Setup PDM
+        uses: actions/setup-pdm@v4
         with:
           python-version: "3.11"
-      - name: Install Poetry
-        # uses: snok/install-poetry@v1
-        uses: Gr1N/setup-poetry@v8
-      - name: Install dependencies (poetry)
-        run: poetry install --no-interaction --only=main,ci,lint
+          cache: true
+      - name: Install dependencies
+        run: pdm sync -d -G lint
       - name: Run lint checks
-        run: poetry run tox --quiet -e check
+        run: pdm run lint
   test:
     name: Run tests
     runs-on: ${{ matrix.platform }}
-    # Workaround to disable pip upgrade warnings until fixed in setup-python
-    # See: https://github.com/actions/setup-python/issues/532
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
     strategy:
       fail-fast: false
       # Versions available:
@@ -42,7 +30,6 @@ jobs:
       # OS images: https://github.com/actions/runner-images
       matrix:
         python-version:
-          - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
@@ -64,34 +51,26 @@ jobs:
             architecture: x86
           - platform: macos-13
             architecture: x86
-          # Not sure why, but 3.7 on x86 windows is cursed in CI
-          # It passes (for now), however it's quite slow,
-          # and I'm ADHD.
-          - platform: windows-latest
-            architecture: x86
-            python-version: 3.7
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - name: Setup PDM
+        uses: actions/setup-pdm@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
-      - name: Install Poetry
-        # uses: snok/install-poetry@v1
-        uses: Gr1N/setup-poetry@v8
       - name: Display platform and environment information
         run: |
           python --version
+          pdm run python --version
           python -c "import sys; print('sys.version: %s' % str(sys.version))"
           python -c "import sys; print('sys.platform: %s' % str(sys.platform))"
           python -c "import os; print('os.name: %s' % str(os.name))"
           python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
-      - name: Install dependencies (poetry)
-        run: poetry install --no-interaction --only=main,ci,test
+      - name: Install dependencies
+        run: pdm sync -d -G test,ci
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
-        run: poetry run tox --quiet
+        run: pdm run test
       - uses: codecov/codecov-action@v3
         with:
           # codecov is annoying. Not sure why I'm still using it,
@@ -117,31 +96,26 @@ jobs:
 
 # TODO: publish releases using CI
 # TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
-# https://github.com/marketplace/actions/upload-a-build-artifact
+# https://docs.pypi.org/trusted-publishers/adding-a-publisher/
+# https://pdm-project.org/en/latest/usage/publish/
 # name: "Build and publish a release"
 # on:
 #   release:
 #     types: [released]
 # jobs:
-#   publish:
-#     name: "📦 Publish Python distributions"
-#     runs-on: "ubuntu-20.04"
-#     strategy:
-#       matrix:
-#         python-version:
-#           - "3.8"
-#     steps:
-#       - uses: actions/checkout@v3
-#       - name: "🐍 Set up Python ${{ matrix.python-version }}"
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: "${{ matrix.python-version }}"
-#       - name: "🐍 Install wheel and build"
-#         run: "python -m pip install wheel build --user"
-#       - name: "🐍 Build a binary wheel and a source tarball"
-#         run: "python -m build"
-#       - name: "📦 Publish distribution to PyPI"
-#         uses: "pypa/gh-action-pypi-publish@master"
-#         if: "startsWith(github.ref, 'refs/tags')"
-#         with:
-#           password: "${{ secrets.pypi_password }}"
+# pypi-publish:
+#   name: Publish release to PyPI
+#   runs-on: "ubuntu-22.04"
+#   permissions:
+#     # This permission is needed for private repositories.
+#     contents: read
+#     # IMPORTANT: this permission is mandatory for trusted publishing
+#     id-token: write
+#   steps:
+#     - uses: actions/checkout@v4
+#     - name: Setup PDM
+#       uses: actions/setup-pdm@v4
+#       with:
+#         python-version: "3.11"
+#     - name: Publish package distributions to PyPI
+#       run: pdm publish
