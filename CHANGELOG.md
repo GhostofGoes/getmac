@@ -35,6 +35,7 @@
 * Switch to [PDM](https://pdm-project.org) for project management
   * Add `pyproject.toml`, consolidated most tool configurations here
   * Remove `setup.py`,  `MANIFEST.in`, and `requirement.txt` files
+* Switch to CodeCov from Coveralls
 
 ## 0.9.5 (07/15/2024)
 

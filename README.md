@@ -1,6 +1,5 @@
 
 [![Latest version on PyPI](https://badge.fury.io/py/getmac.svg)](https://pypi.org/project/getmac/)
-[![Coverage Status](https://coveralls.io/repos/github/GhostofGoes/getmac/badge.svg?branch=main)](https://coveralls.io/github/GhostofGoes/getmac?branch=main)
 [![codecov](https://codecov.io/github/GhostofGoes/getmac/graph/badge.svg?token=5NxlAE9eGY)](https://codecov.io/github/GhostofGoes/getmac)
 [![GitHub Actions Pipeline Status](https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostofGoes/getmac/actions)
 [![Weekly PyPI downloads](https://pepy.tech/badge/getmac/week)](https://pepy.tech/project/getmac)

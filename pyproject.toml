@@ -86,7 +86,6 @@ dev = [
 ci = [
     "tox<5,>=4",
     "tox-gh-actions",
-    "coveralls",
     "tomli; python_version < \"3.12\"",
 ]
 test = [
@@ -202,11 +201,6 @@ pytest
 testpaths = "tests"
 norecursedirs = ".github getmac samples scripts .git .tox .vagrant .idea .vscode dist build *.egg .* .venv"
 addopts = "--tb=short"
-
-
-# --- Coverage configuration ---
-[tool.coverage.run]
-relative_files = true  # required for coveralls
 
 
 # --- Codespell configuration ---

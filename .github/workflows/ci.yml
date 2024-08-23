@@ -76,21 +76,6 @@ jobs:
         with:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Coveralls
-        if: ${{ matrix.platform == 'ubuntu-20.04' && github.event_name != 'pull_request' }}
-        uses: AndreMiras/coveralls-python-action@develop
-        with:
-          parallel: true
-          flag-name: ${{ matrix.python-version }}-${{ matrix.platform }}
-  coveralls_finish:
-    needs: test
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Coveralls Finished
-      if: ${{ github.event_name != 'pull_request' }}
-      uses: AndreMiras/coveralls-python-action@develop
-      with:
-        parallel-finished: true
 
 
 # TODO: publish releases using CI
