@@ -1,12 +1,13 @@
 
 [![Latest version on PyPI](https://badge.fury.io/py/getmac.svg)](https://pypi.org/project/getmac/)
 [![Coverage Status](https://coveralls.io/repos/github/GhostofGoes/getmac/badge.svg?branch=main)](https://coveralls.io/github/GhostofGoes/getmac?branch=main)
+[![codecov](https://codecov.io/github/GhostofGoes/getmac/graph/badge.svg?token=5NxlAE9eGY)](https://codecov.io/github/GhostofGoes/getmac)
 [![GitHub Actions Pipeline Status](https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostofGoes/getmac/actions)
 [![Weekly PyPI downloads](https://pepy.tech/badge/getmac/week)](https://pepy.tech/project/getmac)
 [![PyPI downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
-[![PyPI downloadss of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
+[![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![pdm-managed](https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json)](https://pdm-project.org)
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 
