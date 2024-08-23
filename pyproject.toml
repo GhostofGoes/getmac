@@ -153,7 +153,7 @@ cmd = "vulture --min-confidence 100 getmac tests"
 [tool.pdm.scripts.check_format]
 help = "Check code formatting is correct"
 composite = [
-    "black --check --quiet getmac tests",
+    "black --check getmac tests",
     # TODO: isort
 ]
 
@@ -174,7 +174,7 @@ composite = [
 [tool.pdm.scripts.format]
 help = "Auto-format code to match requirements"
 composite = [
-    "black --quiet getmac tests",
+    "black getmac tests",
     # TODO: isort
 ]
 

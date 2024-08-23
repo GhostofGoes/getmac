@@ -215,9 +215,7 @@ def call_proc(executable: str, args: str) -> str:
     else:
         cmd = [executable, *shlex.split(args)]  # type: ignore
 
-    output: Union[str, bytes] = check_output(
-        cmd, stderr=DEVNULL, env=gvars.ENV
-    )
+    output: Union[str, bytes] = check_output(cmd, stderr=DEVNULL, env=gvars.ENV)
 
     if settings.DEBUG >= 4:
         gvars.log.debug(f"Output from '{executable}' command: {output!s}")
