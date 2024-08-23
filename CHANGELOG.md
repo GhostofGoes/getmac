@@ -3,7 +3,7 @@
 
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
-**Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
+**Announcement**: Compatibility with Python versions older than 3.8 (2.7, 3.4, 3.5, 3.6, 3.7) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
 
 ## 1.0.0 (TBD)
 
@@ -25,17 +25,16 @@
 * Removed support for Python 2.7. It's time. Supporting 2.7 has become an onerous burden on the project, and has prevented fully supporting 3.10 and 3.11 due to having to stay on an ancient version of pytest. I'm done supporting a version of the language that hasn't been updated in nearly 15 years, and has been wholly unsupported for over 5 years.
 * Removed support for Python 3.4 and 3.5. These are quite old and there were a number of essential features added in 3.6+ that I'd like to use (f-strings, type annotations, mature `pathlib`, etc.)
 * Removed support for Python 3.6. setuptools added `pyproject.toml` support in version 61.0.0, however only version 59 is supported for Python 3.6. This means a choice had to be made between moving to `pyproject.toml` or supporting Python 3.6. Given 3.6 has been EOL for over a year, I've decided to drop support.
+* Removed support for Python 3.7, a lot of modern tooling no longer works with it as of late 2024.
 * Removed support for Jython. As of Jan 23rd, 2023, [Jython](https://github.com/jython/jython) still does not support Python3, only 2.7. If and when it supports Python 3, I'll re-add support for it.
 * Removed explicit support for IronPython. [IronPython3 exists](https://github.com/IronLanguages/ironpython3), however I don't have a way to test it in CI. If someone knows of a way to test it in GitHub actions, let me know, and I'm happy to re-add explicit support.
 * Removed RPM packaging. This wasn't being used anywhere, and hasn't been updated since version 0.6.0. Way back when, I dreamt of putting this in OS package repositories. However, I've now learned that's up to the maintainers of those repos (e.g., Ubuntu or Fedora maintainers), not me.
 
 ### Dev
 * Renamed `master` branch to `main`
-* Switch to the excellent and elegant [Poetry](https://python-poetry.org/) for project management
-  * Add `pyproject.toml`
-  * Move most tool configurations to `pyproject.toml` from `tox.ini`
-  * Remove all `requirement.txt` files
-  * Remove `setup.py` and `MANIFEST.in`
+* Switch to [PDM](https://pdm-project.org) for project management
+  * Add `pyproject.toml`, consolidated most tool configurations here
+  * Remove `setup.py`,  `MANIFEST.in`, and `requirement.txt` files
 
 ## 0.9.5 (07/15/2024)
 
@@ -279,7 +278,7 @@ e.g. '-dd' for DEBUG level 2.
 ### Changed
 * **Significant** performance improvement for remote hosts. Previously,
 the average for `get_mac_address(ip='10.0.0.100')` was 1.71 seconds.
-Now, the average is `12.7 miliseconds`, with the special case of a unpopulated
+Now, the average is `12.7 milliseconds`, with the special case of a unpopulated
 arp table being only slightly higher. This was brought about by changes in
 how the arp table is populated. The original method was to use the
 host's `ping` command to send an ICMP packet to the host. This took time,

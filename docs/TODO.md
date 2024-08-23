@@ -29,7 +29,6 @@
     - "As I was thinking of adding support to jaraco.net for supporting macOS devices (IP addresses and mac addresses), I thought getmac might be a helpful solution, but as I delved into it, I could see that getmac only returns a single mac, even though there may be multiple on a host. It would be nice if getmac could abstract some of its behaviors, mainly to allow a user to query for all mac addresses represented by the host."
 
 ## Breaking changes (or potentially breaking)
-- [x] Split getmac.py into separate files for methods, utils, etc.
 - [ ] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient, and doesn't exist in Python 3.9+. We should just take the methods and use directly.
 - [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
@@ -64,9 +63,13 @@
 ## Before releasing
 - [ ] Add a deprecation warning to `get-mac` package, don't publish it for 1.0.0
 - [ ] Update supported versions table in [SECURITY.md](../SECURITY.md)
+- [ ] Automate publishing to PyPI in GitHub Actions?
+- [ ] Edit README.md to append CHANGELOG before publishing to PyPI
 
 
 ## Done for 1.0.0
+- [x] Move to PDM from Poetry
+- [x] Split getmac.py into separate files for methods, utils, etc.
 - [x] rename "master" branch to "main"
 - [x] Create 0.9.0 branch from master/main so we can submit patch releases if needed
 - [x] Drop support for python 2.7, 3.4, and 3.5
