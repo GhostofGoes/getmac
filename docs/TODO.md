@@ -12,7 +12,7 @@
 - [x] Document `initialize_method_cache()`
 - [ ] Auto-generated API docs
 - [x] Add docstrings to all util methods
-- [ ] Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
+- [x] Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
 
 ## Tests
 - [ ] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
@@ -62,7 +62,7 @@
 
 ## Before releasing
 - [ ] Add a deprecation warning to `get-mac` package, don't publish it for 1.0.0
-- [ ] Update supported versions table in [SECURITY.md](../SECURITY.md)
+- [x] Update supported versions table in [SECURITY.md](../SECURITY.md)
 - [ ] Automate publishing to PyPI+GitHub Release in GitHub Actions
 - [ ] Edit README.md to append CHANGELOG before publishing to PyPI
 

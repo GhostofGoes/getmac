@@ -5,7 +5,7 @@
 groups = ["default", "docs", "lint", "test"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:6a3e317605acee0e758af573b6bbaf9f93490f1ac59af17dd6c84b58c914dd58"
+content_hash = "sha256:3566b05c118d1c7d67c5cb4ebf1289de02748b7031a2f20d5cd505b293efd47b"
 
 [[metadata.targets]]
 requires_python = "~=3.8"
@@ -874,6 +874,21 @@ files = [
 ]
 
 [[package]]
+name = "sphinx-argparse-cli"
+version = "1.11.0"
+requires_python = ">=3.7"
+summary = "render CLI arguments (sub-commands friendly) defined by argparse module"
+groups = ["docs"]
+marker = "python_version >= \"3.9\""
+dependencies = [
+    "sphinx!=6.1,>=5.3",
+]
+files = [
+    {file = "sphinx_argparse_cli-1.11.0-py3-none-any.whl", hash = "sha256:a0a2a153816487d2151c47f2d496ed714b040226a3dcd0f66ff823c6497ae3cd"},
+    {file = "sphinx_argparse_cli-1.11.0.tar.gz", hash = "sha256:03e5012ea8456a29aa45ae4583c74b8be8733ea0a6f515e6beff4fb6a1242ec2"},
+]
+
+[[package]]
 name = "sphinx-autodoc-typehints"
 version = "1.23.0"
 requires_python = ">=3.7"
@@ -886,6 +901,21 @@ dependencies = [
 files = [
     {file = "sphinx_autodoc_typehints-1.23.0-py3-none-any.whl", hash = "sha256:ac099057e66b09e51b698058ba7dd76e57e1fe696cd91b54e121d3dad188f91d"},
     {file = "sphinx_autodoc_typehints-1.23.0.tar.gz", hash = "sha256:5d44e2996633cdada499b6d27a496ddf9dbc95dd1f0f09f7b37940249e61f6e9"},
+]
+
+[[package]]
+name = "sphinx-automodapi"
+version = "0.17.0"
+requires_python = ">=3.8"
+summary = "Sphinx extension for auto-generating API documentation for entire modules"
+groups = ["docs"]
+marker = "python_version >= \"3.9\""
+dependencies = [
+    "sphinx>=4",
+]
+files = [
+    {file = "sphinx-automodapi-0.17.0.tar.gz", hash = "sha256:7ccdadad57add4aa9149d9f2bb5cf28c8f8b590280b4735b1156ea8355c423a1"},
+    {file = "sphinx_automodapi-0.17.0-py3-none-any.whl", hash = "sha256:4d029cb79eef29413e94ab01bb0177ebd2d5ba86e9789b73575afe9c06ae1501"},
 ]
 
 [[package]]
@@ -931,23 +961,6 @@ dependencies = [
 files = [
     {file = "sphinx_inline_tabs-2022.1.2b11-py3-none-any.whl", hash = "sha256:bb4e807769ef52301a186d0678da719120b978a1af4fd62a1e9453684e962dbc"},
     {file = "sphinx_inline_tabs-2022.1.2b11.tar.gz", hash = "sha256:afb9142772ec05ccb07f05d8181b518188fc55631b26ee803c694e812b3fdd73"},
-]
-
-[[package]]
-name = "sphinx-tabs"
-version = "3.4.5"
-requires_python = "~=3.7"
-summary = "Tabbed views for Sphinx"
-groups = ["docs"]
-marker = "python_version >= \"3.9\""
-dependencies = [
-    "docutils",
-    "pygments",
-    "sphinx",
-]
-files = [
-    {file = "sphinx-tabs-3.4.5.tar.gz", hash = "sha256:ba9d0c1e3e37aaadd4b5678449eb08176770e0fc227e769b6ce747df3ceea531"},
-    {file = "sphinx_tabs-3.4.5-py3-none-any.whl", hash = "sha256:92cc9473e2ecf1828ca3f6617d0efc0aa8acb06b08c56ba29d1413f2f0f6cf09"},
 ]
 
 [[package]]

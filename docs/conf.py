@@ -32,13 +32,14 @@ release = getmac.__version__
 
 # -- General configuration ---------------------------------------------------
 
-# TODO: sphinx-copybutton
-# TODO: sphinx-tabs (or another extension) to provide tabbed command
-#   examples for different platforms (e.g. for developer docs and CLI usage)
-# TODO(python3): sphinx-autodoc-typehints
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
+    'sphinx_autodoc_typehints',
+    'sphinx_inline_tabs',
+    'sphinx_copybutton',
+    'sphinx_argparse_cli',
+    'sphinx_automodapi.automodapi',
 ]
 
 # TODO: setup ReadTheDocs
