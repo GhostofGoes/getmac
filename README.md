@@ -29,17 +29,29 @@ If the only system you need to run on is Linux, you can run as root, and C-exten
 If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to do so in a [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
 ## Installation
-Stable release from PyPI
+
+### Stable release from PyPI
 
 ```bash
 pip install getmac
 ```
 
-Latest development version
+### Latest development version
 
 ```bash
 pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
+
+### Debian-based distributions 
+This may have it available, depending on your distro (see packaging status below):
+
+```bash
+sudo apt install getmac
+```
+
+### OS Packaging Status
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/getmac.svg)](https://repology.org/project/getmac/versions)
 
 ## Python examples
 ```python
@@ -113,7 +125,7 @@ getmac --ip 192.168.0.1 --override-platform windows
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 ```
 
-## `get_mac_address()`
+## API: `get_mac_address()`
 - `interface`: Name of a network interface on the system
 - `ip`: IPv4 address of a remote host
 - `ip6`: IPv6 address of a remote host
@@ -198,6 +210,7 @@ If you are running a old Python (2.6/3.3 and older) or interpreter, then you can
 - Python 3.4: `getmac<1.0.0`
 - Python 3.5: `getmac<1.0.0`
 - Python 3.6: `getmac<1.0.0`
+- Python 3.7: `getmac<1.0.0`
 
 NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
 
@@ -236,7 +249,7 @@ Before submitting a PR, please make sure you've completed the [pull request chec
 
 The [Python Discord server](https://discord.gg/python) is a good place to ask questions or discuss the project (Handle: @KnownError#0001).
 
-### Contributors
+## Contributors
 - Christopher Goes (@ghostofgoes) - Author and maintainer
 - Calvin Tran (@cyberhobbes) - Windows interface detection improvements
 - Daniel Flanagan (@FlantasticDan) - Code cleanup
