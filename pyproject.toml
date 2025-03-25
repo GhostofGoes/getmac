@@ -99,14 +99,14 @@ lint = [
     "mypy<2.0.0,>=1.3.0",
 ]
 docs = [
-    "furo; python_version >= \"3.9\"",
-    "sphinx<7.0.0,>=6.1.3; python_version >= \"3.9\"",
-    "recommonmark<1.0.0,>=0.7.1; python_version >= \"3.9\"",
-    "sphinx-autodoc-typehints; python_version >= \"3.9\"",
-    "sphinx-copybutton; python_version >= \"3.9\"",
-    "sphinx-inline-tabs; python_version >= \"3.9\"",
-    "sphinx-argparse-cli; python_version >= \"3.9\"",
-    "sphinx-automodapi; python_version >= \"3.9\"",
+    "furo; python_version >= \"3.10\"",
+    "sphinx>7.0.0; python_version >= \"3.10\"",
+    "recommonmark<1.0.0,>=0.7.1; python_version >= \"3.10\"",
+    "sphinx-autodoc-typehints; python_version >= \"3.10\"",
+    "sphinx-copybutton; python_version >= \"3.10\"",
+    "sphinx-inline-tabs; python_version >= \"3.10\"",
+    "sphinx-argparse-cli; python_version >= \"3.10\"",
+    "sphinx-automodapi; python_version >= \"3.10\"",
 ]
 
 [tool.pdm.build]
