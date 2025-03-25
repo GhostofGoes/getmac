@@ -91,6 +91,7 @@ Removing Tox, maybe. Can do version enumeration in GitHub Actions, for all platf
 
 
 # Etc
+- [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
 - [ ] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
 - [ ] cache the result of executable checks in `getmac.utils.popen()`
 - [ ] Refactor the default interface code. Combine the functions into 

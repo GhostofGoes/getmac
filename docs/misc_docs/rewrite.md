@@ -1,5 +1,7 @@
 # Rewrite summary
 
+This is a summary of the rewrite of the core internals that was released with version `0.9.0`.
+
 **NOTE**: The public API of `getmac` is **unchanged** as part of this rewrite. `get_mac_address()` is still the primary way of getting a MAC address, it's just the "under the hood" internals that have changed completely.
 
 ## Motivation
