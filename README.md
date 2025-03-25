@@ -1,12 +1,15 @@
 
-[![Latest version on PyPI](https://badge.fury.io/py/getmac.svg)](https://pypi.org/project/getmac/)
+[![PyPI - Current Version](https://img.shields.io/pypi/v/getmac?label=PyPI)](https://pypi.org/project/getmac/)
 [![codecov](https://codecov.io/github/GhostofGoes/getmac/graph/badge.svg?token=5NxlAE9eGY)](https://codecov.io/github/GhostofGoes/getmac)
 [![GitHub Actions Pipeline Status](https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostofGoes/getmac/actions)
+![Python Version](https://img.shields.io/badge/Python-3.8|3.9|3.10|3.11|3.12-blue.svg)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9388/badge)](https://www.bestpractices.dev/projects/9388)
 [![Weekly PyPI downloads](https://pepy.tech/badge/getmac/week)](https://pepy.tech/project/getmac)
 [![PyPI downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
-[![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-[![pdm-managed](https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json)](https://pdm-project.org)
+<!-- [![PyPI downloads of the old name](https://pepy.tech/badge/get-mac)](https://pepy.tech/project/get-mac) -->
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![PDM-managed](https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json)](https://pdm-project.org)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 <a href="https://trackgit.com">
 <img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/m074l5o81nl6lhv6w0xm" alt="trackgit-views" />
 </a>
@@ -45,7 +48,7 @@ pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
 
 ### Debian-based distributions 
-This may have it available, depending on your distro (see packaging status below):
+`apt` may have it available, depending on your distro (see packaging status below):
 
 ```bash
 sudo apt install getmac
