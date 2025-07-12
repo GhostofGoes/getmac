@@ -4,18 +4,17 @@ build-backend = "pdm.backend"
 
 [project]
 name = "getmac"
-dynamic = ["version"]  # , "readme"
+dynamic = ["version"]
 description = "Platform-independent pure-Python module to get a MAC address"
 dependencies = []
 readme = "README.md"
-# readme = { file = "README.md", content-type = "text/markdown" }
 authors = [
     {name = "Christopher Goes", email = "ghostofgoes@gmail.com"},
 ]
 maintainers = [
     {name = "Christopher Goes", email = "ghostofgoes@gmail.com"},
 ]
-license = { file = "LICENSE"}  # text = "MIT"
+license = { file = "LICENSE"}
 requires-python = "<4.0,>=3.8"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -89,14 +88,16 @@ test = [
     "pytest-xdist",
     "psutil",
     "pygments<3.0,>=2.13",
+    # TODO: pytest-sugar
 ]
 lint = [
     "codespell>=2.2.4",
     "tomli; python_version < \"3.12\"",
     "ruff",
     "vulture",
-    "black<24.0.0,>=23.3.0",
+    "black",
     "mypy<2.0.0,>=1.3.0",
+    "isort",
 ]
 docs = [
     "furo; python_version >= \"3.10\"",
@@ -145,8 +146,8 @@ cmd = "vulture --min-confidence 100 getmac tests"
 [tool.pdm.scripts.check_format]
 help = "Check code formatting is correct"
 composite = [
+    "isort --check getmac tests",
     "black --check getmac tests",
-    # TODO: isort
 ]
 
 [tool.pdm.scripts.typing]
@@ -166,8 +167,8 @@ composite = [
 [tool.pdm.scripts.format]
 help = "Auto-format code to match requirements"
 composite = [
+    "isort getmac tests",
     "black getmac tests",
-    # TODO: isort
 ]
 
 [tool.pdm.scripts.benchmark]
@@ -276,3 +277,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S101", "S104", "S603"]
+
+[tool.isort]
+profile = "black"

@@ -5,7 +5,7 @@ import logging
 import sys
 
 from . import getmac
-from .variables import settings, gvars
+from .variables import gvars, settings
 
 
 def build_parser() -> argparse.ArgumentParser:

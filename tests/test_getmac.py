@@ -12,7 +12,7 @@ from subprocess import CalledProcessError
 import pytest
 
 from getmac import get_mac_address, getmac, utils
-from getmac.variables import settings, consts, gvars
+from getmac.variables import consts, gvars, settings
 
 
 def test_all_methods_defined_are_in_methods_list():

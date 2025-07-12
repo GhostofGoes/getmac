@@ -7,12 +7,12 @@ internal use by getmac.
 import os
 import re
 import shlex
+import shutil
 import socket
 import subprocess
-import shutil
 from typing import Optional, Union
 
-from .variables import settings, consts, gvars
+from .variables import consts, gvars, settings
 
 
 def check_command(command: str) -> bool:

@@ -40,7 +40,7 @@ from subprocess import CalledProcessError
 from typing import Dict, Final, List, Optional, Set, Tuple, Type, Union
 
 from . import utils
-from .variables import settings, consts, gvars
+from .variables import consts, gvars, settings
 
 #: Current version of getmac package
 __version__ = "1.0.0a0"
