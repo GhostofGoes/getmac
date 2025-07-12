@@ -3,21 +3,21 @@
 Thanks for taking an interest in this awesome little project. We love to bring new members into the community, and can always use the help.
 
 ## Resources
-* Task tracking and Bug reports: [GitHub](https://github.com/GhostofGoes/getmac/issues)
-* Discussion: the [Python Discord server](https://discord.gg/python)
+* Features suggestions and bug reports: [GitHub](https://github.com/GhostofGoes/getmac/issues)
+* Discussion and general questions/help: [GitHub discussions](https://github.com/GhostofGoes/getmac/discussions) or the [Python Discord server](https://discord.gg/python)
 
 
 # Code requirements
 
 Your code *must*:
 * Have tests
-* Work with all supported Python versions
-* Work on all supported platforms
-* Pass linting
-* Pass CI
+* Work with all *supported* Python versions
+* Work on all *supported* platforms
+* Pass linting (code quality checks)
+* Pass CI (GitHub Actions)
 * Adhere to the [Code of Conduct](CODE_OF_CONDUCT.md)
 
-Most of these requirements are checked in CI (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Black](https://github.com/psf/black). You can write whatever format you want, as long as you run Black (`pdm run format`) before pushing, you're good. 
+Most of these requirements are checked in CI (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Black](https://github.com/psf/black). You can write whatever format you want, as long as you run Black (`pdm run format`) before pushing, you're good.
 
 Please be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Memes, references, and jokes are OK. Be nice, we're all human, and code is the great equalizer.
 
@@ -54,12 +54,12 @@ Please be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Memes
 ## Platform testing
 Help is dearly needed on testing and rooting out differences in various platforms and configurations. At a basic level, this involves just running the tests on any platforms you use. Open issues for any bugs or quirks you discover, or if you're feeling adventurous, fix it yourself!
 
-Any platform is fair game! The following are some highlights or platforms of special interest:
+**Any platform is fair game!** The following are platforms of special interest:
 * MacOS/OSX (This requires owning a Mac, and is the area most sorely in need of testing)
-* Legacy Windows desktop (7 and 8)
-* Windows Server
+* Legacy Windows (7, 8, 8.1)
+* Windows Server (all versions)
 * Arch Linux
-* BSD
+* BSDs
 
 ## Sample collection
 Examples of output of various commands is an easy way contribute that is still incredibly helpful.
@@ -77,17 +77,18 @@ Examples of output of various commands is an easy way contribute that is still i
     ```bash
     pdm install -d
     ```
-4. Ensure tests work locally:
+4. Ensure tests and linting works:
     ```bash
-    # Run code quality checks
     pdm run lint
-
-    # Run the tests
     pdm run test
     ```
 5. Write some code! Git commit messages should information about what changed, and if it's relevant, the rationale (thinking) for the change.
-6. Follow the checklist in the pull request template
-7. Submit a pull request!
+6. Format your code:
+   ```bash
+    pdm run format
+   ```
+7. Follow the checklist in the pull request template
+8. Submit a pull request!
 
 
 # Bug reports
@@ -136,4 +137,13 @@ pdm run lint
 
 # Run getmac CLI
 pdm run getmac
+```
+
+# Documentation
+
+The docs are built using Sphinx. They are located in the `docs/` folder, and the configuration is in `docs/conf.py`.
+
+To build docs locally:
+```shell
+pdm run docs
 ```
