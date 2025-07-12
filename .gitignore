@@ -3,6 +3,8 @@
 .vagrant/
 .pdm-python
 
+built_docs/
+
 .pytest_cache
 
 # Byte-compiled / optimized / DLL files
