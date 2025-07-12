@@ -4,6 +4,7 @@
 .pdm-python
 
 built_docs/
+docs/api/
 
 .pytest_cache
 
