@@ -1,14 +1,17 @@
+======================
+Command-Line Interface
+======================
+
+The ``getmac`` command provides developers and power users a cross-platform command line tool to get MAC addresses. It is installed when the pip package is installed.
 
 Basic Usage
 ===========
 
-The ``getmac`` command is included when you install the package. This provides developers and power users (like you!) a cross-platform tool to get MAC addresses.
+.. note::
+   Depending on your Python environment, you may not be able to run the command directly (e.g. ``getmac``). If this is the case, then it will have to be invoked via the Python interpreter. See :ref:`python-invoke` for details.
 
 .. note::
-   Depending on your Python environment, you may be able to invoke it directly (``getmac``) or have to reference your Python interpreter to invoke it. See :ref:`python-invoke` for details.
-
-.. note::
-   On Windows, ``getmac.exe`` is a system binary. Depending on the value of the ``PATH`` environment variable, it may get prioritized over the ``getmac`` shim installed by pip. Ensure the ``\Scripts\`` folder in site-packages is added to the PATH variable for your user!
+   On Windows, ``getmac.exe`` is a *system binary* included with Windows. Depending on the value of the ``PATH`` environment variable, it may get prioritized over the ``getmac`` executable shim installed by pip. Ensure the ``\Scripts\`` folder for your Python installation is added to the ``PATH`` variable for your user! Examples: ``C:\Users\<USERNAME>\AppData\Local\Programs\Python\Python39\Scripts``, ``C:\Users\<USERNAME>\scoop\apps\python\current\Scripts``.
 
 
 .. code-block:: shell
@@ -19,7 +22,7 @@ The ``getmac`` command is included when you install the package. This provides d
    # Print the current version
    getmac --version
 
-   # Invoking with no arguments will return MAC address of the default network interface
+   # No arguments returns the MAC address of the default network interface
    getmac
 
    # Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
@@ -43,11 +46,36 @@ Getting the MAC address of a remote host requires the ARP table to be populated.
    getmac --no-network-request -n home.router
 
 
+
+Advanced usage
+==============
+
+Controlling method selection
+----------------------------
+getmac has a selection of methods used to acquire information across platforms. The methods it uses are determined by the platform and if required commands/libraries are present. This system isn't perfect, and in some cases it can be beneficial to have control over method selection, such as in the case of debugging.
+
+The platform detected by getmac can be overridden via ``--override-platform``. This is useful when debugging issues or if you know a method for a different platform works on the current platform. Any values returned by ``platform.system()`` are valid.
+
+.. code-block:: shell
+
+   # Force "linux" to be the "detected" platform and use "linux" methods
+   getmac -i eth0 --override-platform linux
+
+   # Force "windows" to be the "detected" platform and use "windows" methods
+   getmac --ip 192.168.0.1 --override-platform windows
+
+
+A specific method can also be used with ``--force-method``, regardless of the consequences or if it even works.
+
+.. code-block:: shell
+
+   getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
+
+
 Enabling logging messages and debugging
 ---------------------------------------
 
 .. note::
-
    When reporting an issue or asking for help, please enable verbose and the highest level of debugging: ``getmac -v -dddd [arguments]``
 
 Normally, no log messages are printed, just the result from the command. Adding ``-v`` (``--verbose``) argument to any command will enable these messages. This is useful for debugging issues or understanding what's happening.
@@ -80,36 +108,60 @@ There is also a debugging mode. There are multiple levels of debugging, up to 4.
 
 
 
+.. _python-invoke:
 
-.. ref: python-invoke
-
-Usage by specifying Python interpreter
---------------------------------------
+Invoking via interpreter
+========================
 
 If ``getmac`` doesn't work, try ``python3 -m getmac``, where ``python3`` is whatever command you use to run Python and used to install the package.
 
 On Windows, this may be ``py``, e.g. ``py -m getmac``, or just ``python``, e.g. ``python -m getmac``.
 
-When invoking in this fashion, in the examples above you can simply replace calls to ``getmac`` with ``python3 -m getmac`` (or whatever invocation applies to your platform).
+When invoking in this fashion, replace calls to ``getmac`` in the examples above with ``python3 -m getmac`` (or whatever invocation applies to your platform).
 
-.. code-block:: shell
+.. tab:: Linux/macOS
 
-   python3 -m getmac
-   python3 -m getmac --help
-   python3 -m getmac --version
+   .. code-block:: shell
+
+      python3 -m getmac
+      python3 -m getmac --help
+      python3 -m getmac --version
+
+.. tab:: Windows
+
+   .. code-block:: shell
+
+      py -m getmac
+      py -m getmac --help
+      py -m getmac --version
 
 
 Examples of running as a Python module with shorthands for the arguments
 
-.. code-block:: shell
+.. tab:: Linux/macOS
 
-   python3 -m getmac -i 'Ethernet 4'
-   python3 -m getmac -4 192.168.0.1
-   python3 -m getmac -6 ::1
-   python3 -m getmac -n home.router
+   .. code-block:: shell
+
+      python3 -m getmac -i 'Ethernet 4'
+      python3 -m getmac -4 192.168.0.1
+      python3 -m getmac -6 ::1
+      python3 -m getmac -n home.router
+
+.. tab:: Windows
+
+   .. code-block:: shell
+
+      py -m getmac -i 'Ethernet 4'
+      py -m getmac -4 192.168.0.1
+      py -m getmac -6 ::1
+      py -m getmac -n home.router
 
 
-Arguments
-=========
+.. _args:
 
-    Put requisite calls to sphinx_argparse_cli here.===
+Arguments reference
+===================
+
+.. sphinx_argparse_cli::
+   :module: getmac.__main__
+   :func: build_parser

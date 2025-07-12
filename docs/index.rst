@@ -1,38 +1,17 @@
+getmac is a pure-Python package to get the MAC addresses of network interfaces and hosts on the local network.
 
+It provides a platform-independent interface to get the MAC addresses of:
 
+- System network interfaces (by interface name)
+- Remote hosts on the local network (by IPv4/IPv6 address or hostname)
 
+It provides a Python function, :func:`~getmac.getmac.get_mac_address`, and a command-line interface, :ref:`getmac <args>`.
 
-Installation
-============
+.. toctree::
+   :hidden:
+   :titlesonly:
 
-Stable release from PyPI
-------------------------
-
-.. code-block:: shell
-
-   pip install getmac
-
-
-Latest development version
---------------------------
-This will install the current version from the main branch on GitHub.
-
-.. code-block:: shell
-
-   pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
-
-
-Debian-based distributions
---------------------------
-
-``apt`` may have it available, depending on your distro (see packaging status below):
-
-.. code-block:: shell
-
-   sudo apt install getmac
-
-
-OS Packaging Status
--------------------
-
-[![Packaging status](https://repology.org/badge/vertical-allrepos/getmac.svg)](https://repology.org/project/getmac/versions)
+   installation
+   usage
+   cli
+   api
