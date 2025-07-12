@@ -8,7 +8,7 @@ from . import getmac
 from .variables import settings, gvars
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="getmac",
         description="Get MAC addresses of network interfaces or LAN hosts",
@@ -84,6 +84,11 @@ def main() -> None:
         "compatibility, and Method.test() will NOT be checked!",
     )
 
+    return parser
+
+
+def main() -> None:
+    parser = build_parser()
     args = parser.parse_args()
 
     if args.debug or args.verbose:
