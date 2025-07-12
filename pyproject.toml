@@ -107,6 +107,7 @@ docs = [
     "sphinx-inline-tabs; python_version >= \"3.10\"",
     "sphinx-argparse-cli; python_version >= \"3.10\"",
     "sphinx-automodapi; python_version >= \"3.10\"",
+    "sphinx-issues; python_version >= \"3.10\"",
 ]
 
 [tool.pdm.build]
@@ -186,6 +187,9 @@ pytest
   --cov-report xml
   -n auto
 """
+
+[tool.pdm.scripts.docs]
+cmd = "sphinx-build ./docs ./built_docs"
 
 
 # --- Pytest configuration ---
