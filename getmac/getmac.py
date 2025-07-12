@@ -6,7 +6,7 @@ It provides a platform-independent interface to get the MAC addresses of:
 - System network interfaces (by interface name)
 - Remote hosts on the local network (by IPv4/IPv6 address or hostname)
 
-It provides one function: ``get_mac_address()``
+The key function is :func:`~getmac.getmac.get_mac_address`.
 
 .. code-block:: python
    :caption: Examples
@@ -47,8 +47,12 @@ __version__ = "1.0.0a0"
 
 
 class Method:
-    #: Valid platform identifier strings
-    VALID_PLATFORM_NAMES: Set[str] = {
+    """
+    Base class defining a method to get a MAC address.
+    Subclasses should implement the :meth:`test` and :meth:`get` methods.
+    """
+
+    VALID_PLATFORM_NAMES: Final[Set[str]] = {
         "android",
         "darwin",
         "linux",
@@ -59,24 +63,43 @@ class Method:
         "sunos",
         "other",
     }
+    """
+    The valid platform identifier strings, used to match
+    methods to the appropriate platform.
+    """
 
-    #: Platforms supported by a method
     platforms: Set[str] = set()
+    """
+    Platforms supported by a method.
+    """
 
-    #: The type of method, e.g. does it get the MAC of a interface?
-    #: Allowed values: {ip, ip4, ip6, iface, default_iface}
     method_type: str = ""
+    """
+    The type of method, e.g. does it get the MAC of a interface.
 
-    #: If the method makes a network request as part of the check
+    Allowed values:
+
+    - ip
+    - ip4
+    - ip6
+    - iface
+    - default_iface
+    """
+
     network_request: bool = False
+    """
+    If the method makes a network request as part of the check.
+    """
 
-    #: Marks the method as unable to be used, e.g. if there was a runtime
-    #: error indicating the method won't work on the current platform.
     unusable: bool = False
+    """
+    Marks the method as unable to be used, e.g. if there was a runtime
+    error indicating the method won't work on the current platform.
+    """
 
     def test(self) -> bool:
         """
-        Low-impact test that the method is feasible, e.g. command exists.
+        Low-impact test that the method is feasible, e.g. a command exists.
         """
         return False  # pragma: no cover
 
@@ -92,11 +115,11 @@ class Method:
 
         Args:
             arg: What the method should get, such as an IP address
-                or interface name. In the case of default_iface methods,
+                or interface name. In the case of ``default_iface`` methods,
                 this is not used and defaults to an empty string.
 
         Returns:
-            Lowercase colon-separated MAC address, or None if one could
+            Lowercase colon-separated MAC address, or :obj:`None` if one could
             not be found.
         """
         return None  # pragma: no cover
@@ -109,6 +132,11 @@ class Method:
 # TODO(python3): do we want to keep this around? It calls 3 commands and is
 #   quite inefficient. We should just take the methods and use directly.
 class UuidArpGetNode(Method):
+    """
+    Uses Python's :func:`uuid._arp_getnode` function to get the
+    MAC address of a remote host using ARP.
+    """
+
     platforms = {"linux", "darwin", "sunos", "other"}
     method_type = "ip"
 
@@ -142,6 +170,10 @@ class UuidArpGetNode(Method):
 
 
 class ArpFile(Method):
+    """
+    Use the contents of ``/proc/net/arp`` to find the MAC address of a host.
+    """
+
     platforms = {"linux"}
     method_type = "ip4"
 
@@ -175,6 +207,10 @@ class ArpFile(Method):
 
 
 class ArpFreebsd(Method):
+    """
+    Use the ``arp`` command to find the MAC address of a host on FreeBSD.
+    """
+
     platforms = {"freebsd"}
     method_type = "ip"
 
@@ -187,6 +223,10 @@ class ArpFreebsd(Method):
 
 
 class ArpOpenbsd(Method):
+    """
+    Use the ``arp`` command to find the MAC address of a host on OpenBSD.
+    """
+
     platforms = {"openbsd"}
     method_type = "ip"
 
@@ -200,10 +240,15 @@ class ArpOpenbsd(Method):
 
 
 class ArpVariousArgs(Method):
+    """
+    Use the ``arp`` command to find the MAC address of a host on various platforms.
+    """
+
     platforms = {"linux", "darwin", "freebsd", "sunos", "other"}
     method_type = "ip"
-    _regex_std: str = r"\)\s+at\s+" + consts.MAC_RE_COLON
-    _regex_darwin: str = r"\)\s+at\s+" + consts.MAC_RE_SHORT
+
+    _regex_std: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_COLON
+    _regex_darwin: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_SHORT
     _args = (
         ("", True),  # "arp 192.168.1.1"
         # Linux
@@ -292,29 +337,31 @@ class ArpExe(Method):
 
 class ArpingHost(Method):
     """
-    Use ``arping`` command to determine the MAC of a host.
+    Use ``arping`` command to determine the MAC of a host
+    on Linux and Darwin (MacOS).
 
-    Supports three variants of ``arping``
+    This method supports three variants of ``arping``:
 
     - "habets" arping by Thomas Habets
         (`GitHub <https://github.com/ThomasHabets/arping>`__)
         On Debian-based distros, ``apt install arping`` will install
         Habets arping.
-    - "iputils" arping, from the ``iputils-arping``
-        `package <https://packages.debian.org/sid/iputils-arping>`__
+    - "iputils" arping, from the
+        `iputils-arping package <https://packages.debian.org/sid/iputils-arping>`__
     - "busybox" arping, included with BusyBox (a small executable "distro")
         (`further reading <https://boxmatrix.info/wiki/Property:arping>`__)
 
     BusyBox's arping quite similar to iputils-arping. The arguments for
     our purposes are the same, and the output is also the same.
-    There's even a TODO in busybox's arping code referencing iputils arping.
+    There's even a TODO in BusyBox's arping code referencing iputils arping.
     There are several differences:
+
     - The return code from bad arguments is 1, not 2 like for iputils-arping
     - The MAC address in output is lowercase (vs. uppercase in iputils-arping)
 
     This was a pain to obtain samples for busybox on Windows. I recommend
     using WSL and arping'ing the Docker gateway (for WSL2 distros).
-    NOTE: it must be run as root using ``sudo busybox arping``.
+    Note, it must be run as root using ``sudo busybox arping``.
     """
 
     platforms = {"linux", "darwin"}
@@ -375,6 +422,9 @@ class CtypesHost(Method):
     Uses ``SendARP`` from the Windows ``Iphlpapi`` to get the MAC address
     of a remote IPv4 host.
 
+    .. note::
+       This doesn't work with IPv6.
+
     Microsoft Documentation: `SendARP function (iphlpapi.h) <https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp>`__
     """
 
@@ -422,6 +472,11 @@ class CtypesHost(Method):
 
 
 class IpNeighborShow(Method):
+    """
+    Uses the ``ip neighbor show`` command to get the MAC address
+    of a remote host.
+    """
+
     platforms = {"linux", "other"}
     method_type = "ip"  # IPv6 and IPv4
 
@@ -444,6 +499,11 @@ class IpNeighborShow(Method):
 
 
 class SysIfaceFile(Method):
+    """
+    Uses the contents of ``/sys/class/net/<iface>/address``
+    to get the MAC address of a interface.
+    """
+
     platforms = {"linux", "wsl"}
     method_type = "iface"
 
@@ -463,6 +523,11 @@ class SysIfaceFile(Method):
 
 
 class UuidLanscan(Method):
+    """
+    Uses Python's :func:`uuid._find_mac` function to get the MAC address
+    using the ``lanscan`` command on platforms that support it (HP-UX).
+    """
+
     platforms = {"other"}
     method_type = "iface"
 
@@ -486,6 +551,11 @@ class UuidLanscan(Method):
 
 
 class FcntlIface(Method):
+    """
+    Uses :func:`fcntl.ioctl` to get the MAC address of a network
+    interface on Linux (including WSL).
+    """
+
     platforms = {"linux", "wsl"}
     method_type = "iface"
 
@@ -668,7 +738,7 @@ def _parse_ifconfig(iface: str, command_output: str) -> Optional[str]:
 class IfconfigWithIfaceArg(Method):
     """
     ``ifconfig`` command with the interface name as an argument
-    (e.g. ``ifconfig eth0``).
+    (e.g. ``ifconfig eth0``) to determine MAC address of an interface.
     """
 
     platforms = {"linux", "wsl", "freebsd", "openbsd", "other"}
@@ -693,6 +763,11 @@ class IfconfigWithIfaceArg(Method):
 # TODO: combine this with IfconfigWithArg/IfconfigNoArg
 #       (need to do live testing on Darwin)
 class IfconfigEther(Method):
+    """
+    Determine interface MAC using ``ifconfig`` command
+    on Darwin (MacOS) systems.
+    """
+
     platforms = {"darwin"}
     method_type = "iface"
 
@@ -726,7 +801,8 @@ class IfconfigEther(Method):
 # TODO: unit tests
 class IfconfigOther(Method):
     """
-    Wild 'Shot in the Dark' attempt at ``ifconfig`` for unknown platforms.
+    Wild 'Shot in the Dark' attempt at using ``ifconfig``
+    to get interface MAC on unknown platforms.
     """
 
     platforms = {"linux", "other"}
@@ -793,6 +869,10 @@ class IfconfigOther(Method):
 
 
 class NetstatIface(Method):
+    """
+    Determines interface MAC using the ``netstat`` command.
+    """
+
     platforms = {"linux", "wsl", "other"}
     method_type = "iface"
 
@@ -851,6 +931,10 @@ class NetstatIface(Method):
 
 
 class IpLinkIface(Method):
+    """
+    Determines interface MAC using the ``ip link`` command.
+    """
+
     platforms = {"linux", "wsl", "android", "other"}
     method_type = "iface"
 
@@ -889,7 +973,8 @@ class IpLinkIface(Method):
 
 class DefaultIfaceLinuxRouteFile(Method):
     """
-    Get the default interface by parsing the ``/proc/net/route`` file.
+    Determine the default interface by parsing the ``/proc/net/route`` file
+    on Linux-based platforms (including WSL).
 
     This is the same source as the ``route`` command, however it's much
     faster to read this file than to call ``route``. If it fails for whatever
@@ -935,6 +1020,10 @@ class DefaultIfaceLinuxRouteFile(Method):
 
 
 class DefaultIfaceRouteCommand(Method):
+    """
+    Determine default interface using the ``route -n`` command.
+    """
+
     platforms = {"linux", "wsl", "other"}
     method_type = "default_iface"
 
@@ -956,6 +1045,11 @@ class DefaultIfaceRouteCommand(Method):
 
 
 class DefaultIfaceRouteGetCommand(Method):
+    """
+    Determine default interface using the ``route get default`` command
+    on BSD-based platforms, including Darwin (MacOS).
+    """
+
     platforms = {"darwin", "freebsd", "other"}
     method_type = "default_iface"
 
@@ -976,6 +1070,10 @@ class DefaultIfaceRouteGetCommand(Method):
 
 
 class DefaultIfaceIpRoute(Method):
+    """
+    Determine the default interface using the ``ip route`` command.
+    """
+
     # NOTE: this is slightly faster than "route" since
     # there is less output than "route -n"
     platforms = {"linux", "wsl", "other"}
@@ -996,6 +1094,12 @@ class DefaultIfaceIpRoute(Method):
 
 
 class DefaultIfaceOpenBsd(Method):
+    """
+    Determine the default interface on OpenBSD using the ``route`` command.
+
+    The full command is ``route -nq show -inet -gateway -priority 1``.
+    """
+
     platforms = {"openbsd"}
     method_type = "default_iface"
 
@@ -1008,6 +1112,12 @@ class DefaultIfaceOpenBsd(Method):
 
 
 class DefaultIfaceFreeBsd(Method):
+    """
+    Determine the default interface on FreeBSD using the ``netstat`` command.
+
+    The full command is ``netstat -r``.
+    """
+
     platforms = {"freebsd"}
     method_type = "default_iface"
 
@@ -1052,26 +1162,33 @@ METHODS = [
     DefaultIfaceFreeBsd,
 ]  # type: List[Type[Method]]
 
-# TODO: move to gvars class? gotta love import loops with type annotations
-# Primary method to use for a given method type
+# TODO: move to gvars class? gotta love import loops with type annotations.
+#   Use deferred annotations/string annotations.
 METHOD_CACHE: Dict[str, Optional[Method]] = {
     "ip4": None,
     "ip6": None,
     "iface": None,
     "default_iface": None,
 }
+"""
+Primary method to use for a given method type
+"""
 
 
-# Order of methods is determined by:
-#   Platform + version
-#   Performance (file read > command)
-#   Reliability (how well I know/understand the command to work)
+# TODO: move to gvars class?
 FALLBACK_CACHE: Dict[str, List[Method]] = {
     "ip4": [],
     "ip6": [],
     "iface": [],
     "default_iface": [],
 }
+"""
+Order of methods is determined by:
+
+- Platform + version
+- Performance (file read > command)
+- Reliability (how well I know/understand the command to work)
+"""
 
 
 def get_method_by_name(method_name: str) -> Optional[Type[Method]]:
@@ -1423,28 +1540,26 @@ def get_mac_address(
     network_request: bool = True,
 ) -> Optional[str]:
     """
-    Get a MAC from a local interface or remote host.
+    Get a MAC address from a local interface or remote host.
 
-    If you want to be pedantic, this is (probably)
-    a unicast IEEE 802 MAC-48 address.
-
-    Only ONE of the first four arguments may be used
-    (``interface``,``ip``, ``ip6``, or ``hostname``).
+    Only ONE of the first four arguments may be used:
+    ``interface``, ``ip``, ``ip6``, or ``hostname``.
     If none of the arguments are selected, the default network interface for
     the system will be used.
 
+    The MAC is usually a unicast IEEE 802 MAC-48 address.
+
     .. warning::
-       In getmac 1.0.0, exceptions will be raised if the method cache initialization fails
-       (in other words, if there are no valid methods found for the type of MAC requested).
+       In getmac 1.0.0, exceptions will be raised if there are no valid methods
+       found for the type of MAC requested.
 
     .. note::
        ``"localhost"`` or ``"127.0.0.1"`` will always return ``"00:00:00:00:00:00"``
 
     .. note::
-       It is assumed that you are using Ethernet or Wi-Fi. While other protocols
+       It is assumed that the host is using Ethernet or Wi-Fi. While other protocols
        such as Bluetooth may work, this has not been tested and should not be
-       relied upon. If you need this functionality, please open an issue
-       (or better yet, a Pull Request ;))!
+       relied upon. If this functionality is needed, please open an issue or PR.
 
     .. note::
        Exceptions raised by methods are handled silently and returned as :obj:`None`.
@@ -1458,17 +1573,18 @@ def get_mac_address(
             and treat them as if ``ip6`` argument was set instead.
         ip6: Canonical shortened IPv6 address of a remote host (e.g ``ff02::1:ffe7:7f19``),
             or a :mod:`ipaddress` object (:class:`~ipaddress.IPv6Address`
-            and :class:`~ipaddress.IPv6Interface`).
+            or :class:`~ipaddress.IPv6Interface`).
         hostname: DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
         network_request: If network requests should be made when attempting to find the
             MAC of a remote host. If the ``arping`` command is available, this will be used.
             If not, a UDP packet will be sent to the remote host to populate
             the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
-            be configured using the setting ``getmac.settings.PORT``.
+            be configured using the setting :attr:`getmac.variables.Settings.PORT`
+            (by default, it's port 55555).
 
     Returns:
-        Lowercase colon-separated MAC address, or :obj:`None` if one could not be
-        found or there was an error.
+        Lowercase colon-separated MAC address. If no MAC was found, or an exception
+        occurred, :obj:`None` is returned.
     """
 
     # If debugging, start the timer
@@ -1477,7 +1593,7 @@ def get_mac_address(
 
         start_time = timeit.default_timer()
 
-    # Convert bytes to str
+    # Convert bytes to str, assuming UTF-8 encoding
     if isinstance(interface, bytes):
         interface = interface.decode("utf-8")
     if isinstance(ip, bytes):

@@ -8,8 +8,8 @@ import os
 import re
 import shlex
 import socket
-from shutil import which
-from subprocess import DEVNULL, check_output
+import subprocess
+import shutil
 from typing import Optional, Union
 
 from .variables import settings, consts, gvars
@@ -18,7 +18,7 @@ from .variables import settings, consts, gvars
 def check_command(command: str) -> bool:
     """
     Check if a command exists using :func:`shutil.which`. The result of the check
-    is cached in a global dict to speed up subsequent lookups.
+    is cached in a global :class:`dict` to speed up subsequent lookups.
 
     Args:
         command: command to check
@@ -27,13 +27,13 @@ def check_command(command: str) -> bool:
         If the command exists
     """
     if command not in gvars.CHECK_COMMAND_CACHE:
-        gvars.CHECK_COMMAND_CACHE[command] = bool(which(command, path=gvars.PATH_STR))
+        gvars.CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=gvars.PATH_STR))
     return gvars.CHECK_COMMAND_CACHE[command]
 
 
 def check_path(filepath: str) -> bool:
     """
-    Check if the file pointed to by `filepath` exists and is readable.
+    Check if the file pointed to by ``filepath`` exists and is readable.
 
     Args:
         filepath: absolute path of file to check
@@ -134,9 +134,9 @@ def search(
     Args:
         regex: regular expression
         text: data to search
-        group_index: what index in the ``groupdict`` to return,
-            if there are more than 1
-        flags: :mod:`re` flags
+        group_index: index of value in the ``groupdict`` to return,
+            if there are multiple groups in the regex
+        flags: flags to :mod:`re` functions, e.g. :const:`re.IGNORECASE`
 
     Returns:
         The result, or :obj:`None` if the parsing failed
@@ -158,10 +158,10 @@ def popen(command: str, args: str) -> str:
     """
     Execute a command with arguments and return the stdout (stderr is discarded).
 
-    Wrapper around :func:`~getmac.utils.call_proc`, with checks
+    Wrapper around :func:`getmac.utils.call_proc`, with checks
     to ensure the command exists and is executable and some debug
     logging. This should be used instead of
-    :func:`~getmac.utils.call_proc`.
+    :func:`getmac.utils.call_proc`.
 
     Args:
         command: command to run, e.g. ``ping`` or ``ping.exe``
@@ -196,9 +196,10 @@ def popen(command: str, args: str) -> str:
 def call_proc(executable: str, args: str) -> str:
     """
     Wrapper around :func:`subprocess.check_output` with some
-    logging and type conversion. The reason this and
-    :func:`~getmac.utils.popen` are separate functions is
-    for testability.
+    logging and type conversion.
+
+    The reason this and :func:`getmac.utils.popen` are separate
+    functions is to make it easier to mock for unit tests.
 
     Args:
         executable: command to run
@@ -215,7 +216,7 @@ def call_proc(executable: str, args: str) -> str:
     else:
         cmd = [executable, *shlex.split(args)]  # type: ignore
 
-    output: Union[str, bytes] = check_output(cmd, stderr=DEVNULL, env=gvars.ENV)
+    output: Union[str, bytes] = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, env=gvars.ENV)
 
     if settings.DEBUG >= 4:
         gvars.log.debug(f"Output from '{executable}' command: {output!s}")
@@ -228,10 +229,10 @@ def call_proc(executable: str, args: str) -> str:
 
 def uuid_convert(mac: int) -> str:
     """
-    Convert value output from ``uuid`` internal function into a string.
+    Convert value output from :mod:`uuid` internal function into a string.
 
     Args:
-        mac: integer value returned from a ``uuid`` function
+        mac: integer value returned from a :mod:`uuid` function
 
     Returns:
         String with colon-separated MAC address
