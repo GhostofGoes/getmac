@@ -37,7 +37,7 @@ from ipaddress import (
     IPv6Network,
 )
 from subprocess import CalledProcessError
-from typing import Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Dict, Final, List, Optional, Set, Tuple, Type, Union
 
 from . import utils
 from .variables import settings, consts, gvars
@@ -144,7 +144,8 @@ class UuidArpGetNode(Method):
 class ArpFile(Method):
     platforms = {"linux"}
     method_type = "ip4"
-    _path: str = os.environ.get("ARP_PATH", "/proc/net/arp")
+
+    _path: Final[str] = os.environ.get("ARP_PATH", "/proc/net/arp")
 
     def test(self) -> bool:
         return utils.check_path(self._path)
@@ -188,7 +189,8 @@ class ArpFreebsd(Method):
 class ArpOpenbsd(Method):
     platforms = {"openbsd"}
     method_type = "ip"
-    _regex: str = r"[ ]+" + consts.MAC_RE_COLON
+
+    _regex: Final[str] = r"[ ]+" + consts.MAC_RE_COLON
 
     def test(self) -> bool:
         return utils.check_command("arp")
@@ -318,9 +320,10 @@ class ArpingHost(Method):
     platforms = {"linux", "darwin"}
     method_type = "ip4"
     network_request = True
+
     _is_iputils: bool = True
-    _habets_args: str = "-r -C 1 -c 1"
-    _iputils_args: str = "-f -c 1"
+    _habets_args: Final[str] = "-r -C 1 -c 1"
+    _iputils_args: Final[str] = "-f -c 1"
 
     def test(self) -> bool:
         return utils.check_command("arping")
@@ -443,7 +446,8 @@ class IpNeighborShow(Method):
 class SysIfaceFile(Method):
     platforms = {"linux", "wsl"}
     method_type = "iface"
-    _path: str = "/sys/class/net/"
+
+    _path: Final[str] = "/sys/class/net/"
 
     def test(self) -> bool:
         # Imperfect, but should work well enough
@@ -517,7 +521,8 @@ class GetmacExe(Method):
 
     platforms = {"windows"}
     method_type = "iface"
-    _regexes: List[Tuple[str, str]] = [
+
+    _regexes: Final[List[Tuple[str, str]]] = [
         # Connection Name
         (r"\r\n", r".*" + consts.MAC_RE_DASH + r".*\r\n"),
         # Network Adapter (the human-readable name)
@@ -566,7 +571,8 @@ class IpconfigExe(Method):
 
     platforms = {"windows"}
     method_type = "iface"
-    _regex: str = (
+
+    _regex: Final[str] = (
         r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + consts.MAC_RE_DASH + r"\r\n"
     )
 
@@ -638,7 +644,7 @@ class DarwinNetworksetupIface(Method):
 # output from "ifconfig", and probably netstat too. It can probably be made more
 # efficient by someone who actually knows how to write regex.
 # [: ]\s?(?:flags=|\s).*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr|hwaddr|lladdr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))  # noqa: E501
-IFCONFIG_REGEX = (
+IFCONFIG_REGEX: Final[str] = (
     r"[: ]\s?(?:flags=|\s).*?(?:"
     r"(?:\w+[: ]\s?flags=)|"  # Prevent interfaces w/o a MAC from matching
     r"\s(?:ether|address|HWaddr|hwaddr|lladdr)[ :]?\s?"  # Handle various prefixes
@@ -689,6 +695,7 @@ class IfconfigWithIfaceArg(Method):
 class IfconfigEther(Method):
     platforms = {"darwin"}
     method_type = "iface"
+
     _tested_arg: bool = False
     _iface_arg: bool = False
 
@@ -791,7 +798,7 @@ class NetstatIface(Method):
 
     # ".*?": non-greedy
     # https://docs.python.org/3/howto/regex.html#greedy-versus-non-greedy
-    _regexes: List[str] = [
+    _regexes: Final[List[str]] = [
         r": .*?ether " + consts.MAC_RE_COLON,
         r": .*?HWaddr " + consts.MAC_RE_COLON,
         # Ubuntu 12.04 and other older kernels
@@ -846,7 +853,8 @@ class NetstatIface(Method):
 class IpLinkIface(Method):
     platforms = {"linux", "wsl", "android", "other"}
     method_type = "iface"
-    _regex: str = r".*\n.*link/ether " + consts.MAC_RE_COLON
+
+    _regex: Final[str] = r".*\n.*link/ether " + consts.MAC_RE_COLON
     _tested_arg: bool = False
     _iface_arg: bool = False
 

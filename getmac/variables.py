@@ -2,7 +2,7 @@ import logging
 import os
 import platform
 import sys
-from typing import Dict, List
+from typing import Dict, Final, List
 
 
 class VarsClass:
