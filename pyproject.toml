@@ -202,7 +202,7 @@ addopts = "--tb=short"
 # --- Codespell configuration ---
 [tool.codespell]
 check-filenames = true
-skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.idea,*.vscode,_build,.doctrees,htmlcov,.venv,.mypy_cache,deb_dist'
+skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.idea,.vscode,_build,.doctrees,htmlcov,.venv,.mypy_cache,deb_dist,built_docs,.pytest_cache,.pdm-build'
 ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso'
 
 
@@ -262,8 +262,6 @@ select = [
 
 # Linting error codes to ignore
 ignore = [
-    "ANN101",  # missing-type-self
-    "ANN102",  # missing-type-cls
     "RET505",  # unnecessary 'else' after 'return' statement
     "PLW0603", # Using the global statement to update is discouraged
     "PLW2901", # for loop variable overwritten by assignment target
@@ -273,6 +271,7 @@ ignore = [
     # "PLC1901", # compare-to-empty-string
     "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
     "S603",    # subprocess-without-shell-equals-true
+    "PLC0415", # import should be at the top-level of a file (getmac uses imports in functions)
 ]
 
 [tool.ruff.lint.per-file-ignores]

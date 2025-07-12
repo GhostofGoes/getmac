@@ -27,7 +27,9 @@ def check_command(command: str) -> bool:
         If the command exists
     """
     if command not in gvars.CHECK_COMMAND_CACHE:
-        gvars.CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=gvars.PATH_STR))
+        gvars.CHECK_COMMAND_CACHE[command] = bool(
+            shutil.which(command, path=gvars.PATH_STR)
+        )
     return gvars.CHECK_COMMAND_CACHE[command]
 
 
@@ -216,7 +218,9 @@ def call_proc(executable: str, args: str) -> str:
     else:
         cmd = [executable, *shlex.split(args)]  # type: ignore
 
-    output: Union[str, bytes] = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, env=gvars.ENV)
+    output: Union[str, bytes] = subprocess.check_output(
+        cmd, stderr=subprocess.DEVNULL, env=gvars.ENV
+    )
 
     if settings.DEBUG >= 4:
         gvars.log.debug(f"Output from '{executable}' command: {output!s}")
