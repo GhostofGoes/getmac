@@ -156,6 +156,7 @@ class Constants(VarsClass):
 class Variables(VarsClass):
     """
     Things that can change.
+
     Essentially most of the global variables in getmac.
     """
 

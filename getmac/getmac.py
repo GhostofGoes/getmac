@@ -1763,35 +1763,35 @@ def get_mac_address(
             mac = get_by_method("ip4", ip)
         elif interface:
             mac = get_by_method("iface", interface)
-        else:  # Default to searching for interface
+        # === Default to searching for interface ===
+        elif consts.WINDOWS and network_request:
             # Default to finding MAC of the interface with the default route
-            if consts.WINDOWS and network_request:
-                default_iface_ip = utils.fetch_ip_using_dns()
-                mac = get_by_method("ip4", default_iface_ip)
-            elif consts.WINDOWS:
-                # TODO: implement proper default interface detection on windows
-                #   (add a Method subclass to implement DefaultIface on Windows)
-                mac = get_by_method("iface", "Ethernet")
-            else:
-                if not gvars.DEFAULT_IFACE:
-                    gvars.DEFAULT_IFACE = get_by_method("default_iface")  # type: ignore
+            default_iface_ip = utils.fetch_ip_using_dns()
+            mac = get_by_method("ip4", default_iface_ip)
+        elif consts.WINDOWS:
+            # TODO: implement proper default interface detection on windows
+            #   (add a Method subclass to implement DefaultIface on Windows)
+            mac = get_by_method("iface", "Ethernet")
+        else:
+            if not gvars.DEFAULT_IFACE:
+                gvars.DEFAULT_IFACE = get_by_method("default_iface")  # type: ignore
 
-                    if gvars.DEFAULT_IFACE:
-                        gvars.DEFAULT_IFACE = str(gvars.DEFAULT_IFACE).strip()
+                if gvars.DEFAULT_IFACE:
+                    gvars.DEFAULT_IFACE = str(gvars.DEFAULT_IFACE).strip()
 
-                    # TODO: better fallback if default iface lookup fails
-                    if not gvars.DEFAULT_IFACE and consts.BSD:
-                        gvars.DEFAULT_IFACE = "em0"
-                    elif not gvars.DEFAULT_IFACE and consts.DARWIN:  # OSX, maybe?
-                        gvars.DEFAULT_IFACE = "en0"
-                    elif not gvars.DEFAULT_IFACE:
-                        gvars.DEFAULT_IFACE = "eth0"
+                # TODO: better fallback if default iface lookup fails
+                if not gvars.DEFAULT_IFACE and consts.BSD:
+                    gvars.DEFAULT_IFACE = "em0"
+                elif not gvars.DEFAULT_IFACE and consts.DARWIN:  # OSX, maybe?
+                    gvars.DEFAULT_IFACE = "en0"
+                elif not gvars.DEFAULT_IFACE:
+                    gvars.DEFAULT_IFACE = "eth0"
 
-                mac = get_by_method("iface", gvars.DEFAULT_IFACE)
+            mac = get_by_method("iface", gvars.DEFAULT_IFACE)
 
-                # TODO: hack to fallback to loopback if lookup fails
-                if not mac:
-                    mac = get_by_method("iface", "lo")
+            # TODO: hack to fallback to loopback if lookup fails
+            if not mac:
+                mac = get_by_method("iface", "lo")
 
     gvars.log.debug(f"Raw MAC found: {mac}")
 

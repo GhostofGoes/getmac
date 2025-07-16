@@ -86,9 +86,9 @@ test = [
     "pytest-benchmark",
     "pytest-cov",
     "pytest-xdist",
+    "pytest-sugar",
     "psutil",
     "pygments<3.0,>=2.13",
-    # TODO: pytest-sugar
 ]
 lint = [
     "codespell>=2.2.4",
@@ -234,10 +234,6 @@ extend-exclude = [
 # If you're still confused, ask a fellow developer for assistance.
 # You can also run "ruff rule <rule>" to explain a rule on the command line, without a browser or internet access.
 select = [
-    "F",    # Pyflakes
-    "E",    # pycodestyle
-    "W",    # Warning
-    "N",    # pep8-naming
     "ANN",  # flake8-annotations
     "S",    # flake8-bandit
     "B",    # flake8-bugbear
@@ -254,11 +250,18 @@ select = [
     "RET",  # flake8-return
     "TID",  # flake8-tidy-imports
     "ARG",  # flake8-unused-arguments
+    "N",    # pep8-naming
+    "E",    # pycodestyle - Error
+    "W",    # pycodestyle - Warning
+    "F",    # Pyflakes
     "PGH",  # pygrep-hooks
-    "PLC",  # Pylint Convention
-    "PLE",  # Pylint Errors
-    "PLW",  # Pylint Warnings
+    "PLC",  # Pylint - Convention
+    "PLE",  # Pylint - Errors
+    "PLR",  # Pylint - Refactor
+    "PLW",  # Pylint - Warnings
+    # "UP",   # pyupgrade
     "RUF",  # Ruff-specific rules
+
 ]
 
 # Linting error codes to ignore
@@ -273,10 +276,13 @@ ignore = [
     "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
     "S603",    # subprocess-without-shell-equals-true
     "PLC0415", # import should be at the top-level of a file (getmac uses imports in functions)
+    "PLR0915",
+    "PLR0912",
+    "PLR2004",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S101", "S104", "S603"]
+"tests/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S101", "S104", "S603", "D", "PLR"]
 
 [tool.isort]
 profile = "black"

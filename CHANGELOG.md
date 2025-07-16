@@ -19,7 +19,8 @@
     - If you pass it some weird bytes that aren't decodable as utf-8, it's obviously going to break. Don't be dumb :)
 
 ### Changed
-* Reduce size of wheel file (`.whl`)
+* BREAKING CHANGE: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
+* Reduce size of wheel distribution (`.whl` file)
 
 ### Removed
 * Removed support for Python 2.7. It's time. Supporting 2.7 has become an onerous burden on the project, and has prevented fully supporting 3.10 and 3.11 due to having to stay on an ancient version of pytest. I'm done supporting a version of the language that hasn't been updated in nearly 15 years, and has been wholly unsupported for over 5 years.
@@ -36,6 +37,8 @@
   * Add `pyproject.toml`, consolidated most tool configurations here
   * Removed `setup.py`,  `MANIFEST.in`, `requirements*.txt`, `tox.ini`
 * Switched to CodeCov from Coveralls
+* Use [isort](https://pycqa.github.io/isort/index.html) to sort imports
+* Refactored source code documentation and added an API reference to the docs
 
 ## 0.9.5 (07/15/2024)
 

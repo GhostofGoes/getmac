@@ -10,7 +10,7 @@
 - [ ] Re-add Man pages (and auto-build them in CI and include in releases and the distributions)
 - [x] Document `get_by_method()`
 - [x] Document `initialize_method_cache()`
-- [ ] Auto-generated API docs
+- [x] Auto-generated API docs
 - [x] Add docstrings to all util methods
 - [x] Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
 
@@ -19,7 +19,7 @@
 - [ ] >90% test coverage
   - refactor tests to use the new system and structure
   - directly test methods via a `Method.parse()` function
-  - add `Method.parse()` that handles the parsing of command 
+  - add `Method.parse()` that handles the parsing of command
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 
 ## Features
@@ -43,7 +43,7 @@
         - Passing an instance of a subclass of `getmac.Method`
         - Add a CLI argument to reference class by name
     - Add ability to exclude methods. Just remove them from METHODS list so they never get used. Useful for testing specific methods or working around buggy methods.
-    - Document these features in the README/docs, including the CLI arguments 
+    - Document these features in the README/docs, including the CLI arguments
 
 ## Enhancements/fixes/misc.
 - [ ] Properly support WSL2
@@ -92,9 +92,9 @@ Removing Tox, maybe. Can do version enumeration in GitHub Actions, for all platf
 
 # Etc
 - [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
-- [ ] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
+- [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
 - [ ] cache the result of executable checks in `getmac.utils.popen()`
-- [ ] Refactor the default interface code. Combine the functions into 
+- [ ] Refactor the default interface code. Combine the functions into
 one, move the default fallback logic into the function.
 - TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
 - [ ] Move method classes into a separate file

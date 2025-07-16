@@ -246,7 +246,7 @@ def uuid_convert(mac: int) -> str:
 
 def fetch_ip_using_dns() -> str:
     """
-    Determines the IP address of the default network interface.
+    Determine the IP address of the default network interface.
 
     Sends a UDP packet to Cloudflare's DNS (``1.1.1.1``), which should go through
     the default interface. This populates the source address of the socket,
