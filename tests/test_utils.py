@@ -41,16 +41,16 @@ def test_search(get_sample):
 
 
 def test_call_proc(mocker):
-    mocker.patch("getmac.utils.DEVNULL", "DEVNULL")
+    mocker.patch("subprocess.DEVNULL", "DEVNULL")
     mocker.patch.object(gvars, "ENV", "ENV")
 
     mocker.patch.object(consts, "WINDOWS", True)
-    m = mocker.patch("getmac.utils.check_output", return_value="WINSUCCESS")
+    m = mocker.patch("subprocess.check_output", return_value="WINSUCCESS")
     assert utils.call_proc("CMD", "arg") == "WINSUCCESS"
     m.assert_called_once_with("CMD arg", stderr="DEVNULL", env="ENV")
 
     mocker.patch.object(consts, "WINDOWS", False)
-    m = mocker.patch("getmac.utils.check_output", return_value="YAY")
+    m = mocker.patch("subprocess.check_output", return_value="YAY")
     assert utils.call_proc("CMD", "arg1 arg2") == "YAY"
     m.assert_called_once_with(["CMD", "arg1", "arg2"], stderr="DEVNULL", env="ENV")
 
