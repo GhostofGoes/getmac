@@ -8,7 +8,7 @@ jobs:
     name: Run lint checks
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v4
         with:
@@ -40,7 +40,7 @@ jobs:
           - x86
           - x64
         platform:
-          - ubuntu-20.04
+          - ubuntu-22.04
           - windows-latest
           # Fix tests failing on MacOS 14+ due to ARM architecture
           # https://github.com/actions/setup-python/issues/825
@@ -48,12 +48,12 @@ jobs:
           # architecture to the list of architectures above.
           - macos-13
         exclude:
-          - platform: ubuntu-20.04
+          - platform: ubuntu-22.04
             architecture: x86
           - platform: macos-13
             architecture: x86
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v4
         with:
@@ -80,7 +80,7 @@ jobs:
     name: Build HTML documentation
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v4
         with:
@@ -98,7 +98,7 @@ jobs:
     name: Build manpage
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v4
         with:
@@ -132,7 +132,7 @@ jobs:
 #     # IMPORTANT: this permission is mandatory for trusted publishing
 #     id-token: write
 #   steps:
-#     - uses: actions/checkout@v4
+#     - uses: actions/checkout@v6
 #     - name: Setup PDM
 #       uses: pdm-project/setup-pdm@v4
 #       with:
