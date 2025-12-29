@@ -44,9 +44,8 @@ html_theme = 'furo'
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-# TODO: auto-build and include the man page in the release archive
 man_pages = [
-    ('index', 'getmac', 'Cross-platform Python package to get MAC addresses',
+    ('cli', 'getmac', 'Cross-platform Python package to get MAC addresses',
      [author], 1)
 ]
 
