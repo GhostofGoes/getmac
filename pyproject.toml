@@ -189,8 +189,21 @@ pytest
   -n auto
 """
 
+[tool.pdm.scripts.html]
+help = "Build HTML documentation using Sphinx"
+cmd = "sphinx-build -j auto -b html ./docs ./built_docs"
+
+[tool.pdm.scripts.manpage]
+help = "Build Manpage documentation using Sphinx"
+cmd = "sphinx-build -b man ./docs ./built_docs"
+
 [tool.pdm.scripts.docs]
-cmd = "sphinx-build ./docs ./built_docs"
+help = "Build all documentation formats using Sphinx"
+composite = [
+    "html",
+    "manpage",
+]
+
 
 
 # --- Pytest configuration ---
