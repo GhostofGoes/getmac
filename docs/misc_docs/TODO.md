@@ -46,6 +46,7 @@
     - Document these features in the README/docs, including the CLI arguments
 
 ## Enhancements/fixes/misc.
+- [ ] Python 3.13 + 3.14
 - [ ] Properly support WSL2
 - [ ] address all TODOs in the code
 - [ ] implement proper default interface detection on Windows
