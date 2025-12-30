@@ -167,14 +167,16 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 ## Commands and techniques by platform
 - Windows
     - Commands: `getmac.exe`, `ipconfig.exe`, `arp.exe`, `wmic.exe`
-    - Libraries: `uuid`, `ctypes`, `socket`
+    - Libraries: `ctypes`, `socket`
 - Linux/Unix
-    - Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`, `lanscan`, `arping` (both iputils and Habet's variants)
-    - Libraries: `uuid`, `fcntl`, `socket`
+    - Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`, `arping` (both iputils and Habet's variants)
+    - Libraries:  `fcntl`, `socket`
     - Files: `/sys/class/net/{iface}/address`, `/proc/net/arp`
     - Default interfaces: `/proc/net/route`, `route`, `ip route list`
+- HP-UX:
+    - Commands: `lanscan`
 - Mac OSX (Darwin)
-    - `networksetup`, `arping`
+    - Commands: `networksetup`, `arping`
     - Many of the same commands as Linux
 - WSL
     - Windows commands are used for remote hosts

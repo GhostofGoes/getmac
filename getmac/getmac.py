@@ -61,6 +61,7 @@ class Method:
         "openbsd",
         "freebsd",
         "sunos",
+        "hp-ux",
         "other",
     }
     """
@@ -485,12 +486,12 @@ class SysIfaceFile(Method):
 
 class LanscanIface(Method):
     """
-    Uses the ``lanscan`` command to get the MAC address of a network interface.
+    Uses the ``lanscan`` command to get the MAC address of a network interface on HP-UX.
 
     This is adopted from Python's :mod:`uuid` module's ``_lanscan_getnode`` function.
     """
 
-    platforms = {"other"}
+    platforms = {"hp-ux"}
     method_type = "iface"
 
     def test(self) -> bool:
@@ -1749,6 +1750,8 @@ def get_mac_address(
                     gvars.DEFAULT_IFACE = "em0"
                 elif not gvars.DEFAULT_IFACE and consts.DARWIN:  # OSX, maybe?
                     gvars.DEFAULT_IFACE = "en0"
+                elif not gvars.DEFAULT_IFACE and consts.HPUX:
+                    gvars.DEFAULT_IFACE = "lan0"
                 elif not gvars.DEFAULT_IFACE:
                     gvars.DEFAULT_IFACE = "eth0"
 

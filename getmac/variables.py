@@ -56,6 +56,7 @@ class Constants(VarsClass):
     FREEBSD: Final[bool] = _SYST == "FreeBSD"
     NETBSD: Final[bool] = _SYST == "NetBSD"
     SOLARIS: Final[bool] = _SYST == "SunOS"
+    HPUX: Final[bool] = _SYST == "HP-UX"
 
     BSD: Final[bool] = OPENBSD or FREEBSD or NETBSD
     """
@@ -125,6 +126,7 @@ class Constants(VarsClass):
     - freebsd
     - netbsd
     - sunos
+    - hp-ux
     - Any other values that can be returned by :func:`platform.uname`,
         converted to lowercase.
 

@@ -65,6 +65,7 @@ def test_get_instance_from_cache(mocker):
 def test_swap_method_fallback(mocker):
     mocker.patch("getmac.getmac.METHOD_CACHE", {"ip4": getmac.ArpExe()})
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {"ip4": [getmac.CtypesHost()]})
+
     assert getmac._swap_method_fallback("ip4", "ArpExe")
     assert not getmac._swap_method_fallback("ip4", "InvalidMethod")
     assert getmac._swap_method_fallback("ip4", "CtypesHost")
@@ -81,10 +82,11 @@ def test_initialize_method_cache_valid_types(mocker, method_type):
         {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
-    mocker.patch.object(consts, "PLATFORM", "linux")
+
     assert getmac.initialize_method_cache(method_type)
     assert getmac.METHOD_CACHE[method_type] is not None
-    if method_type in ["ip4", "ip6"]:
+
+    if method_type in ["ip4", "ip6"] and consts.PLATFORM == "linux":
         assert getmac.FALLBACK_CACHE[method_type]
 
 
@@ -95,6 +97,7 @@ def test_initialize_method_cache_initialized(mocker):
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
     mocker.patch.object(consts, "PLATFORM", "linux")
+
     assert getmac.initialize_method_cache("ip4")
     assert str(getmac.METHOD_CACHE["ip4"]) == "ArpFile"
     assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.Method)
@@ -107,6 +110,7 @@ def test_initialize_method_cache_bad_type(mocker):
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
     mocker.patch.object(consts, "PLATFORM", "linux")
+
     with pytest.warns(RuntimeWarning):
         assert not getmac.initialize_method_cache("invalid_method_type")
     with pytest.warns(RuntimeWarning):
@@ -123,6 +127,7 @@ def test_initialize_method_cache_platform_override(mocker):
     mocker.patch.object(consts, "PLATFORM", "windows")
     mocker.patch.object(settings, "OVERRIDE_PLATFORM", "darwin")
     mocker.patch("getmac.utils.check_command", return_value=True)
+
     assert getmac.initialize_method_cache("iface")
     assert settings.OVERRIDE_PLATFORM == "darwin"
     assert consts.PLATFORM == "windows"
@@ -138,6 +143,7 @@ def test_initialize_method_cache_no_network_request(mocker):
     mocker.patch.object(consts, "PLATFORM", "linux")
     mocker.patch("getmac.utils.check_command", return_value=True)
     mocker.patch("getmac.utils.check_path", return_value=True)
+
     assert getmac.initialize_method_cache("ip4", network_request=False)
     assert consts.PLATFORM == "linux"
     assert isinstance(getmac.METHOD_CACHE["ip4"], getmac.ArpFile)

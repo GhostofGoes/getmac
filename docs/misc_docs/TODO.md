@@ -20,6 +20,7 @@
   - directly test methods via a `Method.parse()` function
   - add `Method.parse()` that handles the parsing of command
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
+- [ ] Add tests for more samples (see TODOs at top of test_methods.py, plus new third-party samples)
 
 ## Features
 - [x] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
@@ -50,13 +51,6 @@
 - [ ] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
   - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
   - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
-- [ ] Cleanup `ifconfig` methods
-  - [ ] Split `IfconfigOther` into IfconfigWithArg/IfconfigNoArg
-  - [ ] Combine `IfconfigEther` into other Ifconfig methods
-  - [ ] Improve unit test coverage and platform markers
-- [ ] `IpLinkIface`: improve regex to not need extra portion for no arg
-- [ ] Add new regexes to `IpLinkIface` and improve it's parsing so it's more robust, especially on Android
-- [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
 
 ## Before releasing
 - [ ] Add a deprecation warning to `get-mac` package, don't publish it for 1.0.0
@@ -141,37 +135,11 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Determine best remote host detection methods, split off not-applicable commands.
 - [ ] Darwin hostnames? Does it have arp file? (Do less work)
 - [ ] Mac: `ndp -a` to get IPv6 network neighbors (NDP table)
-## Performance
-- [ ] Profiling: CPU usage, memory usage, run time/load time
 
-## Misc.
-- [ ] HP-UX.
-    - Detect HP-UX
-    - Default to `lan0` if default interface can't be found
-    - Add `nwmgr` support
-- [ ] Add ability to match user-provided arguments case-insensitively
-- [ ] Add ability to get the mac address of a Python socket's interface (`socket.socket`)
-- [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
-- [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
-
-
-# Documentation
-- [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
-- [ ] Write a short guide on how to add and test a new method
-
-
-# Dev
-- [ ] Automatically publish to PyPI when publishing a release on GitHub
-- [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
-- [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
-- [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
-- [ ] Move method classes into a separate file
-
-
-# Post-1.0.0
+## Misc platforms
 - [ ] Properly support WSL2
-- [ ] address all TODOs in the code
-- [ ] implement proper default interface detection on Windows
+- [ ] `nwmgr` for HP-UX
+- [ ] Properly implement and test HP-UX for `netstat` and `ifconfig`, add `hp-ux` to `platforms` for corresponding Methods
 - [ ] FreeBSD default interface: `route get default`
 - [ ] Support NetBSD
     - platform: `netbsd`
@@ -185,17 +153,52 @@ This is going to be a bit more complicated since the highest metric routes are g
     - `netstat` doesn't work with `-e`, but does work with no arguments, `-a` and `-i`. `-n` prevents hostnames from resolving, which is faster. `-i` gives the shortest output (and is fastest), but doesn't give us a MAC address. Providing the interface as an argument also doesn't work to get a MAC (`netstat -a -I e1000g0`).
     - default interface via `route get default`?
     - no `ip` command
+
+
+# Performance
+- [ ] Profiling: CPU usage, memory usage, run time/load time
+- [ ] Parameterize regexes? (is this any faster?)
+- [ ] Cache method checks (maybe move this to 1.1.0 release?) Save a string with the names of methods. Save to: file (location configurable via environment variable or option). Read from: file, environment variable, file pointed to by environment variable. Add a flag to control this behavior and location of the cache. Document the behavior.
+- [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
+
+
+# Misc.
+- [ ] Add ability to match user-provided arguments case-insensitively
+- [ ] Add ability to get the mac address of a Python socket's interface (`socket.socket`)
+- [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
+- [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
+
+
+# Documentation
+- [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
+- [ ] Write a short guide on how to add and test a new method
+
+
+# Dev
+- [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
+- [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
+- [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
+- [ ] Move method classes into a separate file
+
+
+# Post-1.0.0
+- [ ] Cleanup `ifconfig` methods
+  - [ ] Split `IfconfigOther` into IfconfigWithArg/IfconfigNoArg
+  - [ ] Combine `IfconfigEther` into other Ifconfig methods
+  - [ ] Improve unit test coverage and platform markers
+- [ ] `IpLinkIface`: improve regex to not need extra portion for no arg
+- [ ] Add new regexes to `IpLinkIface` and improve it's parsing so it's more robust, especially on Android
+- [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
+- [ ] address all TODOs in the code
+- [ ] implement proper default interface detection on Windows
 - [ ] Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
 - [ ] Support IPv6 remote hosts on windows, and IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
-- [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
 - [ ] New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
 - [ ] Use `__import__()` or `importlib`?
-- [ ] Parameterize regexes? (is this any faster?)
 - [ ] Add support for Unix and Windows interface indices as a separate argument to `get_mac_address`. On Windows, we could use `wmic`, while on Unix and Python 3 we can use `socket.if_indextoname()`.
 - [ ] API to add/remove methods at runtime (including new, custom methods)
 - [ ] Reduce duplication, for example "if not arg: return None"
-- [ ] Cache method checks (maybe move this to 1.1.0 release?) Save a string with the names of methods. Save to: file (location configurable via environment variable or option). Read from: file, environment variable, file pointed to by environment variable. Add a flag to control this behavior and location of the cache. Document the behavior.
 - [ ] Add a "net_ok" argument, check network_request attribute on method in CACHE, if not then keep checking for method in FALLBACK_CACHE that has network_request.
 - [ ] Add ability to specify what methods to use via function argument and CLI argument
 - [ ] Add ability to force platform name (e.g. `linux`) via function argument and CLI argument

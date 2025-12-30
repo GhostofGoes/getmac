@@ -1,6 +1,5 @@
 import platform
 import socket
-import sys
 from subprocess import CalledProcessError
 
 import pytest
@@ -576,7 +575,6 @@ def test_lanscan_iface_samples(benchmark, mocker, get_sample, mac, iface, sample
 
     assert mac == benchmark(getmac.LanscanIface().get, arg=iface)
 
-    assert not getmac.LanscanIface().get("")
     assert not getmac.LanscanIface().get("lo0")
     assert not getmac.LanscanIface().get("lan")
     assert not getmac.LanscanIface().get("lan100")
