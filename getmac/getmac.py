@@ -963,11 +963,13 @@ class DefaultIfaceLinuxRouteFile(Method):
     platforms = {"linux", "wsl"}
     method_type = "default_iface"
 
+    _path: Final[str] = "/proc/net/route"
+
     def test(self) -> bool:
-        return utils.check_path("/proc/net/route")
+        return utils.check_path(self._path)
 
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
-        data = utils.read_file("/proc/net/route")
+        data = utils.read_file(self._path)
 
         if data is not None and len(data) > 1:
             for line in data.split("\n")[1:-1]:
@@ -989,10 +991,10 @@ class DefaultIfaceLinuxRouteFile(Method):
             if settings.DEBUG:
                 gvars.log.debug(
                     "Failed to find default interface in data from "
-                    "'/proc/net/route', no destination of '00000000' was found"
+                    f"'{self._path}', no destination of '00000000' was found"
                 )
         elif settings.DEBUG:
-            gvars.log.warning("No data from /proc/net/route")
+            gvars.log.warning(f"No data from {self._path}")
 
         return None
 
