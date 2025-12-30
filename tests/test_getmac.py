@@ -111,10 +111,10 @@ def test_initialize_method_cache_bad_type(mocker):
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
     mocker.patch.object(consts, "PLATFORM", "linux")
 
-    with pytest.warns(RuntimeWarning):
-        assert not getmac.initialize_method_cache("invalid_method_type")
-    with pytest.warns(RuntimeWarning):
-        assert not getmac.initialize_method_cache("ip")
+    with pytest.raises(RuntimeError):
+        getmac.initialize_method_cache("invalid_method_type")
+    with pytest.raises(RuntimeError):
+        getmac.initialize_method_cache("ip")
 
 
 def test_initialize_method_cache_platform_override(mocker):

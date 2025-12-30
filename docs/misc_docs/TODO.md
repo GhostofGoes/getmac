@@ -16,9 +16,6 @@
 ## Tests
 - [ ] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
 - [ ] >90% test coverage
-  - refactor tests to use the new system and structure
-  - directly test methods via a `Method.parse()` function
-  - add `Method.parse()` that handles the parsing of command
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 - [ ] Add tests for more samples (new third-party samples)
 
@@ -28,7 +25,7 @@
 
 ## Breaking changes (or potentially breaking)
 - [x] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient. It's functionality is already implemented by `ArpVariousArgs`.
-- [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
+- [x] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
     - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
     - keep `-4,`, `-6`, and `--ip6` arguments for backwards-compatibility until 1.1.0

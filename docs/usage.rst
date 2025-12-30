@@ -109,7 +109,7 @@ You can also use the standard library's :mod:`ipaddress` module to specify IP ad
 Default interface name
 ----------------------
 
-Get the name of the system's default network interface using :func:`~getmac.getmac.get_default_interface`. This leverages the same logic that getmac uses internally to determine the default interface (e.g. for when ``get_mac_address()`` is called without any arguments).
+Get the name of the system's default network interface using :func:`~getmac.getmac.get_default_interface`. This leverages the same logic that getmac uses internally to determine the default interface (e.g. for when :func:`~getmac.getmac.get_mac_address` is called without any arguments).
 
 .. warning::
    This currently doesn't work on Windows platforms.
@@ -132,23 +132,23 @@ Settings that affect the behavior of getmac are in the :mod:`~getmac.variables` 
 - :attr:`~getmac.variables.Settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get.
 - :attr:`~getmac.variables.Settings.PORT`: the UDP port used to populate the ARP table (IPv4) or NDP list (IPv6) when looking up MACs for hosts or IPs (see the documentation of the ``network_request`` argument in :func:`~getmac.getmac.get_mac_address` for details).
 - :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. ``"linux"``, ``"windows"``, ``"freebsd"``, etc). Any values returned by :func:`platform.system` are valid.
-- :attr:`~getmac.variables.Settings.FORCE_METHOD`: Name of method to use. This will force a specific method to be used, e.g. :class:`getmac.getmac.IpNeighborShow` with the string ``"IpNeighborShow"``. This will be used regardless of the method's type or platform compatibility, and :func:`Method.test() <getmac.getmac.Method.test>` will NOT be checked! The list of available methods is in :data:`getmac.getmac.METHODS`.
+- :attr:`~getmac.variables.Settings.FORCE_METHOD`: Name of method to use. This will force a specific method to be used, e.g. :class:`getmac.getmac.IpNeighborShow` with the string ``"IpNeighborShow"``. This will be used regardless of the method's type or platform compatibility, and :func:`~getmac.getmac.Method.test` will NOT be checked! The list of available methods is in :data:`getmac.getmac.METHODS`.
 
 
 Notes
 =====
 
 - ``"localhost"`` or ``"127.0.0.1"`` will always return ``"00:00:00:00:00:00"``, as this is the MAC address of the loopback interface.
-- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined, then it will attempt to fallback to typical defaults for the platform (`Ethernet` on Windows, `em0` on BSD, `en0` on OSX/Darwin, and `eth0` otherwise). If that fails, then it will fallback to `lo` on POSIX systems.
-- The first four arguments are mutually exclusive. `network_request` does not have any functionality when the `interface` argument is specified, and can be safely set if using in a script.
-- **Exceptions will be handled silently and returned as a None.** If you run into problems, you can set `DEBUG` to true and get more information about what's happening. If you're still having issues, please create an [issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and include the output with `DEBUG` enabled.
+- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined, then it will attempt to fallback to typical defaults for the platform (``Ethernet`` on Windows, ``em0`` on BSD, ``en0`` on OSX/Darwin, and ``eth0`` otherwise). If that fails, then it will fallback to ``lo`` on POSIX systems.
+- The first four arguments to :func:`~getmac.getmac.get_mac_address` are mutually exclusive. ``network_request`` does not have any functionality when the ``interface`` argument is specified, and can be safely set if using in a script.
+- **Most Exceptions will be handled silently and returned as a None.** If you run into problems, you can set :attr:`~getmac.variables.Settings.DEBUG` to true and get more information about what's happening. If you're still having issues, please create an `issue on GitHub <https://github.com/GhostofGoes/getmac/issues>`_ and include the output with :attr:`~getmac.variables.Settings.DEBUG` enabled. As of version 1.0.0, a :class:`RuntimeError` is raised in cases where no possible methods are found matching the type of request and platform or all methods found fail to test (in other words, don't work).
 
 
 Limitations & Known Issues
 ==========================
 
 - The physical transport is assumed to be Ethernet (802.3). Others, such as Wi-Fi (802.11), are currently not tested or considered. I plan to address this in the future, and am definitely open to pull requests or issues related to this, including error reports.
-- "Remote hosts" refer to hosts in *your local layer 2 network*, also known as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
+- "Remote hosts" refer to hosts in *your local layer 2 network*, also known as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please `a issue on GitHub <https://github.com/GhostofGoes/getmac/issues>`_ or shoot me an email, I'd love to be wrong about this.
 - Some methods may not work on certain platforms or configurations. If a method fails, getmac will try the next available method until it finds one that works or exhausts all options.
 - The accuracy and reliability of the MAC address retrieval may vary depending on the network configuration, the target host's settings, and other factors. Please refer to the documentation of each method for more details on their behavior and limitations.
 - Depending on the platform, there could be a performance detriment, due to heavy usage of regular expressions.

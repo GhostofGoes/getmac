@@ -1226,14 +1226,6 @@ def _swap_method_fallback(method_type: str, swap_with: str) -> bool:
     return True
 
 
-def _warn_critical(err_msg: str) -> None:
-    gvars.log.critical(err_msg)
-    warnings.warn(  # noqa: B028
-        f"{err_msg}. NOTICE: this warning my turn into a raised exception in a future release",
-        RuntimeWarning,
-    )
-
-
 def initialize_method_cache(method_type: str, network_request: bool = True) -> bool:
     """
     Initialize the method cache for the given method type.
@@ -1246,6 +1238,11 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
 
     Returns:
         If the cache was initialized successfully
+
+    Raises:
+        RuntimeError: if no valid methods were found for the given method type
+            and the system's platform (or user-defined override platform), or
+            if all matching methods failed to test.
     """
     if METHOD_CACHE.get(method_type):
         if settings.DEBUG:
@@ -1282,8 +1279,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
     ]  # type: List[Type[Method]]
 
     if not type_methods:
-        _warn_critical(f"No valid methods matching MAC type '{method_type}'")
-        return False
+        raise RuntimeError(f"No valid methods matching MAC type '{method_type}'")
 
     if settings.DEBUG >= 2:
         type_strs = ", ".join(tm.__name__ for tm in type_methods)
@@ -1318,10 +1314,9 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         )
 
     if not platform_methods:
-        _warn_critical(
+        raise RuntimeError(
             f"No valid methods found for MAC type '{method_type}' and platform '{platform}'"
         )
-        return False
 
     filtered_methods = platform_methods  # type: List[Type[Method]]
 
@@ -1347,10 +1342,9 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
             gvars.log.debug(f"Test failed for method '{method_instance!s}'")
 
     if not tested_methods:
-        _warn_critical(
+        raise RuntimeError(
             f"All {len(filtered_methods)} '{method_type}' methods failed to test!"
         )
-        return False
 
     if settings.DEBUG >= 2:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)
@@ -1396,8 +1390,7 @@ def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[
     Attempt to use methods, and if they fail, fallback to the next method in the cache.
     """
     if not METHOD_CACHE[method_type] and not FALLBACK_CACHE[method_type]:
-        _warn_critical(f"No usable methods found for MAC type '{method_type}'")
-        return None
+        raise RuntimeError(f"No usable methods found for MAC type '{method_type}'")
 
     if settings.DEBUG:
         gvars.log.debug(
@@ -1528,10 +1521,6 @@ def get_mac_address(
 
     The MAC is usually a unicast IEEE 802 MAC-48 address.
 
-    .. warning::
-       In getmac 1.0.0, exceptions will be raised if there are no valid methods
-       found for the type of MAC requested.
-
     .. note::
        ``"localhost"`` or ``"127.0.0.1"`` will always return ``"00:00:00:00:00:00"``
 
@@ -1541,7 +1530,7 @@ def get_mac_address(
        relied upon. If this functionality is needed, please open an issue or PR.
 
     .. note::
-       Exceptions raised by methods are handled silently and returned as :obj:`None`.
+       Exceptions raised by *methods* are handled silently and returned as :obj:`None`.
 
     Args:
         interface: Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
@@ -1564,6 +1553,10 @@ def get_mac_address(
     Returns:
         Lowercase colon-separated MAC address. If no MAC was found, or an exception
         occurred, :obj:`None` is returned.
+
+    Raises:
+        RuntimeError: If no valid methods are found for the type of MAC requested,
+            or another critical error occurs (potentially due to a bug in getmac).
     """
 
     # If debugging, start the timer
