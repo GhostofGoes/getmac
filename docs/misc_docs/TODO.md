@@ -46,7 +46,7 @@
 
 ## Enhancements/fixes/misc.
 - [x] Python 3.13 + 3.14
-- [ ] Fix `UuidLanscan` for Python 3.9+
+- [x] Fix `UuidLanscan` for Python 3.9+
 - [ ] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
   - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
   - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
@@ -145,7 +145,10 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Profiling: CPU usage, memory usage, run time/load time
 
 ## Misc.
-- [ ] HP-UX. Detect HP-UX. Default to `lan0` if default interface can't be found. Add `lanscan` and `nwmgr` support.
+- [ ] HP-UX.
+    - Detect HP-UX
+    - Default to `lan0` if default interface can't be found
+    - Add `nwmgr` support
 - [ ] Add ability to match user-provided arguments case-insensitively
 - [ ] Add ability to get the mac address of a Python socket's interface (`socket.socket`)
 - [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)

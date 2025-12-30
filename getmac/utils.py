@@ -231,19 +231,6 @@ def call_proc(executable: str, args: str) -> str:
     return output
 
 
-def uuid_convert(mac: int) -> str:
-    """
-    Convert value output from :mod:`uuid` internal function into a string.
-
-    Args:
-        mac: integer value returned from a :mod:`uuid` function
-
-    Returns:
-        String with colon-separated MAC address
-    """
-    return ":".join(("%012X" % mac)[i : i + 2] for i in range(0, 12, 2))
-
-
 def fetch_ip_using_dns() -> str:
     """
     Determine the IP address of the default network interface.

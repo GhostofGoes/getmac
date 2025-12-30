@@ -30,7 +30,8 @@
 * Removed support for Jython. As of Dec 2025, [Jython](https://github.com/jython/jython) still does not support Python 3. If and when it supports Python 3, I'll re-add support for it.
 * Removed explicit support for IronPython. [IronPython3 exists](https://github.com/IronLanguages/ironpython3), however I don't have a way to test it in CI. If someone knows of a way to test it in GitHub actions, let me know, and I'm happy to re-add explicit support.
 * Removed RPM packaging. This wasn't being used anywhere, and hasn't been updated since version 0.6.0. Way back when, I dreamt of putting this in OS package repositories. However, I've now learned that's up to the maintainers of those repos (e.g., Ubuntu or Fedora maintainers), not me.
-* Remove `UuidArpGetnode` method. It's quite slow (performs up to 3 subprocess calls internally) and the functionality is already implemented by `ArpVariousArgs`.
+* Removed `UuidArpGetnode` method. It's quite slow (performs up to 3 subprocess calls internally) and the functionality is already implemented by `ArpVariousArgs`.
+* Removed `UuidLanscan` method. This has been replaced with the new `LanscanIface` method. Some UUID internal function names changed with Python 3.9, and it made more sense to implement from scratch in getmac instead of continuing to rely on CPython-specific private functions.
 
 
 ### Dev

@@ -55,11 +55,6 @@ def test_call_proc(mocker):
     m.assert_called_once_with(["CMD", "arg1", "arg2"], stderr="DEVNULL", env="ENV")
 
 
-def test_uuid_convert():
-    assert utils.uuid_convert(2482700837424) == "02:42:0C:80:62:30"
-    assert utils.uuid_convert(278094213753144) == "FC:EC:DA:D3:29:38"
-
-
 def test_fetch_ip_using_dns(mocker):
     m = mocker.patch("socket.socket.__enter__")
     m.return_value.getsockname.return_value = ("1.2.3.4", 51327)

@@ -554,22 +554,6 @@ def test_fcntl_iface(mocker):
     m.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
 
 
-@pytest.mark.skipif(
-    sys.version_info[0] == 3 and sys.version_info[1] >= 9,
-    reason="Python 3.9+ doesn't have uuid._find_mac",
-)
-def test_uuid_lanscan(mocker):
-    mocker.patch("uuid._find_mac", return_value=2482700837424)
-    assert getmac.UuidLanscan().get("en1") == "02:42:0C:80:62:30"
-    mocker.patch("uuid._find_mac", return_value=None)
-    assert getmac.UuidLanscan().get("10.0.0.1") is None
-    assert getmac.UuidLanscan().get("en0") is None
-
-    mocker.patch("getmac.utils.check_command", return_value=True)
-    assert getmac.UuidLanscan().test() is True
-    utils.check_command.assert_called_once_with("lanscan")
-
-
 @pytest.mark.parametrize(
     ("mac", "iface", "sample_file"),
     [
@@ -592,6 +576,7 @@ def test_lanscan_iface_samples(benchmark, mocker, get_sample, mac, iface, sample
 
     assert mac == benchmark(getmac.LanscanIface().get, arg=iface)
 
+    assert not getmac.LanscanIface().get("")
     assert not getmac.LanscanIface().get("lo0")
     assert not getmac.LanscanIface().get("lan")
     assert not getmac.LanscanIface().get("lan100")

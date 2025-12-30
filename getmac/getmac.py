@@ -516,34 +516,6 @@ class LanscanIface(Method):
         return None
 
 
-class UuidLanscan(Method):
-    """
-    Uses Python's :func:`uuid._find_mac` function to get the MAC address
-    using the ``lanscan`` command on platforms that support it (HP-UX).
-    """
-
-    platforms = {"other"}
-    method_type = "iface"
-
-    def test(self) -> bool:
-        try:
-            from uuid import _find_mac  # type: ignore  # noqa: F401
-
-            return utils.check_command("lanscan")
-        except Exception:
-            return False
-
-    def get(self, arg: str) -> Optional[str]:
-        from uuid import _find_mac  # type: ignore
-
-        mac = _find_mac("lanscan", "-ai", [arg.encode()], lambda i: 0)  # noqa: ARG005
-
-        if mac:
-            return utils.uuid_convert(mac)
-
-        return None
-
-
 class FcntlIface(Method):
     """
     Uses :func:`fcntl.ioctl` to get the MAC address of a network
