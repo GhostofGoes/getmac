@@ -66,8 +66,7 @@ keywords = [
 
 [project.urls]
 "Homepage" = "https://github.com/GhostofGoes/getmac"
-# TODO: get ReadTheDocs working
-# "Documentation" = "https://getmac.readthedocs.io/en/latest/"
+"Documentation" = "https://ghostofgoes.github.io/getmac/"
 "Changelog" = "https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md"
 "Issue tracker" = "https://github.com/GhostofGoes/getmac/issues"
 "Source" = "https://github.com/GhostofGoes/getmac"
