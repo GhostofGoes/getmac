@@ -27,6 +27,7 @@ extensions = [
     'sphinx_argparse_cli',  # Adds CLI documentation from argparse
     'sphinx_automodapi.automodapi',  # API documentation
     'sphinx_issues',  # GitHub Issues/PRs - :issue:, :pr:
+    'myst_parser',  # Markdown support
 ]
 
 intersphinx_mapping = {

@@ -7,7 +7,7 @@ Thanks for taking an interest in this awesome little project. We love to bring n
 * Discussion and general questions/help: [GitHub discussions](https://github.com/GhostofGoes/getmac/discussions) or the [Python Discord server](https://discord.gg/python)
 
 
-# Code requirements
+## Code requirements
 
 Your code *must*:
 * Have tests
@@ -36,22 +36,22 @@ Please be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Memes
 * [ ] Coverage has NOT decreased
 
 
-# Where to contribute
+## Where to contribute
 
-## Good for beginners
+### Good for beginners
 * Sample collection (see section below)
 * Platform testing (see section below)
 * Bug reports!
 * Documentation (including fixes for grammar and spelling)
 * Improving and adding tests for existing samples
 
-## Main areas of focus
+### Main areas of focus
 * Writing parsers for new commands (Example: `netsh int ipv6`)
 * Addressing missing functionality (Example: default interface detection for IPv6 on Windows)
 * Adding new features (Example: ability to find MAC by interface index integer)
 * Adding tests for internal methods and mocking where necessary
 
-## Platform testing
+### Platform testing
 Help is dearly needed on testing and rooting out differences in various platforms and configurations. At a basic level, this involves just running the tests on any platforms you use. Open issues for any bugs or quirks you discover, or if you're feeling adventurous, fix it yourself!
 
 **Any platform is fair game!** The following are platforms of special interest:
@@ -61,14 +61,14 @@ Help is dearly needed on testing and rooting out differences in various platform
 * Arch Linux
 * BSDs
 
-## Sample collection
+### Sample collection
 Examples of output of various commands is an easy way contribute that is still incredibly helpful.
 1. Run the command
 2. Copy/paste the output (or redirect output of command, `tee` is helpful here) into an appropriately named `.out` file in `samples/`
 3. That's it!
 
 
-# Getting started
+## Getting started
 1. Create your own fork of the code through GitHub web interface ([Here's a Guide](https://gist.github.com/Chaser324/ce0505fbed06b947d962))
 1. Clone the fork to your computer. This can be done using the [GitHub desktop](https://desktop.github.com/) GUI , `git clone <fork-url>`, or the Git tools in your favorite editor or IDE.
 1. Create and checkout a new branch in the fork with either your username (e.g. "ghostofgoes"), or the name of the feature or issue you're working on (e.g. "openbsd-support"). Again, this can be done using the GUI, your favorite editor, or `git checkout -b <branch> origin/<branch>`.
@@ -91,7 +91,7 @@ Examples of output of various commands is an easy way contribute that is still i
 8. Submit a pull request!
 
 
-# Bug reports
+## Bug reports
 Filing a bug report:
 
 1. Answer these questions:
@@ -107,13 +107,13 @@ Filing a bug report:
 **NOTE**: If the issue is a potential security vulnerability, do *NOT* open an issue! Instead, email: ghostofgoes(at)gmail(dot)com
 
 
-# Features and ideas
+## Features and ideas
 Ideas for features or other things are welcomed. Open an issue on GitHub detailing the idea, and tag it appropriately (e.g. "Feature" for a new feature).
 
 
-# Resources
+## Resources
 
-## Regex resources (regular expressions)
+### Regex resources (regular expressions)
 - https://pythex.org/
 - https://regex101.com/
 - [Python's `re` documentation](https://docs.python.org/3/library/re.html)
@@ -121,7 +121,7 @@ Ideas for features or other things are welcomed. Open an issue on GitHub detaili
 - https://ultrapico.com/Expresso.htm (I haven't used this but it looks useful)
 
 
-# Commands
+## Commands
 ```bash
 # Create development environment
 pdm install -d
@@ -136,10 +136,11 @@ pdm run test
 pdm run lint
 
 # Run getmac CLI
-pdm run getmac
+pdm run getmac --help
+pdm run getmac --version
 ```
 
-# Documentation
+## Documentation
 
 The docs are built using Sphinx. They are located in the `docs/` folder, and the configuration is in `docs/conf.py`.
 

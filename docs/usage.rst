@@ -33,7 +33,7 @@ Configuration
 =============
 
 TODO: update these for new settings classes
-
+!!
 
 
 - ``logging.getLogger("getmac")``: Runtime messages and errors are recorded to the ``getmac`` logger using Python's :mod:`logging` module. They can be configured by using :func:`logging.basicConfig` or adding :class:`logging.Handler` instances to the logger named ``"getmac"``.
