@@ -19,6 +19,7 @@
 * Handle `bytes` values for `interface`, `ip`, `ip6`, and `hostname` arguments to `get_mac_address()`. This will just call `decode("utf-8")` on the bytes. This is to ease usage with certain libraries and functions that return strings as bytes.
     - If you pass it some weird bytes that aren't decodable as utf-8, it's obviously going to break. Don't be dumb :)
 * Added manpage for the command line interface (`getmac.1`)
+* New method, `LanscanIface`, a proper implementation of `lanscan -ia` for HP-UX systems. This replaces the functionality of the removed `UuidLanscan` method, and is loosely based on CPython's `uuid._lanscan_getnode()` implementation.
 
 ### Changed
 * BREAKING CHANGE: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.

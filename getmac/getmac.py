@@ -483,6 +483,39 @@ class SysIfaceFile(Method):
         return None if data is not None and len(data) < 17 else data
 
 
+class LanscanIface(Method):
+    """
+    Uses the ``lanscan`` command to get the MAC address of a network interface.
+
+    This is adopted from Python's :mod:`uuid` module's ``_lanscan_getnode`` function.
+    """
+
+    platforms = {"other"}
+    method_type = "iface"
+
+    def test(self) -> bool:
+        return utils.check_command("lanscan")
+
+    def get(self, arg: str) -> Optional[str]:
+        # -a: Display station addresses only. No headings.
+        # -i: Display interface names only. No headings.
+        output = utils.popen("lanscan", "-ai")
+        if not output:
+            return None
+
+        # Find the line containing the interface name, e.g. "lan0"
+        search_for = arg + " "  # space to prevent partial matches
+        for line in output.splitlines():
+            if search_for in line:
+                # Extract MAC address from the line
+                # The raw MAC will be something like "0x0012317D6209"
+                # Turn that into a 12-character string, then add colons
+                raw_mac = line.split()[0].replace("0x", "").strip()
+                return ":".join(raw_mac[i : i + 2] for i in range(0, len(raw_mac), 2))
+
+        return None
+
+
 class UuidLanscan(Method):
     """
     Uses Python's :func:`uuid._find_mac` function to get the MAC address
@@ -1099,7 +1132,7 @@ METHODS = [
     ArpingHost,
     SysIfaceFile,
     FcntlIface,
-    UuidLanscan,
+    LanscanIface,
     GetmacExe,
     IpconfigExe,
     WmicExe,

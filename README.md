@@ -256,7 +256,7 @@ Contributors are more than welcome! See the [contribution guide](CONTRIBUTING.md
 
 Before submitting a PR, please make sure you've completed the [pull request checklist](CONTRIBUTING.md#Code_requirements)!
 
-The [Python Discord server](https://discord.gg/python) is a good place to ask questions or discuss the project (Handle: @KnownError#0001).
+The [Python Discord server](https://discord.gg/python) is a good place to ask questions or discuss the project (handle: `@knownerror`).
 
 ## Contributors
 - Christopher Goes (@ghostofgoes) - Author and maintainer
@@ -283,6 +283,8 @@ Many of the methods used to acquire an address and the core logic framework are 
 - [_unix_fcntl_by_interface](https://stackoverflow.com/a/4789267/2214380)
 - [_windows_get_remote_mac_ctypes](goo.gl/ymhZ9p)
 - [String joining](https://stackoverflow.com/a/3258612/2214380)
+- [Facter](https://github.com/puppetlabs/facter) - Command output examples from Facter are leveraged for better test coverage
+- [GLPI Agent](https://github.com/glpi-project/glpi-agent) - Command output examples from GLPI Agent are leveraged for better test coverage
 
 ## License
-MIT. Feel free to copy, modify, and use to your heart's content. Enjoy :)
+The code is licensed MIT. The test data contains Apache 2.0 and GPLv2 licensed files, in the `tests/samples/third_party/` directory.

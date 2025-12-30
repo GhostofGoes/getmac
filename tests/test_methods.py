@@ -568,3 +568,31 @@ def test_uuid_lanscan(mocker):
     mocker.patch("getmac.utils.check_command", return_value=True)
     assert getmac.UuidLanscan().test() is True
     utils.check_command.assert_called_once_with("lanscan")
+
+
+@pytest.mark.parametrize(
+    ("mac", "iface", "sample_file"),
+    [
+        # hpux: lanscan -iap
+        ("00:17:A4:77:08:A4", "lan1", "third_party/glpi_agent/hpux/lanscan/hpux"),
+        ("00:17:A4:77:08:A2", "lan6", "third_party/glpi_agent/hpux/lanscan/hpux"),
+        ("00:17:A4:77:08:EA", "snap31", "third_party/glpi_agent/hpux/lanscan/hpux"),
+        ("00:00:00:00:00:00", "lan901", "third_party/glpi_agent/hpux/lanscan/hpux"),
+        ("00:00:00:00:00:00", "lan904", "third_party/glpi_agent/hpux/lanscan/hpux"),
+        # hpux1: lanscan -iap
+        ("00:16:35:3E:AC:5C", "lan0", "third_party/glpi_agent/hpux/lanscan/hpux1"),
+        # hpux2: lanscan -iap
+        ("00:16:35:3E:AC:44", "lan0", "third_party/glpi_agent/hpux/lanscan/hpux2"),
+        ("00:16:35:3E:AC:45", "lan1", "third_party/glpi_agent/hpux/lanscan/hpux2"),
+    ],
+)
+def test_lanscan_iface_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
+    content = get_sample(sample_file)
+    mocker.patch("getmac.utils.popen", return_value=content)
+
+    assert mac == benchmark(getmac.LanscanIface().get, arg=iface)
+
+    assert not getmac.LanscanIface().get("lo0")
+    assert not getmac.LanscanIface().get("lan")
+    assert not getmac.LanscanIface().get("lan100")
+    assert not getmac.LanscanIface().get("lan90")
