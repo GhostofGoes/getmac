@@ -4,7 +4,7 @@
 ## Documentation
 - [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
 - [x] Single page on RTD/publish with GitHub actions built with Sphinx and Furo
-- [ ] Update docs/usage examples for `get_mac_address()`
+- [x] Update docs/usage examples for `get_mac_address()`
 - [x] Document possible values for `PLATFORM` variable
 - [x] Document Method (and subclass) attributes (use Sphinx "#:" comments)
 - [x] Re-add Man pages (and auto-build them in CI)

@@ -47,7 +47,7 @@ pip install getmac
 pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
 
-### Debian-based distributions 
+### Debian-based distributions
 `apt` may have it available, depending on your distro (see packaging status below):
 
 ```bash
@@ -60,7 +60,8 @@ sudo apt install getmac
 
 ## Python examples
 ```python
-from getmac import get_mac_address
+from getmac import get_mac_address, settings
+
 eth_mac = get_mac_address(interface="eth0")
 win_mac = get_mac_address(interface="Ethernet 3")
 ip_mac = get_mac_address(ip="192.168.0.1")
@@ -69,13 +70,11 @@ host_mac = get_mac_address(hostname="localhost")
 updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
 # Enable debugging
-from getmac import getmac
-getmac.DEBUG = 2  # DEBUG level 2
+settings.DEBUG = 2  # DEBUG level 2
 print(getmac.get_mac_address(interface="Ethernet 3"))
 
 # Change the UDP port used for updating the ARP table (UDP packet)
-from getmac import getmac
-getmac.PORT = 44444  # Default is 55555
+settings.PORT = 44444  # Default is 55555
 print(getmac.get_mac_address(ip="192.168.0.1", network_request=True))
 ```
 
@@ -135,18 +134,18 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - `ip`: IPv4 address of a remote host
 - `ip6`: IPv6 address of a remote host
 - `hostname`: Hostname of a remote host
-- `network_request`: If an network request should be made to update and populate the ARP/NDP table of remote hosts used to lookup MACs in most circumstances. Disable this if you want to just use what's already in the table, or if you have requirements to prevent network traffic. The network request is a empty UDP packet sent to a high port, `55555` by default. This can be changed by setting `getmac.PORT` to the desired integer value. Additionally, on Windows, this will send a UDP packet to `1.1.1.1:53` to attempt to determine the default interface (Note: the IP is [CloudFlare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/)).
+- `network_request`: If an network request should be made to update and populate the ARP/NDP table of remote hosts used to lookup MACs in most circumstances. Disable this if you want to just use what's already in the table, or if you have requirements to prevent network traffic. The network request is a empty UDP packet sent to a high port, `55555` by default. This can be changed by setting `getmac.variables.Settings.PORT` to the desired integer value. Additionally, on Windows, this will send a UDP packet to `1.1.1.1:53` to attempt to determine the default interface (Note: the IP is [CloudFlare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/)).
 
 ## Configuration
 - `logging.getLogger("getmac")`: Runtime messages and errors are recorded to the `getmac` logger using Python's [logging](https://docs.python.org/3/library/logging.html) module. They can be configured by using [logging.basicConfig()](https://docs.python.org/3/library/logging.html#logging.basicConfig) or adding handlers to the `"getmac"` logger.
-- `getmac.getmac.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get.
-- `getmac.getmac.PORT`: UDP port used to populate the ARP/NDP table (see the documentation of the `network_request` argument in `get_mac_address()` for details)
-- `getmac.getmac.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. `"linux"`, `"windows"`, `"freebsd"`, etc.'). Any values returned by `platform.system()` are valid.
-- `getmac.getmac.FORCE_METHOD`: Force a specific method to be used, e.g. 'IpNeighborShow'. This will be used regardless of it's method type or platform compatibility, and `Method.test()` will NOT be checked! The list of available methods is in `getmac.getmac.METHODS`.
+- `getmac.variables.Settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get.
+- `getmac.variables.Settings.PORT`: UDP port used to populate the ARP/NDP table (see the documentation of the `network_request` argument in `get_mac_address()` for details)
+- `getmac.variables.Settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. `"linux"`, `"windows"`, `"freebsd"`, etc.'). Any values returned by `platform.system()` are valid.
+- `getmac.variables.Settings.FORCE_METHOD`: Force a specific method to be used, e.g. 'IpNeighborShow'. This will be used regardless of it's method type or platform compatibility, and `Method.test()` will NOT be checked! The list of available methods is in `getmac.getmac.METHODS`.
 
 ## Features
 - Pure-Python (no compiled C-extensions required!)
-- Python 3.7+
+- Python 3.8+
 - Lightweight, with no dependencies and a relatively small package size (no binary extensions)
 - Supports most platforms with NO binary extensions required!
 - Supports CPython and [PyPy](https://www.pypy.org/)
@@ -158,7 +157,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - "Remote hosts" refer to hosts in your local layer 2 network, also commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
 - The first four arguments are mutually exclusive. `network_request` does not have any functionality when the `interface` argument is specified, and can be safely set if using in a script.
 - The physical transport is assumed to be Ethernet (802.3). Others, such as Wi-Fi (802.11), are currently not tested or considered. I plan to address this in the future, and am definitely open to pull requests or issues related to this, including error reports.
-- **Exceptions will be handled silently and returned as a None.** If you run into problems, you can set `DEBUG` to true and get more     information about what's happening. If you're still having issues, please create an [issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and include the output with `DEBUG` enabled.
+- **Exceptions will be handled silently and returned as a None.** If you run into problems, you can set `DEBUG` to true and get more information about what's happening. If you're still having issues, please create an [issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and include the output with `DEBUG` enabled.
 
 ## Commands and techniques by platform
 - Windows
@@ -189,14 +188,14 @@ All or almost all features should work on "supported" platforms. While other ver
 
 - Windows
     - Desktop: 7, 8, 8.1, 10, 11 (thanks @StevenLooman for testing Windows 11!)
-    - Server: TBD
+    - Server: 2025, 2022
     - Partially supported (untested): 2000, XP, Vista
 - Linux distros
     - CentOS/RHEL 6+
     - Ubuntu 16.04+ (15.10 and older should work, but are untested)
     - Fedora (24+)
 - Mac OSX (Darwin)
-    - The latest two versions probably (TBD)
+    - The latest release, though OSX 14 and 13 have been tested with success.
 - Android (6+)
 - Windows Subsystem for Linux (WSL)
 - FreeBSD (11+)
