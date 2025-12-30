@@ -6,7 +6,7 @@ on:
 jobs:
   lint:
     name: Run lint checks
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - name: Setup PDM
@@ -79,8 +79,8 @@ jobs:
         with:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
-  html-docs:
-    name: Build HTML documentation
+  docs:
+    name: Build HTML docs and manpage
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -91,31 +91,16 @@ jobs:
           cache: true
       - name: Install dependencies
         run: pdm sync -d -G docs
-      - name: Build HTML
-        run: pdm run sphinx-build -b html docs docs/_build/html
-      - uses: actions/upload-artifact@v4
+      - name: Build docs
+        run: pdm run docs
+      - uses: actions/upload-artifact@v6
         with:
           name: html-docs
-          path: docs/_build/html
-  manpage-docs:
-    name: Build manpage
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
-        with:
-          python-version: "3.11"
-          cache: true
-      - name: Install dependencies
-        run: pdm sync -d -G docs
-      - name: Build manpage
-        run: pdm run sphinx-build -b man docs docs/_build/man
-      - uses: actions/upload-artifact@v4
+          path: html_docs/
+      - uses: actions/upload-artifact@v6
         with:
           name: manpage
-          path: docs/_build/man/getmac.1
-
+          path: manpage/getmac.1
 
 # TODO: publish releases using CI
 # TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
