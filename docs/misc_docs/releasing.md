@@ -23,3 +23,4 @@ pdm publish
 1. Create a tagged release on GitHub including:
     a) The relevant section of the CHANGELOG in the body
     b) The source and binary wheels
+    c) The manpage (`getmac.1`)
