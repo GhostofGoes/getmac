@@ -97,10 +97,28 @@ jobs:
         with:
           name: html-docs
           path: html_docs/
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: html_docs/
       - uses: actions/upload-artifact@v6
         with:
           name: manpage
           path: manpage/getmac.1
+  deploy:
+    name: Publish docs to GitHub Pages
+    needs: docs
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/1.0.0-wip'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
 # TODO: publish releases using CI
 # TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
