@@ -1,7 +1,6 @@
 import platform
 import socket
 import sys
-import uuid
 from subprocess import CalledProcessError
 
 import pytest
@@ -553,20 +552,6 @@ def test_fcntl_iface(mocker):
     m = mocker.patch("socket.socket")
     assert getmac.FcntlIface().get("enp3s0") == "74:d4:35:e9:45:73"
     m.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
-
-
-# Python 2.7.5 (CentOS 7) doesn't have this...
-# The commit adding it: https://bit.ly/2Hnd7bN (no idea what release it was in)
-@pytest.mark.skipif(
-    not hasattr(uuid, "_arp_getnode"),
-    reason="This version of Python doesn't have uuid._arp_getnode",
-)
-def test_uuid_arp_get_node(mocker):
-    mocker.patch("uuid._arp_getnode", return_value=278094213753144)
-    assert getmac.UuidArpGetNode().get("10.0.0.1") == "FC:EC:DA:D3:29:38"
-    mocker.patch("uuid._arp_getnode", return_value=None)
-    assert getmac.UuidArpGetNode().get("10.0.0.1") is None
-    assert getmac.UuidArpGetNode().get("en0") is None
 
 
 @pytest.mark.skipif(

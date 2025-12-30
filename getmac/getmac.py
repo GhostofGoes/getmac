@@ -129,46 +129,6 @@ class Method:
         return cls.__name__
 
 
-# TODO(python3): do we want to keep this around? It calls 3 commands and is
-#   quite inefficient. We should just take the methods and use directly.
-class UuidArpGetNode(Method):
-    """
-    Uses Python's :func:`uuid._arp_getnode` function to get the
-    MAC address of a remote host using ARP.
-    """
-
-    platforms = {"linux", "darwin", "sunos", "other"}
-    method_type = "ip"
-
-    def test(self) -> bool:
-        try:
-            from uuid import _arp_getnode  # type: ignore  # noqa: F401
-
-            return True
-        except Exception:
-            return False
-
-    def get(self, arg: str) -> Optional[str]:
-        from uuid import _arp_getnode  # type: ignore
-
-        backup = socket.gethostbyname
-        try:
-            socket.gethostbyname = lambda x: arg  # noqa: ARG005
-            mac1 = _arp_getnode()
-            if mac1 is not None:
-                mac1 = utils.uuid_convert(mac1)
-                mac2 = _arp_getnode()
-                mac2 = utils.uuid_convert(mac2)
-                if mac1 == mac2:
-                    return mac1
-        except Exception:
-            raise
-        finally:
-            socket.gethostbyname = backup
-
-        return None
-
-
 class ArpFile(Method):
     """
     Use the contents of ``/proc/net/arp`` to find the MAC address of a host.
@@ -252,6 +212,7 @@ class ArpVariousArgs(Method):
     _args = (
         ("", True),  # "arp 192.168.1.1"
         # Linux
+        # NOTE: "arp -an" was also used by uuid._arp_getnode() in CPython
         ("-an", False),  # "arp -an"
         ("-an", True),  # "arp -an 192.168.1.1"
         # Darwin, WSL, Linux distros???
@@ -1153,7 +1114,6 @@ METHODS = [
     NetstatIface,
     IpNeighborShow,
     ArpVariousArgs,
-    UuidArpGetNode,
     DefaultIfaceLinuxRouteFile,
     DefaultIfaceIpRoute,
     DefaultIfaceRouteCommand,

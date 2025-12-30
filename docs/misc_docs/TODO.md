@@ -28,7 +28,7 @@
     - "As I was thinking of adding support to jaraco.net for supporting macOS devices (IP addresses and mac addresses), I thought getmac might be a helpful solution, but as I delved into it, I could see that getmac only returns a single mac, even though there may be multiple on a host. It would be nice if getmac could abstract some of its behaviors, mainly to allow a user to query for all mac addresses represented by the host."
 
 ## Breaking changes (or potentially breaking)
-- [ ] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient, and doesn't exist in Python 3.9+. We should just take the methods and use directly.
+- [x] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient. It's functionality is already implemented by `ArpVariousArgs`.
 - [ ] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
     - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
