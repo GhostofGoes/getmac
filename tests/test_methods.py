@@ -26,8 +26,8 @@ def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
     mocker.patch("getmac.utils.popen", return_value="")
     assert not getmac.DarwinNetworksetupIface().get("en0")
 
-    mocker.patch("getmac.utils.check_command", return_value=True)
-    assert getmac.DarwinNetworksetupIface().test() is True
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.DarwinNetworksetupIface().test() is False
     utils.check_command.assert_called_once_with("networksetup")
 
 
@@ -55,6 +55,15 @@ def test_ifconfigether_darwin(benchmark, mocker, get_sample, mac, sample_file):
     assert not getmac.IfconfigEther().get("stf0")
     assert not getmac.IfconfigEther().get("XHC20")
     assert not getmac.IfconfigEther().get("utun0")
+
+
+def test_ifconfigother_edge_cases(mocker):
+    # Test the test function
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.IfconfigOther().test() is False
+    utils.check_command.assert_called_once_with("ifconfig")
+
+    assert getmac.IfconfigOther().get("") is None
 
 
 # TODO: several of these should be a different method without a interface arg
@@ -116,7 +125,12 @@ def test_ifconfigwithifacearg_samples(mocker, get_sample, mac, iface, sample_fil
     assert mac == getmac.IfconfigWithIfaceArg().get(iface)
 
 
-def test_ifconfigwithifacearg_bad_exits(mocker):
+def test_ifconfigwithifacearg_edge_cases(mocker):
+    # Test the test function
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.IfconfigWithIfaceArg().test() is False
+    utils.check_command.assert_called_once_with("ifconfig")
+
     cpe = CalledProcessError(cmd="ifconfig", returncode=1)
     mocker.patch("getmac.utils.popen", side_effect=cpe)
     assert getmac.IfconfigWithIfaceArg().get("eth0") is None
@@ -158,6 +172,34 @@ def test_arping_host_busybox(benchmark, mocker, get_sample):
     assert "00:15:5d:20:f2:73" == benchmark(ap.get, arg="172.29.16.1")
 
 
+def test_arping_host_edge_cases(mocker):
+    # Test the test function
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.ArpingHost().test() is False
+    utils.check_command.assert_called_once_with("arping")
+
+    # No output case in _call_habets()
+    mocker.patch("getmac.utils.popen", return_value="")
+    assert not getmac.ArpingHost()._call_habets("192.168.16.254")
+
+    # Test somewhat complex fallback logic for Habets arping
+    cpe = CalledProcessError(
+        cmd="arping -f -c 1 192.0.2.1", output=b"invalid option", returncode=1
+    )
+    mocker.patch("getmac.utils.popen", side_effect=cpe)
+    mocker.patch.object(settings, "DEBUG", 1)
+
+    # Standard case
+    mocker.patch(
+        "getmac.getmac.ArpingHost._call_habets", return_value="00:50:56:e8:32:3c"
+    )
+    assert getmac.ArpingHost().get("192.168.16.254") == "00:50:56:e8:32:3c"
+
+    # Exception handling case
+    mocker.patch("getmac.getmac.ArpingHost._call_habets", side_effect=cpe)
+    assert not getmac.ArpingHost().get("192.168.16.254")
+
+
 def test_windows_10_iface_getmac_exe(benchmark, mocker, get_sample):
     content = get_sample("windows_10/getmac.out")
     mocker.patch("getmac.utils.popen", return_value=content)
@@ -185,8 +227,8 @@ def test_arpexe_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     mocker.patch("getmac.utils.popen", return_value=content)
     assert mac == benchmark(getmac.ArpExe().get, arg=ip)
 
-    mocker.patch("getmac.utils.check_command", return_value=True)
-    assert getmac.ArpExe().test() is True
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.ArpExe().test() is False
     utils.check_command.assert_called_once_with("arp.exe")
 
 
@@ -198,8 +240,8 @@ def test_openbsd_get_default_iface(benchmark, mocker, get_sample):
     mocker.patch("getmac.utils.popen", return_value="")
     assert not getmac.DefaultIfaceOpenBsd().get()
 
-    mocker.patch("getmac.utils.check_command", return_value=True)
-    assert getmac.DefaultIfaceOpenBsd().test() is True
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.DefaultIfaceOpenBsd().test() is False
     utils.check_command.assert_called_once_with("route")
 
 
@@ -210,8 +252,8 @@ def test_openbsd_remote(benchmark, mocker, get_sample):
     assert "52:54:00:12:35:03" == getmac.ArpOpenbsd().get("10.0.2.3")
     assert "08:00:27:18:64:56" == getmac.ArpOpenbsd().get("10.0.2.15")
 
-    mocker.patch("getmac.utils.check_command", return_value=True)
-    assert getmac.ArpOpenbsd().test() is True
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.ArpOpenbsd().test() is False
     utils.check_command.assert_called_once_with("arp")
 
 
@@ -220,8 +262,8 @@ def test_freebsd_get_default_iface(benchmark, mocker, get_sample):
     mocker.patch("getmac.utils.popen", return_value=content)
     assert "em0" == benchmark(getmac.DefaultIfaceFreeBsd().get)
 
-    mocker.patch("getmac.utils.check_command", return_value=True)
-    assert getmac.DefaultIfaceFreeBsd().test() is True
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.DefaultIfaceFreeBsd().test() is False
     utils.check_command.assert_called_once_with("netstat")
 
 
@@ -244,8 +286,8 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
     assert not getmac.ArpFreebsd().get(mac)
     assert not getmac.ArpFreebsd().get("em0")
 
-    mocker.patch("getmac.utils.check_command", return_value=True)
-    assert getmac.ArpFreebsd().test() is True
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.ArpFreebsd().test() is False
     utils.check_command.assert_called_once_with("arp")
 
 
@@ -295,12 +337,22 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
         ("8e:8f:aa:c9:d2:8b", "fe80::8c8f:aaff:fec9:d28b", "android_9/ip_neighbor.out"),
     ],
 )
-def test_ipneighshow_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+def test_ipneighborshow_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
-    assert mac == benchmark(getmac.IpNeighborShow().get, arg=ip)
 
+    assert mac == benchmark(getmac.IpNeighborShow().get, arg=ip)
     assert getmac.IpNeighborShow().get("bad") is None
+
+
+def test_ipneighborshow_edge_cases(mocker):
+    # Test the test function
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.IpNeighborShow().test() is False
+    utils.check_command.assert_called_once_with("ip")
+
+    mocker.patch("getmac.utils.popen", return_value="")
+    assert not getmac.IpNeighborShow().get("192.168.16.2")
 
 
 @pytest.mark.parametrize(
@@ -331,19 +383,17 @@ def test_netstatiface_samples(benchmark, mocker, get_sample, mac, iface, sample_
     # assert getmac.NetstatIface().get("Kernel") is None
     # assert getmac.NetstatIface().get("e") is None
 
+
+def test_netstatiface_edge_cases(mocker):
+    # Test the test function
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.NetstatIface().test() is False
+    utils.check_command.assert_called_once_with("netstat")
+
     mocker.patch("getmac.utils.popen", return_value=None)
     assert getmac.NetstatIface().get("eth0") is None
     mocker.patch("getmac.utils.popen", return_value=" ")
     assert getmac.NetstatIface().get("eth0") is None
-
-
-def test_ip_link_iface_bad_returncode(mocker, get_sample):
-    """Test the exception handling works for old-style ip link."""
-    content = get_sample("ip_link_list.out")
-    cpe = CalledProcessError(cmd="", returncode=255)
-    mocker.patch("getmac.utils.popen", side_effect=[cpe, content])
-    except_method = getmac.IpLinkIface()
-    assert "74:d4:35:e9:45:71" == except_method.get("eth0")
 
 
 @pytest.mark.parametrize(
@@ -393,6 +443,20 @@ def test_iplinkiface_samples(benchmark, mocker, get_sample, mac, iface, sample_f
     # assert getmac.IpLinkIface().get("") is None
 
 
+def test_ip_link_iface_edge_cases(mocker, get_sample):
+    # Test the test function
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.IpLinkIface().test() is False
+    utils.check_command.assert_called_once_with("ip")
+
+    # Test the exception handling works for old-style ip link
+    content = get_sample("ip_link_list.out")
+    cpe = CalledProcessError(cmd="", returncode=255)
+    mocker.patch("getmac.utils.popen", side_effect=[cpe, content])
+    except_method = getmac.IpLinkIface()
+    assert "74:d4:35:e9:45:71" == except_method.get("eth0")
+
+
 @pytest.mark.parametrize(
     ("expected_iface", "sample_file"),
     [
@@ -432,6 +496,11 @@ def test_defaultifacelinuxroutefile_samples(
 
 
 def test_defaultifacelinuxroutefile(mocker):
+    # Test the test function
+    mocker.patch("getmac.utils.check_path", return_value=False)
+    assert getmac.DefaultIfaceLinuxRouteFile().test() is False
+    utils.check_path.assert_called_once_with("/proc/net/route")
+
     mocker.patch("getmac.utils.read_file", return_value=None)
     assert getmac.DefaultIfaceLinuxRouteFile().get() is None
 
@@ -488,8 +557,8 @@ def test_defaultifaceroutegetcommand_samples(
     mocker.patch("getmac.utils.popen", return_value="interface:")
     assert not getmac.DefaultIfaceRouteGetCommand().get()
 
-    mocker.patch("getmac.utils.check_command", return_value=True)
-    assert getmac.DefaultIfaceRouteGetCommand().test() is True
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.DefaultIfaceRouteGetCommand().test() is False
     utils.check_command.assert_called_once_with("route")
 
 
@@ -555,6 +624,10 @@ def test_sys_iface_file(mocker):
     mocker.patch("getmac.utils.read_file", return_value=None)
     assert getmac.SysIfaceFile().get("ens33") is None
 
+    mocker.patch("getmac.utils.check_path", return_value=False)
+    assert getmac.SysIfaceFile().test() is False
+    utils.check_path.assert_called_once_with("/sys/class/net/")
+
 
 @pytest.mark.skipif(
     platform.system() != "Linux",
@@ -597,3 +670,13 @@ def test_lanscan_iface_samples(benchmark, mocker, get_sample, mac, iface, sample
     assert not getmac.LanscanIface().get("lan")
     assert not getmac.LanscanIface().get("lan100")
     assert not getmac.LanscanIface().get("lan90")
+
+
+def test_lanscan_iface_edge_cases(mocker):
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.LanscanIface().test() is False
+    utils.check_command.assert_called_once_with("lanscan")
+
+    mocker.patch("getmac.utils.popen", return_value="")
+    assert not getmac.LanscanIface().get("lan0")
+    utils.popen.assert_called_once_with("lanscan", "-ai")
