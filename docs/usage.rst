@@ -69,7 +69,7 @@ This results in a UDP packet being sent to the target IP address on port 55555 (
 Changing settings
 -----------------
 
-Available settings are documented in :ref:`Configuration <configuration>`. Here's an example of changing some settings at runtime:
+Available settings are documented in :ref:`configuration`. Here's an example of changing some settings at runtime:
 
 .. code-block:: python
 
@@ -100,12 +100,28 @@ You can also use the standard library's :mod:`ipaddress` module to specify IP ad
    ipv6_addr = ip_address("::1")
    print(get_mac_address(ip=ipv6_addr))
 
-   ipv4_interface = IPv4Interface("192.168.0.1/24")
-   print(get_mac_address(ip=ipv4_interface))
+   ipv4_iface = IPv4Interface("192.168.0.1/24")
+   print(get_mac_address(ip=ipv4_iface))
 
-   ipv6_interface = IPv6Interface("::1/128")
-   print(get_mac_address(ip=ipv6_interface))
+   ipv6_iface = IPv6Interface("::1/128")
+   print(get_mac_address(ip=ipv6_iface))
 
+Default interface name
+----------------------
+
+Get the name of the system's default network interface using :func:`~getmac.getmac.get_default_interface`. This leverages the same logic that getmac uses internally to determine the default interface (e.g. for when ``get_mac_address()`` is called without any arguments).
+
+.. warning::
+   This currently doesn't work on Windows platforms.
+   It should work on other platforms, including Linux, OSX, and most BSDs.
+
+.. code-block:: python
+
+   from getmac import get_default_interface
+   print(get_default_interface())
+
+
+.. _configuration:
 
 Configuration
 =============
@@ -115,7 +131,7 @@ Settings that affect the behavior of getmac are in the :mod:`~getmac.variables` 
 - ``logging.getLogger("getmac")``: Runtime messages and errors are recorded to the ``getmac`` logger using Python's :mod:`logging` module. They can be configured by using :func:`logging.basicConfig` or adding :class:`logging.Handler` instances to the ``getmac`` logger.
 - :attr:`~getmac.variables.Settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get.
 - :attr:`~getmac.variables.Settings.PORT`: the UDP port used to populate the ARP table (IPv4) or NDP list (IPv6) when looking up MACs for hosts or IPs (see the documentation of the ``network_request`` argument in :func:`~getmac.getmac.get_mac_address` for details).
-- :attr:`getmac.variables.Settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. ``"linux"``, ``"windows"``, ``"freebsd"``, etc). Any values returned by :func:`platform.system` are valid.
+- :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. ``"linux"``, ``"windows"``, ``"freebsd"``, etc). Any values returned by :func:`platform.system` are valid.
 - :attr:`~getmac.variables.Settings.FORCE_METHOD`: Name of method to use. This will force a specific method to be used, e.g. :class:`getmac.getmac.IpNeighborShow` with the string ``"IpNeighborShow"``. This will be used regardless of the method's type or platform compatibility, and :func:`Method.test() <getmac.getmac.Method.test>` will NOT be checked! The list of available methods is in :data:`getmac.getmac.METHODS`.
 
 

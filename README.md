@@ -21,7 +21,7 @@ It provides a platform-independent interface to get the MAC addresses of:
 - System network interfaces (by interface name)
 - Remote hosts on the local network (by IPv4/IPv6 address or hostname)
 
-It provides one function: `get_mac_address()`
+It provides one primary function: `get_mac_address()`
 
 [![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.png)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
 
@@ -76,6 +76,11 @@ print(getmac.get_mac_address(interface="Ethernet 3"))
 # Change the UDP port used for updating the ARP table (UDP packet)
 settings.PORT = 44444  # Default is 55555
 print(getmac.get_mac_address(ip="192.168.0.1", network_request=True))
+
+# Get the name of the system's default network interface
+# NOTE: this doesn't currently work on Windows
+from getmac import get_default_interface
+print(get_default_interface())
 ```
 
 ## Terminal examples

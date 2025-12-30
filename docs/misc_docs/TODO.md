@@ -2,7 +2,6 @@
 # 1.0.0 release
 
 ## Documentation
-- [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
 - [x] Single page on RTD/publish with GitHub actions built with Sphinx and Furo
 - [x] Update docs/usage examples for `get_mac_address()`
 - [x] Document possible values for `PLATFORM` variable
@@ -24,7 +23,7 @@
 
 ## Features
 - [x] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
-- [ ] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
+- [x] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
 - [ ] [issue 77](https://github.com/GhostofGoes/getmac/issues/77): Feature: get all mac addresses
     - "As I was thinking of adding support to jaraco.net for supporting macOS devices (IP addresses and mac addresses), I thought getmac might be a helpful solution, but as I delved into it, I could see that getmac only returns a single mac, even though there may be multiple on a host. It would be nice if getmac could abstract some of its behaviors, mainly to allow a user to query for all mac addresses represented by the host."
 
@@ -47,9 +46,6 @@
 
 ## Enhancements/fixes/misc.
 - [x] Python 3.13 + 3.14
-- [ ] Properly support WSL2
-- [ ] address all TODOs in the code
-- [ ] implement proper default interface detection on Windows
 - [ ] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
   - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
   - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
@@ -92,13 +88,10 @@ Removing Tox, maybe. Can do version enumeration in GitHub Actions, for all platf
 
 
 # Etc
-- [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
-- [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
 - [ ] cache the result of executable checks in `getmac.utils.popen()`
 - [ ] Refactor the default interface code. Combine the functions into
 one, move the default fallback logic into the function.
 - TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
-- [ ] Move method classes into a separate file
 
 
 # Bugs or potential issues
@@ -155,10 +148,26 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Add ability to get the mac address of a Python socket's interface (`socket.socket`)
 - [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
 - [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
-- [ ] Use [ruff](https://github.com/charliermarsh/ruff) instead of `flake8`? FastAPI, Scikit learn, [PyPA build](https://github.com/pypa/build/pull/565/), and other major projects are moving to it
+- [x] Use [ruff](https://github.com/charliermarsh/ruff) instead of `flake8`? FastAPI, Scikit learn, [PyPA build](https://github.com/pypa/build/pull/565/), and other major projects are moving to it
+
+
+# Documentation
+- [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
+- [ ] Write a short guide on how to add and test a new method
+
+
+# Dev
+- [ ] Automatically publish to PyPI when publishing a release on GitHub
+- [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
+- [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
+- [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
+- [ ] Move method classes into a separate file
 
 
 # Post-1.0.0
+- [ ] Properly support WSL2
+- [ ] address all TODOs in the code
+- [ ] implement proper default interface detection on Windows
 - [ ] FreeBSD default interface: `route get default`
 - [ ] Support NetBSD
     - platform: `netbsd`
@@ -177,11 +186,8 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
 - [ ] New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
-- [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 - [ ] Use `__import__()` or `importlib`?
 - [ ] Parameterize regexes? (is this any faster?)
-- [ ] Write a short guide on how to add and test a new method
-- [ ] Automatically publish to PyPI when publishing a release on GitHub
 - [ ] Add support for Unix and Windows interface indices as a separate argument to `get_mac_address`. On Windows, we could use `wmic`, while on Unix and Python 3 we can use `socket.if_indextoname()`.
 - [ ] API to add/remove methods at runtime (including new, custom methods)
 - [ ] Reduce duplication, for example "if not arg: return None"

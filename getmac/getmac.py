@@ -1801,3 +1801,23 @@ def get_mac_address(
         gvars.log.debug(f"getmac took {duration:0.4f} seconds")
 
     return utils.clean_mac(mac)
+
+
+def get_default_interface() -> Optional[str]:
+    """
+    Get the name of the default network interface on the system.
+
+    This is essentially a convenience wrapper around
+    :func:`get_by_method` with the ``default_iface`` method type.
+    The code is literally
+    ``return getmac.getmac.get_by_method("default_iface")``.
+
+    .. note::
+       This currently doesn't work on Windows platforms.
+       It should work on other platforms, including Linux, OSX, and most BSDs.
+
+    Returns:
+        The name of the default network interface, or :obj:`None`
+        if it could not be found or an exception occurred.
+    """
+    return get_by_method("default_iface")

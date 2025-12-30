@@ -347,3 +347,16 @@ def test_get_mac_address_invalid_types():
 
     with pytest.raises(ValueError, match="Unknown type for 'ip6' argument"):
         getmac.get_mac_address(ip6=object())
+
+
+def test_get_default_interface(mocker, get_sample):
+    mocker.patch(
+        "getmac.getmac.METHOD_CACHE",
+        {
+            "default_iface": getmac.DefaultIfaceOpenBsd(),
+        },
+    )
+
+    content = get_sample("openbsd_6/route_nq_show_inet_gateway_priority_1.out")
+    mocker.patch("getmac.utils.popen", return_value=content)
+    assert getmac.get_default_interface() == "em0"
