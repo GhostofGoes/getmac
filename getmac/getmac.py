@@ -210,6 +210,9 @@ class ArpVariousArgs(Method):
 
     _regex_std: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_COLON
     _regex_darwin: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_SHORT
+
+    # Possible arp arguments to try
+    # Second element indicates whether to include IP as argument
     _args = (
         ("", True),  # "arp 192.168.1.1"
         # Linux
@@ -220,9 +223,11 @@ class ArpVariousArgs(Method):
         ("-a", False),  # "arp -a"
         ("-a", True),  # "arp -a 192.168.1.1"
     )
+
+    # If arguments have been tested
     _args_tested: bool = False
+    # arguments that worked
     _good_pair: Union[Tuple, Tuple[str, bool]] = ()
-    _good_regex: str = _regex_darwin if consts.DARWIN else _regex_std
 
     def test(self) -> bool:
         return utils.check_command("arp")
@@ -255,11 +260,15 @@ class ArpVariousArgs(Method):
                             f"({pair_to_test[0]}, {pair_to_test[1]}): {ex}"
                         )
 
+            # if no valid argument pair was found, mark unusable
             if not self._good_pair:
                 self.unusable = True
                 return None
+
+            # Mark args as tested to prevent re-testing on subsequent calls
             self._args_tested = True
 
+        # If tests aren't run (e.g. they ran previously), then run the good pair now
         if not command_output:
             # if True, then include IP as a command argument
             cmd_args = [self._good_pair[0]]
@@ -269,11 +278,13 @@ class ArpVariousArgs(Method):
 
             command_output = utils.popen("arp", " ".join(cmd_args))
 
-        escaped = re.escape(arg)
-        _good_regex = (
-            self._regex_darwin if consts.DARWIN or consts.SOLARIS else self._regex_std
-        )  # type: str
-        return utils.search(r"\(" + escaped + _good_regex, command_output)
+        # Do this here for testing reasons
+        if consts.DARWIN or consts.SOLARIS:
+            regex = r"\(" + re.escape(arg) + self._regex_darwin
+        else:
+            regex = r"\(" + re.escape(arg) + self._regex_std
+
+        return utils.search(regex, command_output)
 
 
 class ArpExe(Method):

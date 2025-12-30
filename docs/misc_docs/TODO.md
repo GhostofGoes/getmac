@@ -20,13 +20,11 @@
   - directly test methods via a `Method.parse()` function
   - add `Method.parse()` that handles the parsing of command
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
-- [ ] Add tests for more samples (see TODOs at top of test_methods.py, plus new third-party samples)
+- [ ] Add tests for more samples (new third-party samples)
 
 ## Features
 - [x] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
 - [x] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
-- [ ] [issue 77](https://github.com/GhostofGoes/getmac/issues/77): Feature: get all mac addresses
-    - "As I was thinking of adding support to jaraco.net for supporting macOS devices (IP addresses and mac addresses), I thought getmac might be a helpful solution, but as I delved into it, I could see that getmac only returns a single mac, even though there may be multiple on a host. It would be nice if getmac could abstract some of its behaviors, mainly to allow a user to query for all mac addresses represented by the host."
 
 ## Breaking changes (or potentially breaking)
 - [x] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient. It's functionality is already implemented by `ArpVariousArgs`.
@@ -37,13 +35,27 @@
 - [ ] **API changes** (technically speaking)
     - Add argument to `get_mac_address()` to force the platform used (e.g. `platform_override="linux"`)
         - Also add CLI argument to configure this
-    - Add argument to `get_mac_address()` to force a specific method to be used
+    - Add argument to `get_mac_address()` to force a specific method(s) to be used
         - Passing a string with the name of a method class (e.g. `"ArpFile"`), this will be dynamically looked up from the list of available methods. This will NOT check if the method works by default!
         - Passing a subclass of `getmac.Method`
         - Passing an instance of a subclass of `getmac.Method`
-        - Add a CLI argument to reference class by name
+        - List/Iterable of methods (as above, string/subclass/instance)
+        - Add a CLI argument to reference class by name/names
     - Add ability to exclude methods. Just remove them from METHODS list so they never get used. Useful for testing specific methods or working around buggy methods.
+    - Add a `net_ok` argument, check `network_request` attribute on method in CACHE, if not then keep checking for method in FALLBACK_CACHE that has `network_request`.
     - Document these features in the README/docs, including the CLI arguments
+
+```
+methods=None
+type: Optional[List[Union[str, Method, Type[Method]]]]
+methods (list): Optional list of methods to use for MAC address lookup.
+            This will override the default methods that are auto-determined based on
+            platform inspection and testing, and will be used regardless of whether
+            they work or not. These can be names of method classes as strings
+            (``"ArpFile"``), ``Method`` subclasses (``ArpFile``),
+            or instances of ``Method`` subclasses (``ArpFile()``).
+```
+
 
 ## Enhancements/fixes/misc.
 - [x] Python 3.13 + 3.14
@@ -99,6 +111,15 @@ with a slow run since it tries every method before failing.
 - [ ] Detect if an interface exists before trying to find it's MAC.
 - [ ] **Security**. Spend some quality time ensuring our sources of input (the arguments to `get_mac_address()`) don't result in unexpected code execution. A lot of stuff is running system commands, so we should focus the most effort on the `subprocess.Popen()` calls.
 
+
+# API Features
+- [ ] [issue 77](https://github.com/GhostofGoes/getmac/issues/77): Feature: get all mac addresses
+    - "As I was thinking of adding support to jaraco.net for supporting macOS devices (IP addresses and mac addresses), I thought getmac might be a helpful solution, but as I delved into it, I could see that getmac only returns a single mac, even though there may be multiple on a host. It would be nice if getmac could abstract some of its behaviors, mainly to allow a user to query for all mac addresses represented by the host."
+- [ ] Add support for Unix and Windows interface indices as a separate argument to `get_mac_address`. On Windows, we could use `wmic`, while on Unix and Python 3 we can use `socket.if_indextoname()`.
+- [ ] Add ability to match user-provided arguments case-insensitively
+- [ ] Add ability to get the mac address of a Python socket's interface (`socket.socket`)
+- [ ] API to add/remove methods at runtime (including new, custom methods)
+    - [ ] Document this API and how the method API functions work more generally
 
 # Platform support
 
@@ -162,11 +183,8 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Refactor to build a local state of the interfaces on the system, and use that as fallback for default lookup of interface with no name. Could also include MACs for faster lookup of future interface queries. Similar to how `netifaces` works, with a dict with interface infos. Properly address https://github.com/GhostofGoes/getmac/issues/78
 
 
-# Misc.
-- [ ] Add ability to match user-provided arguments case-insensitively
-- [ ] Add ability to get the mac address of a Python socket's interface (`socket.socket`)
+# Testing
 - [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
-- [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 
 
 # Documentation
@@ -179,6 +197,7 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
 - [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
 - [ ] Move method classes into a separate file
+- [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 
 
 # Post-1.0.0
@@ -196,19 +215,4 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
 - [ ] Use `__import__()` or `importlib`?
-- [ ] Add support for Unix and Windows interface indices as a separate argument to `get_mac_address`. On Windows, we could use `wmic`, while on Unix and Python 3 we can use `socket.if_indextoname()`.
-- [ ] API to add/remove methods at runtime (including new, custom methods)
 - [ ] Reduce duplication, for example "if not arg: return None"
-- [ ] Add a "net_ok" argument, check network_request attribute on method in CACHE, if not then keep checking for method in FALLBACK_CACHE that has network_request.
-- [ ] Add ability to specify what methods to use via function argument and CLI argument
-- [ ] Add ability to force platform name (e.g. `linux`) via function argument and CLI argument
-```
-methods=None
-type: Optional[List[Union[str, Method, Type[Method]]]]
-methods (list): Optional list of methods to use for MAC address lookup.
-            This will override the default methods that are auto-determined based on
-            platform inspection and testing, and will be used regardless of whether
-            they work or not. These can be names of method classes as strings
-            (``"ArpFile"``), ``Method`` subclasses (``ArpFile``),
-            or instances of ``Method`` subclasses (``ArpFile()``).
-```

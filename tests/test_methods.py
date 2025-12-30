@@ -5,7 +5,7 @@ from subprocess import CalledProcessError
 import pytest
 
 from getmac import getmac, utils
-from getmac.variables import consts
+from getmac.variables import consts, settings
 
 # TODO: freebsd11/netstat_-ia.out
 # TODO: netstat_-ian_aix.out
@@ -504,7 +504,7 @@ def test_defaultifaceroutegetcommand_samples(
         ("52:54:00:12:35:02", "10.0.2.2", "solaris10/arp_10-0-2-2.out"),
     ],
 )
-def test_arp_various_args(benchmark, mocker, get_sample, mac, ip, sample_file):
+def test_arp_various_args_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
     if "OSX" in sample_file:
@@ -528,6 +528,24 @@ def test_arp_various_args(benchmark, mocker, get_sample, mac, ip, sample_file):
         result = utils.clean_mac(result)
 
     assert mac == result
+
+
+def test_arp_various_args_edge_cases(mocker, get_sample):
+    assert not getmac.ArpVariousArgs().get("")
+
+    mocker.patch.object(settings, "DEBUG", 1)
+    cpe = CalledProcessError(cmd="arp", returncode=1)
+    mocker.patch("getmac.utils.popen", side_effect=cpe)
+    assert getmac.ArpVariousArgs().get("192.0.2.1") is None
+
+    # Not sure if IP is required on Ubuntu 18, this is just for purposes of testing
+    mocker.patch(
+        "getmac.utils.popen", return_value=get_sample("ubuntu_18.04/arp_-an.out")
+    )
+    inst = getmac.ArpVariousArgs()
+    inst._args_tested = True
+    inst._good_pair = ("-an", True)
+    assert inst.get("192.168.16.2") == "00:50:56:f1:4c:50"
 
 
 def test_sys_iface_file(mocker):
