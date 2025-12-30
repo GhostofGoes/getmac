@@ -39,19 +39,22 @@ jobs:
         architecture:
           - x86
           - x64
+          - arm64
         platform:
           - ubuntu-22.04
           - windows-latest
-          # Fix tests failing on MacOS 14+ due to ARM architecture
-          # https://github.com/actions/setup-python/issues/825
-          # TODO: update tests to use ARM MacOS with 14+, add
-          # architecture to the list of architectures above.
-          - macos-13
+          - macos-latest
         exclude:
           - platform: ubuntu-22.04
             architecture: x86
-          - platform: macos-13
+          - platform: ubuntu-22.04
+            architecture: arm64
+          - platform: windows-latest
+            architecture: arm64
+          - platform: macos-latest
             architecture: x86
+          - platform: macos-latest
+            architecture: x64
     steps:
       - uses: actions/checkout@v6
       - name: Setup PDM
