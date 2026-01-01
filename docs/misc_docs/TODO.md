@@ -62,10 +62,8 @@ methods (list): Optional list of methods to use for MAC address lookup.
   - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
 
 ## Before releasing
-- [ ] Add a deprecation warning to `get-mac` package, don't publish it for 1.0.0
 - [x] Update supported versions table in [SECURITY.md](../SECURITY.md)
-- [ ] Automate publishing to PyPI+GitHub Release in GitHub Actions
-- [ ] Edit README.md to append CHANGELOG before publishing to PyPI
+- [ ] Automate publishing in GitHub Actions. When a tag is created, publish release to PyPI, and generate a GitHub release.
 
 ## Notes
 Removing Tox, maybe. Can do version enumeration in GitHub Actions, for all platforms. No need for me to do locally.
@@ -190,6 +188,7 @@ This is going to be a bit more complicated since the highest metric routes are g
 
 
 # Dev
+- [ ] OpenSSF best practices badge
 - [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 - [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
 - [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)

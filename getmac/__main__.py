@@ -13,9 +13,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="getmac",
         description="Get MAC addresses of network interfaces or LAN hosts",
     )
-    parser.add_argument(
-        "--version", action="version", version=f"getmac {getmac.__version__}"
-    )
+    parser.add_argument("--version", action="version", version=f"getmac {getmac.__version__}")
 
     group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument(
@@ -26,13 +24,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="Name of a network interface on the system",
     )
     group.add_argument(
-        "-4", "--ip", type=str, default=None, help="IPv4 address of a remote host"
+        "-4",
+        "--ip",
+        type=str,
+        default=None,
+        help="IPv4 address of a remote host",
     )
     group.add_argument(
-        "-6", "--ip6", type=str, default=None, help="IPv6 address of a remote host"
+        "-6",
+        "--ip6",
+        type=str,
+        default=None,
+        help="IPv6 address of a remote host",
     )
     group.add_argument(
-        "-n", "--hostname", type=str, default=None, help="Hostname of a remote host"
+        "-n",
+        "--hostname",
+        type=str,
+        default=None,
+        help="Hostname of a remote host",
     )
 
     parser.add_argument(
@@ -93,7 +103,9 @@ def main() -> None:
 
     if args.debug or args.verbose:
         logging.basicConfig(
-            format="%(levelname)-8s %(message)s", level=logging.DEBUG, stream=sys.stderr
+            format="%(levelname)-8s %(message)s",
+            level=logging.DEBUG,
+            stream=sys.stderr,
         )
 
     if args.debug:
@@ -101,9 +113,7 @@ def main() -> None:
 
     if args.override_port:
         port = int(args.override_port)
-        gvars.log.debug(
-            "Using UDP port %d (overriding the default port %d)", port, settings.PORT
-        )
+        gvars.log.debug(f"Using UDP port {port} (overriding the default port {settings.PORT})")
         settings.PORT = port
 
     if args.override_platform:

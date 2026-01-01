@@ -17,12 +17,12 @@ Your code *must*:
 * Pass CI (GitHub Actions)
 * Adhere to the [Code of Conduct](CODE_OF_CONDUCT.md)
 
-Most of these requirements are checked in CI (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Black](https://github.com/psf/black). You can write whatever format you want, as long as you run Black (`pdm run format`) before pushing, you're good.
+Most of these requirements are checked in CI (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Ruff's formatter](https://docs.astral.sh/ruff/formatter/). You can write whatever format you want, as long as you run the formatter before pushing, you're good (`pdm run format`).
 
 Please be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Memes, references, and jokes are OK. Be nice, we're all human, and code is the great equalizer.
 
 ## Checklist before submitting a pull request
-* [ ] Code is formatted using `black` (`pdm run format`)
+* [ ] Code is formatted using `ruff` (`pdm run format`)
 * [ ] All tests run and pass locally
     * [ ] Tests: `pdm run test`
     * [ ] Benchmarks: `pdm run benchmark`

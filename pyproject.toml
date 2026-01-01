@@ -95,9 +95,7 @@ lint = [
     "tomli; python_version < \"3.12\"",
     "ruff",
     "vulture",
-    "black",
     "mypy<2.0.0,>=1.3.0",
-    "isort",
 ]
 docs = [
     "furo; python_version >= \"3.10\"",
@@ -147,8 +145,8 @@ cmd = "vulture --min-confidence 100 getmac tests"
 [tool.pdm.scripts.check_format]
 help = "Check code formatting is correct"
 composite = [
-    "isort --check getmac tests",
-    "black --check getmac tests",
+    "ruff check --select I getmac tests",
+    "ruff format --check getmac tests",
 ]
 
 [tool.pdm.scripts.typing]
@@ -168,8 +166,8 @@ composite = [
 [tool.pdm.scripts.format]
 help = "Auto-format code to match requirements"
 composite = [
-    "isort getmac tests",
-    "black getmac tests",
+    "ruff check --select I --fix getmac tests",
+    "ruff format getmac tests",
 ]
 
 [tool.pdm.scripts.benchmark]
@@ -253,6 +251,7 @@ select = [
     "B",    # flake8-bugbear
     "A",    # flake8-builtins
     "C4",   # flake8-comprehensions
+    "I",    # isort
     "DTZ",  # flake8-datetimez
     "T10",  # flake8-debugger
     "ISC",  # flake8-implicit-str-concat
@@ -273,9 +272,8 @@ select = [
     "PLE",  # Pylint - Errors
     "PLR",  # Pylint - Refactor
     "PLW",  # Pylint - Warnings
-    # "UP",   # pyupgrade
+    "UP",   # pyupgrade
     "RUF",  # Ruff-specific rules
-
 ]
 
 # Linting error codes to ignore
@@ -293,10 +291,13 @@ ignore = [
     "PLR0915",
     "PLR0912",
     "PLR2004",
+    "UP031",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S101", "S104", "S603", "D", "PLR"]
+"tests/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S101", "S104", "S602", "S603", "D", "PLR"]
 
-[tool.isort]
-profile = "black"
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
+quote-style = "double"

@@ -5,7 +5,7 @@ from subprocess import CalledProcessError
 import pytest
 
 from getmac import getmac, utils
-from getmac.variables import consts, settings
+from getmac.variables import consts
 
 # TODO: freebsd11/netstat_-ia.out
 # TODO: netstat_-ian_aix.out
@@ -17,9 +17,7 @@ from getmac.variables import consts, settings
 def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
     content = get_sample("macos_10.12.6/networksetup_-getmacaddress_en0.out")
     mocker.patch("getmac.utils.popen", return_value=content)
-    assert "08:00:27:2b:c2:ed" == benchmark(
-        getmac.DarwinNetworksetupIface().get, arg="en0"
-    )
+    assert "08:00:27:2b:c2:ed" == benchmark(getmac.DarwinNetworksetupIface().get, arg="en0")
 
     mocker.patch("getmac.utils.popen", return_value=None)
     assert not getmac.DarwinNetworksetupIface().get("en0")
@@ -187,11 +185,11 @@ def test_arping_host_edge_cases(mocker):
         cmd="arping -f -c 1 192.0.2.1", output=b"invalid option", returncode=1
     )
     mocker.patch("getmac.utils.popen", side_effect=cpe)
-    mocker.patch.object(settings, "DEBUG", 1)
 
     # Standard case
     mocker.patch(
-        "getmac.getmac.ArpingHost._call_habets", return_value="00:50:56:e8:32:3c"
+        "getmac.getmac.ArpingHost._call_habets",
+        return_value="00:50:56:e8:32:3c",
     )
     assert getmac.ArpingHost().get("192.168.16.254") == "00:50:56:e8:32:3c"
 
@@ -294,14 +292,34 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
 @pytest.mark.parametrize(
     ("mac", "ip", "sample_file"),
     [
-        ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/cat_proc-net-arp.out"),
+        (
+            "00:50:56:f1:4c:50",
+            "192.168.16.2",
+            "ubuntu_18.04/cat_proc-net-arp.out",
+        ),
         ("00:50:56:e1:a8:4a", "192.168.16.2", "ubuntu_18.10/proc_net_arp.out"),
-        ("00:50:56:e8:32:3c", "192.168.16.254", "ubuntu_18.10/proc_net_arp.out"),
+        (
+            "00:50:56:e8:32:3c",
+            "192.168.16.254",
+            "ubuntu_18.10/proc_net_arp.out",
+        ),
         ("00:50:56:c0:00:0a", "192.168.95.1", "ubuntu_18.10/proc_net_arp.out"),
-        ("00:50:56:fa:b7:54", "192.168.95.254", "ubuntu_18.10/proc_net_arp.out"),
+        (
+            "00:50:56:fa:b7:54",
+            "192.168.95.254",
+            "ubuntu_18.10/proc_net_arp.out",
+        ),
         ("52:55:0a:00:02:02", "10.0.2.2", "android_6/cat_proc-net-arp.out"),
-        ("02:00:00:00:01:00", "192.168.232.1", "android_9/cat_proc-net-arp.out"),
-        ("8e:8f:aa:c9:d2:8b", "192.168.200.1", "android_9/cat_proc-net-arp.out"),
+        (
+            "02:00:00:00:01:00",
+            "192.168.232.1",
+            "android_9/cat_proc-net-arp.out",
+        ),
+        (
+            "8e:8f:aa:c9:d2:8b",
+            "192.168.200.1",
+            "android_9/cat_proc-net-arp.out",
+        ),
     ],
 )
 def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -329,12 +347,24 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
             "192.168.16.2",
             "ubuntu_18.04/ip_neighbor_show_192-168-16-2.out",
         ),
-        ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/ip_neighbor_show.out"),
-        ("52:55:0a:00:02:02", "10.0.2.2", "android_6/ip_neighbor_show_10.0.2.2.out"),
+        (
+            "00:50:56:f1:4c:50",
+            "192.168.16.2",
+            "ubuntu_18.04/ip_neighbor_show.out",
+        ),
+        (
+            "52:55:0a:00:02:02",
+            "10.0.2.2",
+            "android_6/ip_neighbor_show_10.0.2.2.out",
+        ),
         ("52:55:0a:00:02:02", "10.0.2.2", "android_6/ip_neighbor.out"),
         ("52:56:00:00:00:02", "fe80::2", "android_6/ip_neighbor.out"),
         ("8e:8f:aa:c9:d2:8b", "192.168.200.1", "android_9/ip_neighbor.out"),
-        ("8e:8f:aa:c9:d2:8b", "fe80::8c8f:aaff:fec9:d28b", "android_9/ip_neighbor.out"),
+        (
+            "8e:8f:aa:c9:d2:8b",
+            "fe80::8c8f:aaff:fec9:d28b",
+            "android_9/ip_neighbor.out",
+        ),
     ],
 )
 def test_ipneighborshow_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -465,9 +495,7 @@ def test_ip_link_iface_edge_cases(mocker, get_sample):
         ("eth0", "android_6/route_-n.out"),
     ],
 )
-def test_default_iface_route_command(
-    benchmark, mocker, get_sample, expected_iface, sample_file
-):
+def test_default_iface_route_command(benchmark, mocker, get_sample, expected_iface, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
     assert expected_iface == benchmark(getmac.DefaultIfaceRouteCommand().get)
@@ -487,9 +515,7 @@ def test_default_iface_route_command(
         (None, "android_9/cat_proc-net-route.out"),
     ],
 )
-def test_defaultifacelinuxroutefile_samples(
-    benchmark, mocker, get_sample, iface, sample_file
-):
+def test_defaultifacelinuxroutefile_samples(benchmark, mocker, get_sample, iface, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.read_file", return_value=content)
     assert benchmark(getmac.DefaultIfaceLinuxRouteFile().get) == iface
@@ -540,9 +566,7 @@ def test_defaultifaceiproute(mocker):
         ("em0", "freebsd11/route_get_default.out"),
     ],
 )
-def test_defaultifaceroutegetcommand_samples(
-    benchmark, mocker, get_sample, iface, sample_file
-):
+def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, iface, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
     assert iface == benchmark(getmac.DefaultIfaceRouteGetCommand().get)
@@ -602,14 +626,14 @@ def test_arp_various_args_samples(benchmark, mocker, get_sample, mac, ip, sample
 def test_arp_various_args_edge_cases(mocker, get_sample):
     assert not getmac.ArpVariousArgs().get("")
 
-    mocker.patch.object(settings, "DEBUG", 1)
     cpe = CalledProcessError(cmd="arp", returncode=1)
     mocker.patch("getmac.utils.popen", side_effect=cpe)
     assert getmac.ArpVariousArgs().get("192.0.2.1") is None
 
     # Not sure if IP is required on Ubuntu 18, this is just for purposes of testing
     mocker.patch(
-        "getmac.utils.popen", return_value=get_sample("ubuntu_18.04/arp_-an.out")
+        "getmac.utils.popen",
+        return_value=get_sample("ubuntu_18.04/arp_-an.out"),
     )
     inst = getmac.ArpVariousArgs()
     inst._args_tested = True
@@ -648,16 +672,48 @@ def test_fcntl_iface(mocker):
     ("mac", "iface", "sample_file"),
     [
         # hpux: lanscan -iap
-        ("00:17:A4:77:08:A4", "lan1", "third_party/glpi_agent/hpux/lanscan/hpux"),
-        ("00:17:A4:77:08:A2", "lan6", "third_party/glpi_agent/hpux/lanscan/hpux"),
-        ("00:17:A4:77:08:EA", "snap31", "third_party/glpi_agent/hpux/lanscan/hpux"),
-        ("00:00:00:00:00:00", "lan901", "third_party/glpi_agent/hpux/lanscan/hpux"),
-        ("00:00:00:00:00:00", "lan904", "third_party/glpi_agent/hpux/lanscan/hpux"),
+        (
+            "00:17:A4:77:08:A4",
+            "lan1",
+            "third_party/glpi_agent/hpux/lanscan/hpux",
+        ),
+        (
+            "00:17:A4:77:08:A2",
+            "lan6",
+            "third_party/glpi_agent/hpux/lanscan/hpux",
+        ),
+        (
+            "00:17:A4:77:08:EA",
+            "snap31",
+            "third_party/glpi_agent/hpux/lanscan/hpux",
+        ),
+        (
+            "00:00:00:00:00:00",
+            "lan901",
+            "third_party/glpi_agent/hpux/lanscan/hpux",
+        ),
+        (
+            "00:00:00:00:00:00",
+            "lan904",
+            "third_party/glpi_agent/hpux/lanscan/hpux",
+        ),
         # hpux1: lanscan -iap
-        ("00:16:35:3E:AC:5C", "lan0", "third_party/glpi_agent/hpux/lanscan/hpux1"),
+        (
+            "00:16:35:3E:AC:5C",
+            "lan0",
+            "third_party/glpi_agent/hpux/lanscan/hpux1",
+        ),
         # hpux2: lanscan -iap
-        ("00:16:35:3E:AC:44", "lan0", "third_party/glpi_agent/hpux/lanscan/hpux2"),
-        ("00:16:35:3E:AC:45", "lan1", "third_party/glpi_agent/hpux/lanscan/hpux2"),
+        (
+            "00:16:35:3E:AC:44",
+            "lan0",
+            "third_party/glpi_agent/hpux/lanscan/hpux2",
+        ),
+        (
+            "00:16:35:3E:AC:45",
+            "lan1",
+            "third_party/glpi_agent/hpux/lanscan/hpux2",
+        ),
     ],
 )
 def test_lanscan_iface_samples(benchmark, mocker, get_sample, mac, iface, sample_file):

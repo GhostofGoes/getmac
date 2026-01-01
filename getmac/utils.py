@@ -27,9 +27,7 @@ def check_command(command: str) -> bool:
         If the command exists
     """
     if command not in gvars.CHECK_COMMAND_CACHE:
-        gvars.CHECK_COMMAND_CACHE[command] = bool(
-            shutil.which(command, path=gvars.PATH_STR)
-        )
+        gvars.CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=gvars.PATH_STR))
     return gvars.CHECK_COMMAND_CACHE[command]
 
 
@@ -126,9 +124,7 @@ def read_file(filepath: str) -> Optional[str]:
         return None
 
 
-def search(
-    regex: str, text: str, group_index: int = 0, flags: int = 0
-) -> Optional[str]:
+def search(regex: str, text: str, group_index: int = 0, flags: int = 0) -> Optional[str]:
     """
     Search for a regular expression in a string, and return the specified group.
     This is thin wrapper around :func:`re.search` with some error handling.

@@ -93,7 +93,12 @@ def test_initialize_method_cache_valid_types(mocker, method_type):
 def test_initialize_method_cache_initialized(mocker):
     mocker.patch(
         "getmac.getmac.METHOD_CACHE",
-        {"ip4": getmac.ArpFile(), "ip6": None, "iface": None, "default_iface": None},
+        {
+            "ip4": getmac.ArpFile(),
+            "ip6": None,
+            "iface": None,
+            "default_iface": None,
+        },
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
     mocker.patch.object(consts, "PLATFORM", "linux")
@@ -168,9 +173,7 @@ def test_get_by_method(mocker, get_sample):
     # ip6
     content = get_sample("android_9/ip_neighbor.out")
     mocker.patch("getmac.utils.popen", return_value=content)
-    assert (
-        getmac.get_by_method("ip6", "fe80::8c8f:aaff:fec9:d28b") == "8e:8f:aa:c9:d2:8b"
-    )
+    assert getmac.get_by_method("ip6", "fe80::8c8f:aaff:fec9:d28b") == "8e:8f:aa:c9:d2:8b"
 
     # iface
     content = get_sample("windows_10/wmic_nic.out")
@@ -259,9 +262,7 @@ def test_get_mac_address_ip(mocker):
 
     # IPv4Interface
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:66")
-    assert (
-        getmac.get_mac_address(ip=IPv4Interface("192.0.2.66/24")) == "00:01:02:04:00:66"
-    )
+    assert getmac.get_mac_address(ip=IPv4Interface("192.0.2.66/24")) == "00:01:02:04:00:66"
     getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.66")
 
     # IPv6Address
@@ -271,9 +272,7 @@ def test_get_mac_address_ip(mocker):
 
     # IPv6Interface
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:44")
-    assert (
-        getmac.get_mac_address(ip=IPv6Interface("fe80::44/24")) == "00:01:02:04:00:44"
-    )
+    assert getmac.get_mac_address(ip=IPv6Interface("fe80::44/24")) == "00:01:02:04:00:44"
     getmac.get_by_method.assert_called_once_with("ip6", "fe80::44")
 
 
@@ -298,9 +297,7 @@ def test_get_mac_address_ip6(mocker):
 
     # IPv6Interface
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:22")
-    assert (
-        getmac.get_mac_address(ip6=IPv6Interface("fe80::22/24")) == "00:01:02:04:00:22"
-    )
+    assert getmac.get_mac_address(ip6=IPv6Interface("fe80::22/24")) == "00:01:02:04:00:22"
     getmac.get_by_method.assert_called_once_with("ip6", "fe80::22")
 
 

@@ -31,20 +31,19 @@
 ### Removed
 * Removed support for Python 2.7 - 3.7. Most of the tooling used by getmac no longer works with 3.7 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
 * Removed support for Jython. As of Dec 2025, [Jython](https://github.com/jython/jython) still does not support Python 3. If and when it supports Python 3, I'll re-add support for it.
-* Removed explicit support for IronPython. [IronPython3 exists](https://github.com/IronLanguages/ironpython3), however I don't have a way to test it in CI. If someone knows of a way to test it in GitHub actions, let me know, and I'm happy to re-add explicit support.
-* Removed RPM packaging. This wasn't being used anywhere, and hasn't been updated since version 0.6.0. Way back when, I dreamt of putting this in OS package repositories. However, I've now learned that's up to the maintainers of those repos (e.g., Ubuntu or Fedora maintainers), not me.
+* Removed support for IronPython. [IronPython3 exists](https://github.com/IronLanguages/ironpython3), however I don't have a way to test it in CI. If someone knows of a way to test it in GitHub actions, let me know, and I'm happy to re-add support.
+* Removed RPM packaging, as it hasn't been maintained since 0.6.0.
 * Removed `UuidArpGetnode` method. It's quite slow (performs up to 3 subprocess calls internally) and the functionality is already implemented by `ArpVariousArgs`.
 * Removed `UuidLanscan` method. This has been replaced with the new `LanscanIface` method. Some UUID internal function names changed with Python 3.9, and it made more sense to implement from scratch in getmac instead of continuing to rely on CPython-specific private functions.
 
 
 ### Dev
-* Renamed `master` branch to `main`
 * Switched to [PDM](https://pdm-project.org) for project management
-  * Add `pyproject.toml`, consolidated most tool configurations here
+* Added `pyproject.toml` and consolidated the configurations for most tools
   * Removed `setup.py`,  `MANIFEST.in`, `requirements*.txt`, `tox.ini`
 * Switched to CodeCov from Coveralls
-* Use [isort](https://pycqa.github.io/isort/index.html) to sort imports
 * Refactored source code documentation and added an API reference to the docs
+* Use [Ruff's formatter](https://docs.astral.sh/ruff/formatter/) instead of Black and isort
 
 ## 0.9.5 (07/15/2024)
 

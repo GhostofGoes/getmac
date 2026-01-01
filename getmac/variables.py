@@ -67,9 +67,7 @@ class Constants(VarsClass):
     """
 
     WSL1: Final[bool] = (
-        _SYST == "Linux"
-        and "Microsoft" in _UNAME.version
-        and "-WSL2" not in _UNAME.release
+        _SYST == "Linux" and "Microsoft" in _UNAME.version and "-WSL2" not in _UNAME.release
     )
     """
     Windows Subsystem for Linux (WSL) version 1.
@@ -80,9 +78,7 @@ class Constants(VarsClass):
     """
 
     WSL2: Final[bool] = (
-        _SYST == "Linux"
-        and "Microsoft" not in _UNAME.version
-        and "-WSL2" in _UNAME.release
+        _SYST == "Linux" and "Microsoft" not in _UNAME.version and "-WSL2" in _UNAME.release
     )
     """
     Windows Subsystem for Linux (WSL) version 2.
@@ -98,9 +94,7 @@ class Constants(VarsClass):
     :meta hide-value:
     """
 
-    ANDROID: Final[bool] = (
-        hasattr(sys, "getandroidapilevel") or "ANDROID_STORAGE" in os.environ
-    )
+    ANDROID: Final[bool] = hasattr(sys, "getandroidapilevel") or "ANDROID_STORAGE" in os.environ
     """
     .. note::
        "Linux" methods apply to Android without modifications.

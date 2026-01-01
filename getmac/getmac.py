@@ -12,6 +12,7 @@ The key function is :func:`~getmac.getmac.get_mac_address`.
    :caption: Examples
 
    from getmac import get_mac_address
+
    eth_mac = get_mac_address(interface="eth0")
    win_mac = get_mac_address(interface="Ethernet 3")
    ip_mac = get_mac_address(ip="192.168.0.1")
@@ -463,9 +464,7 @@ class IpNeighborShow(Method):
 
         try:
             # NOTE: the space prevents accidental matching of partial IPs
-            return (
-                output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
-            )
+            return output.partition(arg + " ")[2].partition("lladdr")[2].strip().split()[0]
         except IndexError as ex:
             gvars.log.debug(f"IpNeighborShow failed with exception: {ex}")
             return None
@@ -620,9 +619,7 @@ class IpconfigExe(Method):
     platforms = {"windows"}
     method_type = "iface"
 
-    _regex: Final[str] = (
-        r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + consts.MAC_RE_DASH + r"\r\n"
-    )
+    _regex: Final[str] = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + consts.MAC_RE_DASH + r"\r\n"
 
     def test(self) -> bool:
         return utils.check_command("ipconfig.exe")
@@ -880,9 +877,7 @@ class NetstatIface(Method):
         if self._working_regex:
             # Use regex that worked previously. This can still return None in
             # the case of interface not existing, but at least it's a bit faster.
-            return utils.search(
-                arg + self._working_regex, command_output, flags=re.DOTALL
-            )
+            return utils.search(arg + self._working_regex, command_output, flags=re.DOTALL)
 
         # See if either regex matches
         for regex in self._regexes:
@@ -1019,7 +1014,8 @@ class DefaultIfaceRouteCommand(Method):
                 .partition("\n")[0]
                 .split()[-1]
             )
-        except IndexError as ex:  # index errors means no default route in output?
+        except IndexError as ex:
+            # index errors means no default route in output?
             gvars.log.debug(f"DefaultIfaceRouteCommand failed for {arg}: {ex}")
             return None
 
@@ -1246,14 +1242,10 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
     """
     if METHOD_CACHE.get(method_type):
         if settings.DEBUG:
-            gvars.log.debug(
-                f"Method cache already initialized for method type '{method_type}'"
-            )
+            gvars.log.debug(f"Method cache already initialized for method type '{method_type}'")
         return True
 
-    gvars.log.debug(
-        f"Initializing '{method_type}' method cache (platform: '{consts.PLATFORM}')"
-    )
+    gvars.log.debug(f"Initializing '{method_type}' method cache (platform: '{consts.PLATFORM}')")
 
     if settings.OVERRIDE_PLATFORM:
         gvars.log.warning(
@@ -1288,9 +1280,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         )
 
     # Filter methods by the platform we're running on
-    platform_methods = [
-        method for method in type_methods if platform in method.platforms
-    ]  # type: List[Type[Method]]
+    platform_methods = [method for method in type_methods if platform in method.platforms]  # type: List[Type[Method]]
 
     if not platform_methods:
         # If there isn't a method for the current platform,
@@ -1302,9 +1292,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         )
         gvars.log.warning(warn_msg)
         warnings.warn(warn_msg, RuntimeWarning, stacklevel=2)
-        platform_methods = [
-            method for method in type_methods if "other" in method.platforms
-        ]
+        platform_methods = [method for method in type_methods if "other" in method.platforms]
 
     if settings.DEBUG >= 2:
         plat_strs = ", ".join(pm.__name__ for pm in platform_methods)
@@ -1342,15 +1330,11 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
             gvars.log.debug(f"Test failed for method '{method_instance!s}'")
 
     if not tested_methods:
-        raise RuntimeError(
-            f"All {len(filtered_methods)} '{method_type}' methods failed to test!"
-        )
+        raise RuntimeError(f"All {len(filtered_methods)} '{method_type}' methods failed to test!")
 
     if settings.DEBUG >= 2:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)
-        gvars.log.debug(
-            f"{len(tested_methods)} tested methods for '{method_type}': {tested_strs}"
-        )
+        gvars.log.debug(f"{len(tested_methods)} tested methods for '{method_type}': {tested_strs}")
 
     # Populate fallback cache with all the tested methods, minus the currently active method
     if METHOD_CACHE[method_type] and METHOD_CACHE[method_type] in tested_methods:
@@ -1435,9 +1419,7 @@ def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[
     return result
 
 
-def get_by_method(
-    method_type: str, arg: str = "", network_request: bool = True
-) -> Optional[str]:
+def get_by_method(method_type: str, arg: str = "", network_request: bool = True) -> Optional[str]:
     """
     Query for a MAC using a specific method.
 
@@ -1464,9 +1446,7 @@ def get_by_method(
         forced_method = get_method_by_name(settings.FORCE_METHOD)
 
         if not forced_method:
-            gvars.log.error(
-                f"Invalid FORCE_METHOD method name '{settings.FORCE_METHOD}'"
-            )
+            gvars.log.error(f"Invalid FORCE_METHOD method name '{settings.FORCE_METHOD}'")
             return None
 
         return forced_method().get(arg)
@@ -1504,9 +1484,7 @@ def get_by_method(
 
 def get_mac_address(
     interface: Union[str, bytes, None] = None,
-    ip: Union[
-        str, bytes, IPv4Address, IPv4Interface, IPv6Address, IPv6Interface, None
-    ] = None,
+    ip: Union[str, bytes, IPv4Address, IPv4Interface, IPv6Address, IPv6Interface, None] = None,
     ip6: Union[str, bytes, IPv6Address, IPv6Interface, None] = None,
     hostname: Union[str, bytes, None] = None,
     network_request: bool = True,
@@ -1606,9 +1584,7 @@ def get_mac_address(
                 "not a network. Try IPv6Address or IPv6Interface instead."
             )
         else:
-            raise ValueError(
-                f"Unknown type for 'ip' argument: '{ip.__class__.__name__}'"
-            )
+            raise ValueError(f"Unknown type for 'ip' argument: '{ip.__class__.__name__}'")
 
     if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
         return "00:00:00:00:00:00"
@@ -1629,8 +1605,7 @@ def get_mac_address(
         if not socket.has_ipv6:
             # TODO: raise exception instead of returning None?
             gvars.log.error(
-                "Cannot get the MAC address of a IPv6 host: "
-                "IPv6 is not supported on this system"
+                "Cannot get the MAC address of a IPv6 host: IPv6 is not supported on this system"
             )
             return None
 
@@ -1646,9 +1621,7 @@ def get_mac_address(
                 "not a network. Try IPv6Address or IPv6Interface instead."
             )
         elif not isinstance(ip6, str):
-            raise ValueError(
-                f"Unknown type for 'ip6' argument: '{ip6.__class__.__name__}'"
-            )
+            raise ValueError(f"Unknown type for 'ip6' argument: '{ip6.__class__.__name__}'")
 
         if ":" not in ip6:
             gvars.log.error(f"Invalid IPv6 address (no ':'): {ip6}")
@@ -1681,10 +1654,7 @@ def get_mac_address(
 
             if not mac:
                 for arp_meth in ["CtypesHost", "ArpingHost"]:
-                    if (
-                        settings.FORCE_METHOD
-                        and settings.FORCE_METHOD.lower() != arp_meth
-                    ):
+                    if settings.FORCE_METHOD and settings.FORCE_METHOD.lower() != arp_meth:
                         continue
 
                     if arp_meth == str(METHOD_CACHE["ip4"]):
