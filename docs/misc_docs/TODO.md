@@ -63,10 +63,6 @@ methods (list): Optional list of methods to use for MAC address lookup.
 
 ## Before releasing
 - [x] Update supported versions table in [SECURITY.md](../SECURITY.md)
-- [ ] Automate publishing in GitHub Actions. When a tag is created, publish release to PyPI, and generate a GitHub release.
-
-## Notes
-Removing Tox, maybe. Can do version enumeration in GitHub Actions, for all platforms. No need for me to do locally.
 
 ## Done for 1.0.0
 - [x] Move to PDM from Poetry
@@ -194,6 +190,8 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
 - [ ] Move method classes into a separate file
 - [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
+- [ ] Automate publishing in GitHub Actions. When a tag is created, publish release to PyPI, and generate a GitHub release.
+    - This is going to require re-doing how changelogs are created a bit.
 
 
 # Post-1.0.0
