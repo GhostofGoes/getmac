@@ -14,7 +14,7 @@
 - [x] Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
 
 ## Tests
-- [ ] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
+- [x] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
 - [ ] >90% test coverage
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 - [ ] Add tests for more samples (new third-party samples)
