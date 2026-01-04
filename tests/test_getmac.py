@@ -336,6 +336,10 @@ def test_get_mac_address_default_args_fallback_global(mocker):
 
 
 def test_get_mac_address_invalid_types():
+    """
+    Test that invalid types for 'ip' and 'ip6' arguments raise ValueError.
+    """
+
     with pytest.raises(ValueError, match="IPv4Network"):
         getmac.get_mac_address(ip=IPv4Network("192.0.1.0/24"))
 
@@ -350,6 +354,92 @@ def test_get_mac_address_invalid_types():
 
     with pytest.raises(ValueError, match="Unknown type for 'ip6' argument"):
         getmac.get_mac_address(ip6=object())
+
+
+def test_get_mac_address_default_interface(mocker):
+    """
+    Test default interface is used when no other arguments are given.
+    """
+    # need to mock get_by_method called with:
+    #   "default_iface" => test_iface
+    #   "iface", "test_iface" => MAC address
+    comp_mac = "00:11:22:33:44:55"
+
+    def __test_iface_default(a1, a2=None):  # noqa: ARG001
+        if a1 == "default_iface":
+            return "test_iface"
+        return comp_mac
+
+    mocker.patch.object(consts, "WINDOWS", False)
+    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
+    mocker.patch(
+        "getmac.getmac.get_by_method",
+        side_effect=__test_iface_default,
+    )
+    assert getmac.get_mac_address() == comp_mac
+
+
+def test_get_mac_address_default_interface_fallback(mocker):
+    """
+    More coverage of the fallback logic if default interface can't be determined.
+    """
+    mocker.patch.object(consts, "WINDOWS", False)
+    comp_mac = "00:11:22:33:44:44"
+
+    def __test_iface_fallback(a1, a2=None):  # noqa: ARG001
+        if a1 == "default_iface":
+            return ""
+        return comp_mac
+
+    # BSD fallback path
+    mocker.patch.object(consts, "BSD", True)
+    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
+    mocker.patch(
+        "getmac.getmac.get_by_method",
+        side_effect=__test_iface_fallback,
+    )
+    assert getmac.get_mac_address() == comp_mac
+    assert gvars.DEFAULT_IFACE == "em0"
+
+    # Darwin fallback path
+    mocker.patch.object(consts, "BSD", False)
+    mocker.patch.object(consts, "DARWIN", True)
+    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
+    mocker.patch(
+        "getmac.getmac.get_by_method",
+        side_effect=__test_iface_fallback,
+    )
+    assert getmac.get_mac_address() == comp_mac
+    assert gvars.DEFAULT_IFACE == "en0"
+
+    # HPUX fallback path
+    mocker.patch.object(consts, "DARWIN", False)
+    mocker.patch.object(consts, "HPUX", True)
+    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
+    mocker.patch(
+        "getmac.getmac.get_by_method",
+        side_effect=__test_iface_fallback,
+    )
+    assert getmac.get_mac_address() == comp_mac
+    assert gvars.DEFAULT_IFACE == "lan0"
+
+    # eth0 fallback path
+    mocker.patch.object(consts, "HPUX", False)
+    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
+    mocker.patch(
+        "getmac.getmac.get_by_method",
+        side_effect=__test_iface_fallback,
+    )
+    assert getmac.get_mac_address() == comp_mac
+    assert gvars.DEFAULT_IFACE == "eth0"
+
+    # test hack to fallback to loopback
+    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
+    mocker.patch(
+        "getmac.getmac.get_by_method",
+        side_effect=lambda a1, a2=None: "00:11:22:33:44:04" if a2 == "lo" else "",  # noqa: ARG005
+    )
+    assert getmac.get_mac_address() == "00:11:22:33:44:04"
 
 
 def test_get_default_interface(mocker, get_sample):
