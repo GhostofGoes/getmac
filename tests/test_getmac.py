@@ -82,6 +82,10 @@ def test_initialize_method_cache_valid_types(mocker, method_type):
         {"ip4": None, "ip6": None, "iface": None, "default_iface": None},
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
+    # The fallback-cache assertion below expects more than one usable Method,
+    # which otherwise depends on which optional platform commands (arp,
+    # arping, ...) happen to be installed on the machine running the suite.
+    mocker.patch("getmac.utils.check_command", return_value=True)
 
     assert getmac.initialize_method_cache(method_type)
     assert getmac.METHOD_CACHE[method_type] is not None
