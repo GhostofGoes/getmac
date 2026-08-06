@@ -1,8 +1,49 @@
+
 # Changelog
 
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
-**Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
+**Announcement**: Compatibility with Python versions older than 3.8 (2.7, 3.4, 3.5, 3.6, 3.7) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
+
+## 1.0.0 (TBD)
+
+### Added
+* Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
+* Support Python 3.10 - 3.14
+* New function, `getmac.get_default_interface()`, which returns the name of the system's default interface (NOTE: Windows is not supported currently).
+* Support for [ipaddress](https://docs.python.org/3/library/ipaddress.html) objects from the Python standard library: `IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`
+    - These can be used with the `ip` and `ip6` arguments to `get_mac_address()`
+    - The `ip` argument will accept IPv6 objects and process them as if `ip6` was set.
+    - If passed a string, `ip` will still treat it like a IPv4 address. This behavior may change in a future release, with `ip` allowing either type of address, and `ip6` argument being deprecated.
+    - `IPv4Network` and `IPv6Network` will result in a `ValueError`. They're networks, not hosts, and passing them makes no sense.
+* Handle `bytes` values for `interface`, `ip`, `ip6`, and `hostname` arguments to `get_mac_address()`. This will just call `decode("utf-8")` on the bytes. This is to ease usage with certain libraries and functions that return strings as bytes.
+    - If you pass it some weird bytes that aren't decodable as utf-8, it's obviously going to break. Don't be dumb :)
+* Added manpage for the command line interface (`getmac.1`)
+* Improved HP-UX support
+    * New method, `LanscanIface`, a proper implementation of `lanscan -ia` for HP-UX systems. This replaces the functionality of the removed `UuidLanscan` method, and is loosely based on CPython's `uuid._lanscan_getnode()` implementation.
+    * Added platform detection for HP-UX and a default to `lan0` interface
+
+### Changed
+* **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
+* **BREAKING CHANGE**: `RuntimeError` is now raised in cases where no methods are found matching the type of request and platform, or if all matching methods fail to test. This should almost never happen unless you're on an exotic platform or have an unusual configuration, or a recent platform update changed commands such that getmac no longer functions. If you encounter a `RuntimeError` exception, it means something went horribly wrong, and you should considor reporting the [issue on GitHub](https://github.com/GhostofGoes/getmac/issues).
+* Reduce size of wheel distribution (`.whl` file)
+
+### Removed
+* Removed support for Python 2.7 - 3.7. Most of the tooling used by getmac no longer works with 3.7 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
+* Removed support for Jython. As of Dec 2025, [Jython](https://github.com/jython/jython) still does not support Python 3. If and when it supports Python 3, I'll re-add support for it.
+* Removed support for IronPython. [IronPython3 exists](https://github.com/IronLanguages/ironpython3), however I don't have a way to test it in CI. If someone knows of a way to test it in GitHub actions, let me know, and I'm happy to re-add support.
+* Removed RPM packaging, as it hasn't been maintained since 0.6.0.
+* Removed `UuidArpGetnode` method. It's quite slow (performs up to 3 subprocess calls internally) and the functionality is already implemented by `ArpVariousArgs`.
+* Removed `UuidLanscan` method. This has been replaced with the new `LanscanIface` method. Some UUID internal function names changed with Python 3.9, and it made more sense to implement from scratch in getmac instead of continuing to rely on CPython-specific private functions.
+
+
+### Dev
+* Switched to [PDM](https://pdm-project.org) for project management
+* Added `pyproject.toml` and consolidated the configurations for most tools
+  * Removed `setup.py`,  `MANIFEST.in`, `requirements*.txt`, `tox.ini`
+* Switched to CodeCov from Coveralls
+* Refactored source code documentation and added an API reference to the docs
+* Use [Ruff's formatter](https://docs.astral.sh/ruff/formatter/) instead of Black and isort
 
 ## 0.9.5 (07/15/2024)
 
@@ -246,7 +287,7 @@ e.g. '-dd' for DEBUG level 2.
 ### Changed
 * **Significant** performance improvement for remote hosts. Previously,
 the average for `get_mac_address(ip='10.0.0.100')` was 1.71 seconds.
-Now, the average is `12.7 miliseconds`, with the special case of a unpopulated
+Now, the average is `12.7 milliseconds`, with the special case of a unpopulated
 arp table being only slightly higher. This was brought about by changes in
 how the arp table is populated. The original method was to use the
 host's `ping` command to send an ICMP packet to the host. This took time,

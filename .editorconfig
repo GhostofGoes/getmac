@@ -16,6 +16,12 @@ trim_trailing_whitespace = true
 # Use 2 spaces for the HTML files
 [*.{yml,yaml}]
 indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.toml]
+insert_final_newline = true
+trim_trailing_whitespace = true
 
 # The JSON files contain newlines inconsistently
 [*.json]
@@ -37,3 +43,12 @@ indent_size = 2
 indent_style = unset
 indent_size = unset
 end_of_line = unset
+
+[*.rst]
+indent_size = 3
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+insert_final_newline = true
+trim_trailing_whitespace = true

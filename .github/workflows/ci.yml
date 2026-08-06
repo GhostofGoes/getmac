@@ -1,34 +1,27 @@
 name: CI
-
 on:
-- release
-- push
-- pull_request
-
+  - release
+  - push
+  - pull_request
 jobs:
   lint:
     name: Run lint checks
-    runs-on: ubuntu-20.04
-    # Workaround to disable pip upgrade warnings until fixed in setup-python
-    # See: https://github.com/actions/setup-python/issues/532
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v6
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.8"
-      - name: Install tox
-        run: python -m pip install tox
+          python-version: "3.11"
+          cache: true
+      - name: Install dependencies
+        # NOTE: test is needed here to evaluate imports for pytest
+        run: pdm sync -d -G lint,test
       - name: Run lint checks
-        run: tox -e check
+        run: pdm run lint
   test:
     name: Run tests
     runs-on: ${{ matrix.platform }}
-    # Workaround to disable pip upgrade warnings until fixed in setup-python
-    # See: https://github.com/actions/setup-python/issues/532
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
     strategy:
       fail-fast: false
       # Versions available:
@@ -38,105 +31,128 @@ jobs:
       # OS images: https://github.com/actions/runner-images
       matrix:
         python-version:
-          - "3.7"
           - "3.8"
           - "3.9"
-          - "pypy-3.7"
-          - "pypy-3.8"
-          - "pypy-3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
         architecture:
           - x86
           - x64
+          - arm64
         platform:
-          - ubuntu-20.04
+          - ubuntu-22.04
           - windows-latest
-          # Fix tests failing on MacOS 14+ due to ARM architecture
-          # https://github.com/actions/setup-python/issues/825
-          # TODO: update tests to use ARM MacOS with 14+, add 
-          # architecture to the list of architectures above.
-          - macos-13
+          - macos-latest
         exclude:
-          - platform: ubuntu-20.04
+          - platform: ubuntu-22.04
             architecture: x86
-          - platform: macos-13
+          - platform: ubuntu-22.04
+            architecture: arm64
+          - platform: windows-latest
+            architecture: arm64
+          - platform: macos-latest
             architecture: x86
-          - platform: macos-13
-            python-version: "pypy-3.7"
-          - platform: macos-13
-            python-version: "pypy-3.8"
+          - platform: macos-latest
+            architecture: x64
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v6
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
       - name: Display platform and environment information
         run: |
           python --version
+          pdm run python --version
           python -c "import sys; print('sys.version: %s' % str(sys.version))"
           python -c "import sys; print('sys.platform: %s' % str(sys.platform))"
           python -c "import os; print('os.name: %s' % str(os.name))"
           python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
       - name: Install dependencies
-        run: python -m pip install tox coveralls tox-gh-actions
+        run: pdm sync -d -G test
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
-        run: tox
-      - uses: codecov/codecov-action@v3
+        run: pdm run test
+      - uses: codecov/codecov-action@v4
         with:
-          # codecov is annoying. Not sure why I'm still using it, 
-          # may need to look at something that has less heisenbugs.
-          # https://community.codecov.com/t/ci-failure-due-to-too-many-uploads-to-this-commit/2587/12
           fail_ci_if_error: false
-      - name: Coveralls
-        if: ${{ matrix.platform == 'ubuntu-20.04' && github.event_name != 'pull_request' }}
-        uses: AndreMiras/coveralls-python-action@develop
-        with:
-          parallel: true
-          flag-name: ${{ matrix.python-version }}-${{ matrix.platform }}
-  coveralls_finish:
-    needs: test
-    runs-on: ubuntu-20.04
+          token: ${{ secrets.CODECOV_TOKEN }}
+  docs:
+    name: Build HTML docs and manpage
+    runs-on: ubuntu-24.04
     steps:
-    - name: Coveralls Finished
-      if: ${{ github.event_name != 'pull_request' }}
-      uses: AndreMiras/coveralls-python-action@develop
-      with:
-        parallel-finished: true
+      - uses: actions/checkout@v6
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.11"
+          cache: true
+      - name: Install dependencies
+        run: pdm sync -d -G docs
+      - name: Build docs
+        run: pdm run docs
+      - uses: actions/upload-artifact@v6
+        with:
+          name: html-docs
+          path: html_docs/
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: html_docs/
+      - uses: actions/upload-artifact@v6
+        with:
+          name: manpage
+          path: manpage/getmac.1
+  deploy:
+    name: Publish docs to GitHub Pages
+    needs: docs
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/1.0.0-wip'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
-
-# TODO: publish
-# TODO: need to do this for both "getmac" and "get-mac" packages
+# TODO: publish releases using CI
 # TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
-
-# https://github.com/marketplace/actions/upload-a-build-artifact
-
-# name: "Build and publish a release"
-
-# on:
-#   release:
-#     types: [released]
-
-# jobs:
-#   publish:
-#     name: "📦 Publish Python distributions"
-#     runs-on: "ubuntu-20.04"
-#     strategy:
-#       matrix:
-#         python-version:
-#           - "3.8"
-#     steps:
-#       - uses: actions/checkout@v3
-#       - name: "🐍 Set up Python ${{ matrix.python-version }}"
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: "${{ matrix.python-version }}"
-#       - name: "🐍 Install wheel"
-#         run: "python -m pip install wheel --user"
-#       - name: "🐍 Build a binary wheel and a source tarball"
-#         run: "python setup.py sdist bdist_wheel"
-#       - name: "📦 Publish distribution to PyPI"
-#         uses: "pypa/gh-action-pypi-publish@master"
-#         if: "startsWith(github.ref, 'refs/tags')"
-#         with:
-#           password: "${{ secrets.pypi_password }}"
+# https://docs.pypi.org/trusted-publishers/adding-a-publisher/
+# https://pdm-project.org/en/latest/usage/publish/
+  # publish:
+  #   name: Publish Release
+  #   needs: [test, lint, docs]
+  #   runs-on: ubuntu-latest
+  #   if: startsWith(github.ref, 'refs/tags/') && github.event_name == 'push'
+  #   permissions:
+  #     contents: write
+  #     id-token: write
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - name: Setup PDM
+  #       uses: pdm-project/setup-pdm@v4
+  #       with:
+  #         python-version: "3.11"
+  #         cache: true
+  #     - name: Build artifacts
+  #       run: pdm build
+  #     - name: Publish to PyPI
+  #       run: pdm publish
+  #     - uses: actions/download-artifact@v6
+  #       with:
+  #         name: manpage
+  #         path: manpage_dist
+  #     - name: Create GitHub Release
+  #       uses: softprops/action-gh-release@v2
+  #       with:
+  #         files: |
+  #           dist/*
+  #           manpage_dist/getmac.1
+  #         generate_release_notes: true

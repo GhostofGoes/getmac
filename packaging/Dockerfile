@@ -6,6 +6,6 @@ LABEL project_url="https://github.com/GhostofGoes/getmac"
 ADD .. /opt/getmac
 WORKDIR /opt/getmac
 
-RUN python setup.py install
+RUN python -m pip install .
 
 ENTRYPOINT ["getmac"]

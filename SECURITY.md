@@ -4,8 +4,10 @@
 
 | Version    | Supported          |
 | ---------- | ------------------ |
-| 0.8.x      | :white_check_mark: |
-| <= 0.7.x   | :x:                |
+| 1.0.x      | Yes |
+| 0.9.x      | Maintenance mode, security or major bug fixes only |
+| 0.8.x      | No longer supported |
+| <= 0.7.x   | No longer supported |
 
 ## Reporting a Vulnerability or other security issue
 

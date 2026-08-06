@@ -8,12 +8,12 @@
 
 ### Code changes:
 
-- [ ] Did you format your code with Black? 
-    - `black getmac tests`
+- [ ] Did you format your code? 
+    - `pdm run format`
 - [ ] Are the linting checks passing?
-    - `tox -e check`
+    - `pdm run lint`
 - [ ] Do all tests pass locally?
-    - `tox`
+    - `pdm run test`
 - [ ] Have you updated the [CHANGELOG](CHANGELOG.md) with a summary of your change?
 - [ ] Did you add your name to the contributors list in the [README](README.md)?
 

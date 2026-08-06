@@ -1,0 +1,303 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "getmac"
+dynamic = ["version"]
+description = "Platform-independent pure-Python module to get a MAC address"
+dependencies = []
+readme = "README.md"
+authors = [
+    {name = "Christopher Goes", email = "ghostofgoes@gmail.com"},
+]
+maintainers = [
+    {name = "Christopher Goes", email = "ghostofgoes@gmail.com"},
+]
+license = { file = "LICENSE"}
+requires-python = "<4.0,>=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: POSIX :: BSD",
+    "Operating System :: POSIX :: BSD :: FreeBSD",
+    "Operating System :: POSIX :: BSD :: NetBSD",
+    "Operating System :: POSIX :: BSD :: OpenBSD",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: POSIX :: Other",
+    "Operating System :: MacOS",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Information Technology",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Systems Administration",
+    "Topic :: System :: Networking",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+keywords = [
+    "getmac",
+    "get-mac",
+    "macaddress",
+    "mac-address",
+    "mac",
+    "ethernet",
+    "mac-48",
+    "network",
+    "networking",
+    "layer2",
+    "layer-2",
+    "802.3",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/GhostofGoes/getmac"
+"Documentation" = "https://ghostofgoes.github.io/getmac/"
+"Changelog" = "https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md"
+"Issue tracker" = "https://github.com/GhostofGoes/getmac/issues"
+"Source" = "https://github.com/GhostofGoes/getmac"
+"Discord server" = "https://discord.gg/python"
+
+[project.scripts]
+getmac = "getmac.__main__:main"
+
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest<8,>=7",
+    "pytest-randomly",
+    "pytest-mock",
+    "pytest-benchmark",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest-sugar",
+    "psutil",
+    "pygments<3.0,>=2.13",
+]
+lint = [
+    "codespell>=2.2.4",
+    "tomli; python_version < \"3.12\"",
+    "ruff",
+    "vulture",
+    "mypy<2.0.0,>=1.3.0",
+]
+docs = [
+    "furo; python_version >= \"3.10\"",
+    "sphinx>7.0.0; python_version >= \"3.10\"",
+    "recommonmark<1.0.0,>=0.7.1; python_version >= \"3.10\"",
+    "sphinx-autodoc-typehints; python_version >= \"3.10\"",
+    "sphinx-copybutton; python_version >= \"3.10\"",
+    "sphinx-inline-tabs; python_version >= \"3.10\"",
+    "sphinx-argparse-cli; python_version >= \"3.10\"",
+    "sphinx-automodapi; python_version >= \"3.10\"",
+    "sphinx-issues; python_version >= \"3.10\"",
+    "myst-parser; python_version >= \"3.10\"",
+]
+
+[tool.pdm.build]
+includes = ["getmac/", "LICENSE", "README.md"]
+source-includes = [
+    "tests/",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "pyproject.toml",
+]
+
+[tool.pdm.version]
+source = "file"
+path = "getmac/getmac.py"
+
+
+# --- PDM scripts for developers ---
+[tool.pdm.scripts.spelling]
+help = "Check spelling using Codespell"
+cmd = "codespell --toml pyproject.toml"
+
+[tool.pdm.scripts.check]
+help = "Check for linting issues using ruff"
+cmd = "ruff check getmac tests"
+
+[tool.pdm.scripts.fix]
+help = "Check for linting issues and auto-fix"
+cmd = "ruff check --fix getmac tests"
+
+[tool.pdm.scripts.unused]
+help = "Check for unused code using Vulture"
+cmd = "vulture --min-confidence 100 getmac tests"
+
+[tool.pdm.scripts.check_format]
+help = "Check code formatting is correct"
+composite = [
+    "ruff check --select I getmac tests",
+    "ruff format --check getmac tests",
+]
+
+[tool.pdm.scripts.typing]
+help = "Check typing using Mypy"
+cmd = "mypy getmac tests"
+
+[tool.pdm.scripts.lint]
+help = "Run all linting checks (code quality)"
+composite = [
+    "spelling",
+    "check",
+    "unused",
+    "check_format",
+    "typing",
+]
+
+[tool.pdm.scripts.format]
+help = "Auto-format code to match requirements"
+composite = [
+    "ruff check --select I --fix getmac tests",
+    "ruff format getmac tests",
+]
+
+[tool.pdm.scripts.benchmark]
+help = "Run tests with benchmarking enabled"
+cmd = "pytest --benchmark-enable -n auto"
+
+# Need more verbosity? Add arguments.
+# Example: "pdm run test -vv" (note the "-vv" added)
+[tool.pdm.scripts.test]
+help = "Run tests (no benchmarking)"
+cmd = """
+pytest
+  --benchmark-disable
+  --cov=getmac
+  --cov-report term
+  --cov-report html
+  --cov-report xml
+  -n auto
+"""
+
+[tool.pdm.scripts.html]
+help = "Build HTML documentation using Sphinx"
+cmd = "sphinx-build -j auto -b html ./docs ./html_docs"
+
+[tool.pdm.scripts.manpage]
+help = "Build Manpage documentation using Sphinx"
+cmd = "sphinx-build -j auto -b man ./docs ./manpage"
+
+[tool.pdm.scripts.docs]
+help = "Build all documentation formats using Sphinx"
+composite = [
+    "html",
+    "manpage",
+]
+
+
+
+# --- Pytest configuration ---
+[tool.pytest.ini_options]
+testpaths = "tests"
+norecursedirs = ".github getmac samples scripts .git .tox .vagrant .idea .vscode dist build *.egg .* .venv"
+addopts = "--tb=short"
+
+
+# --- Codespell configuration ---
+[tool.codespell]
+check-filenames = true
+skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.idea,.vscode,_build,.doctrees,htmlcov,.venv,.mypy_cache,deb_dist,built_docs,.pytest_cache,.pdm-build,manpage,html_docs,third_party'
+ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso'
+
+
+# --- Ruff configuration ---
+# https://docs.astral.sh/ruff/
+[tool.ruff]
+line-length = 99
+# Files to exclude from linting
+extend-exclude = [
+    "*.pyc",
+    "__pycache__",
+    ".tox",
+    ".venv",
+    ".github",
+    ".vagrant",
+    "docs",
+    "packaging",
+    "samples",
+    "scripts",
+]
+
+[tool.ruff.lint]
+# Rules: https://docs.astral.sh/ruff/rules/
+# If you violate a rule, lookup the rule on the Rules page in ruff docs.
+# Many rules have links you can click with a explanation of the rule and how to fix it.
+# If there isn't a link, go to the project the rule was source from (e.g. flake8-bugbear)
+# and review it's docs for the corresponding rule.
+# If you're still confused, ask a fellow developer for assistance.
+# You can also run "ruff rule <rule>" to explain a rule on the command line, without a browser or internet access.
+select = [
+    "ANN",  # flake8-annotations
+    "S",    # flake8-bandit
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins
+    "C4",   # flake8-comprehensions
+    "I",    # isort
+    "DTZ",  # flake8-datetimez
+    "T10",  # flake8-debugger
+    "ISC",  # flake8-implicit-str-concat
+    "G",    # flake8-logging-format
+    "PIE",  # flake8-pie
+    "T20",  # flake8-print
+    "PT",   # flake8-pytest-style
+    "RSE",  # flake8-raise
+    "RET",  # flake8-return
+    "TID",  # flake8-tidy-imports
+    "ARG",  # flake8-unused-arguments
+    "N",    # pep8-naming
+    "E",    # pycodestyle - Error
+    "W",    # pycodestyle - Warning
+    "F",    # Pyflakes
+    "PGH",  # pygrep-hooks
+    "PLC",  # Pylint - Convention
+    "PLE",  # Pylint - Errors
+    "PLR",  # Pylint - Refactor
+    "PLW",  # Pylint - Warnings
+    "UP",   # pyupgrade
+    "RUF",  # Ruff-specific rules
+]
+
+# Linting error codes to ignore
+ignore = [
+    "RET505",  # unnecessary 'else' after 'return' statement
+    "PLW0603", # Using the global statement to update is discouraged
+    "PLW2901", # for loop variable overwritten by assignment target
+    "G004",    # Logging statement uses f-string
+    "PIE790",  # no-unnecessary-pass
+    "PGH003",  # Use specific rule codes when ignoring type issues
+    # "PLC1901", # compare-to-empty-string
+    "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
+    "S603",    # subprocess-without-shell-equals-true
+    "PLC0415", # import should be at the top-level of a file (getmac uses imports in functions)
+    "PLR0915",
+    "PLR0912",
+    "PLR2004",
+    "UP031",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S101", "S104", "S602", "S603", "D", "PLR"]
+
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
+quote-style = "double"
