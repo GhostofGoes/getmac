@@ -2,6 +2,7 @@
 .vscode/
 .vagrant/
 .pdm-python
+.claude/
 
 built_docs/
 html_docs/
