@@ -10,10 +10,16 @@
 import os
 import sys
 
+try:
+    from typing import List, Optional
+except ImportError:
+    pass
+
 
 # Everything below this point has been copied verbatim from the Python-3.3
 # sources.
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
+    # type: (str, int, Optional[str]) -> Optional[str]
     """Given a command, mode, and a PATH string, return the path which
     conforms to the given mode on the PATH, or None if there is no such
     file.
@@ -28,6 +34,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     # Additionally check that `file` is not a directory, as on Windows
     # directories pass the os.access check.
     def _access_check(fn, mode):
+        # type: (str, int) -> bool
         return os.path.exists(fn) and os.access(fn, mode) and not os.path.isdir(fn)
 
     # Short circuit. If we're given a full path which matches the mode
@@ -35,7 +42,8 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     if _access_check(cmd, mode):
         return cmd
 
-    path = (path or os.environ.get("PATH", os.defpath)).split(os.pathsep)
+    path_str = path if path is not None else os.environ.get("PATH", os.defpath)
+    path_parts = path_str.split(os.pathsep)  # type: List[str]
 
     if sys.platform == "win32":
         # The current directory takes precedence on Windows.
@@ -56,7 +64,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         files = [cmd]
 
     seen = set()
-    for dir in path:
+    for dir in path_parts:
         dir = os.path.normcase(dir)
         if dir not in seen:
             seen.add(dir)

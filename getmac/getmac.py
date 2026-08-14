@@ -23,6 +23,7 @@ It provides one function: ``get_mac_address()``
     updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
 """
+
 import ctypes
 import logging
 import os
@@ -30,16 +31,17 @@ import platform
 import re
 import shlex
 import socket
+import subprocess
 import struct
 import sys
 import traceback
 import warnings
 from subprocess import CalledProcessError, check_output
 
-try:  # Python 3
-    from subprocess import DEVNULL  # type: ignore
-except ImportError:  # Python 2
-    DEVNULL = open(os.devnull, "wb")  # type: ignore
+try:
+    DEVNULL = subprocess.DEVNULL  # type: Union[int, BufferedWriter]
+except AttributeError:  # Python 2
+    DEVNULL = open(os.devnull, "wb")
 
 # Used for mypy (a data type analysis tool)
 # If you're copying the code, this section can be safely removed
@@ -47,7 +49,8 @@ try:
     from typing import TYPE_CHECKING
 
     if TYPE_CHECKING:
-        from typing import Dict, List, Optional, Set, Tuple, Type, Union
+        from io import BufferedWriter
+        from typing import Dict, IO, List, Optional, Set, Tuple, Type, Union
 except ImportError:
     pass
 
@@ -79,7 +82,7 @@ else:
     _SYST = _UNAME.system  # type: str
 if _SYST == "Java":
     try:
-        import java.lang
+        import java.lang  # type: ignore[import-not-found]
 
         _SYST = str(java.lang.System.getProperty("os.name"))
     except ImportError:
@@ -271,10 +274,11 @@ def _popen(command, args):
 
 def _call_proc(executable, args):
     # type: (str, str) -> str
+    cmd = ""  # type: Union[str, List[str]]
     if WINDOWS:
-        cmd = executable + " " + args  # type: ignore
+        cmd = executable + " " + args
     else:
-        cmd = [executable] + shlex.split(args)  # type: ignore
+        cmd = [executable] + shlex.split(args)
 
     output = check_output(cmd, stderr=DEVNULL, env=ENV)
 
@@ -303,7 +307,7 @@ def _fetch_ip_using_dns():
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("1.1.1.1", 53))
-    ip = s.getsockname()[0]
+    ip = str(s.getsockname()[0])
     s.close()  # NOTE: sockets don't have context manager in 2.7 :(
     return ip
 
@@ -338,7 +342,7 @@ class Method:
 
     def test(self):  # type: () -> bool  # noqa: T484
         """Low-impact test that the method is feasible, e.g. command exists."""
-        pass  # pragma: no cover
+        raise NotImplementedError  # pragma: no cover
 
     # TODO: automatically clean MAC on return
     def get(self, arg):  # type: (str) -> Optional[str]
@@ -359,7 +363,7 @@ class Method:
             Lowercase colon-separated MAC address, or None if one could
             not be found.
         """
-        pass  # pragma: no cover
+        raise NotImplementedError  # pragma: no cover
 
     @classmethod
     def __str__(cls):  # type: () -> str
@@ -466,7 +470,7 @@ class ArpVariousArgs(Method):
         ("-a", True),  # "arp -a 192.168.1.1"
     )
     _args_tested = False  # type: bool
-    _good_pair = ()  # type: Union[Tuple, Tuple[str, bool]]
+    _good_pair = None  # type: Optional[Tuple[str, bool]]
 
     def test(self):  # type: () -> bool
         return check_command("arp")
@@ -508,9 +512,12 @@ class ArpVariousArgs(Method):
 
         if not command_output:
             # if True, then include IP as a command argument
-            cmd_args = [self._good_pair[0]]
+            good_pair = self._good_pair
+            if good_pair is None:
+                return None
+            cmd_args = [good_pair[0]]
 
-            if self._good_pair[1]:
+            if good_pair[1]:
                 cmd_args.append(arg)
 
             command_output = _popen("arp", " ".join(cmd_args))
@@ -638,16 +645,25 @@ class CtypesHost(Method):
 
     def test(self):  # type: () -> bool
         try:
-            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # noqa: T484
+            windll = getattr(ctypes, "windll", None)
+            if windll is None:
+                return False
+            result = windll.wsock32.inet_addr(b"127.0.0.1")  # type: int
+            return result > 0
         except Exception:
             return False
 
     def get(self, arg):  # type: (str) -> Optional[str]
+        windll = getattr(ctypes, "windll", None)
+        if windll is None:
+            return None
+
+        arg_input = arg  # type: Union[str, bytes]
         if not PY2:  # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
-            arg = arg.encode()  # type: ignore
+            arg_input = arg.encode()
 
         try:
-            inetaddr = ctypes.windll.wsock32.inet_addr(arg)  # type: ignore
+            inetaddr = windll.wsock32.inet_addr(arg_input)
             if inetaddr in (0, -1):
                 raise Exception
         except Exception:
@@ -655,19 +671,19 @@ class CtypesHost(Method):
             #   We should be explicit about only accepting ipv4 addresses
             #   and handle any hostname resolution in calling code
             hostip = socket.gethostbyname(arg)
-            inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
+            inetaddr = windll.wsock32.inet_addr(hostip)
 
         buffer = ctypes.c_buffer(6)
         addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
 
         # https://docs.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp
-        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
+        send_arp = windll.Iphlpapi.SendARP
         if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
             return None
 
         # Convert binary data into a string.
         macaddr = ""
-        for intval in struct.unpack("BBBBBB", buffer):  # type: ignore
+        for intval in struct.unpack("BBBBBB", buffer):
             if intval > 15:
                 replacestr = "0x"
             else:
@@ -723,19 +739,24 @@ class UuidLanscan(Method):
 
     def test(self):  # type: () -> bool
         try:
-            from uuid import _find_mac  # noqa: T484
+            import uuid
 
-            return check_command("lanscan")
+            return bool(getattr(uuid, "_find_mac", None)) and check_command("lanscan")
         except Exception:
             return False
 
     def get(self, arg):  # type: (str) -> Optional[str]
-        from uuid import _find_mac  # type: ignore
+        import uuid
 
+        _find_mac = getattr(uuid, "_find_mac", None)
+        if _find_mac is None:
+            return None
+
+        arg_input = arg  # type: Union[str, bytes]
         if not PY2:
-            arg = bytes(arg, "utf-8")  # type: ignore
+            arg_input = bytes(arg, "utf-8")
 
-        mac = _find_mac("lanscan", "-ai", [arg], lambda i: 0)
+        mac = _find_mac("lanscan", "-ai", [arg_input], lambda i: 0)
 
         if mac:
             return _uuid_convert(mac)
@@ -787,7 +808,7 @@ class GetmacExe(Method):
         # Network Adapter (the human-readable name)
         (r"\r\n.*", r".*" + MAC_RE_DASH + r".*\r\n"),
     ]  # type: List[Tuple[str, str]]
-    _champ = ()  # type: Union[tuple, Tuple[str, str]]
+    _champ = None  # type: Optional[Tuple[str, str]]
 
     def test(self):  # type: () -> bool
         # NOTE: the scripts from this library (getmac) are excluded from the
@@ -1379,7 +1400,8 @@ def _swap_method_fallback(method_type, swap_with):
     curr = METHOD_CACHE[method_type]
     FALLBACK_CACHE[method_type].remove(found)
     METHOD_CACHE[method_type] = found
-    FALLBACK_CACHE[method_type].insert(0, curr)  # noqa: T484
+    if curr is not None:
+        FALLBACK_CACHE[method_type].insert(0, curr)
 
     return True
 
@@ -1527,8 +1549,9 @@ def initialize_method_cache(
         )
 
     # Populate fallback cache with all the tested methods, minus the currently active method
-    if METHOD_CACHE[method_type] and METHOD_CACHE[method_type] in tested_methods:
-        tested_methods.remove(METHOD_CACHE[method_type])  # noqa: T484
+    current_method = METHOD_CACHE[method_type]
+    if current_method and current_method in tested_methods:
+        tested_methods.remove(current_method)
 
     FALLBACK_CACHE[method_type] = tested_methods
 
@@ -1871,7 +1894,8 @@ def get_mac_address(  # noqa: C901
                 global DEFAULT_IFACE
 
                 if not DEFAULT_IFACE:
-                    DEFAULT_IFACE = get_by_method("default_iface")  # noqa: T484
+                    default_iface = get_by_method("default_iface")
+                    DEFAULT_IFACE = default_iface if default_iface else ""
 
                     if DEFAULT_IFACE:
                         DEFAULT_IFACE = str(DEFAULT_IFACE).strip()

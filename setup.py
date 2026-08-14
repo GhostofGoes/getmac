@@ -36,6 +36,7 @@ setup(
     license="MIT",
     data_files=[],
     packages=["getmac"],
+    package_data={"getmac": ["py.typed"]},
     zip_safe=True,
     entry_points={"console_scripts": ["getmac2 = getmac.__main__:main"]}
     if sys.version_info[:2] <= (2, 7)
@@ -82,6 +83,7 @@ setup(
         "Programming Language :: Python :: Implementation :: PyPy",
         "Programming Language :: Python :: Implementation :: IronPython",
         "Programming Language :: Python :: Implementation :: Jython",
+        "Typing :: Typed",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
         "Intended Audience :: Information Technology",
