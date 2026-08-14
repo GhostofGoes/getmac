@@ -247,6 +247,7 @@ The [Python Discord server](https://discord.gg/python) is a good place to ask qu
 - Tomasz Duda (@tomaszduda23) - support for docker in network bridge mode
 - Steven Looman (@StevenLooman) - Windows 11 testing
 - Reimund Renner (@raymanP) - macOS fixes
+- Simone Chemelli (@chemelli74) - py.typed the library
 
 ## Sources
 Many of the methods used to acquire an address and the core logic framework are attributed to the CPython project's UUID implementation.
