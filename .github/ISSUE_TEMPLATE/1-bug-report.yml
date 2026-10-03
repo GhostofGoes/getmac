@@ -1,0 +1,115 @@
+name: "Bug Report"
+description: "Report an error, issue, or other unexpected behavior"
+title: "[BUG] "
+labels: ["bug"]
+type: bug
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for taking the time to report a bug! Please write in English and
+        provide **text output**, not screenshots or photos of screens.
+
+
+        **Security vulnerabilities must NOT be reported here.** See the
+        [Security Policy](https://github.com/GhostofGoes/getmac/security/policy) instead.
+  - type: input
+    attributes:
+      label: getmac version
+      description: >-
+        Output of `python -m getmac --version`.
+        Please don't say things like "latest" or "latest on main".
+      placeholder: "getmac 1.0.0"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Python version
+      description: "Python implementation, version, and architecture. Output of `python -VV` is ideal."
+      placeholder: "e.g., CPython 3.12.3 x64, PyPy 3.10 7.3.17"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Operating system
+      description: "OS name, version, and processor architecture. If using WSL or a container, say so."
+      placeholder: "e.g., Windows 11 23H2 x64, Ubuntu 24.04 x86_64, macOS 15.1 arm64, WSL2 Ubuntu 22.04 x86_64"
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Usage
+      description: "How are you using getmac?"
+      options:
+        - Python library
+        - Command line (CLI)
+        - Both
+        - Other / N/A
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Lookup type
+      description: "Which kind of lookup is affected? Select all that apply."
+      multiple: true
+      options:
+        - Default interface (no arguments)
+        - Local interface (interface / -i)
+        - Remote IPv4 host (ip / -4)
+        - Remote IPv6 host (ip6 / -6)
+        - Hostname (hostname / -n)
+        - get_default_interface()
+        - Other / N/A
+  - type: textarea
+    attributes:
+      label: Description
+      description: >-
+        A clear and concise description of the bug. Include the command(s) run or code used.
+        What did you expect to happen, and what actually happened?
+      placeholder: "Running `getmac -i eth0` printed nothing and exited with code 1, but `ip link show eth0` shows a MAC..."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: "Clear and concise list of steps, commands, or a minimal code snippet that reproduces the bug."
+      placeholder: "1. Install getmac with `pip install getmac`\n2. Run `python -m getmac -i eth0`\n3. See the error"
+  - type: textarea
+    attributes:
+      label: Debug output
+      description: >-
+        Output with debugging enabled, which shows which methods getmac tried and why they failed.
+        From the CLI, add `-v -dddd` to the command that's failing (e.g., `python -m getmac -v -dddd -i eth0`).
+        This is the most useful thing you can provide!
+        If it's longer than ~1000 characters, put it in a [GitHub Gist](https://gist.github.com/) and paste the link instead.
+      render: shell
+  - type: textarea
+    attributes:
+      label: Platform command output
+      description: >-
+        If getmac is parsing a command's output incorrectly, paste the raw output of that command
+        (e.g., `ip neighbor show`, `arp -a`, `ifconfig eth0`, `ipconfig /all`).
+        Captured output is used to write tests and fix parsers.
+      render: text
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: >-
+        Any other context about the problem, such as network setup (VPN, VM, Docker, bridged interfaces),
+        whether it worked in a previous getmac version, or links to related issues and PRs.
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      description: "Please confirm the following before submitting your issue."
+      options:
+        - label: >-
+            I have included no sensitive information in my issue. Redact any MAC addresses,
+            IP addresses, or hostnames you don't want to be public.
+          required: true
+        - label: >-
+            I have searched the existing issues and believe this is not a duplicate.
+            If it's closely related to another issue, I have linked to it.
+            If it's a duplicate, add your information to the existing issue instead of creating a new one.
+          required: true
+        - label: "This is not a security vulnerability (see the [Security Policy](https://github.com/GhostofGoes/getmac/security/policy))."
+          required: true

@@ -1,5 +1,11 @@
-blank_issues_allowed: true
+blank_issues_enabled: true
 contact_links:
   - name: Have a general question or comment?
     url: "https://github.com/GhostofGoes/getmac/discussions"
     about: Open a discussion thread!
+  - name: Documentation
+    url: "https://ghostofgoes.github.io/getmac/"
+    about: Usage guide, API reference, and command line documentation.
+  - name: Report a security vulnerability
+    url: "https://github.com/GhostofGoes/getmac/security/policy"
+    about: Please do NOT report security vulnerabilities in public issues.

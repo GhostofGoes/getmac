@@ -1,0 +1,61 @@
+name: "Feature Request"
+description: "Suggest a new feature, platform support, or other improvement"
+title: "[FEATURE] "
+labels: ["feature"]
+type: feature
+body:
+  - type: textarea
+    attributes:
+      label: Summary
+      description: "A brief description of the idea or feature."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Motivation
+      description: >-
+        Why is this feature important? What problem does it solve, or what use case does it enable?
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Platforms
+      description: "Which platforms does this apply to? Select all that apply."
+      multiple: true
+      options:
+        - All platforms
+        - Linux
+        - Windows
+        - macOS
+        - WSL
+        - BSD (FreeBSD, OpenBSD, etc.)
+        - Android
+        - Other (describe below)
+  - type: textarea
+    attributes:
+      label: Proposed solution
+      description: >-
+        Describe how you envision the feature working. Include any relevant details, such as:
+        changes to the Python API (`get_mac_address()` arguments, new functions),
+        new command line flags, or platform commands that could be used (e.g., `netsh`, `ip`, `lanscan`).
+  - type: textarea
+    attributes:
+      label: Alternatives considered
+      description: "Have you considered any alternative solutions or workarounds? If so, please describe them."
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: "Any other context about the feature request, including links to related issues or pull requests."
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      description: "Please confirm the following before submitting your issue."
+      options:
+        - label: "I have included no sensitive information in my issue."
+          required: true
+        - label: >-
+            I have searched the existing issues and believe this is not a duplicate
+            of an existing feature request.
+          required: true
+        - label: "I'm willing to submit a pull request for this feature (not required)."
+          required: false
