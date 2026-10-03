@@ -100,7 +100,7 @@ When fixing a parsing bug for a specific platform/command version, add the raw c
 - AI-authored PRs or PRs with AI-authored changes must include some sort of notice that the PR was authored by AI.
 - All documentation and CHANGELOG entries must be human-readable and use plain language, though acronyms and jargon is OK.
 - Keep PR descriptions concise and to the point, with what changed, the simple rationale, and anything a human reviewer needs to know at a high level.
-- Commits should be GPG-signed when possible. If GPG signing isn't available, warn the user and ask how to proceed before commiting a change or pushing changes.
+- Commits should be GPG-signed when possible. If GPG signing isn't available, warn the user and ask how to proceed before committing a change or pushing changes.
 
 ## TODOs
 
