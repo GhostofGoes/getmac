@@ -38,7 +38,7 @@ from ipaddress import (
     IPv6Network,
 )
 from subprocess import CalledProcessError
-from typing import Dict, Final, List, Optional, Set, Tuple, Type, Union
+from typing import Final, Optional, Union
 
 from . import utils
 from .variables import consts, gvars, settings
@@ -53,7 +53,7 @@ class Method:
     Subclasses should implement the :meth:`test` and :meth:`get` methods.
     """
 
-    VALID_PLATFORM_NAMES: Final[Set[str]] = {
+    VALID_PLATFORM_NAMES: Final[set[str]] = {
         "android",
         "darwin",
         "linux",
@@ -70,7 +70,7 @@ class Method:
     methods to the appropriate platform.
     """
 
-    platforms: Set[str] = set()
+    platforms: set[str] = set()
     """
     Platforms supported by a method.
     """
@@ -228,7 +228,7 @@ class ArpVariousArgs(Method):
     # If arguments have been tested
     _args_tested: bool = False
     # arguments that worked
-    _good_pair: Union[Tuple, Tuple[str, bool]] = ()
+    _good_pair: Union[tuple, tuple[str, bool]] = ()
 
     def test(self) -> bool:
         return utils.check_command("arp")
@@ -569,13 +569,13 @@ class GetmacExe(Method):
     platforms = {"windows"}
     method_type = "iface"
 
-    _regexes: Final[List[Tuple[str, str]]] = [
+    _regexes: Final[list[tuple[str, str]]] = [
         # Connection Name
         (r"\r\n", r".*" + consts.MAC_RE_DASH + r".*\r\n"),
         # Network Adapter (the human-readable name)
         (r"\r\n.*", r".*" + consts.MAC_RE_DASH + r".*\r\n"),
     ]
-    _champ: Union[tuple, Tuple[str, str]] = ()
+    _champ: Union[tuple, tuple[str, str]] = ()
 
     def test(self) -> bool:
         # NOTE: the scripts from this library (getmac) are excluded from the
@@ -790,7 +790,7 @@ class IfconfigOther(Method):
         ("-av", r".*?Ether\s"),
     )
     _args_tested: bool = False
-    _good_pair: List[Union[str, Tuple[str, str]]] = []
+    _good_pair: list[Union[str, tuple[str, str]]] = []
 
     def test(self) -> bool:
         return utils.check_command("ifconfig")
@@ -853,7 +853,7 @@ class NetstatIface(Method):
 
     # ".*?": non-greedy
     # https://docs.python.org/3/howto/regex.html#greedy-versus-non-greedy
-    _regexes: Final[List[str]] = [
+    _regexes: Final[list[str]] = [
         r": .*?ether " + consts.MAC_RE_COLON,
         r": .*?HWaddr " + consts.MAC_RE_COLON,
         # Ubuntu 12.04 and other older kernels
@@ -1107,7 +1107,7 @@ class DefaultIfaceFreeBsd(Method):
 
 # TODO: order methods by effectiveness/reliability
 #   Use a class attribute maybe? e.g. "score", then sort by score in cache
-METHODS = [
+METHODS: list[type[Method]] = [
     # NOTE: CtypesHost is faster than ArpExe because of sub-process startup times :)
     CtypesHost,
     ArpFile,
@@ -1135,11 +1135,11 @@ METHODS = [
     DefaultIfaceRouteGetCommand,
     DefaultIfaceOpenBsd,
     DefaultIfaceFreeBsd,
-]  # type: List[Type[Method]]
+]
 
 # TODO: move to gvars class? gotta love import loops with type annotations.
 #   Use deferred annotations/string annotations.
-METHOD_CACHE: Dict[str, Optional[Method]] = {
+METHOD_CACHE: dict[str, Optional[Method]] = {
     "ip4": None,
     "ip6": None,
     "iface": None,
@@ -1151,7 +1151,7 @@ Primary method to use for a given method type
 
 
 # TODO: move to gvars class?
-FALLBACK_CACHE: Dict[str, List[Method]] = {
+FALLBACK_CACHE: dict[str, list[Method]] = {
     "ip4": [],
     "ip6": [],
     "iface": [],
@@ -1166,7 +1166,7 @@ Order of methods is determined by:
 """
 
 
-def get_method_by_name(method_name: str) -> Optional[Type[Method]]:
+def get_method_by_name(method_name: str) -> Optional[type[Method]]:
     for method in METHODS:
         if method.__name__.lower() == method_name.lower():
             return method
@@ -1262,13 +1262,13 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
 
     # Filter methods by the type of MAC we're looking for, such as "ip"
     # for remote host methods or "iface" for local interface methods.
-    type_methods = [
+    type_methods: list[type[Method]] = [
         method
         for method in METHODS
         if (method.method_type != "ip" and method.method_type == method_type)
         # Methods with a type of "ip" can handle both IPv4 and IPv6
         or (method.method_type == "ip" and method_type in ["ip4", "ip6"])
-    ]  # type: List[Type[Method]]
+    ]
 
     if not type_methods:
         raise RuntimeError(f"No valid methods matching MAC type '{method_type}'")
@@ -1280,7 +1280,9 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         )
 
     # Filter methods by the platform we're running on
-    platform_methods = [method for method in type_methods if platform in method.platforms]  # type: List[Type[Method]]
+    platform_methods: list[type[Method]] = [
+        method for method in type_methods if platform in method.platforms
+    ]
 
     if not platform_methods:
         # If there isn't a method for the current platform,
@@ -1306,14 +1308,14 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
             f"No valid methods found for MAC type '{method_type}' and platform '{platform}'"
         )
 
-    filtered_methods = platform_methods  # type: List[Type[Method]]
+    filtered_methods: list[type[Method]] = platform_methods
 
     # If network_request is False, then remove any methods that have network_request=True
     if not network_request:
         filtered_methods = [m for m in platform_methods if not m.network_request]
 
     # Determine which methods work on the current system
-    tested_methods = []  # type: List[Method]
+    tested_methods: list[Method] = []
 
     for method_class in filtered_methods:
         method_instance = method_class()  # type: Method

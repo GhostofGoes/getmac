@@ -6,7 +6,7 @@ This file provides guidance to AI coding agents when working with code in this r
 
 `getmac` is a pure-Python, dependency-free library and CLI that gets the MAC address of local network interfaces or remote hosts on the LAN. It must run across many OSes (Windows, Linux, macOS/Darwin, WSL1/WSL2, BSDs, Solaris, HP-UX, Android) without any C-extensions, so all platform logic is implemented by shelling out to platform commands (`arp`, `ip`, `ifconfig`, `netstat`, `ipconfig.exe`, `wmic.exe`, `arping`, `networksetup`, `lanscan`, etc.), reading `/proc` or `/sys` files, or using stdlib features (`fcntl`, `ctypes`).
 
-**This is the `1.0.0-wip` branch** — an in-progress rewrite/modernization targeting Python 3.8+ only (Python 2, PyPy2, IronPython, and Jython support has been dropped). Don't reintroduce Python-2-compatible patterns (`# type: (...) -> ...` comments, `from __future__ import`, `six`-style shims) — this branch uses real type annotations and f-strings throughout. The `main` branch is still the 0.9.x line and is structured differently (single-file `getmac/getmac.py` with module-level globals) — don't assume patterns from `main` apply here.
+**This is the `1.0.0-wip` branch** — an in-progress rewrite/modernization targeting Python 3.9+ only (Python 2, PyPy2, IronPython, and Jython support has been dropped). Don't reintroduce Python-2-compatible patterns (`# type: (...) -> ...` comments, `from __future__ import`, `six`-style shims) — this branch uses real type annotations and f-strings throughout. The `main` branch is still the 0.9.x line and is structured differently (single-file `getmac/getmac.py` with module-level globals) — don't assume patterns from `main` apply here.
 
 ## Package layout
 
@@ -86,7 +86,7 @@ When fixing a parsing bug for a specific platform/command version, add the raw c
 
 ## Compatibility constraints
 
-- Must run on Python 3.8–3.14, CPython and PyPy — no C-extensions, stdlib only, no runtime dependencies.
+- Must run on Python 3.9–3.14, CPython and PyPy — no C-extensions, stdlib only, no runtime dependencies.
 - Prefer real type annotations (`def foo(x: str) -> Optional[str]:`) — this branch has already moved off the `# type:` comment style used on `main`.
 - Settings/constants are accessed through the `settings` / `consts` / `gvars` singletons in `getmac/variables.py`, not as bare module attributes on `getmac.getmac` (that was the 0.9.x pattern).
 

@@ -1,7 +1,6 @@
 import logging
 import sys
 from subprocess import PIPE, Popen
-from typing import List
 
 import pytest
 
@@ -12,7 +11,7 @@ from getmac.variables import settings
 BASE_CMD = [sys.executable, "-m", "getmac"]
 
 
-def run_cmd(command: List[str]) -> str:
+def run_cmd(command: list[str]) -> str:
     stdout, stderr = Popen(command, stdout=PIPE, stderr=PIPE).communicate()
     return stdout.decode("utf-8").strip() + stderr.decode().strip()
 

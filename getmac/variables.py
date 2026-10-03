@@ -6,7 +6,7 @@ import logging
 import os
 import platform
 import sys
-from typing import Dict, Final, List
+from typing import Final
 
 
 class VarsClass:
@@ -156,7 +156,7 @@ class Variables(VarsClass):
     Essentially most of the global variables in getmac.
     """
 
-    PATH: List[str] = os.environ.get("PATH", os.defpath).split(os.pathsep)
+    PATH: list[str] = os.environ.get("PATH", os.defpath).split(os.pathsep)
     """
     Get and cache the configured system PATH environment variable on import.
     The process environment does not change after a process is started.
@@ -173,7 +173,7 @@ class Variables(VarsClass):
     :meta hide-value:
     """
 
-    ENV: Dict[str, str] = dict(os.environ)
+    ENV: dict[str, str] = dict(os.environ)
     """
     Use a copy of the environment so any modifications that need to be made
     for operation of getmac doesn't modify the process's current environment.
@@ -181,7 +181,7 @@ class Variables(VarsClass):
     :meta hide-value:
     """
 
-    CHECK_COMMAND_CACHE: Dict[str, bool] = {}
+    CHECK_COMMAND_CACHE: dict[str, bool] = {}
     """
     Cache of commands that have been checked for existence by
     :func:`~getmac.utils.check_command`. This speeds up subsequent

@@ -4,11 +4,11 @@
 [metadata]
 groups = ["default", "docs", "lint", "test"]
 strategy = ["inherit_metadata"]
-lock_version = "4.5.0"
-content_hash = "sha256:24daaff9ccccad500297e42c4a731c5629327b1a07b82fd90b364028705e8dac"
+lock_version = "4.5.1"
+content_hash = "sha256:6c8b30c19245198c5cf9eba6cb41ff9353ed273a9d60ba53ff769269c6009e03"
 
 [[metadata.targets]]
-requires_python = "~=3.8"
+requires_python = "~=3.9"
 
 [[package]]
 name = "alabaster"

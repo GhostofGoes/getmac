@@ -5,7 +5,7 @@ license: MIT
 ---
 
 `getmac` is a pure-Python, dependency-free package (`pip install getmac`,
-Python 3.8+) with one job: given a local interface name, an IPv4/IPv6
+Python 3.9+) with one job: given a local interface name, an IPv4/IPv6
 address, or a hostname, return its MAC address. The common cases need no
 root/admin. Full docs: https://ghostofgoes.github.io/getmac/
 
@@ -120,7 +120,7 @@ equivalents of the CLI debugging flags.
 
 ## Older 0.9.x releases
 
-If 0.9.x is installed (the last line supporting Python 2.7–3.7), the core
+If 0.9.x is installed (the last line supporting Python 2.7–3.8), the core
 `get_mac_address()` call and CLI flags are the same, except:
 
 - There's no `get_default_interface()` or `getmac.settings`. Set

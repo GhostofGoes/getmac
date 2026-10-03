@@ -3,7 +3,7 @@
 
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
-**Announcement**: Compatibility with Python versions older than 3.8 (2.7, 3.4, 3.5, 3.6, 3.7) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
+**Announcement**: Compatibility with Python versions older than 3.9 (2.7, 3.4, 3.5, 3.6, 3.7, 3.8) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
 
 ## 1.0.0 (TBD)
 
@@ -29,7 +29,7 @@
 * Reduce size of wheel distribution (`.whl` file)
 
 ### Removed
-* Removed support for Python 2.7 - 3.7. Most of the tooling used by getmac no longer works with 3.7 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
+* Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
 * Removed support for Jython. As of Dec 2025, [Jython](https://github.com/jython/jython) still does not support Python 3. If and when it supports Python 3, I'll re-add support for it.
 * Removed support for IronPython. [IronPython3 exists](https://github.com/IronLanguages/ironpython3), however I don't have a way to test it in CI. If someone knows of a way to test it in GitHub actions, let me know, and I'm happy to re-add support.
 * Removed RPM packaging, as it hasn't been maintained since 0.6.0.

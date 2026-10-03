@@ -2,7 +2,7 @@
 [![PyPI - Current Version](https://img.shields.io/pypi/v/getmac?label=PyPI)](https://pypi.org/project/getmac/)
 [![codecov](https://codecov.io/github/GhostofGoes/getmac/graph/badge.svg?token=5NxlAE9eGY)](https://codecov.io/github/GhostofGoes/getmac)
 [![GitHub Actions Pipeline Status](https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostofGoes/getmac/actions)
-![Python Version](https://img.shields.io/badge/Python-3.8|3.9|3.10|3.11|3.12-blue.svg)
+![Python Version](https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14-blue.svg)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9388/badge)](https://www.bestpractices.dev/projects/9388)
 [![Weekly PyPI downloads](https://pepy.tech/badge/getmac/week)](https://pepy.tech/project/getmac)
 [![PyPI downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
@@ -148,7 +148,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 
 ## Features
 - Pure-Python (no compiled C-extensions required!)
-- Python 3.8+
+- Python 3.9+
 - Lightweight, with no dependencies and a relatively small package size (no binary extensions)
 - Supports most platforms with NO binary extensions required!
 - Supports CPython and [PyPy](https://www.pypy.org/)
@@ -209,7 +209,7 @@ All or almost all features should work on "supported" platforms. While other ver
 - BusyBox (not technically a platform, but several of the methods work on this platform)
 
 ## Legacy Python versions
-If you are running a old Python (2.6/3.3 and older) or interpreter, then you can install an older version of `getmac` that supported that version. The wheels are available in the [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or from PyPI with a current version of `pip` and some special arguments.
+If you are running an old Python (3.8 and older) or interpreter, then you can install an older version of `getmac` that supported that version. The wheels are available in the [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or from PyPI with a current version of `pip` and some special arguments.
 
 - Python 2.5: `get-mac==0.5.0`
 - Python 2.6: `getmac==0.6.0`
@@ -220,6 +220,7 @@ If you are running a old Python (2.6/3.3 and older) or interpreter, then you can
 - Python 3.5: `getmac<1.0.0`
 - Python 3.6: `getmac<1.0.0`
 - Python 3.7: `getmac<1.0.0`
+- Python 3.8: `getmac<1.0.0`
 
 NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
 
