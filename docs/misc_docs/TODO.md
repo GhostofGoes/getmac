@@ -18,7 +18,6 @@
 - [ ] >90% test coverage
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 - [ ] Add tests for more samples (new third-party samples)
-- [ ] Use `prek` for linting
 
 ## Features
 - [x] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
@@ -193,6 +192,8 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 - [ ] Automate publishing in GitHub Actions. When a tag is created, publish release to PyPI, and generate a GitHub release.
     - This is going to require re-doing how changelogs are created a bit.
+- [ ] Use towncrier for release notes (or another fragment-file based system, avoid merge conflicts)
+- [ ] Use `prek` for linting
 
 
 # Post-1.0.0
