@@ -18,6 +18,7 @@
 - [ ] >90% test coverage
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 - [ ] Add tests for more samples (new third-party samples)
+- [ ] Use `prek` for linting
 
 ## Features
 - [x] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`

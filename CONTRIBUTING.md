@@ -16,10 +16,25 @@ Your code *must*:
 * Pass linting (code quality checks)
 * Pass CI (GitHub Actions)
 * Adhere to the [Code of Conduct](CODE_OF_CONDUCT.md)
+* Adhere to the [AI policy below](#ai-policy)
+* Branch names and commits must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) notation, e.g. a branch should be `feat-my-feature`, not `patch-1`, and commits should be `feat: myfeature description`, not `add some cool thing check it out`.
 
 Most of these requirements are checked in CI (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Ruff's formatter](https://docs.astral.sh/ruff/formatter/). You can write whatever format you want, as long as you run the formatter before pushing, you're good (`pdm run format`).
 
-Please be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Memes, references, and jokes are OK. Be nice, we're all human, and code is the great equalizer.
+Please be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Memes, references, and jokes are OK. Be nice, we're all human (well, most of us), and code is the great equalizer.
+
+### AI Policy
+
+AI-assisted contributions are allowed, with the following requirements:
+
+* [ ] All commits must include Co-Authorship indicating the commit was authored in-part or wholly by AI
+* [ ] PR description must note that the contribution was authoried in-part or wholly by AI
+* [ ] You (the human) must personally review all *non-test* changes by the AI. This is a small project, it's not a big ask. If it's obvious you have not done this, your PR will be closed, kthnxbai.
+* [ ] It's OK to draft CHANGELOG and documentation with the AI, but please write it in your own words. AI-verbiage will be told once to be made human, second offence => PR closed.
+
+This policy only applies to agent-powered AI contributions. It doesn't apply if you're just using AI tab-completion in an editor or a chatbot to answer questions or generate code snippets (unless the chatbot generates ALL your code, then it applies).
+
+It's a (hopefully) straightforward and easy to follow policy. Therefore, if you don't follow this policy, you risk your PR being closed, and possibly being banned from the repo (and risk your GitHub account being suspended). I've had annoying bots on other repos, don't be that guy.
 
 ## Checklist before submitting a pull request
 * [ ] Code is formatted using `ruff` (`pdm run format`)
@@ -29,6 +44,7 @@ Please be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Memes
     * [ ] Lint: `pdm run lint`
 * [ ] Update the [CHANGELOG](CHANGELOG.md) (if applicable, for non-trivial changes)
 * [ ] Add your name to the contributors list in the [README](README.md) (please include what your contribution was after your name)
+* [ ] (AI Bots) The AI policy was followed
 
 ## Checklist before a Pull Request will be merged
 * [ ] *All* tests pass in GitHub Actions
