@@ -69,11 +69,11 @@ updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
 # Enable debugging
 settings.DEBUG = 2  # DEBUG level 2
-print(getmac.get_mac_address(interface="Ethernet 3"))
+print(get_mac_address(interface="Ethernet 3"))
 
 # Change the UDP port used for updating the ARP table (UDP packet)
 settings.PORT = 44444  # Default is 55555
-print(getmac.get_mac_address(ip="192.168.0.1", network_request=True))
+print(get_mac_address(ip="192.168.0.1", network_request=True))
 
 # Get the name of the system's default network interface
 # NOTE: this doesn't currently work on Windows
@@ -250,12 +250,12 @@ The Python standard library has a robust set of networking functionality, such a
 
 In Fall 2018 the package name changed to `getmac` from `get-mac`. This affected the package name, the CLI script, and some of the documentation. There were no changes to the core library code. While both package names will updated on PyPI, the use of `getmac` is preferred.
 
-In Summer 2020, the code was significantly refactored, moving to a class-based structure and significantly improving performance and accuracy. See [docs/rewrite.md](docs/rewrite.md) for details.
+In Summer 2020, the code was significantly refactored, moving to a class-based structure and significantly improving performance and accuracy. See [rewrite.md](https://github.com/GhostofGoes/getmac/blob/main/docs/misc_docs/rewrite.md) for details.
 
 ## Contributing
-Contributors are more than welcome! See the [contribution guide](CONTRIBUTING.md) to get started, and checkout the [todo list](TODO.md) for a full list of tasks and bugs.
+Contributors are more than welcome! See the [contribution guide](https://ghostofgoes.github.io/getmac/contributing.html) to get started, and checkout the [todo list](https://github.com/GhostofGoes/getmac/blob/main/docs/misc_docs/TODO.md) for a full list of tasks and bugs.
 
-Before submitting a PR, please make sure you've completed the [pull request checklist](CONTRIBUTING.md#Code_requirements)!
+Before submitting a PR, please make sure you've completed the [pull request checklist](https://ghostofgoes.github.io/getmac/contributing.html#checklist-before-submitting-a-pull-request)!
 
 The [Python Discord server](https://discord.gg/python) is a good place to ask questions or discuss the project (handle: `@knownerror`).
 
@@ -282,10 +282,10 @@ Many of the methods used to acquire an address and the core logic framework are 
 
 ### Other notable sources
 - [_unix_fcntl_by_interface](https://stackoverflow.com/a/4789267/2214380)
-- [_windows_get_remote_mac_ctypes](goo.gl/ymhZ9p)
+- [_windows_get_remote_mac_ctypes](https://github.com/ActiveState/code/tree/master/recipes/Python/347812_Get_MAC_address_remote)
 - [String joining](https://stackoverflow.com/a/3258612/2214380)
 - [Facter](https://github.com/puppetlabs/facter) - Command output examples from Facter are leveraged for better test coverage
 - [GLPI Agent](https://github.com/glpi-project/glpi-agent) - Command output examples from GLPI Agent are leveraged for better test coverage
 
 ## License
-The code is licensed MIT. The test data contains Apache 2.0 and GPLv2 licensed files, in the `tests/samples/third_party/` directory.
+The code is licensed MIT. The test data contains Apache 2.0 and GPLv2 licensed files, in the `tests/samples/third_party/` directory. These files are not included in the packages published to PyPI.
