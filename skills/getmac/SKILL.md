@@ -1,152 +1,129 @@
 ---
 name: getmac
-description: Get the MAC (hardware/Ethernet) address of a local network interface or a remote host on the LAN, using the `getmac` CLI or Python library (`pip install getmac`). Use when asked to look up, find, or resolve a MAC address / hardware address / NIC address for a network interface, IP address, or hostname, either from the command line or inside a Python script.
+description: Look up the MAC address of a local network interface, or of a remote host on the LAN by IP or hostname, using the `getmac` Python package (CLI or library). Use whenever a task needs a MAC/hardware address, from the shell or from Python code.
+license: MIT
 ---
 
-`getmac` is a small, dependency-free Python package providing a CLI and a
-library function for one job: given a local interface name, an IP/IPv6
-address, or a hostname, return its MAC address. It requires no special
-privileges (no root/admin needed) for the common cases below.
+`getmac` is a pure-Python, dependency-free package (`pip install getmac`,
+Python 3.8+) with one job: given a local interface name, an IPv4/IPv6
+address, or a hostname, return its MAC address. The common cases need no
+root/admin. Full docs: https://ghostofgoes.github.io/getmac/
 
-This skill covers the **currently published PyPI release (`getmac` 0.9.5)**
-— the version `pip install getmac` actually gives you today. Don't assume
-newer-looking APIs from the project's GitHub `README` at the tip of its
-`main` branch or other in-development branches are already released; verify
-with `pip show getmac` / `getmac --version` if in doubt.
+This skill covers **getmac 1.x**. Check the installed version with
+`python -m getmac --version`. If it reports 0.9.x, see
+[Older 0.9.x releases](#older-09x-releases) at the end.
 
-## Install
+## CLI
 
-```bash
-pip install getmac
-```
+Prefer `python -m getmac` over the bare `getmac` command: on Windows, the
+built-in `C:\Windows\System32\getmac.exe` usually shadows it on `PATH`.
 
-Puts a `getmac` executable on `PATH` and makes `import getmac` available.
-No compiled dependencies — pure Python, works the same via `pipx install
-getmac` if you want it isolated from a project's own environment.
-
-## CLI usage
+The lookup modes are mutually exclusive, so pass at most one:
 
 ```bash
-getmac --help          # or: python -m getmac --help (identical, same argparse)
-getmac --version        # -> getmac 0.9.5
+python -m getmac                    # MAC of the default interface
+python -m getmac -i eth0            # local interface
+python -m getmac -4 192.168.1.1     # remote IPv4 host
+python -m getmac -6 fe80::1         # remote IPv6 host
+python -m getmac -n router.lan      # hostname (resolved to IPv4 via DNS, then looked up)
 ```
 
-The four lookup modes are mutually exclusive — pass at most one:
+**Output contract:** on success, stdout contains only the MAC (lowercase,
+colon-separated, e.g. `00:0c:29:be:5c:9e`) and the exit code is `0`. On any
+failure, stdout is empty and the exit code is `1`. Check the exit code
+instead of matching text:
 
 ```bash
-getmac                          # no args: MAC of the default network interface
-getmac -i eth0                  # MAC of a named local interface
-getmac -4 192.168.1.1           # MAC of a remote IPv4 host (populates ARP table first)
-getmac -6 fe80::1               # MAC of a remote IPv6 host
-getmac -n router.lan            # MAC of a host by hostname (resolved via DNS, then looked up)
-```
-
-Verified against a real machine (interface `ens33`, an IP already present in
-its ARP table):
-
-```
-$ getmac
-00:0c:29:be:5c:9e
-$ getmac -i ens33
-00:0c:29:be:5c:9e
-$ getmac -4 192.168.235.2
-00:50:56:e6:19:8a
-$ getmac -n localhost
-00:00:00:00:00:00
-```
-
-**Output contract**: on success, the MAC (lowercase, colon-separated, e.g.
-`00:0c:29:be:5c:9e`) is the *only* thing printed to stdout, and the process
-exits `0`. On failure (interface doesn't exist, host unreachable/not in
-ARP table, etc.) **nothing is printed to stdout and the exit code is `1`** —
-this is the reliable way to detect success/failure in a script, not text
-matching:
-
-```bash
-if mac=$(getmac -i "$IFACE_NAME") && [[ -n "$mac" ]]; then
+if mac=$(python -m getmac -i "$IFACE"); then
   echo "Found: $mac"
 else
-  echo "Could not resolve a MAC for $IFACE_NAME" >&2
+  echo "No MAC found for $IFACE" >&2
 fi
 ```
 
-Useful flags:
+Other flags:
 
 | Flag | Effect |
 |---|---|
-| `-N`, `--no-net` | Don't send a UDP packet / use `arping` to refresh the ARP table before an IP/hostname lookup — only use what's already cached. Faster, but more likely to return nothing for a host not recently contacted. |
-| `-v`, `--verbose` | Log progress messages to **stderr** (stdout still carries only the final MAC). |
-| `-d`, `--debug` | More detail than `-v`; stack with `-dd` for even more. All still on stderr. |
-| `--override-port PORT` | Change the UDP port used to "ping" a host into populating the ARP table (default `55555`). |
-| `--override-platform PLATFORM` | Force platform-specific lookup logic (e.g. `linux`, `windows`, `freebsd`) instead of auto-detecting. Mainly a debugging aid — don't use to make an incompatible method work, it won't. |
-| `--force-method METHOD` | Force one specific internal lookup method by name, bypassing normal fallback. Debugging-only; skips the method's own feasibility check. |
+| `-N`, `--no-net` | Don't run `arping` or send a UDP packet to refresh the ARP table first; only use what's cached. Faster, but likely to find nothing for a host not recently contacted. |
+| `-v` / `-d` / `-dd` | Log progress / debug detail to **stderr**. stdout still carries only the MAC. |
+| `--override-port PORT` | UDP port used to provoke an ARP entry (default `55555`). |
+| `--override-platform`, `--force-method` | Debugging aids only. They bypass platform detection and method feasibility checks, so they won't make an unsupported lookup work. |
 
 ## Python API
 
 ```python
-from getmac import get_mac_address
+from getmac import get_mac_address, get_default_interface
 
+get_mac_address()                     # default interface
 get_mac_address(interface="eth0")
 get_mac_address(ip="192.168.1.1")
 get_mac_address(ip6="fe80::1")
 get_mac_address(hostname="router.lan")
-get_mac_address(ip="10.0.0.1", network_request=True)  # default; set False to skip the ARP-refresh probe
+get_mac_address(ip="10.0.0.1", network_request=False)  # skip the ARP-refresh probe
+
+get_default_interface()               # e.g. "eth0" (name, not MAC); not supported on Windows
 ```
 
-Verified directly:
+Pass at most one of `interface` / `ip` / `ip6` / `hostname`. Inputs can be
+`str` or `bytes` (decoded as UTF-8). `ip` and `ip6` also accept `ipaddress`
+objects:
 
 ```python
->>> from getmac import get_mac_address
->>> get_mac_address(interface="ens33")
-'00:0c:29:be:5c:9e'
->>> get_mac_address(ip="192.168.235.2")
-'00:50:56:e6:19:8a'
->>> get_mac_address(interface="does-not-exist")
-None
+import ipaddress
+
+get_mac_address(ip=ipaddress.ip_address("192.168.1.1"))
+get_mac_address(ip=ipaddress.ip_interface("192.168.1.1/24"))  # uses the host part
+get_mac_address(ip=ipaddress.ip_address("fe80::1"))           # IPv6 object -> treated as ip6
 ```
 
-**On failure this returns `None`, it does not raise.** Internally, exceptions
-from platform-specific lookup methods are caught and logged, not propagated
-— so always check for `None` rather than wrapping calls in `try`/`except`.
+A *string* passed to `ip` is always treated as IPv4; use `ip6` for IPv6
+strings.
 
-`interface`/`ip`/`ip6`/`hostname` are mutually exclusive — pass exactly one,
-or none to get the default interface's MAC.
+### Failures and exceptions
 
-### Runtime settings (module-level, not function args)
+- **A lookup that finds nothing returns `None`.** This covers an unknown
+  interface, an unreachable host and an unresolvable hostname. Errors inside
+  the platform lookup methods are caught and logged, so check for `None`.
+- **`ValueError`** means a bad argument: an `IPv4Network`/`IPv6Network`
+  (getmac needs a host, not a network) or an unsupported type such as `int`.
+- **`RuntimeError`** means getmac has no working lookup method for this kind
+  of request on this platform, e.g. none of the commands it relies on are
+  available. Retrying won't help; it's an environment problem, or a bug worth
+  reporting upstream.
+
+### Settings
+
+Settings live on the `getmac.settings` object. Set them before calling:
 
 ```python
-from getmac import getmac as _getmac_internals
+import getmac
 
-_getmac_internals.DEBUG = 2        # 0 (off) .. ~4 (max) — logs via the "getmac" logger
-_getmac_internals.PORT = 44444     # UDP port for the ARP-refresh probe, default 55555
+getmac.settings.DEBUG = 2     # 0 (off) to ~4; logs via the "getmac" logger
+getmac.settings.PORT = 44444  # UDP port for the ARP-refresh probe
 ```
 
-These are plain module attributes on the internal `getmac.getmac` module
-(there is no separate `settings` object in this release) — set them before
-calling `get_mac_address()`. Debug/verbose output goes through Python's
-`logging` module under the logger name `"getmac"`; configure it the normal
-way (`logging.basicConfig(...)`) to actually see the messages.
+To see the debug output, configure `logging` (e.g. `logging.basicConfig()`).
+`settings` also has `OVERRIDE_PLATFORM` and `FORCE_METHOD`, the library
+equivalents of the CLI debugging flags.
 
 ## Gotchas
 
-- **`get_default_interface` is not available in this release.** It only
-  exists on getmac's in-development branches, not in the published 0.9.5
-  on PyPI — `from getmac import get_default_interface` raises `ImportError`
-  today. To get the MAC of the default interface, just call
-  `get_mac_address()` with no arguments (CLI: `getmac` with no flags) —
-  that already resolves the default interface internally.
-- **A nonexistent interface name and an unreachable/unknown IP behave the
-  same way**: CLI exits 1 with empty stdout, library call returns `None`.
-  There's no separate "interface doesn't exist" vs. "host not found" signal
-  — don't try to distinguish them from the return value alone.
-- **`getmac -v`/`-d` output goes to stderr, not stdout** — if you're
-  capturing output in a script, `$(getmac -v ...)` via normal command
-  substitution is safe (stderr isn't captured), but don't parse `2>&1`
-  combined output expecting the MAC to be on a predictable line.
-- **IP/hostname lookups need the target to be on the same LAN /
-  broadcast domain.** There is no way to get a MAC for a host outside the
-  local network — `getmac -4 8.8.8.8` will not work and isn't a bug.
-- **Windows/macOS/BSD-specific behavior** (e.g. `arp.exe`, `wmic.exe`,
-  `networksetup` on macOS) is documented in the upstream README but wasn't
-  exercised for this skill — it was verified only on Linux. Don't assume
-  parity; if it matters, test on the actual target platform.
+- **The target must be on the local network.** MACs aren't visible across
+  routers, so `-4 8.8.8.8` returning nothing is expected, not a bug.
+- **Failures are indistinguishable.** A nonexistent interface and an
+  unreachable host both give `None` / exit code 1 with empty stdout.
+- **`localhost` / `127.0.0.1` return `00:00:00:00:00:00`.**
+- **The first call is slower.** getmac probes which platform commands work
+  and caches the result for the rest of the process, so later calls are
+  faster.
+
+## Older 0.9.x releases
+
+If 0.9.x is installed (the last line supporting Python 2.7–3.7), the core
+`get_mac_address()` call and CLI flags are the same, except:
+
+- There's no `get_default_interface()` or `getmac.settings`. Set
+  `getmac.getmac.DEBUG` / `getmac.getmac.PORT` module attributes instead.
+- `ipaddress` objects aren't accepted. Pass strings.
+- On Python 2, the console script is `getmac2`.
