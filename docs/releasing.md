@@ -3,8 +3,14 @@
 **NOTE**: Linux is required to build the `.deb` package.
 
 ```bash
-python -m pip install -U pip
-pip install -U setuptools twine wheel
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y build-essential fakeroot debhelper dh-python python3-all python3.11 python3.11-venv
+
+python3.11 -m venv ~/py311venv
+source ~/py311venv/bin/activate
+
+pip install setuptools twine wheel
 pip install -U stdeb
 ```
 
@@ -30,9 +36,10 @@ python setup.py sdist bdist_wheel --universal
 ```bash
 twine upload dist/*
 ```
-9. Build the Debian package
+9. Build the Debian package. `nocheck` skips the Debian test step. Must be run in a weird way. This project is getting rickity, need 1.0 release already.
 ```bash
-python setup.py --command-packages=stdeb.command bdist_deb
+deactivate
+rm -rf deb_dist && DEB_BUILD_OPTIONS=nocheck /home/cgoes/py311env/bin/python setup.py --command-packages=stdeb.command bdist_deb
 ```
 10. Create a tagged release on GitHub including:
     a) The relevant section of the CHANGELOG in the body

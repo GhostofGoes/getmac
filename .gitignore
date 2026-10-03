@@ -2,6 +2,7 @@
 .vscode/
 .vagrant/
 .pdm-python
+/*.tar.gz
 
 .pytest_cache
 

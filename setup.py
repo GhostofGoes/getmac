@@ -22,6 +22,8 @@ setup(
     version=__version__,
     author="Christopher Goes",
     author_email="ghostofgoes@gmail.com",
+    maintainer="Christopher Goes",
+    maintainer_email="ghostofgoes@gmail.com",
     description="Get MAC addresses of remote hosts and local interfaces",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -62,7 +64,6 @@ setup(
         # TODO(1.0.0): change to 5 - Production/Stable
         "Development Status :: 4 - Beta",
         "Environment :: Console",
-        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX",
