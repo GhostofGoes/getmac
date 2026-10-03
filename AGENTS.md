@@ -105,3 +105,8 @@ When fixing a parsing bug for a specific platform/command version, add the raw c
 ## TODOs
 
 - My list of tasks to do is in [docs/misc_docs/TODO.md](./docs/misc_docs/TODO.md). Reference this when completing a task to see if anything should be checked off or updated.
+
+## Security
+
+- Anonymize any MAC addresses, IP addresses, hostnames, or other potentially sensitive information before comitting or pushing (unless those values were generated from thin air and not from a real system).
+- Do not commit any sensitive information including keys, API keys, tokens, GPG keys, SSH keys, passwords, etc.
