@@ -108,5 +108,5 @@ When fixing a parsing bug for a specific platform/command version, add the raw c
 
 ## Security
 
-- Anonymize any MAC addresses, IP addresses, hostnames, or other potentially sensitive information before comitting or pushing (unless those values were generated from thin air and not from a real system).
+- Anonymize any MAC addresses, IP addresses, hostnames, or other potentially sensitive information before committing or pushing (unless those values were generated from thin air and not from a real system).
 - Do not commit any sensitive information including keys, API keys, tokens, GPG keys, SSH keys, passwords, etc.
