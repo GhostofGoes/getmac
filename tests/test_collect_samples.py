@@ -218,7 +218,7 @@ def test_default_dir_name(mocker, collect_samples, uname, os_release, expected):
 def test_main(mocker, capsys, tmp_path, collect_samples):
     """Collect samples with fake commands, without running anything for real."""
 
-    def fake_run_command(argv, env, timeout, merge_stderr=False):  # noqa: ARG001
+    def fake_run_command(argv, *_args):
         if argv[0] == "/bin/ndp":
             return collect_samples.RunResult(1, b"some output\n", b"ndp: error!")
         if argv[0] == "/bin/arping":
