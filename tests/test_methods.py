@@ -304,11 +304,6 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
             "ubuntu_18.10/proc_net_arp.out",
         ),
         ("00:50:56:c0:00:0a", "192.168.95.1", "ubuntu_18.10/proc_net_arp.out"),
-        (
-            "00:50:56:fa:b7:54",
-            "192.168.95.254",
-            "ubuntu_18.10/proc_net_arp.out",
-        ),
         ("52:55:0a:00:02:02", "10.0.2.2", "android_6/cat_proc-net-arp.out"),
         (
             "02:00:00:00:01:00",
@@ -319,6 +314,27 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
             "8e:8f:aa:c9:d2:8b",
             "192.168.200.1",
             "android_9/cat_proc-net-arp.out",
+        ),
+        # Same MAC as the incomplete 192.168.0.46 entry above it (issue #76)
+        ("02:00:00:00:00:47", "192.168.0.47", "ubuntu_20.04/cat_proc-net-arp.out"),
+        # Synthetic sample, rows formatted the same way as the kernel's
+        # arp_format_neigh_entry() and arp_format_pneigh_entry() (net/ipv4/arp.c)
+        (
+            "02:00:00:00:00:10",
+            "192.0.2.10",
+            "linux_synthetic/cat_proc-net-arp_flags.out",
+        ),
+        # Permanent entry (Flags 0x6), listed after 192.0.2.10
+        (
+            "02:00:00:00:00:01",
+            "192.0.2.1",
+            "linux_synthetic/cat_proc-net-arp_flags.out",
+        ),
+        # Incomplete entry on eth0, complete entry for the same IP on eth1
+        (
+            "02:00:00:00:00:22",
+            "192.0.2.2",
+            "linux_synthetic/cat_proc-net-arp_flags.out",
         ),
     ],
 )
@@ -333,10 +349,67 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     assert not getmac.ArpFile().get(mac)
 
     mocker.patch("getmac.utils.read_file", return_value=None)
-    assert not getmac.ArpFile().get(ip)
+    inst = getmac.ArpFile()
+    assert not inst.get(ip)
+    assert inst.unusable is True
 
     mocker.patch("getmac.utils.read_file", return_value="")
     assert not getmac.ArpFile().get(ip)
+
+    mocker.patch("getmac.utils.check_path", return_value=False)
+    assert getmac.ArpFile().test() is False
+    utils.check_path.assert_called_once_with("/proc/net/arp")
+
+
+@pytest.mark.parametrize(
+    ("ip", "sample_file"),
+    [
+        # Entries with Flags 0x0 are incomplete or failed, and must be ignored
+        # even if they still have a (stale) MAC (issue #76)
+        ("192.168.0.46", "ubuntu_20.04/cat_proc-net-arp.out"),
+        ("192.168.95.254", "ubuntu_18.10/proc_net_arp.out"),
+        ("104.198.143.177", "ubuntu_18.10/proc_net_arp.out"),
+        ("192.0.2.4", "linux_synthetic/cat_proc-net-arp_flags.out"),
+        # Proxy ARP entry (Flags 0xc, published), it doesn't have a real MAC
+        ("192.0.2.3", "linux_synthetic/cat_proc-net-arp_flags.out"),
+        # Must match the whole IP, not just the end of it
+        ("92.168.16.2", "ubuntu_18.04/cat_proc-net-arp.out"),
+        ("2.0.2.1", "linux_synthetic/cat_proc-net-arp_flags.out"),
+        # Not in the table at all
+        ("192.168.0.48", "ubuntu_20.04/cat_proc-net-arp.out"),
+        ("192.0.2.5", "linux_synthetic/cat_proc-net-arp_flags.out"),
+    ],
+)
+def test_arpfile_ignored_entries(mocker, get_sample, ip, sample_file):
+    mocker.patch("getmac.utils.read_file", return_value=get_sample(sample_file))
+    assert getmac.ArpFile().get(ip) is None
+
+
+def test_arpfile_get_mac_address_issue_76(mocker, get_sample):
+    """
+    get_mac_address() shouldn't return the stale MAC of an
+    incomplete entry in ``/proc/net/arp`` (issue #76).
+    """
+    mocker.patch(
+        "getmac.getmac.METHOD_CACHE",
+        {"ip4": getmac.ArpFile(), "ip6": None, "iface": None, "default_iface": None},
+    )
+    mocker.patch(
+        "getmac.getmac.FALLBACK_CACHE",
+        {"ip4": [], "ip6": [], "iface": [], "default_iface": []},
+    )
+    mocker.patch(
+        "getmac.utils.read_file",
+        return_value=get_sample("ubuntu_20.04/cat_proc-net-arp.out"),
+    )
+    # Don't send the UDP packet used to populate the ARP table
+    mock_socket = mocker.patch("socket.socket")
+
+    assert getmac.get_mac_address(ip="192.168.0.47") == "02:00:00:00:00:47"
+    mock_socket.assert_not_called()
+
+    assert getmac.get_mac_address(ip="192.168.0.46") is None
+    mock_socket.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
 
 
 @pytest.mark.parametrize(
@@ -364,6 +437,11 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
             "8e:8f:aa:c9:d2:8b",
             "fe80::8c8f:aaff:fec9:d28b",
             "android_9/ip_neighbor.out",
+        ),
+        (
+            "00:0d:b9:37:2b:c2",
+            "10.0.10.1",
+            "third_party/glpi_agent/generic/arp/linux-ip-neighbor",
         ),
     ],
 )

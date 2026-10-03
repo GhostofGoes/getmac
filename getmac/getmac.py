@@ -134,12 +134,22 @@ class Method:
 class ArpFile(Method):
     """
     Use the contents of ``/proc/net/arp`` to find the MAC address of a host.
+
+    Only complete entries are used. Incomplete and failed entries are ignored,
+    since the kernel keeps the last known (possibly stale) MAC for failed entries.
     """
 
     platforms = {"linux"}
     method_type = "ip4"
 
     _path: Final[str] = os.environ.get("ARP_PATH", "/proc/net/arp")
+
+    # ATF_COM, "completed entry (ha valid)", from include/uapi/linux/if_arp.h.
+    # The kernel sets it for entries with a usable MAC (0x2), along with ATF_PERM
+    # for permanent entries (0x6). Incomplete and failed entries are 0x0, and
+    # proxy ARP entries are 0xc (ATF_PUBL | ATF_PERM) with an all-zero MAC.
+    # The net-tools and BusyBox "arp" commands use this flag the same way.
+    _ATF_COM: Final[int] = 0x02
 
     def test(self) -> bool:
         return utils.check_path(self._path)
@@ -154,16 +164,24 @@ class ArpFile(Method):
             self.unusable = True
             return None
 
-        if data is not None and len(data) > 1:
-            # TODO: handle flags column, 0x0 entries are incomplete and should be ignored
-            # https://github.com/GhostofGoes/getmac/issues/76
-            # Need to get some samples, probably by doing wifi schennigans
-            # Not sure if worth addressing for arp command parsers,
-            # thought maybe it's a use case for Android? (ArpFile no work?)
+        # Columns: IP address, HW type, Flags, HW address, Mask, Device
+        # The IP must be the whole first column, otherwise a search for 192.168.16.2
+        # would match 192.168.16.254 (or 92.168.16.2 match 192.168.16.2) if it comes first!
+        regex = (
+            r"^"
+            + re.escape(arg)
+            + r"[ \t]+\S+[ \t]+(0x[0-9a-fA-F]+)[ \t]+"
+            + consts.MAC_RE_COLON
+            + r"\s"
+        )
 
-            # Need a space, otherwise a search for 192.168.16.2
-            # will match 192.168.16.254 if it comes first!
-            return utils.search(re.escape(arg) + r" .+" + consts.MAC_RE_COLON, data)
+        # An IP can have entries on more than one interface, use the first complete one
+        for match in re.finditer(regex, data, re.MULTILINE):
+            flags, mac = match.groups()
+            if int(flags, 16) & self._ATF_COM:
+                return mac
+            if settings.DEBUG:
+                gvars.log.debug(f"ArpFile: ignoring incomplete entry for {arg} (flags: {flags})")
 
         return None
 

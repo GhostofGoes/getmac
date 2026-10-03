@@ -27,6 +27,7 @@
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
 * **BREAKING CHANGE**: `RuntimeError` is now raised in cases where no methods are found matching the type of request and platform, or if all matching methods fail to test. This should almost never happen unless you're on an exotic platform or have an unusual configuration, or a recent platform update changed commands such that getmac no longer functions. If you encounter a `RuntimeError` exception, it means something went horribly wrong, and you should considor reporting the [issue on GitHub](https://github.com/GhostofGoes/getmac/issues).
 * Reduce size of wheel distribution (`.whl` file)
+* Fixed `get_mac_address()` returning an old MAC for an IP that is no longer in use on Linux. Incomplete and failed entries (Flags `0x0`) and proxy ARP entries (Flags `0xc`) in `/proc/net/arp` are now ignored and return `None`. Also fixed a lookup for an IP like `92.168.0.1` matching the entry for `192.168.0.1`. (Fixes issue [#76](https://github.com/GhostofGoes/getmac/issues/76))
 
 ### Removed
 * Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
