@@ -89,3 +89,14 @@ When fixing a parsing bug for a specific platform/command version, add the raw c
 - Must run on Python 3.8–3.14, CPython and PyPy — no C-extensions, stdlib only, no runtime dependencies.
 - Prefer real type annotations (`def foo(x: str) -> Optional[str]:`) — this branch has already moved off the `# type:` comment style used on `main`.
 - Settings/constants are accessed through the `settings` / `consts` / `gvars` singletons in `getmac/variables.py`, not as bare module attributes on `getmac.getmac` (that was the 0.9.x pattern).
+
+## Contributions
+
+- Do not commit or push to the `main` branch, unless explicitly instructed to.
+- Commits must follow conventional commits format
+- Branch names must follow conventional commits format
+- PR titles should follow conventional commits format
+- AI-authored commits must include Co-Authorship
+- AI-authored PRs or PRs with AI-authored changes must include some sort of notice that the PR was authored by AI.
+- All documentation and CHANGELOG entries must be human-readable and use plain language, though acronyms and jargon is OK.
+- Keep PR descriptions concise and to the point, with what changed, the simple rationale, and anything a human reviewer needs to know at a high level.
