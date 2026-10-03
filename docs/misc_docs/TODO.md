@@ -1,31 +1,12 @@
 
 # 1.0.0 release
 
-## Documentation
-- [x] Single page on RTD/publish with GitHub actions built with Sphinx and Furo
-- [x] Update docs/usage examples for `get_mac_address()`
-- [x] Document possible values for `PLATFORM` variable
-- [x] Document Method (and subclass) attributes (use Sphinx "#:" comments)
-- [x] Re-add Man pages (and auto-build them in CI)
-- [x] Document `get_by_method()`
-- [x] Document `initialize_method_cache()`
-- [x] Auto-generated API docs
-- [x] Add docstrings to all util methods
-- [x] Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
-
 ## Tests
-- [x] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
 - [ ] >90% test coverage
 - [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
 - [ ] Add tests for more samples (new third-party samples)
 
-## Features
-- [x] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
-- [x] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
-
 ## Breaking changes (or potentially breaking)
-- [x] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient. It's functionality is already implemented by `ArpVariousArgs`.
-- [x] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
     - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
     - keep `-4,`, `-6`, and `--ip6` arguments for backwards-compatibility until 1.1.0
@@ -55,35 +36,9 @@ methods (list): Optional list of methods to use for MAC address lookup.
 
 
 ## Enhancements/fixes/misc.
-- [x] Python 3.13 + 3.14
-- [x] Fix `UuidLanscan` for Python 3.9+
 - [ ] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
   - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
   - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
-
-## Before releasing
-- [x] Update supported versions table in [SECURITY.md](../SECURITY.md)
-
-## Done for 1.0.0
-- [x] Move to PDM from Poetry
-- [x] Split getmac.py into separate files for methods, utils, etc.
-- [x] rename "master" branch to "main"
-- [x] Create 0.9.0 branch from master/main so we can submit patch releases if needed
-- [x] Drop support for python 2.7, 3.4, and 3.5
-- [x] BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES (especially pytest...)
-- [x] Use `pyproject.toml` instead of `setup.py`
-- [x] update classifiers in setup.py
-- [x] add inline type annotations for method arguments. remove types from docstrings?
-- [x] Remove `shutilwhich.py` and `.coveragerc`
-- [x] Replace `flake8-mypy` with proper execution of mypy in tests (the project is dead and archived, https://github.com/ambv/flake8-mypy)
-- [x] Support Python 3.10 and 3.11
-    - [x] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
-    - [x] add tests + setup.py classifier
-- [x] Refactor how global variables are handled
-- [x] rewrite strings to f-strings
-- [x] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
-- [x] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping").
-
 
 # Etc
 - [ ] cache the result of executable checks in `getmac.utils.popen()`
@@ -113,8 +68,6 @@ with a slow run since it tries every method before failing.
     - [ ] Document this API and how the method API functions work more generally
 
 # Platform support
-
-## Windows
 
 ### Remote hosts
 do this next, i guess, to get ipv6 working on windows + WSL
@@ -187,7 +140,6 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] OpenSSF best practices badge
 - [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 - [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
-- [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
 - [ ] Move method classes into a separate file
 - [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 - [ ] Automate publishing in GitHub Actions. When a tag is created, publish release to PyPI, and generate a GitHub release.
@@ -212,3 +164,62 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
 - [ ] Use `__import__()` or `importlib`?
 - [ ] Reduce duplication, for example "if not arg: return None"
+
+
+# Completed tasks
+
+## 1.0.0 release
+
+### Documentation
+- [x] Single page on RTD/publish with GitHub actions built with Sphinx and Furo
+- [x] Update docs/usage examples for `get_mac_address()`
+- [x] Document possible values for `PLATFORM` variable
+- [x] Document Method (and subclass) attributes (use Sphinx "#:" comments)
+- [x] Re-add Man pages (and auto-build them in CI)
+- [x] Document `get_by_method()`
+- [x] Document `initialize_method_cache()`
+- [x] Auto-generated API docs
+- [x] Add docstrings to all util methods
+- [x] Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
+
+### Tests
+- [x] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
+
+### Features
+- [x] Support `ipaddress` objects, `IPv4Address` and `IPv6Address`
+- [x] Add new method: `get_default_interface()`. This leverages the default interface detection methods to expose a helpful public API.
+
+### Breaking changes (or potentially breaking)
+- [x] Replace the `UuidArpGetNode` method. It calls 3 commands and is quite inefficient. It's functionality is already implemented by `ArpVariousArgs`.
+- [x] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
+
+### Enhancements/fixes/misc.
+- [x] Python 3.13 + 3.14
+- [x] Fix `UuidLanscan` for Python 3.9+
+
+### Before releasing
+- [x] Update supported versions table in [SECURITY.md](../SECURITY.md)
+
+### Done for 1.0.0
+- [x] Move to PDM from Poetry
+- [x] Split getmac.py into separate files for methods, utils, etc.
+- [x] rename "master" branch to "main"
+- [x] Create 0.9.0 branch from master/main so we can submit patch releases if needed
+- [x] Drop support for python 2.7, 3.4, and 3.5
+- [x] BUMP TEST DEPENDENCIES AND PYTEST VERSION TO MODERN TIMES (especially pytest...)
+- [x] Use `pyproject.toml` instead of `setup.py`
+- [x] update classifiers in setup.py
+- [x] add inline type annotations for method arguments. remove types from docstrings?
+- [x] Remove `shutilwhich.py` and `.coveragerc`
+- [x] Replace `flake8-mypy` with proper execution of mypy in tests (the project is dead and archived, https://github.com/ambv/flake8-mypy)
+- [x] Support Python 3.10 and 3.11
+    - [x] Update pytest (pytest 4, which we were using to support python 2.7, doesn't work with python 3.10)
+    - [x] add tests + setup.py classifier
+- [x] Refactor how global variables are handled
+- [x] rewrite strings to f-strings
+- [x] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
+- [x] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping").
+
+## Dev
+
+- [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
