@@ -1,5 +1,5 @@
 [build-system]
-requires = ["pdm-backend"]
+requires = ["pdm-backend>=2.4.0"]
 build-backend = "pdm.backend"
 
 [project]
@@ -11,16 +11,14 @@ readme = "README.md"
 authors = [
     {name = "Christopher Goes", email = "ghostofgoes@gmail.com"},
 ]
-maintainers = [
-    {name = "Christopher Goes", email = "ghostofgoes@gmail.com"},
-]
-license = { file = "LICENSE"}
-requires-python = "<4.0,>=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Operating System :: Android",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
     "Operating System :: POSIX :: BSD",
@@ -71,13 +69,14 @@ keywords = [
 "Changelog" = "https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md"
 "Issue tracker" = "https://github.com/GhostofGoes/getmac/issues"
 "Source" = "https://github.com/GhostofGoes/getmac"
+"Security" = "https://github.com/GhostofGoes/getmac/security/policy"
 "Discord server" = "https://discord.gg/python"
 
 [project.scripts]
 getmac = "getmac.__main__:main"
 
 
-[tool.pdm.dev-dependencies]
+[dependency-groups]
 test = [
     "pytest<8,>=7",
     "pytest-randomly",
@@ -110,7 +109,9 @@ docs = [
 ]
 
 [tool.pdm.build]
-includes = ["getmac/", "LICENSE", "README.md"]
+includes = ["getmac/"]
+# Third-party samples are licensed separately (Apache 2.0, GPLv2), so keep them out of the sdist
+excludes = ["tests/samples/third_party/"]
 source-includes = [
     "tests/",
     "CHANGELOG.md",
