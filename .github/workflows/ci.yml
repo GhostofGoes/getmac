@@ -22,6 +22,9 @@ jobs:
   test:
     name: Run tests
     runs-on: ${{ matrix.platform }}
+    # Python 3.15 is a pre-release, so failures there are reported but don't fail the workflow.
+    # TODO: remove this once Python 3.15.0 is released
+    continue-on-error: ${{ matrix.python-version == '3.15' }}
     strategy:
       fail-fast: false
       # Versions available:
@@ -37,6 +40,7 @@ jobs:
           - "3.12"
           - "3.13"
           - "3.14"
+          - "3.15"
         architecture:
           - x86
           - x64
@@ -63,6 +67,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
+          allow-python-prereleases: true
       - name: Display platform and environment information
         run: |
           python --version
