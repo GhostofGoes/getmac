@@ -29,7 +29,7 @@ AI-assisted contributions are allowed, with the following requirements:
 
 * [ ] All commits must include Co-Authorship indicating the commit was authored in-part or wholly by AI
 * [ ] PR description must note that the contribution was authoried in-part or wholly by AI
-* [ ] You (the human) must personally review all *non-test* changes by the AI. This is a small project, it's not a big ask. If it's obvious you have not done this, your PR will be closed, kthnxbai.
+* [ ] You (the human) must personally review all *library, CI, and documentation changes* made by the AI before opening the PR. This is a small project, it's not a big ask. Tests, scripts, etc are fine to do only a cursory review. If it's obvious you have not done this, your PR will be closed as the slop it is, kthnxbai.
 * [ ] It's OK to draft CHANGELOG and documentation with the AI, but please write it in your own words. AI-verbiage will be told once to be made human, second offence => PR closed.
 
 This policy only applies to agent-powered AI contributions. It doesn't apply if you're just using AI tab-completion in an editor or a chatbot to answer questions or generate code snippets (unless the chatbot generates ALL your code, then it applies).
@@ -110,7 +110,7 @@ Some notes:
 1. Create your own fork of the code through GitHub web interface ([Here's a Guide](https://gist.github.com/Chaser324/ce0505fbed06b947d962))
 1. Clone the fork to your computer. This can be done using the [GitHub desktop](https://desktop.github.com/) GUI , `git clone <fork-url>`, or the Git tools in your favorite editor or IDE.
 1. Create and checkout a new branch in the fork with either your username (e.g. "ghostofgoes"), or the name of the feature or issue you're working on (e.g. "openbsd-support"). Again, this can be done using the GUI, your favorite editor, or `git checkout -b <branch> origin/<branch>`.
-2. Install PDM: https://pdm-project.org/en/latest/#installation
+2. Install PDM (2.20+): https://pdm-project.org/en/latest/#installation
 3. Create local environment:
     ```bash
     pdm install -d
