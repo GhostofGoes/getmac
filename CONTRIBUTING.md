@@ -78,9 +78,31 @@ Help is dearly needed on testing and rooting out differences in various platform
 * BSDs
 
 ### Sample collection
-Examples of output of various commands is an easy way contribute that is still incredibly helpful.
+Collection examples of output of various commands is an easy way to contribute in a meaningful way.
+
+Samples go in `tests/samples/`, in a folder named after the platform and version (e.g. `ubuntu_18.04`, `macos_10.12.6`, `windows_10`).
+
+The easiest way is to run `scripts/collect_samples.py`. It runs all the commands getmac uses on your platform (plus a few related ones), and saves the output of each one to a `.out` file in `tests/samples/<platform>_<version>/`. It only needs Python 3.9+, getmac doesn't need to be installed, so you can copy it to any machine and run it there.
+
+```bash
+# See what would be run, without running anything
+python scripts/collect_samples.py --dry-run
+
+# Collect the samples
+python scripts/collect_samples.py
+```
+
+Some notes:
+* Existing samples aren't overwritten, unless you use `--force`
+* Commands that aren't installed are skipped. Exit codes and errors are written to `collect_samples.log` in the same folder.
+* Some commands only work as root or Administrator (e.g. `arping`).
+* Run `python scripts/collect_samples.py --help` for all the options, e.g. `--name` to change the folder name, `--interface` and `--ip` to choose the interfaces and hosts to look up.
+
+**Check the samples before committing them!** They have real MAC addresses, IP addresses, and hostnames from your machine. Replace anything you don't want to be public, and **use the same replacement everywhere** so the samples stay consistent.
+
+#### To add a sample by hand
 1. Run the command
-2. Copy/paste the output (or redirect output of command, `tee` is helpful here) into an appropriately named `.out` file in `samples/`
+2. Copy/paste the output (or redirect output, `tee` is helpful here) into a `.out` file in `tests/samples/<platform>_<version>/`. Name it after the command, e.g. `arp -a` is `arp_-a.out` and `ip route list 0/0` is `ip_route_list_0slash0.out`.
 3. That's it!
 
 
