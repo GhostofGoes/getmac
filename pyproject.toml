@@ -172,7 +172,7 @@ composite = [
 
 [tool.pdm.scripts.benchmark]
 help = "Run tests with benchmarking enabled"
-cmd = "pytest --benchmark-enable -n auto"
+cmd = "pytest --benchmark-enable"
 
 # Need more verbosity? Add arguments.
 # Example: "pdm run test -vv" (note the "-vv" added)
