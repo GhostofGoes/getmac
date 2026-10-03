@@ -3,6 +3,7 @@ Tests for packaging artifacts: sdist and wheel.
 This test was mostly generated using AI assistance.
 """
 
+import os
 import subprocess
 import tarfile
 import zipfile
@@ -13,12 +14,18 @@ def test_packaging_artifacts(tmp_path: Path) -> None:
     """Build sdist and wheel, then verify their contents."""
     dist_dir = tmp_path / "dist"
 
+    # pytest-cov starts coverage in Python subprocesses via COV_CORE_* environment
+    # variables. Remove them so the build doesn't record the temporary copy of the
+    # source that pdm builds the wheel from, which no longer exists at report time.
+    env = {k: v for k, v in os.environ.items() if not k.startswith("COV_CORE_")}
+
     # Build the package
     subprocess.run(
         f"pdm build --dest {dist_dir!s}",
         check=True,
         capture_output=True,
         shell=True,
+        env=env,
     )
 
     # 1. Check sdist
