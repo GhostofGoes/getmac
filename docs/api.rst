@@ -5,7 +5,8 @@ API
 Full API reference for the `getmac` package.
 
 .. automodapi:: getmac.getmac
-   :skip: CalledProcessError,IPv4Address,IPv4Interface,IPv4Network,IPv6Address,IPv6Interface,IPv6Network
+   :include-all-objects:
+   :skip: CalledProcessError,IPv4Address,IPv4Interface,IPv4Network,IPv6Address,IPv6Interface,IPv6Network,Final,Optional,Union,consts,gvars,settings,IFCONFIG_REGEX
 
 .. automodapi:: getmac.variables
    :skip: VarsClass
