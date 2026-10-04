@@ -48,6 +48,7 @@ Other flags:
 | `-N`, `--no-net` | Don't run `arping` or send a UDP packet to refresh the ARP table first; only use what's cached. Faster, but likely to find nothing for a host not recently contacted. |
 | `-v` / `-d` / `-dd` | Log progress / debug detail to **stderr**. stdout still carries only the MAC. |
 | `--override-port PORT` | UDP port used to provoke an ARP entry (default `55555`). |
+| `--arp-timeout SECONDS` | After the UDP packet, keep re-checking the ARP table for the host for up to this long (default `0`, check once). Helps with hosts that are slow to reply; misses take this much longer. |
 | `--override-platform`, `--force-method` | Debugging aids only. They bypass platform detection and method feasibility checks, so they won't make an unsupported lookup work. |
 
 ## Python API
@@ -62,7 +63,7 @@ get_mac_address(ip6="fe80::1")
 get_mac_address(hostname="router.lan")
 get_mac_address(ip="10.0.0.1", network_request=False)  # skip the ARP-refresh probe
 
-get_default_interface()               # e.g. "eth0" (name, not MAC); not supported on Windows
+get_default_interface()               # e.g. "eth0" or "Ethernet 2" (name, not MAC)
 ```
 
 Pass at most one of `interface` / `ip` / `ip6` / `hostname`. Inputs can be
@@ -101,6 +102,7 @@ import getmac
 
 getmac.settings.DEBUG = 2     # 0 (off) to ~4; logs via the "getmac" logger
 getmac.settings.PORT = 44444  # UDP port for the ARP-refresh probe
+getmac.settings.ARP_TIMEOUT = 1.0  # seconds to keep re-checking after the probe (default 0)
 ```
 
 To see the debug output, configure `logging` (e.g. `logging.basicConfig()`).
@@ -114,6 +116,10 @@ equivalents of the CLI debugging flags.
 - **Failures are indistinguishable.** A nonexistent interface and an
   unreachable host both give `None` / exit code 1 with empty stdout.
 - **`localhost` / `127.0.0.1` return `00:00:00:00:00:00`.**
+- **No arguments means the default interface.** If it can't be found (e.g. no
+  routes) or has no MAC (e.g. a VPN tunnel), the first non-loopback interface
+  with a MAC is used, and `None` if there isn't one (except on Windows, which
+  only uses the default interface).
 - **The first call is slower.** getmac probes which platform commands work
   and caches the result for the rest of the process, so later calls are
   faster.

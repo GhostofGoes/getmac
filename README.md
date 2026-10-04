@@ -75,8 +75,12 @@ print(get_mac_address(interface="Ethernet 3"))
 settings.PORT = 44444  # Default is 55555
 print(get_mac_address(ip="192.168.0.1", network_request=True))
 
+# After sending the UDP packet, keep checking the ARP table for the host for up to
+# 1 second, since it can take a moment to reply. Default is 0 (check once).
+settings.ARP_TIMEOUT = 1.0
+print(get_mac_address(ip="192.168.0.1"))
+
 # Get the name of the system's default network interface
-# NOTE: this doesn't currently work on Windows
 from getmac import get_default_interface
 print(get_default_interface())
 ```
@@ -121,6 +125,9 @@ python -m getmac -v -dd -n home.router
 # Change the UDP port used for populating the ARP table when getting the MAC of a remote host
 getmac --ip 192.168.0.1 --override-port 9001
 
+# Keep checking the ARP table for the host for up to 1 second after sending the UDP packet
+getmac --ip 192.168.0.1 --arp-timeout 1
+
 # The platform detected by getmac can be overridden via '--override-platform'.
 # This is useful when debugging issues or if you know a method
 # for a different platform works on the current platform.
@@ -143,6 +150,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - `logging.getLogger("getmac")`: Runtime messages and errors are recorded to the `getmac` logger using Python's [logging](https://docs.python.org/3/library/logging.html) module. They can be configured by using [logging.basicConfig()](https://docs.python.org/3/library/logging.html#logging.basicConfig) or adding handlers to the `"getmac"` logger.
 - `getmac.variables.Settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get.
 - `getmac.variables.Settings.PORT`: UDP port used to populate the ARP/NDP table (see the documentation of the `network_request` argument in `get_mac_address()` for details)
+- `getmac.variables.Settings.ARP_TIMEOUT`: How long to keep checking the ARP/NDP table for a host after sending the UDP packet, in seconds. The host's entry is only added once it replies, which can take longer than getmac takes to check. Default is `0` (check once, without waiting). Lookups of hosts that don't reply take this much longer.
 - `getmac.variables.Settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. `"linux"`, `"windows"`, `"freebsd"`, etc.'). Any values returned by `platform.system()` are valid.
 - `getmac.variables.Settings.FORCE_METHOD`: Force a specific method to be used, e.g. 'IpNeighborShow'. This will be used regardless of it's method type or platform compatibility, and `Method.test()` will NOT be checked! The list of available methods is in `getmac.getmac.METHODS`.
 
@@ -156,7 +164,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - MIT licensed!
 
 ## Notes
-- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined, then it will attempt to fallback to typical defaults for the platform (`Ethernet` on Windows, `em0` on BSD, `en0` on OSX/Darwin, and `eth0` otherwise). If that fails, then it will fallback to `lo` on POSIX systems.
+- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, `None` is returned. On Windows, only the default interface is used.
 - "Remote hosts" refer to hosts in your local layer 2 network, also commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
 - The first four arguments are mutually exclusive. `network_request` does not have any functionality when the `interface` argument is specified, and can be safely set if using in a script.
 - The physical transport is assumed to be Ethernet (802.3). Others, such as Wi-Fi (802.11), are currently not tested or considered. I plan to address this in the future, and am definitely open to pull requests or issues related to this, including error reports.
@@ -164,8 +172,9 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 
 ## Commands and techniques by platform
 - Windows
-    - Commands: `getmac.exe`, `ipconfig.exe`, `arp.exe`, `wmic.exe`
+    - Commands: `getmac.exe`, `ipconfig.exe`, `arp.exe`, `netsh.exe`, `wmic.exe`
     - Libraries: `ctypes`, `socket`
+    - Default interfaces: `netsh.exe`
 - Linux/Unix
     - Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`, `arping` (both iputils and Habet's variants)
     - Libraries:  `fcntl`, `socket`
@@ -186,7 +195,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
     - Commands: `ifconfig`, `arp`
     - Default interfaces: `netstat`
 - Android
-    - Commands: `ip link`
+    - The same commands and files as Linux, where they're available. See the note on Android below.
 
 ## Platforms currently supported
 All or almost all features should work on "supported" platforms. While other versions of the same family or distro may work, they are untested and may have bugs or missing features.
@@ -202,6 +211,7 @@ All or almost all features should work on "supported" platforms. While other ver
 - Mac OSX (Darwin)
     - The latest release, though OSX 14 and 13 have been tested with success.
 - Android (6+)
+    - Newer versions of Android don't have many of the commands getmac uses, and restrict access to network information, so getmac may not find anything. Installing [BusyBox](https://busybox.net/) or the [Termux](https://termux.dev/) `iproute2` and `net-tools` packages adds the missing commands, but they can still be blocked by Android's restrictions.
 - Windows Subsystem for Linux (WSL)
 - FreeBSD (11+)
 - OpenBSD
@@ -251,7 +261,7 @@ To build the image yourself, see the [Docker section of the contribution guide](
 ## Known Issues
 - Linux, WSL: Getting the mac of a local interface IP does not currently work (`getmac --ip 10.0.0.4` will fail if `10.0.0.4` is the IP address of a local interface). This issue may be present on other POSIX systems as well.
 - Hostnames for IPv6 devices are not yet supported.
-- Windows: the "default" (used when no arguments set or specified) of selecting the default route interface only works effectively if `network_request` is enabled. If not, `Ethernet` is used as the default.
+- Windows: `ipconfig.exe` (a fallback for when `getmac.exe` doesn't work) only finds interfaces by name in English output, since the adapter headers are translated.
 - IPv6 support is good but lags behind IPv4 in some places and isn't as well-tested across the supported platform set.
 
 ## Background and history

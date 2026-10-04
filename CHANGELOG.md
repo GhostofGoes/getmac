@@ -10,7 +10,7 @@
 ### Added
 * Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
 * Support Python 3.10 - 3.14
-* New function, `getmac.get_default_interface()`, which returns the name of the system's default interface (NOTE: Windows is not supported currently).
+* New function, `getmac.get_default_interface()`, which returns the name of the system's default interface.
 * Support for [ipaddress](https://docs.python.org/3/library/ipaddress.html) objects from the Python standard library: `IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`
     - These can be used with the `ip` and `ip6` arguments to `get_mac_address()`
     - The `ip` argument will accept IPv6 objects and process them as if `ip6` was set.
@@ -21,7 +21,9 @@
 * Added manpage for the command line interface (`getmac.1`)
 * Improved HP-UX support
     * New method, `LanscanIface`, a proper implementation of `lanscan -ia` for HP-UX systems. This replaces the functionality of the removed `UuidLanscan` method, and is loosely based on CPython's `uuid._lanscan_getnode()` implementation.
-    * Added platform detection for HP-UX and a default to `lan0` interface
+    * Added platform detection for HP-UX
+* New setting, `settings.ARP_TIMEOUT` (`--arp-timeout` on the command line). After sending the UDP packet to populate the ARP/NDP table, getmac keeps checking it for the host for up to this many seconds, for hosts that are slow to reply. It's off (`0`) by default. (Issue [#101](https://github.com/GhostofGoes/getmac/issues/101))
+* Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [#90](https://github.com/GhostofGoes/getmac/issues/90))
 
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
@@ -33,6 +35,22 @@
 * Fixed `ifconfig` parsing on Solaris and Debian GNU/kFreeBSD, which print MACs without leading zeros (e.g. `0:c:29:c1:70:2a`).
 * Fixed the `CtypesHost` method on Windows passing a string instead of bytes to `inet_addr()` when looking up a hostname.
 * Fixed the `FcntlIface` method on Linux not closing its socket after each lookup.
+* `get_mac_address()` with no arguments: if the default interface can't be found (e.g. there aren't any routes) or doesn't have a MAC (e.g. a VPN tunnel), the first interface with a MAC that isn't a loopback interface is used, or `None` is returned if there isn't one. It no longer guesses names like `eth0` or `en0`, or returns the loopback interface's `00:00:00:00:00:00`. (Issue [#78](https://github.com/GhostofGoes/getmac/issues/78))
+* Windows: `get_mac_address()` with no arguments uses the actual default interface, instead of assuming it's named "Ethernet".
+* Windows: interface names have to match the whole name or description of an adapter (case is ignored). Before, "Wi-Fi" could return the MAC of the "Microsoft Wi-Fi Direct Virtual Adapter".
+* Windows: interface names longer than 15 characters now work (`GetmacExe` now uses the CSV output of `getmac.exe`).
+* Fixed `IpconfigExe` taking seconds to minutes when an interface wasn't found, such as a tunnel adapter.
+* `IpconfigExe` finds the MAC in non-English `ipconfig` output, without the "Physical Address" label. Interfaces are still only found by name in English output.
+* Fixed interface names with characters like `(`, `*` and `.` not being found (e.g. `vEthernet (WSL)`).
+* Fixed `NetstatIface` returning the MAC of another interface.
+* Fixed Windows commands failing on systems where adapter names have non-English characters.
+* Fixed `network_request=False` (`--no-net`) not always preventing methods that send network requests from being used.
+* Fixed `FORCE_METHOD` set to `ArpingHost` or `CtypesHost` still sending a UDP packet before the ARP request.
+* Fixed a working IPv4 method being dropped when `ArpFile` fails.
+* Fixed `ArpVariousArgs` not parsing the output of the Linux `arp` command from the `net-tools` package.
+* Fixed getmac's own `getmac` command being run instead of Windows' `getmac.exe` when getmac is installed in a virtual environment.
+* Fixed `IfconfigEther` (macOS) running `ifconfig` twice on the first lookup.
+* Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android. (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95))
 
 ### Removed
 * Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
@@ -55,6 +73,7 @@
 * Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
 * CI tests on PyPy 3.10 and 3.11.
 * 100% code coverage! (a significant milestone for this project)
+* `settings` and `__version__` are now published in `getmac.__all__`, for type checkers.
 
 ## 0.9.6 (10/03/2026)
 

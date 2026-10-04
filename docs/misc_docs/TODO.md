@@ -7,28 +7,22 @@
 
 # Etc
 - [ ] cache the result of executable checks in `getmac.utils.popen()`
-- [ ] Refactor the default interface code. Combine the functions into
-one, move the default fallback logic into the function.
 - TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
 
 
 # Bugs or potential issues
 - [ ] Fix lookup of a IPv4 address of a local interface on Linux
 - [ ] Unicode handling on non-English systems. `LC_ALL=C` works on POSIX (it stops net-tools from translating its output) and no "UNICODE" regex option is needed, but on Windows:
-    - `utils.call_proc()` decodes output as strict UTF-8, while Windows commands print in the OEM code page (e.g. cp850, cp866). Any non-ASCII character raises `UnicodeDecodeError`, and the method is marked unusable. Decode with UTF-8 then the `oem` codec, with `errors="replace"`.
-    - `IpconfigExe` needs the English "Physical Address" label, and its regex backtracks catastrophically when it's missing (seconds to minutes).
+    - [x] `utils.call_proc()` decoded output as strict UTF-8, while Windows commands print in the OEM code page (e.g. cp850, cp866). It now decodes with UTF-8, then the `oem` codec with `errors="replace"`.
+    - [x] `IpconfigExe` needed the English "Physical Address" label. It now matches the MAC value (the only 6-byte value in an adapter's section), and its regex no longer backtracks catastrophically.
+    - [ ] `IpconfigExe` only finds adapter names in English output, since the headers are translated (e.g. `Ethernet adapter Ethernet 3:` is `Carte Ethernet Ethernet 3 :` in French and `Ethernet-Adapter Ethernet 3:` in German). The name is always last, so match headers that end with ` <name>`, preferring the exact English `adapter <name>` match. Watch for names that end another adapter's name (`Ethernet` and `Realtek Ethernet`). Descriptions aren't translated, but the "Description" label is (e.g. `Beschreibung` in German).
     - `WmicExe` is the last working fallback, and WMIC is being removed from Windows 11.
-    - Collect real samples from non-English Windows systems to test this.
+    - [ ] Collect real samples from non-English Windows systems (e.g. French, German, Spanish, Japanese) with `scripts/collect_samples.py`, especially `ipconfig.exe /all`, and use them to test the methods. The only non-English Windows samples so far are French `arp -a` output from glpi-agent (`tests/samples/third_party/glpi_agent/generic/arp/`).
 - [ ] Loopback lookups. On Linux `lo` is `00:00:00:00:00:00` (root can change it); on macOS, BSDs, Solaris, HP-UX and Windows the loopback interface has no MAC, so `00:00:00:00:00:00` is a getmac convention there.
     - The `localhost`/`127.0.0.1` shortcut only matches those exact strings. `LOCALHOST`, `127.0.0.2`, `::1` and the host's own name (`127.0.1.1` on Debian) return `None` and send a UDP packet to the host itself. Check `ipaddress.ip_address(...).is_loopback` after resolving instead.
-    - When the default interface can't be found, `get_mac_address()` falls back to `lo` and returns `00:00:00:00:00:00` ([issue 78](https://github.com/GhostofGoes/getmac/issues/78)). Use the first non-loopback interface with a MAC, or return `None`.
     - Methods disagree on `lo`: `SysIfaceFile` and `FcntlIface` return the zero MAC, `IpLinkIface` and the `ifconfig` parsers return `None`.
-- [ ] `FORCE_METHOD` and the IPv4 network request: `get_mac_address()` compares the lowercased `FORCE_METHOD` with `"CtypesHost"`/`"ArpingHost"`, so it never matches and the UDP packet is always sent, even when forcing `ArpingHost`.
-- [ ] `get_mac_address(network_request=False)` (and `-N`) doesn't pass `network_request` on to `get_by_method()`, so methods that send packets (`ArpingHost`, `CtypesHost`) can still be used.
-- [ ] When `ArpFile` is a fallback and fails during the IPv4 ARP table check, `_remove_unusable()` replaces the working primary method instead of removing `ArpFile`.
 - [ ] Exceptions from a method forced with `FORCE_METHOD` aren't caught, which contradicts the `get_mac_address()` docstring and `docs/usage.rst`.
 - [ ] Docstrings that don't match the code: `get_default_interface()` can raise `RuntimeError`, `get_instance_from_cache()` returns an instance (not a class), `utils.search()` uses `groups()` (not `groupdict()`), `get_method_by_name()` has no docstring, and `Method.get()` returns raw output (not a cleaned MAC).
-- [ ] On Windows, IPv6 lookups and `get_default_interface()` fall back to the "other" methods, which run `arp.exe`/`route.exe` with Unix-style arguments.
 - [ ] Remote host that is actually an interface should resolve to localhost MAC
 - [ ] Reduce the cost of failures. Currently, failures are penalized
 with a slow run since it tries every method before failing.
@@ -52,16 +46,17 @@ do this next, i guess, to get ipv6 working on windows + WSL
 also, on WSL, do netsh.exe instead of netsh
 https://www.prodjim.com/how-to-arp-a-in-ipv6
 
-- [ ] IPv6: `netsh int ipv6 show neigh`
-- [ ] IPv4: `netsh int ipv4 show neigh`
+- [x] IPv6: `netsh int ipv6 show neigh`
+- [x] IPv4: `netsh int ipv4 show neigh`
 
 ### Interface MACs
+- [ ] New method for PowerShell's `Get-NetAdapter` (e.g. `powershell.exe -NoProfile -NonInteractive -Command "Get-NetAdapter | Format-List -Property Name,InterfaceDescription,MacAddress"`). Its property names and values aren't translated, and it replaces WMIC, which is being removed from Windows 11 (`WmicExe`). PowerShell is slow to start (about 0.3 to 1 seconds), so it should come after `GetmacExe` and `IpconfigExe` in `METHODS`. `scripts/collect_samples.py` already collects its output (`powershell_Get-NetAdapter.out`), but there aren't any samples of it yet.
 - [ ] `netsh int ipv6`
 - [ ] win32 API (`ctypes`)
 
 ### Default Interfaces
 This is going to be a bit more complicated since the highest metric routes are going to be IP addresses and not interfaces. We'll have to resolve those to an interface, then select that interface as the default route.
-- [ ] IPv4: `netsh interface ipv4 show route`
+- [x] IPv4: `netsh interface ipv4 show route`
 - [ ] IPv6: `netsh interface ipv6 show route`
 - [ ] `ipconfig`
 - [ ] IPv4: `route print -4`
@@ -129,9 +124,8 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Add new regexes to `IpLinkIface` and improve it's parsing so it's more robust, especially on Android
 - [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
 - [ ] address all TODOs in the code
-- [ ] implement proper default interface detection on Windows
 - [ ] Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
-- [ ] Support IPv6 remote hosts on windows, and IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
+- [ ] Support IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
 - [ ] New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
 - [ ] Use `__import__()` or `importlib`?
@@ -151,7 +145,6 @@ This is going to be a bit more complicated since the highest metric routes are g
         - List/Iterable of methods (as above, string/subclass/instance)
         - Add a CLI argument to reference class by name/names
     - Add ability to exclude methods. Just remove them from METHODS list so they never get used. Useful for testing specific methods or working around buggy methods.
-    - Add a `net_ok` argument, check `network_request` attribute on method in CACHE, if not then keep checking for method in FALLBACK_CACHE that has `network_request`.
     - Document these features in the README/docs, including the CLI arguments
 
 ```
@@ -203,6 +196,13 @@ methods (list): Optional list of methods to use for MAC address lookup.
   - Fixed by only using `/proc/net/arp` entries with the `ATF_COM` (completed, `0x2`) flag set, which ignores incomplete, failed (`0x0`) and proxy (`0xc`) entries.
 - [x] Python 3.13 + 3.14
 - [x] Fix `UuidLanscan` for Python 3.9+
+- [x] [issue #78](https://github.com/GhostofGoes/getmac/issues/78): when the default interface can't be found (e.g. no routes) or has no MAC, use the first non-loopback interface with a MAC, or return `None` (instead of guessing `eth0` and falling back to `lo`). The fallback logic is in one function, `_default_interface_mac()`.
+- [x] [issue #90](https://github.com/GhostofGoes/getmac/issues/90): Windows methods for IPv6 lookups (`NetshNeighbors`) and the default interface (`DefaultIfaceNetsh`), so Windows doesn't fall back to the "other" methods that run `arp.exe`/`route.exe` with Unix-style arguments. Windows interface names are matched exactly (`GetmacExe` uses CSV output).
+- [x] [issue #95](https://github.com/GhostofGoes/getmac/issues/95): detect Python 3.13+ on Android as Linux, list the methods in the "failed to test" error, and document the Android limitations.
+- [x] [issue #101](https://github.com/GhostofGoes/getmac/issues/101): `settings.ARP_TIMEOUT` (`--arp-timeout`) to wait for the host's ARP/NDP entry after the UDP packet (off by default).
+- [x] `get_mac_address(network_request=False)` (and `-N`) now passes `network_request` on to `get_by_method()`, which skips methods that send packets (`ArpingHost`, `CtypesHost`) even if they're cached.
+- [x] `FORCE_METHOD` and the IPv4 network request: the case-insensitive comparison with `"CtypesHost"`/`"ArpingHost"` now matches, so no UDP packet is sent when forcing them.
+- [x] When `ArpFile` is a fallback and fails during the IPv4 ARP table check, it's removed from the fallbacks, instead of replacing the working primary method.
 
 ### Before releasing
 - [x] Remove `1.0.0-wip` from the GitHub Pages deploy condition in `ci.yml` when merging into `main`

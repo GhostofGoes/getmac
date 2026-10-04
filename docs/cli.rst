@@ -45,6 +45,12 @@ Getting the MAC address of a remote host requires the ARP table to be populated.
    getmac --no-network-request --ip 192.168.0.1
    getmac --no-network-request -n home.router
 
+The host's entry is only added to the table once it replies, which can take longer than getmac takes to check the table. Use ``--arp-timeout`` to keep checking for it for up to a number of seconds (by default, it's checked once).
+
+.. code-block:: shell
+
+   getmac --ip 192.168.0.1 --arp-timeout 1
+
 
 
 Advanced usage
