@@ -117,6 +117,9 @@ This is going to be a bit more complicated since the highest metric routes are g
     - This is going to require re-doing how changelogs are created a bit.
 - [ ] Use towncrier for release notes (or another fragment-file based system, avoid merge conflicts)
 - [ ] Use `prek` for linting
+- [ ] Debian packaging (`.deb`) for 1.0.0. The 0.9.x releases built one with `stdeb` from `setup.py` (see `docs/releasing.md` on the `main` branch), and this branch doesn't have a `setup.py`. Options:
+    - A `debian/` directory, built with `dh-python` (`pybuild`) and its `pyproject` support, with `pdm-backend` as a build dependency. Add the steps to `docs/misc_docs/releasing.md`, or build it in CI.
+    - Stop attaching `.deb` files to GitHub releases, and leave Debian packages to the distros (see "OS Packaging Status" in the README).
 
 
 # Post-1.0.0
