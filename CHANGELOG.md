@@ -27,20 +27,24 @@
 
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
-* **BREAKING CHANGE**: `RuntimeError` is now raised in cases where no methods are found matching the type of request and platform, or if all matching methods fail to test. This should almost never happen unless you're on an exotic platform or have an unusual configuration, or a recent platform update changed commands such that getmac no longer functions. If you encounter a `RuntimeError` exception, it means something went horribly wrong, and you should considor reporting the [issue on GitHub](https://github.com/GhostofGoes/getmac/issues).
+    * **NOTE: This will require code changes if your code modifies getmac settings variables**
+* **BREAKING CHANGE**: `RuntimeError` is now raised in cases where no methods are found matching the type of request and platform, or if all matching methods fail to test.
+    * This should almost never happen unless you're on an exotic platform or have an unusual configuration, or a recent platform update changed commands such that getmac no longer functions. If you encounter a `RuntimeError` exception, it means something went horribly wrong, and you should considor reporting the [issue on GitHub](https://github.com/GhostofGoes/getmac/issues).
 * Reduce size of wheel distribution (`.whl` file).
-* Fixed `get_mac_address()` returning an old MAC for an IP that is no longer in use on Linux. Incomplete and failed entries (Flags `0x0`) and proxy ARP entries (Flags `0xc`) in `/proc/net/arp` are now ignored and return `None`. Also fixed a lookup for an IP like `92.168.0.1` matching the entry for `192.168.0.1`. (Fixes issue [#76](https://github.com/GhostofGoes/getmac/issues/76))
+* Fixed `get_mac_address()` returning an old MAC for an IP that is no longer in use on Linux. Incomplete and failed entries (Flags `0x0`) and proxy ARP entries (Flags `0xc`) in `/proc/net/arp` are now ignored and return `None`. Also fixed a lookup for an IP like `92.168.0.1` matching the entry for `192.168.0.1` (Issue [#76](https://github.com/GhostofGoes/getmac/issues/76)).
 * Fixed the default interface name from `ip route` including extra text when the route has no `proto` field, e.g. `ens193 onlink` instead of `ens193` for `default via 192.168.1.254 dev ens193 onlink`.
 * Fixed `ifconfig` parsing returning a wrong MAC for some interfaces.
 * Fixed `ifconfig` parsing on Solaris and Debian GNU/kFreeBSD, which print MACs without leading zeros (e.g. `0:c:29:c1:70:2a`).
 * Fixed the `CtypesHost` method on Windows passing a string instead of bytes to `inet_addr()` when looking up a hostname.
 * Fixed the `FcntlIface` method on Linux not closing its socket after each lookup.
-* `get_mac_address()` with no arguments: if the default interface can't be found (e.g. there aren't any routes) or doesn't have a MAC (e.g. a VPN tunnel), the first interface with a MAC that isn't a loopback interface is used, or `None` is returned if there isn't one. It no longer guesses names like `eth0` or `en0`, or returns the loopback interface's `00:00:00:00:00:00`. (Issue [#78](https://github.com/GhostofGoes/getmac/issues/78))
+* `get_mac_address()` with no arguments: if the default interface can't be found (e.g. there aren't any routes) or doesn't have a MAC (e.g. a VPN tunnel), the first interface with a MAC that isn't a loopback interface is used (Issue [#78](https://github.com/GhostofGoes/getmac/issues/78)).
+    * It no longer guesses names like `eth0` or `en0`, or returns the loopback interface's `00:00:00:00:00:00`.
+    * Also helps address issue [#91](https://github.com/GhostofGoes/getmac/issues/91).
 * Windows: `get_mac_address()` with no arguments uses the actual default interface, instead of assuming it's named "Ethernet".
-* Windows: interface names have to match the whole name or description of an adapter (case is ignored). Before, "Wi-Fi" could return the MAC of the "Microsoft Wi-Fi Direct Virtual Adapter".
-* Windows: interface names longer than 15 characters now work (`GetmacExe` now uses the CSV output of `getmac.exe`).
-* Fixed `IpconfigExe` taking seconds to minutes when an interface wasn't found, such as a tunnel adapter.
-* `IpconfigExe` finds the MAC in non-English `ipconfig` output, without the "Physical Address" label. Interfaces are still only found by name in English output.
+* Windows: interface names now must match the whole name or description (case-insensitive). Before, "Wi-Fi" could return the MAC of the "Microsoft Wi-Fi Direct Virtual Adapter".
+* Windows: `GetmacExe` can now find interface names >15 characters long.
+* Fixed `IpconfigExe` taking seconds to minutes when a named interface wasn't found in certain cases.
+* Improved `IpconfigExe` to handle non-English `ipconfig` output, without relying on the "Physical Address" label. Interfaces are still only found by name in English output, which is a limitation that will be addressed in a future release.
 * Fixed interface names with characters like `(`, `*` and `.` not being found (e.g. `vEthernet (WSL)`).
 * Fixed `NetstatIface` returning the MAC of another interface.
 * Fixed Windows commands failing on systems where adapter names have non-English characters.
@@ -50,8 +54,8 @@
 * Fixed `ArpVariousArgs` not parsing the output of the Linux `arp` command from the `net-tools` package.
 * Fixed getmac's own `getmac` command being run instead of Windows' `getmac.exe` when getmac is installed in a virtual environment.
 * Fixed `IfconfigEther` (macOS) running `ifconfig` twice on the first lookup.
-* Fixed `DarwinNetworksetupIface` (macOS) being dropped for the rest of the process after looking up an interface that isn't a hardware port, like a VPN tunnel. With the new default interface fallback, `get_mac_address()` with no arguments returns a MAC when connected to a VPN, instead of `None`. (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91))
-* Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android. (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95))
+* Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91)).
+* Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95)).
 
 ### Removed
 * Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
@@ -74,7 +78,8 @@
 * Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
 * CI tests on PyPy 3.10 and 3.11.
 * 100% code coverage! (a significant milestone for this project)
-* Added samples from GitHub's macOS 15 and 26, Windows Server 2022 and 2025, and Windows 11 Arm runners, collected with `scripts/collect_samples.py`. Fixed the script cutting adapter names with "Adapter" in them short on Windows (e.g. "VMware Network Adapter VMnet1").
+* Added test samples from GitHub's macOS and Windows runners, collected with `scripts/collect_samples.py`.
+* Added test samples from two third-party projects, significantly increasing test coverage. To maintain license compatibility, these samples were checked into git as-is, and are not included in the source distribution.
 * `settings` and `__version__` are now published in `getmac.__all__`, for type checkers.
 
 ## 0.9.6 (10/03/2026)
