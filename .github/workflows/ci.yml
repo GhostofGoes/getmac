@@ -8,9 +8,9 @@ jobs:
     name: Run lint checks
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
         with:
           python-version: "3.11"
           cache: true
@@ -61,9 +61,9 @@ jobs:
           - platform: macos-latest
             architecture: x64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -81,7 +81,7 @@ jobs:
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
         run: pdm run test
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7
         with:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -89,9 +89,9 @@ jobs:
     name: Build HTML docs and manpage
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
         with:
           python-version: "3.13"
           cache: true
@@ -99,14 +99,14 @@ jobs:
         run: pdm sync -d -G docs
       - name: Build docs
         run: pdm run docs
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: html-docs
           path: html_docs/
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: html_docs/
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: manpage
           path: manpage/getmac.1
@@ -124,7 +124,7 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
 
 # TODO: publish releases using CI
 # TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
@@ -139,9 +139,9 @@ jobs:
   #     contents: write
   #     id-token: write
   #   steps:
-  #     - uses: actions/checkout@v6
+  #     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
   #     - name: Setup PDM
-  #       uses: pdm-project/setup-pdm@v4
+  #       uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
   #       with:
   #         python-version: "3.11"
   #         cache: true
@@ -149,12 +149,12 @@ jobs:
   #       run: pdm build
   #     - name: Publish to PyPI
   #       run: pdm publish
-  #     - uses: actions/download-artifact@v6
+  #     - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
   #       with:
   #         name: manpage
   #         path: manpage_dist
   #     - name: Create GitHub Release
-  #       uses: softprops/action-gh-release@v2
+  #       uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
   #       with:
   #         files: |
   #           dist/*

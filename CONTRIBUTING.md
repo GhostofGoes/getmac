@@ -241,3 +241,16 @@ Published images have SBOM and provenance attestations, and a signed build prove
 The published image only gets security updates from its base image when it's rebuilt. To rebuild a release's image, run the workflow manually on the release tag: go to Actions > Docker > Run workflow and select the tag in the "Branch" menu, or run `gh workflow run docker.yml --ref 1.0.0`. Use this instead of re-running the tag's workflow run, since GitHub only allows re-runs for 30 days.
 
 **For maintainers:** packages published to a personal account are private at first, even when the repository is public. After the first publish, make the package public on GitHub: on the package's page, click "Package settings", then "Change visibility" (under "Danger Zone"), and select "Public". This only needs to be done once, and it can't be undone.
+
+## GitHub Actions
+
+The actions used in the workflows in `.github/workflows/` are pinned to a commit SHA, with the version tag they track in a comment, e.g. `actions/checkout@<commit SHA> # v7`. This protects CI from a tag being moved to a different, possibly malicious, commit.
+
+To update the pinned actions, run:
+
+```bash
+# NOTE: requires Docker
+pdm run update-actions
+```
+
+This uses [pin-github-action](https://github.com/mheap/pin-github-action). To move an action to a new major version, change the tag in its comment (e.g. `# v7` to `# v8`), then run the command. To add a new action, write it with a tag as usual (e.g. `uses: owner/action@v1`), then run the command to pin it.
