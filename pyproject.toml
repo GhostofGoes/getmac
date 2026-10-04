@@ -132,26 +132,26 @@ cmd = "codespell --toml pyproject.toml"
 
 [tool.pdm.scripts.check]
 help = "Check for linting issues using ruff"
-cmd = "ruff check getmac tests"
+cmd = "ruff check getmac tests scripts"
 
 [tool.pdm.scripts.fix]
 help = "Check for linting issues and auto-fix"
-cmd = "ruff check --fix getmac tests"
+cmd = "ruff check --fix getmac tests scripts"
 
 [tool.pdm.scripts.unused]
 help = "Check for unused code using Vulture"
-cmd = "vulture --min-confidence 100 getmac tests"
+cmd = "vulture --min-confidence 100 getmac tests scripts"
 
 [tool.pdm.scripts.check_format]
 help = "Check code formatting is correct"
 composite = [
-    "ruff check --select I getmac tests",
-    "ruff format --check getmac tests",
+    "ruff check --select I getmac tests scripts",
+    "ruff format --check getmac tests scripts",
 ]
 
 [tool.pdm.scripts.typing]
 help = "Check typing using Mypy"
-cmd = "mypy getmac tests"
+cmd = "mypy getmac tests scripts"
 
 [tool.pdm.scripts.lint]
 help = "Run all linting checks (code quality)"
@@ -166,8 +166,8 @@ composite = [
 [tool.pdm.scripts.format]
 help = "Auto-format code to match requirements"
 composite = [
-    "ruff check --select I --fix getmac tests",
-    "ruff format getmac tests",
+    "ruff check --select I --fix getmac tests scripts",
+    "ruff format getmac tests scripts",
 ]
 
 [tool.pdm.scripts.benchmark]
@@ -239,7 +239,6 @@ extend-exclude = [
     "docs",
     "packaging",
     "samples",
-    "scripts",
 ]
 
 [tool.ruff.lint]
