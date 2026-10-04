@@ -225,15 +225,24 @@ If you are running an old Python (3.8 and older) or interpreter, then you can in
 NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
 
 ## Docker
-Add `-v /proc/1/net/arp:/host/arp -e ARP_PATH=/host/arp` to access arp table of host inside container in bridge network mode.
+A Docker image of the `getmac` command is published to the [GitHub Container Registry](https://github.com/GhostofGoes/getmac/pkgs/container/getmac) for `linux/amd64` and `linux/arm64`. The container runs `getmac` as an unprivileged user (`nobody`), and any arguments are passed to it.
 
 ```bash
-docker build -f packaging/Dockerfile -t getmac .
-docker run -it getmac:latest --help
-docker run -it getmac:latest --version
-docker run -it getmac:latest -n localhost
-docker run --rm -it -v /proc/1/net/arp:/host/arp -e ARP_PATH=/host/arp getmac:latest -n 192.168.0.1
+docker run --rm ghcr.io/ghostofgoes/getmac --help
+docker run --rm ghcr.io/ghostofgoes/getmac --version
+docker run --rm ghcr.io/ghostofgoes/getmac -n localhost
 ```
+
+The `latest` tag is the newest stable release, and releases are also tagged with their version (e.g. `1.0.0`, `1.0`, and `1`). Pre-releases are only tagged with their version. The `edge` tag is built from the `main` branch.
+
+By default the container is on Docker's bridge network, so it sees its own interfaces and ARP table, not the host's. On Linux, use `--network host` to look up the host's interfaces. In bridge mode, add `-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp` to read the host's ARP table. With Docker Desktop on macOS and Windows, the container only sees the Docker VM's network, not your computer's. IPv6 lookups (`-6`) need a Docker network with IPv6 enabled.
+
+```bash
+docker run --rm --network host ghcr.io/ghostofgoes/getmac
+docker run --rm -v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp ghcr.io/ghostofgoes/getmac -4 192.168.0.1
+```
+
+To build the image yourself, see the [Docker section of the contribution guide](https://ghostofgoes.github.io/getmac/contributing.html#docker).
 
 ## Caveats
 - Depending on the platform, there could be a performance detriment, due to heavy usage of regular expressions.
