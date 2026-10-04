@@ -1,11 +1,6 @@
 
 # 1.0.0 release
 
-## Tests
-- [ ] >90% test coverage
-- [ ] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
-- [ ] Add tests for more samples (new third-party samples)
-
 ## Breaking changes (or potentially breaking)
 - [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
     - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
@@ -34,11 +29,6 @@ methods (list): Optional list of methods to use for MAC address lookup.
             or instances of ``Method`` subclasses (``ArpFile()``).
 ```
 
-
-## Enhancements/fixes/misc.
-- [ ] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
-  - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
-  - Fix is to check that the flag != 0x0, which should do the trick, unless there's an edge case that it misses.
 
 # Etc
 - [ ] cache the result of executable checks in `getmac.utils.popen()`
@@ -141,7 +131,6 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 - [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
 - [ ] Move method classes into a separate file
-- [ ] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 - [ ] Automate publishing in GitHub Actions. When a tag is created, publish release to PyPI, and generate a GitHub release.
     - This is going to require re-doing how changelogs are created a bit.
 - [ ] Use towncrier for release notes (or another fragment-file based system, avoid merge conflicts)
@@ -183,6 +172,9 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [x] Furo, sphinx-autodoc-typehints, sphinx-argparse-cli, sphinx-automodapi, sphinx-copybutton, recommonmark
 
 ### Tests
+- [x] >90% test coverage
+- [x] Improve CLI tests to ensure output is what's expected (e.g. ensure `--override-port` logs a warning and the value actually gets overridden)
+- [x] Add tests for more samples (new third-party samples)
 - [x] Add test to ensure only the expected files make it into the sdist and wheel, no unexpected files
 
 ### Features
@@ -194,6 +186,10 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [x] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 
 ### Enhancements/fixes/misc.
+- [x] Python 3.15 (pre-release) in CI
+- [x] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
+  - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
+  - Fixed by only using `/proc/net/arp` entries with the `ATF_COM` (completed, `0x2`) flag set, which ignores incomplete, failed (`0x0`) and proxy (`0xc`) entries.
 - [x] Python 3.13 + 3.14
 - [x] Fix `UuidLanscan` for Python 3.9+
 
@@ -221,5 +217,5 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [x] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping").
 
 ## Dev
-
+- [x] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 - [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
