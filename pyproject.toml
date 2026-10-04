@@ -203,6 +203,11 @@ composite = [
     "manpage",
 ]
 
+# Extra arguments are passed to "docker build", e.g. "pdm run build-docker --no-cache"
+[tool.pdm.scripts.build-docker]
+help = "Build the Docker image (packaging/build-docker.sh)"
+cmd = "bash packaging/build-docker.sh"
+
 
 
 # --- Pytest configuration ---
