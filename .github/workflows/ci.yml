@@ -1,34 +1,52 @@
 name: CI
-
 on:
-- release
-- push
-- pull_request
+  push:
+    branches:
+      - main
+      - 1.0.0-wip
+    # Version tags, e.g. 1.0.0 or 1.0.0rc1. Pushing one also publishes the release to PyPI.
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+  pull_request:
+
+# Jobs only get read access to the repository unless they ask for more (e.g. deploy)
+permissions:
+  contents: read
+
+# Cancel runs for older commits on the same pull request. Runs for branches and tags
+# can deploy docs or publish a release, so they wait for the previous run instead.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
     name: Run lint checks
-    runs-on: ubuntu-20.04
-    # Workaround to disable pip upgrade warnings until fixed in setup-python
-    # See: https://github.com/actions/setup-python/issues/532
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          python-version: "3.8"
-      - name: Install tox
-        run: python -m pip install tox
+          persist-credentials: false
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
+        with:
+          python-version: "3.11"
+          cache: true
+      - name: Check that pdm.lock is up to date with pyproject.toml
+        run: pdm lock --check
+      - name: Install dependencies
+        # NOTE: test is needed here to evaluate imports for pytest
+        run: pdm sync -d -G lint,test
       - name: Run lint checks
-        run: tox -e check
+        run: pdm run lint
   test:
     name: Run tests
     runs-on: ${{ matrix.platform }}
-    # Workaround to disable pip upgrade warnings until fixed in setup-python
-    # See: https://github.com/actions/setup-python/issues/532
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
+    timeout-minutes: 20
+    # Python 3.15 is a pre-release, so failures there are reported but don't fail the workflow.
+    # TODO: remove this once Python 3.15.0 is released
+    continue-on-error: ${{ matrix.python-version == '3.15' }}
     strategy:
       fail-fast: false
       # Versions available:
@@ -38,105 +56,173 @@ jobs:
       # OS images: https://github.com/actions/runner-images
       matrix:
         python-version:
-          - "3.7"
-          - "3.8"
           - "3.9"
-          - "pypy-3.7"
-          - "pypy-3.8"
-          - "pypy-3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+          - "3.15"
+          - "pypy3.10"
+          - "pypy3.11"
         architecture:
           - x86
           - x64
+          - arm64
         platform:
-          - ubuntu-20.04
-          - windows-latest
-          # Fix tests failing on MacOS 14+ due to ARM architecture
-          # https://github.com/actions/setup-python/issues/825
-          # TODO: update tests to use ARM MacOS with 14+, add 
-          # architecture to the list of architectures above.
-          - macos-13
+          - ubuntu-24.04
+          - windows-2025
+          - macos-26
         exclude:
-          - platform: ubuntu-20.04
+          - platform: ubuntu-24.04
             architecture: x86
-          - platform: macos-13
+          - platform: ubuntu-24.04
+            architecture: arm64
+          - platform: windows-2025
+            architecture: arm64
+          - platform: macos-26
             architecture: x86
-          - platform: macos-13
-            python-version: "pypy-3.7"
-          - platform: macos-13
-            python-version: "pypy-3.8"
+          - platform: macos-26
+            architecture: x64
+          # PyPy has no 32-bit Windows builds
+          - platform: windows-2025
+            architecture: x86
+            python-version: "pypy3.10"
+          - platform: windows-2025
+            architecture: x86
+            python-version: "pypy3.11"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
-      - name: Display platform and environment information
-        run: |
-          python --version
-          python -c "import sys; print('sys.version: %s' % str(sys.version))"
-          python -c "import sys; print('sys.platform: %s' % str(sys.platform))"
-          python -c "import os; print('os.name: %s' % str(os.name))"
-          python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
+          allow-python-prereleases: true
+          cache: true
       - name: Install dependencies
-        run: python -m pip install tox coveralls tox-gh-actions
+        run: pdm sync -d -G test
+      - name: Show platform and environment information
+        run: pdm run python -c "import os, platform, sys; print(sys.version); print(platform.python_implementation(), platform.machine()); print('sys.platform:', sys.platform, 'os.name:', os.name); print(platform.uname())"
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
-        run: tox
-      - uses: codecov/codecov-action@v3
+        run: pdm run test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7
         with:
-          # codecov is annoying. Not sure why I'm still using it, 
-          # may need to look at something that has less heisenbugs.
-          # https://community.codecov.com/t/ci-failure-due-to-too-many-uploads-to-this-commit/2587/12
           fail_ci_if_error: false
-      - name: Coveralls
-        if: ${{ matrix.platform == 'ubuntu-20.04' && github.event_name != 'pull_request' }}
-        uses: AndreMiras/coveralls-python-action@develop
-        with:
-          parallel: true
-          flag-name: ${{ matrix.python-version }}-${{ matrix.platform }}
-  coveralls_finish:
-    needs: test
-    runs-on: ubuntu-20.04
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ${{ runner.os }},${{ matrix.python-version }}
+          name: ${{ matrix.platform }}-${{ matrix.python-version }}-${{ matrix.architecture }}
+  docs:
+    name: Build HTML docs and manpage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-    - name: Coveralls Finished
-      if: ${{ github.event_name != 'pull_request' }}
-      uses: AndreMiras/coveralls-python-action@develop
-      with:
-        parallel-finished: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
+        with:
+          python-version: "3.13"
+          cache: true
+      - name: Install dependencies
+        run: pdm sync -d -G docs
+      - name: Build docs
+        run: pdm run docs
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: html-docs
+          path: html_docs/
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: html_docs/
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: manpage
+          path: manpage/getmac.1
+  deploy:
+    name: Publish docs to GitHub Pages
+    needs: docs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main'
+    # Only one deployment to GitHub Pages at a time. A newer deployment waits for the
+    # current one to finish instead of cancelling it.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
 
-
-# TODO: publish
-# TODO: need to do this for both "getmac" and "get-mac" packages
-# TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
-
-# https://github.com/marketplace/actions/upload-a-build-artifact
-
-# name: "Build and publish a release"
-
-# on:
-#   release:
-#     types: [released]
-
-# jobs:
-#   publish:
-#     name: "📦 Publish Python distributions"
-#     runs-on: "ubuntu-20.04"
-#     strategy:
-#       matrix:
-#         python-version:
-#           - "3.8"
-#     steps:
-#       - uses: actions/checkout@v3
-#       - name: "🐍 Set up Python ${{ matrix.python-version }}"
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: "${{ matrix.python-version }}"
-#       - name: "🐍 Install wheel"
-#         run: "python -m pip install wheel --user"
-#       - name: "🐍 Build a binary wheel and a source tarball"
-#         run: "python setup.py sdist bdist_wheel"
-#       - name: "📦 Publish distribution to PyPI"
-#         uses: "pypa/gh-action-pypi-publish@master"
-#         if: "startsWith(github.ref, 'refs/tags')"
-#         with:
-#           password: "${{ secrets.pypi_password }}"
+  # Publishing to PyPI follows the Python Packaging User Guide:
+  # https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
+  # The package is built in a job without any special permissions, and only the
+  # publish job can get a PyPI token (through Trusted Publishing).
+  build:
+    name: Build distributions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
+        with:
+          python-version: "3.13"
+      - name: Build the sdist and wheel
+        run: pdm build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [lint, test, docs, build]
+    # Only for version tags pushed to this repository (not forks)
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && github.repository == 'GhostofGoes/getmac'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/getmac/${{ github.ref_name }}/
+    permissions:
+      id-token: write # Trusted Publishing to PyPI, and signing the attestations
+      attestations: write # Save the build provenance attestations to GitHub
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Check that the tag matches the package version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [ ! -f "dist/getmac-${TAG}.tar.gz" ]; then
+            echo "::error::Tag '${TAG}' doesn't match the version of the built package:"
+            ls dist/
+            exit 1
+          fi
+      # Attestations stored on GitHub, which can be checked with:
+      #   gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac
+      - name: Generate build provenance attestations
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: "dist/*"
+      # Also uploads PEP 740 attestations to PyPI (on by default with Trusted Publishing)
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        with:
+          attestations: true

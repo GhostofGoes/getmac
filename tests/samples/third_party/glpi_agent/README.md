@@ -1,0 +1,1 @@
+The files in this folder are from the GPLI Agent project (https://github.com/glpi-project/glpi-agent) and are licensed with the GPLv2 license. The files used are unmodified and only used as input data for unit tests.

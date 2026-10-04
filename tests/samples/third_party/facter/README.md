@@ -1,0 +1,1 @@
+The files in this folder are from the Facter project (https://github.com/puppetlabs/facter) and are licensed with the Apache 2.0 license. The files used are unmodified and only used as input data for unit tests.

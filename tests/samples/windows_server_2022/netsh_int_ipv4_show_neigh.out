@@ -1,0 +1,29 @@
+
+Interface 1: Loopback Pseudo-Interface 1
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+224.0.0.22                                                       Permanent 
+
+Interface 14: Ethernet 3
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+10.9.0.1                                      12-34-56-78-9a-bc  Reachable 
+10.9.15.255                                   ff-ff-ff-ff-ff-ff  Permanent 
+224.0.0.22                                    01-00-5e-00-00-16  Permanent 
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent 
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent 
+255.255.255.255                               ff-ff-ff-ff-ff-ff  Permanent 
+
+Interface 11: vEthernet (nat)
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+172.31.223.255                                ff-ff-ff-ff-ff-ff  Permanent 
+224.0.0.22                                    01-00-5e-00-00-16  Permanent 
+224.0.0.251                                   01-00-5e-00-00-fb  Permanent 
+

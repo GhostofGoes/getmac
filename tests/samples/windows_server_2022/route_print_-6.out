@@ -1,0 +1,24 @@
+===========================================================================
+Interface List
+ 14...7c 1e 52 a2 b0 10 ......Microsoft Hyper-V Network Adapter #3
+  1...........................Software Loopback Interface 1
+ 11...00 15 5d a2 b0 11 ......Hyper-V Virtual Ethernet Adapter
+===========================================================================
+
+IPv6 Route Table
+===========================================================================
+Active Routes:
+ If Metric Network Destination      Gateway
+  1    331 ::1/128                  On-link
+ 14    266 fe80::/64                On-link
+ 11   5256 fe80::/64                On-link
+ 11   5256 fe80::a200:a210:a220:a230/128
+                                    On-link
+ 14    266 fe80::a100:a110:a120:a130/128
+                                    On-link
+  1    331 ff00::/8                 On-link
+ 14    266 ff00::/8                 On-link
+ 11   5256 ff00::/8                 On-link
+===========================================================================
+Persistent Routes:
+  None

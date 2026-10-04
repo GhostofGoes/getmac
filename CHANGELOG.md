@@ -1,8 +1,86 @@
+
 # Changelog
 
 **NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
-**Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
+**Announcement**: Compatibility with Python versions older than 3.9 (2.7, 3.4, 3.5, 3.6, 3.7, 3.8) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
+
+## 1.0.0 (TBD)
+
+### Added
+* Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
+* Support Python 3.10 - 3.14
+* New function, `getmac.get_default_interface()`, which returns the name of the system's default interface.
+* Support for [ipaddress](https://docs.python.org/3/library/ipaddress.html) objects from the Python standard library: `IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`
+    - These can be used with the `ip` and `ip6` arguments to `get_mac_address()`
+    - The `ip` argument will accept IPv6 objects and process them as if `ip6` was set.
+    - If passed a string, `ip` will still treat it like a IPv4 address. This behavior may change in a future release, with `ip` allowing either type of address, and `ip6` argument being deprecated.
+    - `IPv4Network` and `IPv6Network` will result in a `ValueError`. They're networks, not hosts, and passing them makes no sense.
+* Handle `bytes` values for `interface`, `ip`, `ip6`, and `hostname` arguments to `get_mac_address()`. This will just call `decode("utf-8")` on the bytes. This is to ease usage with certain libraries and functions that return strings as bytes.
+    - If you pass it some weird bytes that aren't decodable as utf-8, it's obviously going to break. Don't be dumb :)
+* Added manpage for the command line interface (`getmac.1`)
+* Improved HP-UX support
+    * New method, `LanscanIface`, a proper implementation of `lanscan -ia` for HP-UX systems. This replaces the functionality of the removed `UuidLanscan` method, and is loosely based on CPython's `uuid._lanscan_getnode()` implementation.
+    * Added platform detection for HP-UX
+* New setting, `settings.ARP_TIMEOUT` (`--arp-timeout` on the command line). After sending the UDP packet to populate the ARP/NDP table, getmac keeps checking it for the host for up to this many seconds, for hosts that are slow to reply. It's off (`0`) by default. (Issue [#101](https://github.com/GhostofGoes/getmac/issues/101))
+* Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [#90](https://github.com/GhostofGoes/getmac/issues/90))
+
+### Changed
+* **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
+    * **NOTE: This will require code changes if your code modifies getmac settings variables**
+* **BREAKING CHANGE**: `RuntimeError` is now raised in cases where no methods are found matching the type of request and platform, or if all matching methods fail to test.
+    * This should almost never happen unless you're on an exotic platform or have an unusual configuration, or a recent platform update changed commands such that getmac no longer functions. If you encounter a `RuntimeError` exception, it means something went horribly wrong, and you should considor reporting the [issue on GitHub](https://github.com/GhostofGoes/getmac/issues).
+* Reduce size of wheel distribution (`.whl` file).
+* Fixed `get_mac_address()` returning an old MAC for an IP that is no longer in use on Linux. Incomplete and failed entries (Flags `0x0`) and proxy ARP entries (Flags `0xc`) in `/proc/net/arp` are now ignored and return `None`. Also fixed a lookup for an IP like `92.168.0.1` matching the entry for `192.168.0.1` (Issue [#76](https://github.com/GhostofGoes/getmac/issues/76)).
+* Fixed the default interface name from `ip route` including extra text when the route has no `proto` field, e.g. `ens193 onlink` instead of `ens193` for `default via 192.168.1.254 dev ens193 onlink`.
+* Fixed `ifconfig` parsing returning a wrong MAC for some interfaces.
+* Fixed `ifconfig` parsing on Solaris and Debian GNU/kFreeBSD, which print MACs without leading zeros (e.g. `0:c:29:c1:70:2a`).
+* Fixed the `CtypesHost` method on Windows passing a string instead of bytes to `inet_addr()` when looking up a hostname.
+* Fixed the `FcntlIface` method on Linux not closing its socket after each lookup.
+* `get_mac_address()` with no arguments: if the default interface can't be found (e.g. there aren't any routes) or doesn't have a MAC (e.g. a VPN tunnel), the first interface with a MAC that isn't a loopback interface is used (Issue [#78](https://github.com/GhostofGoes/getmac/issues/78)).
+    * It no longer guesses names like `eth0` or `en0`, or returns the loopback interface's `00:00:00:00:00:00`.
+    * Also helps address issue [#91](https://github.com/GhostofGoes/getmac/issues/91).
+* Windows: `get_mac_address()` with no arguments uses the actual default interface, instead of assuming it's named "Ethernet".
+* Windows: interface names now must match the whole name or description (case-insensitive). Before, "Wi-Fi" could return the MAC of the "Microsoft Wi-Fi Direct Virtual Adapter".
+* Windows: `GetmacExe` can now find interface names >15 characters long.
+* Fixed `IpconfigExe` taking seconds to minutes when a named interface wasn't found in certain cases.
+* Improved `IpconfigExe` to handle non-English `ipconfig` output, without relying on the "Physical Address" label. Interfaces are still only found by name in English output, which is a limitation that will be addressed in a future release.
+* Fixed interface names with characters like `(`, `*` and `.` not being found (e.g. `vEthernet (WSL)`).
+* Fixed `NetstatIface` returning the MAC of another interface.
+* Fixed Windows commands failing on systems where adapter names have non-English characters.
+* Fixed `network_request=False` (`--no-net`) not always preventing methods that send network requests from being used.
+* Fixed `FORCE_METHOD` set to `ArpingHost` or `CtypesHost` still sending a UDP packet before the ARP request.
+* Fixed a working IPv4 method being dropped when `ArpFile` fails.
+* Fixed `ArpVariousArgs` not parsing the output of the Linux `arp` command from the `net-tools` package.
+* Fixed getmac's own `getmac` command being run instead of Windows' `getmac.exe` when getmac is installed in a virtual environment.
+* Fixed `IfconfigEther` (macOS) running `ifconfig` twice on the first lookup.
+* Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91)).
+* Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95)).
+
+### Removed
+* Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
+* Removed support for Jython. As of Dec 2025, [Jython](https://github.com/jython/jython) still does not support Python 3. If and when it supports Python 3, I'll re-add support for it.
+* Removed support for IronPython. [IronPython3 exists](https://github.com/IronLanguages/ironpython3), however I don't have a way to test it in CI. If someone knows of a way to test it in GitHub actions, let me know, and I'm happy to re-add support.
+* Removed RPM packaging, as it hasn't been maintained since 0.6.0.
+* Removed `UuidArpGetnode` method. It's quite slow (performs up to 3 subprocess calls internally) and the functionality is already implemented by `ArpVariousArgs`.
+* Removed `UuidLanscan` method. This has been replaced with the new `LanscanIface` method. Some UUID internal function names changed with Python 3.9, and it made more sense to implement from scratch in getmac instead of continuing to rely on CPython-specific private functions.
+
+
+### Dev
+* Switched to [PDM](https://pdm-project.org) for project management
+* Added `pyproject.toml` and consolidated the configurations for most tools
+  * Removed `setup.py`,  `MANIFEST.in`, `requirements*.txt`, `tox.ini`
+* Switched to CodeCov from Coveralls
+* Refactored source code documentation and added an API reference to the docs
+* Use [Ruff's formatter](https://docs.astral.sh/ruff/formatter/) instead of Black and isort
+* Updated development dependencies to their latest versions (pytest 8/9, Sphinx 9, mypy 2, etc.)
+* Updated GitHub Actions and pinned them to commit SHAs, and added `pdm run update-actions` to update the pins.
+* Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
+* CI tests on PyPy 3.10 and 3.11.
+* 100% code coverage! (a significant milestone for this project)
+* Added test samples from GitHub's macOS and Windows runners, collected with `scripts/collect_samples.py`.
+* Added test samples from two third-party projects, significantly increasing test coverage. To maintain license compatibility, these samples were checked into git as-is, and are not included in the source distribution.
+* `settings` and `__version__` are now published in `getmac.__all__`, for type checkers.
 
 ## 0.9.6 (10/03/2026)
 
@@ -251,7 +329,7 @@ e.g. '-dd' for DEBUG level 2.
 ### Changed
 * **Significant** performance improvement for remote hosts. Previously,
 the average for `get_mac_address(ip='10.0.0.100')` was 1.71 seconds.
-Now, the average is `12.7 miliseconds`, with the special case of a unpopulated
+Now, the average is `12.7 milliseconds`, with the special case of a unpopulated
 arp table being only slightly higher. This was brought about by changes in
 how the arp table is populated. The original method was to use the
 host's `ping` command to send an ICMP packet to the host. This took time,

@@ -1,0 +1,32 @@
+
+Interface 1: Loopback Pseudo-Interface 1
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+ff02::16                                                         Permanent 
+ff02::1:2                                                        Permanent 
+
+Interface 16: Ethernet 5
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+ff02::1                                       33-33-00-00-00-01  Permanent 
+ff02::2                                       33-33-00-00-00-02  Permanent 
+ff02::16                                      33-33-00-00-00-16  Permanent 
+ff02::1:2                                     33-33-00-01-00-02  Permanent 
+ff02::1:3                                     33-33-00-01-00-03  Permanent 
+ff02::1:ff20:a130                             33-33-ff-20-a1-30  Permanent 
+
+Interface 13: vEthernet (Default Switch)
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+ff02::1                                       33-33-00-00-00-01  Permanent 
+ff02::2                                       33-33-00-00-00-02  Permanent 
+ff02::16                                      33-33-00-00-00-16  Permanent 
+ff02::1:2                                     33-33-00-01-00-02  Permanent 
+ff02::1:ff20:a230                             33-33-ff-20-a2-30  Permanent 
+

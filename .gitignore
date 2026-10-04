@@ -2,7 +2,13 @@
 .vscode/
 .vagrant/
 .pdm-python
+.claude/
 /*.tar.gz
+
+built_docs/
+html_docs/
+manpage/
+docs/api/
 
 .pytest_cache
 

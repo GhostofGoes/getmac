@@ -1,0 +1,6 @@
+en1: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+	options=400<CHANNEL_IO>
+	ether 12:34:56:26:a0:11
+	nd6 options=201<PERFORMNUD,DAD>
+	media: none
+	status: inactive

@@ -1,0 +1,9 @@
+# Ignore file for packaging/Dockerfile. The build context is the repository root.
+# Exclude everything, then include only the files needed to build the package.
+# README.md and LICENSE are needed because pyproject.toml references them.
+*
+!getmac/
+!LICENSE
+!pyproject.toml
+!README.md
+**/__pycache__

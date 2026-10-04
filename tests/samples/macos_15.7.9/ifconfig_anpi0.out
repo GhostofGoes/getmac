@@ -1,0 +1,5 @@
+anpi0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+	options=400<CHANNEL_IO>
+	ether 12:34:56:15:a0:12
+	media: none
+	status: inactive

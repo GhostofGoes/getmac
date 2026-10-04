@@ -1,0 +1,3 @@
+"Connection Name","Network Adapter","Physical Address","Transport Name"
+"Ethernet 4","Mellanox ConnectX-4 Lx Virtual Ethernet Adapter","7C-1E-52-A2-B0-10","N/A"
+"Ethernet 3","Microsoft Hyper-V Network Adapter #3","7C-1E-52-A2-B0-10","\Device\Tcpip_{00000022-0000-4000-8000-000000000001}"

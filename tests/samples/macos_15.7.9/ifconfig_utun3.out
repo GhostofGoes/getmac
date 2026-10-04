@@ -1,0 +1,3 @@
+utun3: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 1000
+	inet6 fe80::a500:a51:a520:a53%utun3 prefixlen 64 scopeid 0xb 
+	nd6 options=201<PERFORMNUD,DAD>

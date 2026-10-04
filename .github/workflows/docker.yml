@@ -1,0 +1,334 @@
+name: Docker
+
+# Builds and tests the Docker image (packaging/Dockerfile) on linux/amd64 and
+# linux/arm64, and publishes it to the GitHub Container Registry:
+#   - Pushes to main publish the "edge" tag.
+#   - Release tags (e.g. "1.0.0") publish "1.0.0", "1.0", "1", and "latest".
+#     "1.0", "1", and "latest" are only moved to a release if it's the newest 1.0.x
+#     release, 1.x release, or release overall. Pre-releases and post-releases
+#     (e.g. "1.1.0rc1" or "1.0.0.post1") only publish their own version tag.
+#   - Running the workflow manually (Actions > Docker > Run workflow) on main or a
+#     release tag publishes the same tags again, e.g. to get base image updates.
+# Pull requests, other branches, and forks only build and test the image.
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+    # Path filters only apply to branches. Pushing a tag always runs the workflow.
+    paths:
+      - ".github/workflows/docker.yml"
+      - "packaging/**"
+      - "getmac/**"
+      - "pyproject.toml"
+      - "README.md"
+      - "LICENSE"
+  pull_request:
+    paths:
+      - ".github/workflows/docker.yml"
+      - "packaging/**"
+      - "getmac/**"
+      - "pyproject.toml"
+      - "README.md"
+      - "LICENSE"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Cancel runs for older commits on the same branch or pull request. Runs for main
+# and tags can publish, so they wait for the previous run to finish instead.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  IMAGE_NAME: ghcr.io/ghostofgoes/getmac
+  TEST_IMAGE: getmac-test:ci
+
+jobs:
+  # The test and publish jobs build on this exact base image, so the published
+  # image is built on the base image that was tested, even if the base image's
+  # tag is updated while the workflow is running.
+  base-image:
+    name: Get the base image digest
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.base.outputs.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Get the base image digest
+        id: base
+        run: |
+          base_image="$(sed -n 's/^ARG BASE_IMAGE=//p' packaging/Dockerfile)"
+          digest="$(docker buildx imagetools inspect "$base_image" --format '{{.Manifest.Digest}}')"
+          if [[ -z "$base_image" || ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Couldn't get the digest of the BASE_IMAGE in packaging/Dockerfile"
+            exit 1
+          fi
+          echo "Base image: $base_image@$digest"
+          echo "image=$base_image@$digest" >> "$GITHUB_OUTPUT"
+
+  lint:
+    name: Check the Dockerfile and build script
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Check the build script with ShellCheck
+        run: shellcheck packaging/build-docker.sh
+      # Runs the build script with "docker build --check", which checks the
+      # Dockerfile against BuildKit's build checks without building the image
+      - name: Check the Dockerfile
+        run: bash packaging/build-docker.sh --check
+
+  test:
+    name: Build and test (${{ matrix.platform }})
+    needs: base-image
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Get the version and build time
+        run: |
+          version="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' getmac/getmac.py)"
+          if [[ -z "$version" ]]; then
+            echo "::error::Couldn't find __version__ in getmac/getmac.py"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      # The build cache is saved for each platform, and the publish job reuses it
+      - name: Build the image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: packaging/Dockerfile
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: ${{ env.TEST_IMAGE }}
+          build-args: |
+            BASE_IMAGE=${{ needs.base-image.outputs.image }}
+            VERSION=${{ env.VERSION }}
+            REVISION=${{ github.sha }}
+            CREATED=${{ env.CREATED }}
+          cache-from: type=gha,scope=docker-${{ matrix.arch }}
+          cache-to: type=gha,scope=docker-${{ matrix.arch }},mode=max
+      - name: Check --version and --help
+        run: |
+          docker run --rm "$TEST_IMAGE" --help
+          output="$(docker run --rm "$TEST_IMAGE" --version)"
+          echo "$output"
+          if [[ "$output" != "getmac $VERSION" ]]; then
+            echo "::error::Expected --version to print 'getmac $VERSION'"
+            exit 1
+          fi
+      - name: Look up localhost
+        run: |
+          output="$(docker run --rm "$TEST_IMAGE" -n localhost)"
+          echo "$output"
+          if [[ "$output" != "00:00:00:00:00:00" ]]; then
+            echo "::error::Expected 00:00:00:00:00:00 for localhost"
+            exit 1
+          fi
+      - name: Look up the default interface (bridge and host networks)
+        run: |
+          mac_regex='^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+          for network in bridge host; do
+            output="$(docker run --rm --network "$network" "$TEST_IMAGE")"
+            echo "$network: $output"
+            if [[ ! "$output" =~ $mac_regex ]]; then
+              echo "::error::Expected a MAC address for the default interface on the $network network"
+              exit 1
+            fi
+          done
+      # Same as reading the host's ARP table in bridge mode, with a known entry
+      - name: Look up a host in a bind-mounted ARP table (ARP_PATH)
+        run: |
+          printf '%s\n' \
+            'IP address       HW type     Flags       HW address            Mask     Device' \
+            '192.0.2.1        0x1         0x2         02:00:00:00:00:01     *        eth0' \
+            > "$RUNNER_TEMP/arp"
+          chmod 644 "$RUNNER_TEMP/arp"
+          output="$(docker run --rm -v "$RUNNER_TEMP/arp:/host/arp:ro" -e ARP_PATH=/host/arp \
+            "$TEST_IMAGE" --no-network-requests -4 192.0.2.1)"
+          echo "$output"
+          if [[ "$output" != "02:00:00:00:00:01" ]]; then
+            echo "::error::Expected 02:00:00:00:00:01 from the ARP table in ARP_PATH"
+            exit 1
+          fi
+      - name: Check the image runs as a non-root user
+        run: |
+          user="$(docker image inspect --format '{{.Config.User}}' "$TEST_IMAGE")"
+          uid="$(docker run --rm --entrypoint id "$TEST_IMAGE" -u)"
+          echo "User: $user, UID: $uid"
+          if [[ "$user" != "65534:65534" || "$uid" != "65534" ]]; then
+            echo "::error::Expected the image to run as 65534:65534 (nobody)"
+            exit 1
+          fi
+      - name: Check the image labels
+        run: |
+          labels="$(docker image inspect --format '{{json .Config.Labels}}' "$TEST_IMAGE")"
+          jq . <<< "$labels"
+          if ! jq -e --arg version "$VERSION" --arg revision "$GITHUB_SHA" '
+            . as $labels
+            | ["title", "description", "authors", "url", "source", "documentation", "licenses", "created"]
+            | all($labels["org.opencontainers.image." + .] | length > 0)
+              and $labels["org.opencontainers.image.version"] == $version
+              and $labels["org.opencontainers.image.revision"] == $revision
+          ' <<< "$labels" > /dev/null; then
+            echo "::error::Expected all the OCI labels to be set, with version $VERSION and revision $GITHUB_SHA"
+            exit 1
+          fi
+
+  publish:
+    name: Publish to GitHub Container Registry
+    needs: [base-image, lint, test]
+    # Only pushes and manual runs on main and release tags are published, and
+    # never from forks. Only users with write access can run the workflow manually.
+    if: >-
+      github.repository == 'GhostofGoes/getmac'
+      && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # Push the image to ghcr.io
+      id-token: write # Sign the build provenance attestation
+      attestations: write # Save the build provenance attestation
+    steps:
+      # All the tags are fetched to find the newest releases
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Get the version and build time
+        run: |
+          version="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' getmac/getmac.py)"
+          if [[ -z "$version" ]]; then
+            echo "::error::Couldn't find __version__ in getmac/getmac.py"
+            exit 1
+          fi
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "$version" ]]; then
+            echo "::error::The tag ($GITHUB_REF_NAME) doesn't match __version__ in getmac/getmac.py ($version)"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      # The "1.0", "1", and "latest" tags are only moved if this is the newest
+      # release with the same minor version, major version, or overall, so publishing
+      # an older release again doesn't move them back to it. Pre-releases and
+      # post-releases aren't counted, since they only get their own version tag.
+      - name: Check if this is the newest release
+        id: newest
+        run: |
+          minor=false major=false latest=false
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" =~ ^([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
+            major_prefix="${BASH_REMATCH[1]}."
+            minor_prefix="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}."
+            releases="$(git tag --list | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V || true)"
+            echo "Releases: $(tr '\n' ' ' <<< "$releases")"
+            if ! grep -q -x -F "$GITHUB_REF_NAME" <<< "$releases"; then
+              echo "::error::Couldn't find the $GITHUB_REF_NAME tag in the git tags"
+              exit 1
+            fi
+            # The newest release that starts with the given prefix
+            newest() {
+              awk -v prefix="$1" 'substr($0, 1, length(prefix)) == prefix' <<< "$releases" | tail -n 1
+            }
+            if [[ "$(newest "$minor_prefix")" == "$GITHUB_REF_NAME" ]]; then
+              minor=true
+            fi
+            if [[ "$(newest "$major_prefix")" == "$GITHUB_REF_NAME" ]]; then
+              major=true
+            fi
+            if [[ "$(newest "")" == "$GITHUB_REF_NAME" ]]; then
+              latest=true
+            fi
+          fi
+          echo "Newest of its minor version: $minor, major version: $major, overall: $latest"
+          {
+            echo "minor=$minor"
+            echo "major=$major"
+            echo "latest=$latest"
+          } >> "$GITHUB_OUTPUT"
+      # Both platforms are built here from the test jobs' build cache, on the same
+      # base image. QEMU is only used to build linux/arm64 if the cache misses
+      # (e.g. the cache was evicted).
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Only the tags are used from this. The labels come from the Dockerfile and
+      # the build args, the same as local builds.
+      - name: Get the image tags
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          flavor: latest=false
+          tags: |
+            type=pep440,pattern={{version}}
+            type=pep440,pattern={{major}}.{{minor}},enable=${{ steps.newest.outputs.minor == 'true' }}
+            type=pep440,pattern={{major}},enable=${{ steps.newest.outputs.major == 'true' }}
+            type=raw,value=latest,enable=${{ steps.newest.outputs.latest == 'true' }}
+            type=edge,branch=main
+      - name: Build and push the image
+        id: push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: packaging/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            BASE_IMAGE=${{ needs.base-image.outputs.image }}
+            VERSION=${{ env.VERSION }}
+            REVISION=${{ github.sha }}
+            CREATED=${{ env.CREATED }}
+          # The package page on GitHub reads these from the image index for
+          # multi-platform images. Keep them the same as the LABELs in packaging/Dockerfile.
+          annotations: |
+            index:org.opencontainers.image.description=Platform-independent pure-Python module to get a MAC address
+            index:org.opencontainers.image.source=https://github.com/GhostofGoes/getmac
+            index:org.opencontainers.image.licenses=MIT
+          cache-from: |
+            type=gha,scope=docker-amd64
+            type=gha,scope=docker-arm64
+          # SBOM and SLSA provenance attestations, stored with the image
+          provenance: mode=max
+          sbom: true
+      # Signed build provenance, which can be verified with "gh attestation verify"
+      - name: Attest the build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}

@@ -1,0 +1,43 @@
+
+Windows IP Configuration
+
+   Host Name . . . . . . . . . . . . : runnervm00025
+   Primary Dns Suffix  . . . . . . . : 
+   Node Type . . . . . . . . . . . . : Hybrid
+   IP Routing Enabled. . . . . . . . : No
+   WINS Proxy Enabled. . . . . . . . : No
+   DNS Suffix Search List. . . . . . : example.internal.cloudapp.net
+
+Ethernet adapter Ethernet 3:
+
+   Connection-specific DNS Suffix  . : example.internal.cloudapp.net
+   Description . . . . . . . . . . . : Microsoft Hyper-V Network Adapter #3
+   Physical Address. . . . . . . . . : 70-A8-A5-A5-B0-10
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+   Link-local IPv6 Address . . . . . : fe80::a100:a110:a120:a130%14(Preferred) 
+   IPv4 Address. . . . . . . . . . . : 10.9.0.110(Preferred) 
+   Subnet Mask . . . . . . . . . . . : 255.255.240.0
+   Lease Obtained. . . . . . . . . . : Sunday, October 4, 2026 7:37:10 AM
+   Lease Expires . . . . . . . . . . : Wednesday, November 10, 2162 2:10:27 PM
+   Default Gateway . . . . . . . . . : 10.9.0.1
+   DHCP Server . . . . . . . . . . . : 203.0.113.160
+   DHCPv6 IAID . . . . . . . . . . . : 242264229
+   DHCPv6 Client DUID. . . . . . . . : 00-01-00-01-12-34-56-78-00-15-5D-A0-B0-01
+   DNS Servers . . . . . . . . . . . : 203.0.113.160
+   NetBIOS over Tcpip. . . . . . . . : Enabled
+
+Ethernet adapter vEthernet (nat):
+
+   Connection-specific DNS Suffix  . : 
+   Description . . . . . . . . . . . : Hyper-V Virtual Ethernet Adapter
+   Physical Address. . . . . . . . . : 00-15-5D-A5-B0-11
+   DHCP Enabled. . . . . . . . . . . : No
+   Autoconfiguration Enabled . . . . : Yes
+   Link-local IPv6 Address . . . . . : fe80::a200:a210:a220:a23%11(Preferred) 
+   IPv4 Address. . . . . . . . . . . : 172.31.16.1(Preferred) 
+   Subnet Mask . . . . . . . . . . . : 255.255.240.0
+   Default Gateway . . . . . . . . . : 
+   DHCPv6 IAID . . . . . . . . . . . : 184554845
+   DHCPv6 Client DUID. . . . . . . . : 00-01-00-01-12-34-56-78-00-15-5D-A0-B0-01
+   NetBIOS over Tcpip. . . . . . . . : Enabled
