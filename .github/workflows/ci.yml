@@ -148,7 +148,7 @@ jobs:
     needs: docs
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/1.0.0-wip'
+    if: github.ref == 'refs/heads/main'
     # Only one deployment to GitHub Pages at a time. A newer deployment waits for the
     # current one to finish instead of cancelling it.
     concurrency:

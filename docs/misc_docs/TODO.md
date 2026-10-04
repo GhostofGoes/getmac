@@ -1,36 +1,7 @@
 
 # 1.0.0 release
 
-## Breaking changes (or potentially breaking)
-- [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
-    - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
-    - keep `-4,`, `-6`, and `--ip6` arguments for backwards-compatibility until 1.1.0
-- [ ] **API changes** (technically speaking)
-    - Add argument to `get_mac_address()` to force the platform used (e.g. `platform_override="linux"`)
-        - Also add CLI argument to configure this
-    - Add argument to `get_mac_address()` to force a specific method(s) to be used
-        - Passing a string with the name of a method class (e.g. `"ArpFile"`), this will be dynamically looked up from the list of available methods. This will NOT check if the method works by default!
-        - Passing a subclass of `getmac.Method`
-        - Passing an instance of a subclass of `getmac.Method`
-        - List/Iterable of methods (as above, string/subclass/instance)
-        - Add a CLI argument to reference class by name/names
-    - Add ability to exclude methods. Just remove them from METHODS list so they never get used. Useful for testing specific methods or working around buggy methods.
-    - Add a `net_ok` argument, check `network_request` attribute on method in CACHE, if not then keep checking for method in FALLBACK_CACHE that has `network_request`.
-    - Document these features in the README/docs, including the CLI arguments
-
-```
-methods=None
-type: Optional[List[Union[str, Method, Type[Method]]]]
-methods (list): Optional list of methods to use for MAC address lookup.
-            This will override the default methods that are auto-determined based on
-            platform inspection and testing, and will be used regardless of whether
-            they work or not. These can be names of method classes as strings
-            (``"ArpFile"``), ``Method`` subclasses (``ArpFile``),
-            or instances of ``Method`` subclasses (``ArpFile()``).
-```
-
 ## Before releasing
-- [ ] Remove `1.0.0-wip` from the GitHub Pages deploy condition in `ci.yml` when merging into `main`
 - [ ] After the first Docker image is published, make the GHCR package public
 
 
@@ -166,6 +137,34 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Use `__import__()` or `importlib`?
 - [ ] Reduce duplication, for example "if not arg: return None"
 
+## Breaking changes (or potentially breaking)
+- [ ] **Consolidate `ip6` argument into `ip` argument.**. Parse based on `::` character vs `.` character if `str` or via `.version == 4`/`.version == 6` for `ipaddress` objects.
+    - Combine `--ip` and `--ip6` CLI arguments into `--ip` output. this would make it *much* easier to test methods.
+    - keep `-4,`, `-6`, and `--ip6` arguments for backwards-compatibility until 1.1.0
+- [ ] **API changes** (technically speaking)
+    - Add argument to `get_mac_address()` to force the platform used (e.g. `platform_override="linux"`)
+        - Also add CLI argument to configure this
+    - Add argument to `get_mac_address()` to force a specific method(s) to be used
+        - Passing a string with the name of a method class (e.g. `"ArpFile"`), this will be dynamically looked up from the list of available methods. This will NOT check if the method works by default!
+        - Passing a subclass of `getmac.Method`
+        - Passing an instance of a subclass of `getmac.Method`
+        - List/Iterable of methods (as above, string/subclass/instance)
+        - Add a CLI argument to reference class by name/names
+    - Add ability to exclude methods. Just remove them from METHODS list so they never get used. Useful for testing specific methods or working around buggy methods.
+    - Add a `net_ok` argument, check `network_request` attribute on method in CACHE, if not then keep checking for method in FALLBACK_CACHE that has `network_request`.
+    - Document these features in the README/docs, including the CLI arguments
+
+```
+methods=None
+type: Optional[List[Union[str, Method, Type[Method]]]]
+methods (list): Optional list of methods to use for MAC address lookup.
+            This will override the default methods that are auto-determined based on
+            platform inspection and testing, and will be used regardless of whether
+            they work or not. These can be names of method classes as strings
+            (``"ArpFile"``), ``Method`` subclasses (``ArpFile``),
+            or instances of ``Method`` subclasses (``ArpFile()``).
+```
+
 
 # Completed tasks
 
@@ -206,6 +205,7 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [x] Fix `UuidLanscan` for Python 3.9+
 
 ### Before releasing
+- [x] Remove `1.0.0-wip` from the GitHub Pages deploy condition in `ci.yml` when merging into `main`
 - [x] Add the 0.9.6 entry from `main`'s CHANGELOG to this branch's CHANGELOG
 - [x] Update supported versions table in [SECURITY.md](../SECURITY.md)
 
