@@ -135,8 +135,9 @@ class ArpFile(Method):
     """
     Use the contents of ``/proc/net/arp`` to find the MAC address of a host.
 
-    Only complete entries are used. Incomplete and failed entries are ignored,
-    since the kernel keeps the last known (possibly stale) MAC for failed entries.
+    Only complete entries are used. Incomplete, failed and proxy ARP entries are
+    ignored, since the kernel keeps the last known (possibly stale) MAC for failed
+    entries, and proxy ARP entries don't have a real MAC.
     """
 
     platforms = {"linux"}
@@ -181,7 +182,9 @@ class ArpFile(Method):
             if int(flags, 16) & self._ATF_COM:
                 return mac
             if settings.DEBUG:
-                gvars.log.debug(f"ArpFile: ignoring incomplete entry for {arg} (flags: {flags})")
+                gvars.log.debug(
+                    f"ArpFile: ignoring entry without a valid MAC for {arg} (flags: {flags})"
+                )
 
         return None
 
@@ -441,7 +444,7 @@ class CtypesHost(Method):
             #   We should be explicit about only accepting ipv4 addresses
             #   and handle any hostname resolution in calling code
             hostip = socket.gethostbyname(arg)
-            inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
+            inetaddr = ctypes.windll.wsock32.inet_addr(hostip.encode())  # type: ignore
 
         buffer = ctypes.c_buffer(6)
         addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
@@ -567,12 +570,11 @@ class FcntlIface(Method):
 
         encoded_arg = arg.encode()
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-        # 0x8927 = SIOCGIFADDR
-        info = fcntl.ioctl(  # type: ignore
-            s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15])
-        )
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            # 0x8927 = SIOCGIFHWADDR, get the hardware (MAC) address
+            info = fcntl.ioctl(  # type: ignore
+                s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15])
+            )
 
         return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
@@ -702,16 +704,24 @@ class DarwinNetworksetupIface(Method):
         return utils.search(consts.MAC_RE_COLON, command_output)
 
 
+# A MAC that isn't followed by more octets. Otherwise the start of a longer
+# hardware address, like InfiniBand's 20-byte "HWaddr", would match as a MAC.
+_IFCONFIG_MAC_END: Final[str] = r"(?!:?[0-9a-fA-F])"
+
 # This only took 15-20 hours of throwing my brain against a wall multiple times
 # over the span of 1-2 years to figure out. It works for almost all conceivable
 # output from "ifconfig", and probably netstat too. It can probably be made more
 # efficient by someone who actually knows how to write regex.
-# [: ]\s?(?:flags=|\s).*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr|hwaddr|lladdr)[ :]?\s?([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))  # noqa: E501
+# [: ]\s?(?:flags=|\s)(?:[^\n]|\n(?=\s))*?(?:(?:\w+[: ]\s?flags=)|\s(?:ether|address|HWaddr|hwaddr|lladdr)[ :]?\s?([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})(?!:?[0-9a-fA-F]))  # noqa: E501
 IFCONFIG_REGEX: Final[str] = (
-    r"[: ]\s?(?:flags=|\s).*?(?:"
+    r"[: ]\s?(?:flags=|\s)"
+    # Stay within this interface. Its other lines are indented, so a line
+    # that isn't is the next interface, and its MAC must not be matched.
+    r"(?:[^\n]|\n(?=\s))*?(?:"
     r"(?:\w+[: ]\s?flags=)|"  # Prevent interfaces w/o a MAC from matching
     r"\s(?:ether|address|HWaddr|hwaddr|lladdr)[ :]?\s?"  # Handle various prefixes
-    r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}))"  # Match the MAC
+    # Match the MAC. Octets can be a single digit, e.g. "0:c:29:c1:70:2a" on Solaris.
+    r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})" + _IFCONFIG_MAC_END + r")"
 )
 
 
@@ -827,7 +837,7 @@ class IfconfigOther(Method):
                     command_output = utils.popen("ifconfig", pair_to_test[0])
                     self._good_pair = list(pair_to_test)  # type: ignore
                     if isinstance(self._good_pair[1], str):
-                        self._good_pair[1] += consts.MAC_RE_COLON
+                        self._good_pair[1] += consts.MAC_RE_COLON + _IFCONFIG_MAC_END
                     break
                 except CalledProcessError as ex:
                     if settings.DEBUG:
@@ -848,7 +858,7 @@ class IfconfigOther(Method):
         # Handle the two possible search terms
         if isinstance(self._good_pair[1], tuple):
             for term in self._good_pair[1]:
-                regex = term + consts.MAC_RE_COLON
+                regex = term + consts.MAC_RE_COLON + _IFCONFIG_MAC_END
                 result = utils.search(re.escape(arg) + regex, command_output)
 
                 if result:
@@ -1084,7 +1094,9 @@ class DefaultIfaceIpRoute(Method):
                 gvars.log.debug("DefaultIfaceIpRoute failed: no output")
             return None
 
-        return output.partition("dev")[2].partition("proto")[0].strip()
+        # Use the interface name after "dev". The fields after it vary, e.g.
+        # "proto dhcp ...", "onlink" or nothing at all, so don't rely on them.
+        return utils.search(r"\bdev\s+(\S+)", output)
 
 
 class DefaultIfaceOpenBsd(Method):
@@ -1265,12 +1277,15 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
 
     gvars.log.debug(f"Initializing '{method_type}' method cache (platform: '{consts.PLATFORM}')")
 
-    if settings.OVERRIDE_PLATFORM:
+    # Platform identifiers are lowercase, but allow values like "Darwin" from platform.system()
+    override_platform = (settings.OVERRIDE_PLATFORM or "").strip().lower()
+
+    if override_platform:
         gvars.log.warning(
-            f"Platform override is set, using '{settings.OVERRIDE_PLATFORM}' as platform "
+            f"Platform override is set, using '{override_platform}' as platform "
             f"instead of detected platform '{consts.PLATFORM}'"
         )
-        platform = settings.OVERRIDE_PLATFORM
+        platform = override_platform
     else:
         platform = consts.PLATFORM
 

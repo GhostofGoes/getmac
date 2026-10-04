@@ -1,5 +1,8 @@
+import ctypes
+import errno
 import platform
 import socket
+import sys
 from subprocess import CalledProcessError
 
 import pytest
@@ -29,18 +32,46 @@ def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
     utils.check_command.assert_called_once_with("networksetup")
 
 
+FACTER_IFCONFIG = "third_party/facter/ifconfig/"
+GLPI_IFCONFIG = "third_party/glpi_agent/generic/ifconfig/"
+
 ifconfigether_samples = [
-    ("2c:f0:ee:2f:c7:de", "OSX/ifconfig.out"),
-    ("08:00:27:2b:c2:ed", "macos_10.12.6/ifconfig.out"),
-    ("08:00:27:2b:c2:ed", "macos_10.12.6/ifconfig_en0.out"),
+    ("2c:f0:ee:2f:c7:de", "en0", "OSX/ifconfig.out"),
+    ("08:00:27:2b:c2:ed", "en0", "macos_10.12.6/ifconfig.out"),
+    ("08:00:27:2b:c2:ed", "en0", "macos_10.12.6/ifconfig_en0.out"),
+    # Mac OS X 10.5 - 10.6 (Facter samples)
+    ("00:1b:63:ae:02:66", "en0", FACTER_IFCONFIG + "Mac_OS_X_10.5.5_ifconfig"),
+    ("00:1e:52:70:d7:b6", "en1", FACTER_IFCONFIG + "Mac_OS_X_10.5.5_ifconfig"),
+    ("00:17:f2:06:e4:2e", "en0", FACTER_IFCONFIG + "darwin_9_8_0"),
+    ("00:50:56:c0:00:01", "vmnet1", FACTER_IFCONFIG + "darwin_9_8_0"),
+    ("00:17:f2:06:e4:2e", "en0", FACTER_IFCONFIG + "darwin_9_8_0_en0"),
+    ("00:17:f2:06:e3:c2", "en0", FACTER_IFCONFIG + "darwin_10_3_0"),
+    ("00:17:f2:06:e3:c3", "en1", FACTER_IFCONFIG + "darwin_10_3_0"),
+    ("00:50:56:c0:00:08", "vmnet8", FACTER_IFCONFIG + "darwin_10_3_0"),
+    ("00:17:f2:06:e3:c2", "en0", FACTER_IFCONFIG + "darwin_10_3_0_en0"),
+    ("58:b0:35:fa:08:b1", "en0", FACTER_IFCONFIG + "darwin_10_6_4"),
+    ("58:b0:35:7f:25:b3", "en1", FACTER_IFCONFIG + "darwin_10_6_4"),
+    ("0a:00:27:00:00:00", "vboxnet0", FACTER_IFCONFIG + "darwin_10_6_4"),
+    ("58:b0:35:7f:25:b3", "en1", FACTER_IFCONFIG + "darwin_10_6_4_en1"),
+    ("00:25:4b:ca:56:72", "en0", FACTER_IFCONFIG + "darwin_10_6_6_dualstack"),
+    ("00:25:00:48:19:ef", "en1", FACTER_IFCONFIG + "darwin_10_6_6_dualstack_en1"),
+    ("00:23:32:d5:ee:34", "en0", FACTER_IFCONFIG + "darwin_ifconfig_all_with_multiple_interfaces"),
+    ("00:11:33:22:55:44", "en1", FACTER_IFCONFIG + "darwin_ifconfig_all_with_multiple_interfaces"),
+    ("00:1c:b3:be:81:c9", "en1", FACTER_IFCONFIG + "darwin_ifconfig_single_interface"),
+    # Newer macOS, with VLAN (en0.1), bridge and AWDL interfaces
+    ("64:5a:ed:ea:5c:81", "en0", "third_party/facter/ifconfig_mac"),
+    ("08:00:27:f5:23:f7", "en0.1", "third_party/facter/ifconfig_mac"),
+    ("82:17:0e:93:9d:00", "bridge0", "third_party/facter/ifconfig_mac"),
+    ("06:5a:ed:ea:5c:81", "p2p0", "third_party/facter/ifconfig_mac"),
+    ("2e:ba:e4:83:4b:b7", "awdl0", "third_party/facter/ifconfig_mac"),
 ]
 
 
-@pytest.mark.parametrize(("mac", "sample_file"), ifconfigether_samples)
-def test_ifconfigether_darwin(benchmark, mocker, get_sample, mac, sample_file):
+@pytest.mark.parametrize(("mac", "iface", "sample_file"), ifconfigether_samples)
+def test_ifconfigether_darwin(benchmark, mocker, get_sample, mac, iface, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
-    assert mac == benchmark(getmac.IfconfigEther().get, arg="en0")
+    assert mac == benchmark(getmac.IfconfigEther().get, arg=iface)
 
     if sample_file == "OSX/ifconfig.out":
         assert "b2:eb:94:59:0b:d4" == getmac.IfconfigEther().get("awdl0")
@@ -55,6 +86,44 @@ def test_ifconfigether_darwin(benchmark, mocker, get_sample, mac, sample_file):
     assert not getmac.IfconfigEther().get("utun0")
 
 
+@pytest.mark.parametrize(
+    ("mac", "iface", "sample_file"),
+    [
+        # Output of "ifconfig" (all interfaces) from older net-tools on Linux,
+        # where the MAC is on the same line as the interface name
+        ("52:54:00:12:34:56", "eth0", "android_6/ifconfig.out"),
+        ("08:00:27:e8:81:6f", "eth0", "ubuntu_12.04/ifconfig.out"),
+        ("16:8D:2A:15:17:91", "eth0", FACTER_IFCONFIG + "centos_5_5"),
+        ("00:17:F2:06:E4:26", "eth0", FACTER_IFCONFIG + "fedora_10"),
+        ("00:50:56:C0:00:01", "vmnet1", FACTER_IFCONFIG + "fedora_10"),
+        ("00:50:56:C0:00:08", "vmnet8", FACTER_IFCONFIG + "fedora_10"),
+        ("00:17:F2:0D:9B:A8", "eth0", FACTER_IFCONFIG + "fedora_13"),
+        ("00:18:F3:F6:33:E5", "eth0:2", FACTER_IFCONFIG + "fedora_8"),
+        (
+            "00:12:3f:be:22:01",
+            "eth0",
+            FACTER_IFCONFIG + "linux_ifconfig_all_with_multiple_interfaces",
+        ),
+        ("00:16:CB:A6:D4:3A", "eth0", FACTER_IFCONFIG + "ubuntu_7_04"),
+        # 9 character name, so only one space before "Link encap"
+        ("00:17:F2:49:E0:E6", "ath0:avah", FACTER_IFCONFIG + "ubuntu_7_04"),
+        ("A4:BA:DB:A5:F5:FA", "eth0", GLPI_IFCONFIG + "dell-xt2"),
+        ("4E:8C:81:ED:9B:35", "pan0", GLPI_IFCONFIG + "dell-xt2"),
+        ("00:24:D6:6F:81:3A", "wlan0", GLPI_IFCONFIG + "dell-xt2"),
+        ("00:50:56:AD:00:0E", "bond0", GLPI_IFCONFIG + "linux-bonding"),
+        ("00:1E:68:2F:85:D8", "peth0", GLPI_IFCONFIG + "linux-rhel5.6"),
+        ("FE:FF:FF:FF:FF:FF", "vif1.0", GLPI_IFCONFIG + "linux-rhel5.6"),
+    ],
+)
+def test_ifconfigother_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
+    assert mac == benchmark(getmac.IfconfigOther().get, arg=iface)
+    utils.popen.assert_called_with("ifconfig", "")
+
+    assert getmac.IfconfigOther().get("lo") is None
+    assert getmac.IfconfigOther().get("sit0") is None
+
+
 def test_ifconfigother_edge_cases(mocker):
     # Test the test function
     mocker.patch("getmac.utils.check_command", return_value=False)
@@ -62,6 +131,38 @@ def test_ifconfigother_edge_cases(mocker):
     utils.check_command.assert_called_once_with("ifconfig")
 
     assert getmac.IfconfigOther().get("") is None
+
+
+def test_ifconfigother_fallback_args(mocker, get_sample):
+    # "ifconfig" without arguments fails, so "ifconfig -a" is used instead
+    content = get_sample(FACTER_IFCONFIG + "centos_5_5")
+    cpe = CalledProcessError(cmd="ifconfig", returncode=1)
+    mocker.patch("getmac.utils.popen", side_effect=[cpe, content, content])
+
+    inst = getmac.IfconfigOther()
+    assert inst.get("eth0") == "16:8D:2A:15:17:91"
+    utils.popen.assert_called_with("ifconfig", "-a")
+
+    # The arguments that worked are reused for the next lookup
+    assert inst.get("eth0") == "16:8D:2A:15:17:91"
+    assert utils.popen.call_count == 3
+    utils.popen.assert_called_with("ifconfig", "-a")
+
+
+@pytest.mark.parametrize("args", ["", "-a"])
+def test_ifconfigother_infiniband(mocker, get_sample, args):
+    """InfiniBand has a 20 byte "HWaddr", its first 6 bytes aren't a MAC."""
+    content = get_sample(FACTER_IFCONFIG + "linux_ifconfig_ib0") + "\n"
+    content += get_sample(FACTER_IFCONFIG + "ubuntu_7_04")
+    outputs = [content, content]
+    if args:  # "ifconfig" without arguments fails, so "ifconfig -a" is used
+        outputs.insert(0, CalledProcessError(cmd="ifconfig", returncode=1))
+    mocker.patch("getmac.utils.popen", side_effect=outputs)
+
+    inst = getmac.IfconfigOther()
+    assert inst.get("ib0") is None
+    assert inst.get("eth0") == "00:16:CB:A6:D4:3A"
+    utils.popen.assert_called_with("ifconfig", args)
 
 
 # TODO: several of these should be a different method without a interface arg
@@ -79,6 +180,53 @@ ifconfig_samples = [
     ("32:00:10:bf:60:00", "bridge0", "OSX/ifconfig.out"),
     ("08:00:27:18:64:56", "em0", "openbsd_6/ifconfig.out"),
     ("08:00:27:18:64:56", "em0", "openbsd_6/ifconfig_em0.out"),
+    ("52:54:00:12:34:56", "eth0", "android_6/ifconfig_eth0.out"),
+    ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ifconfig.out"),
+    ("02:42:33:bf:3e:40", "docker0", "ubuntu_18.04/ifconfig.out"),
+    ("b4:2e:99:36:1e:64", "eth0", "WSL_ubuntu_18.04/ifconfig.out"),
+    ("00:15:5d:83:d9:0a", "eth8", "WSL_ubuntu_18.04/ifconfig.out"),
+    # NetBSD uses "address:" instead of "ether"
+    ("08:00:27:ce:da:53", "wm0", "netbsd8.2/ifconfig.out"),
+    ("08:00:27:ce:da:53", "wm0", "netbsd8.2/ifconfig_wm0.out"),
+    # Facter samples
+    ("00:0e:0c:68:67:7c", "fxp0", FACTER_IFCONFIG + "6.0-STABLE_FreeBSD_ifconfig"),
+    ("00:0e:0c:68:67:7c", "fxp0", FACTER_IFCONFIG + "freebsd_6_0"),
+    ("00:0b:db:93:09:67", "bge0", FACTER_IFCONFIG + "bsd_ifconfig_all_with_multiple_interfaces"),
+    ("00:0b:db:93:09:68", "bge1", FACTER_IFCONFIG + "bsd_ifconfig_all_with_multiple_interfaces"),
+    ("16:8D:2A:15:17:91", "eth0", FACTER_IFCONFIG + "centos_5_5"),
+    ("16:8D:2A:15:17:91", "eth0", FACTER_IFCONFIG + "centos_5_5_eth0"),
+    ("00:17:F2:06:E4:26", "eth0", FACTER_IFCONFIG + "fedora_10_eth0"),
+    ("00:17:F2:0D:9B:A8", "eth0", FACTER_IFCONFIG + "fedora_13"),
+    ("00:17:F2:0D:9B:A8", "eth0", FACTER_IFCONFIG + "fedora_13_eth0"),
+    ("00:18:F3:F6:33:E5", "eth0", FACTER_IFCONFIG + "fedora_8"),
+    ("00:18:F3:F6:33:E5", "eth0:1", FACTER_IFCONFIG + "fedora_8"),  # Alias interface
+    ("00:18:F3:F6:33:E5", "eth0", FACTER_IFCONFIG + "fedora_8_eth0"),
+    ("00:12:3f:be:22:01", "eth0", FACTER_IFCONFIG + "linux_ifconfig_all_with_multiple_interfaces"),
+    ("00:21:cc:4b:29:7d", "em1", FACTER_IFCONFIG + "linux_ifconfig_no_addr"),
+    ("00:16:CB:A6:D4:3A", "eth0", FACTER_IFCONFIG + "ubuntu_7_04"),
+    ("00:17:F2:49:E0:E6", "ath0", FACTER_IFCONFIG + "ubuntu_7_04"),
+    ("00:16:CB:A6:D4:3A", "eth0", FACTER_IFCONFIG + "ubuntu_7_04_eth0"),
+    # GLPI Agent samples
+    ("08:00:27:2e:70:97", "em0", GLPI_IFCONFIG + "dragonfly-1"),
+    ("3c:a9:f4:5a:04:b8", "iwn0", GLPI_IFCONFIG + "freebsd-4"),
+    ("3c:a9:f4:5a:04:b8", "wlan0", GLPI_IFCONFIG + "freebsd-4"),
+    ("c8:0a:a9:3f:35:fa", "re0", GLPI_IFCONFIG + "freebsd-8.1"),
+    ("02:24:1b:9d:ca:01", "fwe0", GLPI_IFCONFIG + "freebsd-8.1"),
+    ("0a:00:27:00:00:00", "vboxnet0", GLPI_IFCONFIG + "freebsd-8.1"),
+    ("00:16:18:87:ca:b5", "bce0", GLPI_IFCONFIG + "freebsd-bis"),
+    ("00:16:18:87:ca:b6", "bce1", GLPI_IFCONFIG + "freebsd-bis"),
+    ("00:23:18:cf:0d:93", "em0", GLPI_IFCONFIG + "freebsd-ter"),
+    ("4c:ed:de:2c:9d:9a", "wlan0", GLPI_IFCONFIG + "freebsd-ter"),
+    ("48:5b:39:c6:53:ba", "eth0", GLPI_IFCONFIG + "linux-archlinux"),
+    ("0a:00:27:00:00:00", "vboxnet0", GLPI_IFCONFIG + "linux-archlinux"),
+    ("00:50:56:AD:00:0E", "bond0", GLPI_IFCONFIG + "linux-bonding"),
+    ("00:50:56:AD:00:0E", "eth0", GLPI_IFCONFIG + "linux-bonding"),
+    ("02:42:0c:d5:0f:d7", "docker0", GLPI_IFCONFIG + "linux-el8"),
+    ("e4:11:5b:ed:36:0c", "eth0", GLPI_IFCONFIG + "linux-el8"),
+    ("e4:11:5b:ed:36:38", "eth1", GLPI_IFCONFIG + "linux-el8"),
+    ("e4:11:5b:ed:36:0c", "eth0:srv", GLPI_IFCONFIG + "linux-el8"),
+    ("4e:05:62:03:69:e7", "macvlan0", GLPI_IFCONFIG + "linux-el8"),
+    ("00:23:ae:8c:33:b6", "em1", GLPI_IFCONFIG + "linux-fc17"),
 ]
 
 
@@ -100,12 +248,109 @@ def test_parse_ifconfig_samples(benchmark, get_sample, mac, iface, sample_file):
     assert not getmac._parse_ifconfig("em", content)
     assert not getmac._parse_ifconfig("e", content)
     assert not getmac._parse_ifconfig("h0", content)
-    assert not getmac._parse_ifconfig("docker0", content)
+    if "docker0:" not in content:  # Some samples have a real docker0 interface
+        assert not getmac._parse_ifconfig("docker0", content)
     assert not getmac._parse_ifconfig("XHC20", content)
     assert not getmac._parse_ifconfig("utun0", content)
     assert not getmac._parse_ifconfig("enc0", content)
     assert not getmac._parse_ifconfig("pflog0", content)
     assert not getmac._parse_ifconfig("", content)
+
+
+@pytest.mark.parametrize(
+    ("iface", "sample_file"),
+    [
+        # Android 9 emulator, "Link encap:UNSPEC" without a MAC
+        ("wlan0", "android_9/ifconfig.out"),
+        ("radio0", "android_9/ifconfig.out"),
+        ("wlan0", "android_9/ifconfig_wlan0.out"),
+        # Solaris only shows the MAC to root (and then with short octets,
+        # see test_parse_ifconfig_short_octets)
+        ("e1000g0", "solaris10/ifconfig_-a.out"),
+        ("e1000g0", "solaris10/ifconfig_e1000g0.out"),
+        ("e1000g0", FACTER_IFCONFIG + "solaris_ifconfig_all_with_multiple_interfaces"),
+        ("bge0", FACTER_IFCONFIG + "sunos_ifconfig_all_with_multiple_interfaces"),
+        ("e1000g0", GLPI_IFCONFIG + "oi-2021.10"),
+        ("lo", FACTER_IFCONFIG + "linux_ifconfig_no_mac"),
+        # OpenVZ venet and Atheros wifi0 have a 16 byte "HWaddr" with dashes, not a MAC
+        ("venet0", FACTER_IFCONFIG + "linux_ifconfig_venet"),
+        ("venet0:0", FACTER_IFCONFIG + "linux_ifconfig_venet"),
+        ("wifi0", FACTER_IFCONFIG + "ubuntu_7_04"),
+        # InfiniBand has a 20 byte "HWaddr", its first 6 bytes aren't a MAC
+        ("ib0", FACTER_IFCONFIG + "linux_ifconfig_ib0"),
+        ("sit0", GLPI_IFCONFIG + "linux-bonding"),
+        # The interface after sit0 (wlan0) has a MAC, it isn't sit0's
+        ("sit0", GLPI_IFCONFIG + "dell-xt2"),
+        ("faith0", GLPI_IFCONFIG + "dragonfly-1"),
+        ("tun0", GLPI_IFCONFIG + "freebsd-8.1"),
+        # IP over FireWire, the "lladdr" isn't a MAC
+        ("fwip0", GLPI_IFCONFIG + "freebsd-8.1"),
+        # FireWire on macOS, the "lladdr" is 8 bytes (EUI-64), not a MAC
+        ("fw0", FACTER_IFCONFIG + "darwin_10_3_0"),
+    ],
+)
+def test_parse_ifconfig_no_mac(mocker, get_sample, iface, sample_file):
+    content = get_sample(sample_file)
+    assert getmac._parse_ifconfig(iface, content) is None
+
+    mocker.patch("getmac.utils.popen", return_value=content)
+    assert getmac.IfconfigWithIfaceArg().get(iface) is None
+
+
+@pytest.mark.parametrize(
+    ("iface", "sample_file"),
+    [
+        ("ib0", FACTER_IFCONFIG + "linux_ifconfig_ib0"),
+        ("venet0:1", FACTER_IFCONFIG + "linux_ifconfig_venet"),
+        ("lo", FACTER_IFCONFIG + "linux_ifconfig_no_mac"),
+    ],
+)
+def test_parse_ifconfig_no_mac_before_mac(get_sample, iface, sample_file):
+    """
+    An interface without a MAC that's listed before one with a MAC
+    must not get the MAC of the interface after it.
+    """
+    # Blank line between interfaces, like "ifconfig" from net-tools prints
+    content = get_sample(sample_file) + "\n" + get_sample(FACTER_IFCONFIG + "ubuntu_7_04")
+    assert getmac._parse_ifconfig(iface, content) is None
+    assert getmac._parse_ifconfig("ath0", content) == "00:17:F2:49:E0:E6"
+
+
+@pytest.mark.parametrize(
+    ("mac", "raw_mac", "iface", "sample_file"),
+    [
+        (
+            "00:0c:29:c1:70:2a",
+            "0:c:29:c1:70:2a",
+            "e1000g0",
+            FACTER_IFCONFIG + "solaris_ifconfig_single_interface",
+        ),
+        ("00:50:56:9a:45:1c", "0:50:56:9a:45:1c", "net0", "third_party/facter/solaris_ifconfig"),
+        ("08:00:20:d1:6d:79", "8:0:20:d1:6d:79", "hme0", FACTER_IFCONFIG + "open_solaris_10"),
+        ("00:1e:c9:43:55:f9", "0:1e:c9:43:55:f9", "bge0", FACTER_IFCONFIG + "open_solaris_b132"),
+        ("02:08:20:89:75:75", "2:8:20:89:75:75", "int0", FACTER_IFCONFIG + "open_solaris_b132"),
+        ("00:15:17:7a:60:30", "0:15:17:7a:60:30", "e1000g0", GLPI_IFCONFIG + "solaris-10"),
+        ("08:00:27:fc:ad:56", "8:0:27:fc:ad:56", "e1000g0", GLPI_IFCONFIG + "opensolaris"),
+        # Debian GNU/kFreeBSD
+        (
+            "00:11:0a:59:67:90",
+            "0:11:a:59:67:90",
+            "em0",
+            FACTER_IFCONFIG + "debian_kfreebsd_ifconfig",
+        ),
+    ],
+)
+def test_parse_ifconfig_short_octets(mocker, get_sample, mac, raw_mac, iface, sample_file):
+    """
+    Solaris (as root) and kFreeBSD print the MAC without leading zeros
+    in each octet, e.g. "ether 0:c:29:c1:70:2a".
+    """
+    content = get_sample(sample_file)
+    assert getmac._parse_ifconfig(iface, content) == raw_mac
+    assert utils.clean_mac(raw_mac) == mac
+
+    mocker.patch("getmac.utils.popen", return_value=content)
+    assert getmac.IfconfigWithIfaceArg().get(iface) == raw_mac
 
 
 def test_parse_ifconfig_bad_params():
@@ -170,6 +415,37 @@ def test_arping_host_busybox(benchmark, mocker, get_sample):
     assert "00:15:5d:20:f2:73" == benchmark(ap.get, arg="172.29.16.1")
 
 
+def test_arping_host_habets_fallback(mocker, get_sample):
+    # Habets arping fails on the iputils arguments, so the Habets arguments are used instead
+    cpe = CalledProcessError(
+        cmd="arping -f -c 1 192.168.16.254",
+        returncode=1,
+        output=get_sample("WSL2_kali_2023.1/habets_arping_-f_-c_1_172-29-16-1.out").encode(),
+    )
+    habets_output = get_sample("ubuntu_18.04/arping-habets.out")
+    mocker.patch("getmac.utils.popen", side_effect=[cpe, habets_output])
+
+    ap = getmac.ArpingHost()
+    assert ap.get("192.168.16.254") == "00:50:56:e8:32:3c"
+    assert ap._is_iputils is False
+    utils.popen.assert_called_with("arping", "-r -C 1 -c 1 192.168.16.254")
+
+
+def test_arping_host_busybox_error_no_fallback(mocker, get_sample):
+    # BusyBox's usage error doesn't mention Habets, so the Habets arguments aren't tried
+    cpe = CalledProcessError(
+        cmd="arping --ridic",
+        returncode=1,
+        output=get_sample("WSL2_kali_2023.1/busbox_arping_--ridic.out").encode(),
+    )
+    mocker.patch("getmac.utils.popen", side_effect=cpe)
+
+    ap = getmac.ArpingHost()
+    assert ap.get("172.29.16.1") is None
+    assert ap._is_iputils is True
+    utils.popen.assert_called_once_with("arping", "-f -c 1 172.29.16.1")
+
+
 def test_arping_host_edge_cases(mocker):
     # Test the test function
     mocker.patch("getmac.utils.check_command", return_value=False)
@@ -198,10 +474,72 @@ def test_arping_host_edge_cases(mocker):
     assert not getmac.ArpingHost().get("192.168.16.254")
 
 
+@pytest.fixture
+def windll(mocker):
+    """
+    Stands in for ``ctypes.windll``, which only exists on Windows. SendARP()
+    succeeds, and writes a MAC to the buffer it's given (like the real one).
+    """
+    mac_buffer = ctypes.create_string_buffer(6)
+    mocker.patch("ctypes.c_buffer", return_value=mac_buffer)
+    windll = mocker.patch("ctypes.windll", create=True)
+    windll.wsock32.inet_addr.return_value = 0x0A0200C0  # 192.0.2.10, in network byte order
+
+    def _send_arp(*_args):
+        mac_buffer.raw = b"\x00\x1a\x2b\x0c\x4d\xfe"
+        return 0  # NO_ERROR
+
+    windll.Iphlpapi.SendARP.side_effect = _send_arp
+    return windll
+
+
+def test_ctypes_host_test(mocker, windll):
+    windll.wsock32.inet_addr.return_value = 0x0100007F
+    assert getmac.CtypesHost().test() is True
+    windll.wsock32.inet_addr.assert_called_once_with(b"127.0.0.1")
+
+    # Not on Windows
+    mocker.patch("ctypes.windll", None)
+    assert getmac.CtypesHost().test() is False
+
+
+def test_ctypes_host(windll):
+    # Bytes less than 0x10 are zero-padded, e.g. "0c" not "c"
+    assert getmac.CtypesHost().get("192.0.2.10") == "001a2b0c4dfe"
+    windll.wsock32.inet_addr.assert_called_once_with(b"192.0.2.10")
+    assert windll.Iphlpapi.SendARP.call_args[0][:2] == (0x0A0200C0, 0)
+
+    # ERROR_BAD_NET_NAME, no ARP reply from the host
+    windll.Iphlpapi.SendARP.side_effect = None
+    windll.Iphlpapi.SendARP.return_value = 67
+    assert getmac.CtypesHost().get("192.0.2.10") is None
+
+
+def test_ctypes_host_hostname(mocker, windll):
+    """If inet_addr() can't parse the argument, it's resolved as a hostname."""
+    windll.wsock32.inet_addr.side_effect = [-1, 0x0A0200C0]  # INADDR_NONE, then 192.0.2.10
+    mocker.patch("socket.gethostbyname", return_value="192.0.2.10")
+
+    assert getmac.CtypesHost().get("myhost") == "001a2b0c4dfe"
+    socket.gethostbyname.assert_called_once_with("myhost")
+    # inet_addr() takes a char* (bytes), a str would be passed as a wchar_t*
+    assert windll.wsock32.inet_addr.call_args_list == [
+        mocker.call(b"myhost"),
+        mocker.call(b"192.0.2.10"),
+    ]
+    assert windll.Iphlpapi.SendARP.call_args[0][0] == 0x0A0200C0
+
+
 def test_windows_10_iface_getmac_exe(benchmark, mocker, get_sample):
     content = get_sample("windows_10/getmac.out")
     mocker.patch("getmac.utils.popen", return_value=content)
     assert "74-D4-35-E9-45-71" == benchmark(getmac.GetmacExe().get, arg="Ethernet 2")
+
+    # The regex that worked is reused for the next lookup
+    inst = getmac.GetmacExe()
+    assert inst.get("Ethernet 2") == "74-D4-35-E9-45-71"
+    assert inst._champ
+    assert inst.get("Ethernet 2") == "74-D4-35-E9-45-71"
 
 
 def test_windows_10_iface_ipconfig(benchmark, mocker, get_sample):
@@ -218,7 +556,13 @@ def test_windows_10_iface_wmic(benchmark, mocker, get_sample):
 
 @pytest.mark.parametrize(
     ("mac", "ip", "sample_file"),
-    [("78-28-ca-c4-66-fe", "10.0.0.175", "windows_10/arp_-a_10.0.0.175.out")],
+    [
+        ("78-28-ca-c4-66-fe", "10.0.0.175", "windows_10/arp_-a_10.0.0.175.out"),
+        # French Windows
+        ("00-80-0c-07-ae-d3", "192.168.0.1", "third_party/glpi_agent/generic/arp/win32"),
+        # French Windows, "No ARP Entries Found."
+        (None, "192.168.0.1", "third_party/glpi_agent/generic/arp/none"),
+    ],
 )
 def test_arpexe_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
     content = get_sample(sample_file)
@@ -358,7 +702,8 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
 
     mocker.patch("getmac.utils.check_path", return_value=False)
     assert getmac.ArpFile().test() is False
-    utils.check_path.assert_called_once_with("/proc/net/arp")
+    # The path can be changed with the ARP_PATH environment variable
+    utils.check_path.assert_called_once_with(getmac.ArpFile._path)
 
 
 @pytest.mark.parametrize(
@@ -383,33 +728,6 @@ def test_arpfile_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
 def test_arpfile_ignored_entries(mocker, get_sample, ip, sample_file):
     mocker.patch("getmac.utils.read_file", return_value=get_sample(sample_file))
     assert getmac.ArpFile().get(ip) is None
-
-
-def test_arpfile_get_mac_address_issue_76(mocker, get_sample):
-    """
-    get_mac_address() shouldn't return the stale MAC of an
-    incomplete entry in ``/proc/net/arp`` (issue #76).
-    """
-    mocker.patch(
-        "getmac.getmac.METHOD_CACHE",
-        {"ip4": getmac.ArpFile(), "ip6": None, "iface": None, "default_iface": None},
-    )
-    mocker.patch(
-        "getmac.getmac.FALLBACK_CACHE",
-        {"ip4": [], "ip6": [], "iface": [], "default_iface": []},
-    )
-    mocker.patch(
-        "getmac.utils.read_file",
-        return_value=get_sample("ubuntu_20.04/cat_proc-net-arp.out"),
-    )
-    # Don't send the UDP packet used to populate the ARP table
-    mock_socket = mocker.patch("socket.socket")
-
-    assert getmac.get_mac_address(ip="192.168.0.47") == "02:00:00:00:00:47"
-    mock_socket.assert_not_called()
-
-    assert getmac.get_mac_address(ip="192.168.0.46") is None
-    mock_socket.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
 
 
 @pytest.mark.parametrize(
@@ -491,6 +809,13 @@ def test_netstatiface_samples(benchmark, mocker, get_sample, mac, iface, sample_
     # assert getmac.NetstatIface().get("Kernel") is None
     # assert getmac.NetstatIface().get("e") is None
 
+    # The regex that worked is reused for the next lookup
+    inst = getmac.NetstatIface()
+    assert mac == inst.get(iface)
+    assert inst._working_regex
+    assert mac == inst.get(iface)
+    assert inst.get("eth00") is None
+
 
 def test_netstatiface_edge_cases(mocker):
     # Test the test function
@@ -505,23 +830,37 @@ def test_netstatiface_edge_cases(mocker):
 
 
 @pytest.mark.parametrize(
-    ("expected_mac", "iface_arg"),
+    ("expected_mac", "iface_arg", "sample_file"),
     [
-        ("b4:2e:99:36:1e:33", "eth0"),
-        ("b4:2e:99:35:1e:86", "eth3"),
-        ("00:15:5d:83:d9:0a", "eth8"),
-        (None, "lo"),
-        ("00:ff:36:20:68:56", "eth15"),
-        (None, "eth16"),
-        (None, "eth"),
+        ("b4:2e:99:36:1e:33", "eth0", "WSL_ubuntu_18.04/ip_link.out"),
+        ("b4:2e:99:35:1e:86", "eth3", "WSL_ubuntu_18.04/ip_link.out"),
+        ("00:15:5d:83:d9:0a", "eth8", "WSL_ubuntu_18.04/ip_link.out"),
+        (None, "lo", "WSL_ubuntu_18.04/ip_link.out"),
+        ("00:ff:36:20:68:56", "eth15", "WSL_ubuntu_18.04/ip_link.out"),
+        (None, "eth16", "WSL_ubuntu_18.04/ip_link.out"),
+        (None, "eth", "WSL_ubuntu_18.04/ip_link.out"),
+        ("0a:15:3d:6f:80:b5", "dummy0", "android_6.0.1_no_root__ip_link.txt"),
+        ("00:0a:f5:52:24:04", "wlan0", "android_6.0.1_no_root__ip_link.txt"),
+        ("02:0a:f5:52:24:04", "p2p0", "android_6.0.1_no_root__ip_link.txt"),
+        # Cellular data interfaces ("link/[530]") don't have a MAC
+        (None, "rmnet0", "android_6.0.1_no_root__ip_link.txt"),
+        (None, "rmnet_data0", "android_6.0.1_no_root__ip_link.txt"),
+        (None, "lo", "android_6.0.1_no_root__ip_link.txt"),
+        ("00:50:56:9a:cb:a4", "ens160", "third_party/facter/ip_link_show"),
+        (None, "lo", "third_party/facter/ip_link_show"),
     ],
 )
-def test_ip_link_iface_wsl(benchmark, mocker, get_sample, expected_mac, iface_arg):
+def test_ip_link_iface_no_iface_arg(
+    benchmark, mocker, get_sample, expected_mac, iface_arg, sample_file
+):
+    # Code path for older versions of "ip link" that don't accept an interface
+    # argument, which parses the output of "ip link" (all interfaces) instead
     mocker.patch("getmac.getmac.IpLinkIface._tested_arg", True)
     mocker.patch("getmac.getmac.IpLinkIface._iface_arg", False)
-    content = get_sample("WSL_ubuntu_18.04/ip_link.out")
+    content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
     assert expected_mac == benchmark(getmac.IpLinkIface().get, arg=iface_arg)
+    utils.popen.assert_called_with("ip", "link")
 
 
 @pytest.mark.parametrize(
@@ -532,6 +871,7 @@ def test_ip_link_iface_wsl(benchmark, mocker, get_sample, expected_mac, iface_ar
         ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ip_link.out"),
         ("74:d4:35:e9:45:71", "eth0", "ip_link_list.out"),
         ("52:54:00:12:34:56", "eth0", "android_6/ip_link.out"),
+        ("52:54:00:12:34:56", "eth0", "android_6/ip_link_show_eth0.out"),
         ("46:37:e2:ae:b8:7f", "radio0@if10", "android_9/ip_link.out"),
     ],
 )
@@ -591,6 +931,9 @@ def test_default_iface_route_command(benchmark, mocker, get_sample, expected_ifa
         ("ens33", "ubuntu_18.10/proc_net_route.out"),
         ("eth0", "android_6/cat_proc-net-route.out"),
         (None, "android_9/cat_proc-net-route.out"),
+        ("ens160", "third_party/facter/proc_net_route"),
+        # Only the header line, no routes
+        (None, "third_party/facter/proc_net_route_empty"),
     ],
 )
 def test_defaultifacelinuxroutefile_samples(benchmark, mocker, get_sample, iface, sample_file):
@@ -618,12 +961,36 @@ def test_defaultifacelinuxroutefile(mocker):
         ("ens33", "ubuntu_18.04/ip_route_list_0slash0.out"),
         ("eth0", "WSL_ubuntu_18.04/ip_route_list_0slash0.out"),
         ("eth0", "android_6/ip_route_list_0slash0.out"),
+        ("wlan0", "third_party/glpi_agent/linux/ip/default-gateway-1"),
+        # Two default routes, the first one has the lowest metric
+        ("eth0", "third_party/glpi_agent/linux/ip/default-gateway-2"),
+        # No "proto" after the interface name
+        ("ens193", "third_party/glpi_agent/linux/ip/default-gateway-3"),
     ],
 )
 def test_defaultifaceiproute_samples(benchmark, mocker, get_sample, iface, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
     assert iface == benchmark(getmac.DefaultIfaceIpRoute().get)
+
+
+@pytest.mark.parametrize(
+    ("iface", "output"),
+    [
+        ("eth0", "default via 10.0.0.1 dev eth0 metric 100\n"),
+        ("wg0", "default dev wg0 scope link\n"),
+        # Route with multiple next hops (multipath), "proto" is before "dev"
+        (
+            "eth0",
+            "default proto static metric 100\n"
+            "\tnexthop via 10.0.0.1 dev eth0 weight 1\n"
+            "\tnexthop via 10.0.0.2 dev eth1 weight 1\n",
+        ),
+    ],
+)
+def test_defaultifaceiproute_without_proto(mocker, iface, output):
+    mocker.patch("getmac.utils.popen", return_value=output)
+    assert getmac.DefaultIfaceIpRoute().get() == iface
 
 
 def test_defaultifaceiproute(mocker):
@@ -634,7 +1001,7 @@ def test_defaultifaceiproute(mocker):
     assert getmac.DefaultIfaceIpRoute().get() is None
 
     mocker.patch("getmac.utils.popen", return_value="asdfalksj3")
-    assert not getmac.DefaultIfaceIpRoute().get()
+    assert getmac.DefaultIfaceIpRoute().get() is None
 
 
 @pytest.mark.parametrize(
@@ -642,6 +1009,8 @@ def test_defaultifaceiproute(mocker):
     [
         ("en0", "macos_10.12.6/route_-n_get_default.out"),
         ("em0", "freebsd11/route_get_default.out"),
+        # Solaris (uses the "other" platform methods)
+        ("net0", "third_party/facter/route_n_get_default"),
     ],
 )
 def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, iface, sample_file):
@@ -664,41 +1033,47 @@ def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, ifac
     utils.check_command.assert_called_once_with("route")
 
 
+# NOTE: Darwin and Solaris will return MACs without leading zeroes,
+# e.g. "58:6d:8f:7:c9:94" instead of "58:6d:8f:07:c9:94"
+#
+# It makes more sense to me to just handle the weird mac here
+# in the test instead of adding redundant logic for cleaning
+# the result to the method. "raw_mac" is what the method returns,
+# and "mac" is the result after cleaning.
 @pytest.mark.parametrize(
-    ("mac", "ip", "sample_file"),
+    ("mac", "raw_mac", "ip", "sample_file"),
     [
-        ("58:6d:8f:07:c9:94", "192.168.1.1", "OSX/arp_-a.out"),
-        ("58:6d:8f:07:c9:94", "192.168.1.1", "OSX/arp_-an.out"),
-        ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/arp_-a.out"),
-        ("00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/arp_-an.out"),
-        ("52:54:00:12:35:02", "10.0.2.2", "freebsd11/arp_10-0-2-2.out"),
-        ("52:54:00:12:35:02", "10.0.2.2", "solaris10/arp_10-0-2-2.out"),
+        ("58:6d:8f:07:c9:94", "58:6d:8f:7:c9:94", "192.168.1.1", "OSX/arp_-a.out"),
+        ("58:6d:8f:07:c9:94", "58:6d:8f:7:c9:94", "192.168.1.1", "OSX/arp_-an.out"),
+        ("52:54:00:12:35:02", "52:54:0:12:35:2", "10.0.2.2", "macos_10.12.6/arp_-an.out"),
+        ("52:54:00:12:35:03", "52:54:0:12:35:3", "10.0.2.3", "macos_10.12.6/arp_-an.out"),
+        ("01:00:5e:00:00:fb", "1:0:5e:0:0:fb", "224.0.0.251", "macos_10.12.6/arp_-an.out"),
+        ("52:54:00:12:35:03", "52:54:0:12:35:3", "10.0.2.3", "macos_10.12.6/arp_10.0.2.3.out"),
+        ("00:50:56:f1:4c:50", "00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/arp_-a.out"),
+        ("00:50:56:f1:4c:50", "00:50:56:f1:4c:50", "192.168.16.2", "ubuntu_18.04/arp_-an.out"),
+        (
+            "00:8d:b9:37:4a:c2",
+            "00:8d:b9:37:4a:c2",
+            "192.168.0.3",
+            "third_party/glpi_agent/generic/arp/linux",
+        ),
+        ("52:54:00:12:35:02", "52:54:00:12:35:02", "10.0.2.2", "freebsd11/arp_10-0-2-2.out"),
+        ("52:54:00:12:35:02", "52:54:00:12:35:02", "10.0.2.2", "netbsd8.2/arp_10-0-2-2.out"),
+        ("52:54:00:12:35:03", "52:54:00:12:35:03", "10.0.2.3", "netbsd8.2/arp_a.out"),
+        ("52:54:00:12:35:02", "52:54:0:12:35:2", "10.0.2.2", "solaris10/arp_10-0-2-2.out"),
     ],
 )
-def test_arp_various_args_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+def test_arp_various_args_samples(benchmark, mocker, get_sample, mac, raw_mac, ip, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
-    if "OSX" in sample_file:
+    if "OSX" in sample_file or "macos" in sample_file:
         mocker.patch.object(consts, "DARWIN", True)
     elif "solaris" in sample_file:
         mocker.patch.object(consts, "SOLARIS", True)
 
     result = benchmark(getmac.ArpVariousArgs().get, arg=ip)
-
-    # NOTE: Darwin and Solaris will return MACs without leading zeroes,
-    # e.g. "58:6d:8f:7:c9:94" instead of "58:6d:8f:07:c9:94"
-    #
-    # It makes more sense to me to just handle the weird mac here
-    # in the test instead of adding redundant logic for cleaning
-    # the result to the method.
-    if "OSX" in sample_file:
-        assert result == "58:6d:8f:7:c9:94"
-    elif "solaris" in sample_file:
-        assert result == "52:54:0:12:35:2"
-    if "OSX" in sample_file or "solaris" in sample_file:
-        result = utils.clean_mac(result)
-
-    assert mac == result
+    assert result == raw_mac
+    assert mac == utils.clean_mac(result)
 
 
 def test_arp_various_args_edge_cases(mocker, get_sample):
@@ -731,6 +1106,17 @@ def test_sys_iface_file(mocker):
     utils.check_path.assert_called_once_with("/sys/class/net/")
 
 
+@pytest.mark.parametrize(
+    ("mac", "iface", "sample_file"),
+    [("52:54:00:12:34:56", "eth0", "android_6/cat_sys-class-net-eth0-address.out")],
+)
+def test_sys_iface_file_samples(mocker, get_sample, mac, iface, sample_file):
+    mocker.patch("getmac.utils.read_file", return_value=get_sample(sample_file))
+    # The file has a trailing newline, get_mac_address() cleans it up
+    assert mac == utils.clean_mac(getmac.SysIfaceFile().get(iface))
+    utils.read_file.assert_called_once_with(f"/sys/class/net/{iface}/address")
+
+
 @pytest.mark.skipif(
     platform.system() != "Linux",
     reason="Can't reliably mock fcntl on non-Linux platforms",
@@ -744,6 +1130,29 @@ def test_fcntl_iface(mocker):
     m = mocker.patch("socket.socket")
     assert getmac.FcntlIface().get("enp3s0") == "74:d4:35:e9:45:73"
     m.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
+    # The socket is closed when it's done
+    m.return_value.__exit__.assert_called_once()
+
+
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Can't reliably mock fcntl on non-Linux platforms",
+)
+def test_fcntl_iface_no_such_device(mocker):
+    """The socket is closed even if the ioctl fails, e.g. for an interface that doesn't exist."""
+    mocker.patch("fcntl.ioctl", side_effect=OSError(errno.ENODEV, "No such device"))
+    m = mocker.patch("socket.socket")
+    with pytest.raises(OSError, match="No such device"):
+        getmac.FcntlIface().get("nope0")
+    m.return_value.__exit__.assert_called_once()
+
+
+def test_fcntl_iface_test(mocker):
+    assert getmac.FcntlIface().test() is (platform.system() != "Windows")
+
+    # fcntl can't be imported on Windows
+    mocker.patch.dict(sys.modules, {"fcntl": None})
+    assert getmac.FcntlIface().test() is False
 
 
 @pytest.mark.parametrize(

@@ -33,6 +33,12 @@ class Settings(VarsClass):
     OVERRIDE_PLATFORM: str = ""
     """
     User-configurable override to force a specific platform.
+
+    Methods for this platform are used instead of the methods for the detected
+    platform, :attr:`~getmac.variables.Constants.PLATFORM`. Use a platform
+    identifier such as ``"linux"`` or ``"wsl"``, or any value returned by
+    :func:`platform.system`, such as ``"Darwin"``. Case and surrounding
+    whitespace are ignored. An empty string (the default) means no override.
     """
 
     FORCE_METHOD: str = ""
@@ -74,15 +80,26 @@ class Constants(VarsClass):
     The version that's a very cool abstraction layer
     remapping Linux syscalls to Windows syscalls.
 
+    Its kernel release and version contain ``Microsoft``, e.g. ``4.4.0-19041-Microsoft``.
+    On WSL1, :attr:`~getmac.variables.Constants.PLATFORM` is ``"wsl"``
+    and :attr:`~getmac.variables.Constants.LINUX` is :obj:`False`.
+
     :meta hide-value:
     """
 
     WSL2: Final[bool] = (
-        _SYST == "Linux" and "Microsoft" not in _UNAME.version and "-WSL2" in _UNAME.release
+        _SYST == "Linux"
+        and "Microsoft" not in _UNAME.version
+        and ("-WSL2" in _UNAME.release or "microsoft-standard" in _UNAME.release)
     )
     """
     Windows Subsystem for Linux (WSL) version 2.
     The version that's basically a fancy Linux VM on Hyper-V.
+
+    Its kernel release ends with ``-microsoft-standard-WSL2``, or with
+    ``-microsoft-standard`` on older (4.19) kernels. WSL2 uses the Linux methods,
+    so :attr:`~getmac.variables.Constants.PLATFORM` is ``"linux"``
+    and :attr:`~getmac.variables.Constants.LINUX` is :obj:`True`.
 
     :meta hide-value:
     """
@@ -104,15 +121,14 @@ class Constants(VarsClass):
     :meta hide-value:
     """
 
-    PLATFORM: Final[str] = "wsl" if (LINUX and WSL1) else _SYST.lower()
+    # TODO: change "wsl" to "wsl1", since WSL2 method should just work like normal linux
+    PLATFORM: Final[str] = "wsl" if WSL1 else _SYST.lower()
     """
     Generic platform identifier used for filtering methods.
 
-    # TODO: change "wsl" to "wsl1", since WSL2 method should just work like normal linux
-
     Possible values:
 
-    - wsl
+    - wsl (WSL1 only, see :attr:`~getmac.variables.Constants.WSL1`. WSL2 is ``linux``.)
     - linux
     - windows
     - darwin
@@ -121,7 +137,7 @@ class Constants(VarsClass):
     - netbsd
     - sunos
     - hp-ux
-    - Any other values that can be returned by :func:`platform.uname`,
+    - Any other values that can be returned by :func:`platform.system`,
         converted to lowercase.
 
     :meta hide-value:

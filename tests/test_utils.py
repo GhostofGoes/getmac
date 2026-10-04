@@ -1,3 +1,5 @@
+import sys
+
 from getmac import utils
 from getmac.variables import consts, gvars
 
@@ -53,6 +55,33 @@ def test_call_proc(mocker):
     m = mocker.patch("subprocess.check_output", return_value="YAY")
     assert utils.call_proc("CMD", "arg1 arg2") == "YAY"
     m.assert_called_once_with(["CMD", "arg1", "arg2"], stderr="DEVNULL", env="ENV")
+
+    # check_output() returns bytes, since it isn't run in text mode
+    mocker.patch("subprocess.check_output", return_value=b"BYTES")
+    assert utils.call_proc("CMD", "arg") == "BYTES"
+
+
+def test_popen_path(mocker, tmp_path):
+    """The command is run from the first PATH directory with an executable named after it."""
+    is_dir = tmp_path / "is_dir"
+    (is_dir / "testcmd").mkdir(parents=True)
+    not_executable = tmp_path / "not_executable"
+    not_executable.mkdir()
+    (not_executable / "testcmd").write_text("")
+    has_cmd = tmp_path / "has_cmd"
+    has_cmd.mkdir()
+    (has_cmd / "testcmd").write_text("")
+    (has_cmd / "testcmd").chmod(0o755)
+
+    path = [str(tmp_path / "missing"), str(is_dir), str(not_executable), str(has_cmd)]
+    if sys.platform == "win32":
+        # Windows doesn't have an executable permission, so any file would be used
+        path.remove(str(not_executable))
+    mocker.patch.object(gvars, "PATH", path)
+    m = mocker.patch("getmac.utils.call_proc", return_value="SUCCESS")
+
+    assert utils.popen("testcmd", "ARGS") == "SUCCESS"
+    m.assert_called_once_with(str(has_cmd / "testcmd"), "ARGS")
 
 
 def test_fetch_ip_using_dns(mocker):
