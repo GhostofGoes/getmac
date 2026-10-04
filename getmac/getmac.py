@@ -457,8 +457,10 @@ class CtypesHost(Method):
             return None
 
         # Convert binary data into a string.
+        # buffer.raw is the contents as bytes. PyPy 3.11 (8.0+) doesn't accept the
+        # ctypes array itself in struct.unpack().
         macaddr = ""
-        for intval in struct.unpack("BBBBBB", buffer):  # type: ignore
+        for intval in struct.unpack("BBBBBB", buffer.raw):
             if intval > 15:
                 replacestr = "0x"
             else:
