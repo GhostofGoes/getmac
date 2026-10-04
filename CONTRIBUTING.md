@@ -193,7 +193,7 @@ Sphinx warnings fail the build (the same as in CI), so fix any warnings before s
 
 ## Docker
 
-The Docker image is defined in `packaging/Dockerfile`. To build it locally (this needs Docker with BuildKit, which is the default builder since Docker Engine 23.0):
+The Docker image is defined in `packaging/Dockerfile`. To build it locally (this needs Docker with BuildKit, which is the default since Docker Engine 23.0):
 
 ```bash
 pdm run build-docker
@@ -202,17 +202,6 @@ pdm run build-docker
 docker run --rm getmac --version
 docker run --rm getmac -n localhost
 docker run --rm --network host getmac
-```
-
-This runs `packaging/build-docker.sh`, which can also be run directly from any directory. It tags the image as `getmac` and `getmac:<version>`, and fills in the version, git commit, and build time labels. It's the same as running this from the root of the repository, except that the script adds `-dirty` to the git commit if the files that go into the image have uncommitted changes:
-
-```bash
-version="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' getmac/getmac.py)"
-docker build --pull -f packaging/Dockerfile \
-  --build-arg VERSION="$version" \
-  --build-arg REVISION="$(git rev-parse HEAD)" \
-  --build-arg CREATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  -t getmac -t "getmac:$version" .
 ```
 
 `--pull` gets the latest version of the base image instead of using a locally cached copy. Set `IMAGE` to use a different image name, or a name with a tag to only use that tag. Any arguments are passed to `docker build`.
@@ -224,23 +213,19 @@ IMAGE=getmac:dev pdm run build-docker --no-cache
 
 Build arguments, set with `--build-arg NAME=value`:
 
-* `BASE_IMAGE`: the image to build on, `docker.io/library/python:3.14-slim-trixie` by default. Use this to try a different Python version, e.g. `--build-arg BASE_IMAGE=docker.io/library/python:3.13-slim-trixie`. It must be Debian-based, since `iproute2` is installed with apt.
-* `VERSION`, `REVISION`, and `CREATED`: the getmac version, git commit, and build time (RFC 3339), for the `org.opencontainers.image.version`, `revision`, and `created` [labels](https://specs.opencontainers.org/image-spec/annotations/). The build script sets these, and they're empty otherwise. The other labels (title, description, license, links, etc.) are set in the Dockerfile.
-
-Only the files allowed by `packaging/Dockerfile.dockerignore` are sent to the build: the `getmac/` package, `pyproject.toml`, `README.md`, and `LICENSE`. If building the package ever needs another file, add it there.
+* `BASE_IMAGE`: the image to build on, `docker.io/library/python:3.14-slim-trixie` by default. Use this to try a different Python version, e.g. `--build-arg BASE_IMAGE=docker.io/library/python:3.13-slim-trixie`.
+* `VERSION`, `REVISION`, and `CREATED`: the getmac version, git commit, and build time (RFC 3339), for the `org.opencontainers.image.version`, `revision`, and `created` [labels](https://specs.opencontainers.org/image-spec/annotations/).
 
 ### Docker in CI
 
-The Docker workflow (`.github/workflows/docker.yml`) builds and tests the image on `linux/amd64` and `linux/arm64` for pull requests and pushes that change any of the files it uses, for release tags, and when it's run manually. It publishes the image to `ghcr.io/ghostofgoes/getmac`, using the workflow's `GITHUB_TOKEN` (no secrets need to be set up):
+The Docker workflow (`.github/workflows/docker.yml`) builds and tests the image on `linux/amd64` and `linux/arm64`. It publishes the image to `ghcr.io/ghostofgoes/getmac`:
 
 * Pushes to `main` publish the `edge` tag.
-* Pushing a release tag (e.g. `1.0.0`) publishes `1.0.0`, `1.0`, `1`, and `latest`. `1.0`, `1`, and `latest` are only moved to a release if it's the newest `1.0.x` release, `1.x` release, or release overall. Pre-releases and post-releases (e.g. `1.1.0rc1` or `1.0.0.post1`) are only tagged with their version. The tag must match `__version__` in `getmac/getmac.py`, or the publish fails.
+* Pushing a release tag (e.g. `1.0.0`) publishes `1.0.0`, `1.0`, `1`, and `latest`.
 * Running the workflow manually on `main` or a release tag publishes the same tags again.
 * Pull requests, other branches, and forks only build and test the image.
 
 Published images have SBOM and provenance attestations, and a signed build provenance attestation from GitHub that can be checked with `gh attestation verify oci://ghcr.io/ghostofgoes/getmac:<tag> --repo GhostofGoes/getmac`.
-
-The published image only gets security updates from its base image when it's rebuilt. To rebuild a release's image, run the workflow manually on the release tag: go to Actions > Docker > Run workflow and select the tag in the "Branch" menu, or run `gh workflow run docker.yml --ref 1.0.0`. Use this instead of re-running the tag's workflow run, since GitHub only allows re-runs for 30 days.
 
 **For maintainers:** packages published to a personal account are private at first, even when the repository is public. After the first publish, make the package public on GitHub: on the package's page, click "Package settings", then "Change visibility" (under "Danger Zone"), and select "Public". This only needs to be done once, and it can't be undone.
 
