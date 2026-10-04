@@ -54,6 +54,7 @@
 * Updated GitHub Actions and pinned them to commit SHAs, and added `pdm run update-actions` to update the pins.
 * Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
 * CI tests on PyPy 3.10 and 3.11.
+* 100% code coverage! (a significant milestone for this project)
 
 ## 0.9.6 (10/03/2026)
 
