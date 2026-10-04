@@ -22,6 +22,8 @@ The key function is :func:`~getmac.getmac.get_mac_address`.
 
 """
 
+# https://web.archive.org/web/20140718071917/http://multivax.com/last_question.html
+
 import ctypes
 import os
 import re
