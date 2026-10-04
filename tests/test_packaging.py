@@ -4,14 +4,20 @@ This test was mostly generated using AI assistance.
 """
 
 import os
+import shutil
 import subprocess
 import tarfile
 import zipfile
 from pathlib import Path
 
+import pytest
+
 
 def test_packaging_artifacts(tmp_path: Path) -> None:
     """Build sdist and wheel, then verify their contents."""
+    if shutil.which("pdm") is None:
+        pytest.skip("pdm CLI not installed")
+
     dist_dir = tmp_path / "dist"
 
     # pytest-cov starts coverage in Python subprocesses via COV_CORE_* environment
@@ -75,6 +81,15 @@ def test_packaging_artifacts(tmp_path: Path) -> None:
     # Ensure source code and tests are present in sdist
     assert any(f.startswith("getmac/") for f in sdist_files), "Source code missing from sdist"
     assert any(f.startswith("tests/") for f in sdist_files), "Tests missing from sdist"
+    assert "getmac/py.typed" in sdist_files, "PEP 561 py.typed marker missing from sdist"
+
+    # Third-party samples are licensed separately and must not be distributed
+    for f in sdist_files:
+        assert not f.startswith("tests/samples/third_party/"), f"File '{f}' should not be in sdist"
+    # ...but the first-party samples the test suite needs must still be there
+    assert "tests/samples/ubuntu_18.04/ifconfig.out" in sdist_files, (
+        "Test samples missing from sdist"
+    )
 
     # 2. Check wheel
     wheels = list(dist_dir.glob("*.whl"))
@@ -82,6 +97,8 @@ def test_packaging_artifacts(tmp_path: Path) -> None:
 
     with zipfile.ZipFile(wheels[0], "r") as z:
         wheel_files = z.namelist()
+        metadata_files = [f for f in wheel_files if f.endswith(".dist-info/METADATA")]
+        metadata = z.read(metadata_files[0]).decode("utf-8") if metadata_files else ""
 
     # Tests should NOT be in wheel (assuming standard practice for this lib)
     for f in wheel_files:
@@ -91,6 +108,17 @@ def test_packaging_artifacts(tmp_path: Path) -> None:
 
     # Ensure package is in wheel
     assert any(f.startswith("getmac/") for f in wheel_files), "Source code missing from wheel"
-    assert any(f.endswith(".dist-info/METADATA") for f in wheel_files), (
-        "Metadata missing from wheel"
+    assert metadata_files, "Metadata missing from wheel"
+    assert "getmac/py.typed" in wheel_files, "PEP 561 py.typed marker missing from wheel"
+
+    # Only the package and its .dist-info should be installed (e.g. not a top-level LICENSE)
+    for f in wheel_files:
+        assert f.startswith(("getmac/", "getmac-")), f"Unexpected top-level file in wheel: '{f}'"
+    assert any(f.endswith(".dist-info/licenses/LICENSE") for f in wheel_files), (
+        "LICENSE missing from wheel .dist-info"
     )
+
+    # License metadata uses a SPDX expression (PEP 639)
+    assert "Metadata-Version: 2.4" in metadata
+    assert "License-Expression: MIT" in metadata
+    assert "License-File: LICENSE" in metadata
