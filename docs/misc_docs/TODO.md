@@ -29,6 +29,10 @@ methods (list): Optional list of methods to use for MAC address lookup.
             or instances of ``Method`` subclasses (``ArpFile()``).
 ```
 
+## Before releasing
+- [ ] Remove `1.0.0-wip` from the GitHub Pages deploy condition in `ci.yml` when merging into `main`
+- [ ] After the first Docker image is published, make the GHCR package public
+
 
 # Etc
 - [ ] cache the result of executable checks in `getmac.utils.popen()`
@@ -39,8 +43,21 @@ one, move the default fallback logic into the function.
 
 # Bugs or potential issues
 - [ ] Fix lookup of a IPv4 address of a local interface on Linux
-- [ ] Unicode handling. UNICODE option needed for non-english locales? (Is LC_ALL working?)
-- [ ] Are there ever cases where loopback != `FF:FF:FF:FF:FF:FF`?
+- [ ] Unicode handling on non-English systems. `LC_ALL=C` works on POSIX (it stops net-tools from translating its output) and no "UNICODE" regex option is needed, but on Windows:
+    - `utils.call_proc()` decodes output as strict UTF-8, while Windows commands print in the OEM code page (e.g. cp850, cp866). Any non-ASCII character raises `UnicodeDecodeError`, and the method is marked unusable. Decode with UTF-8 then the `oem` codec, with `errors="replace"`.
+    - `IpconfigExe` needs the English "Physical Address" label, and its regex backtracks catastrophically when it's missing (seconds to minutes).
+    - `WmicExe` is the last working fallback, and WMIC is being removed from Windows 11.
+    - Collect real samples from non-English Windows systems to test this.
+- [ ] Loopback lookups. On Linux `lo` is `00:00:00:00:00:00` (root can change it); on macOS, BSDs, Solaris, HP-UX and Windows the loopback interface has no MAC, so `00:00:00:00:00:00` is a getmac convention there.
+    - The `localhost`/`127.0.0.1` shortcut only matches those exact strings. `LOCALHOST`, `127.0.0.2`, `::1` and the host's own name (`127.0.1.1` on Debian) return `None` and send a UDP packet to the host itself. Check `ipaddress.ip_address(...).is_loopback` after resolving instead.
+    - When the default interface can't be found, `get_mac_address()` falls back to `lo` and returns `00:00:00:00:00:00` ([issue 78](https://github.com/GhostofGoes/getmac/issues/78)). Use the first non-loopback interface with a MAC, or return `None`.
+    - Methods disagree on `lo`: `SysIfaceFile` and `FcntlIface` return the zero MAC, `IpLinkIface` and the `ifconfig` parsers return `None`.
+- [ ] `FORCE_METHOD` and the IPv4 network request: `get_mac_address()` compares the lowercased `FORCE_METHOD` with `"CtypesHost"`/`"ArpingHost"`, so it never matches and the UDP packet is always sent, even when forcing `ArpingHost`.
+- [ ] `get_mac_address(network_request=False)` (and `-N`) doesn't pass `network_request` on to `get_by_method()`, so methods that send packets (`ArpingHost`, `CtypesHost`) can still be used.
+- [ ] When `ArpFile` is a fallback and fails during the IPv4 ARP table check, `_remove_unusable()` replaces the working primary method instead of removing `ArpFile`.
+- [ ] Exceptions from a method forced with `FORCE_METHOD` aren't caught, which contradicts the `get_mac_address()` docstring and `docs/usage.rst`.
+- [ ] Docstrings that don't match the code: `get_default_interface()` can raise `RuntimeError`, `get_instance_from_cache()` returns an instance (not a class), `utils.search()` uses `groups()` (not `groupdict()`), `get_method_by_name()` has no docstring, and `Method.get()` returns raw output (not a cleaned MAC).
+- [ ] On Windows, IPv6 lookups and `get_default_interface()` fall back to the "other" methods, which run `arp.exe`/`route.exe` with Unix-style arguments.
 - [ ] Remote host that is actually an interface should resolve to localhost MAC
 - [ ] Reduce the cost of failures. Currently, failures are penalized
 with a slow run since it tries every method before failing.
@@ -55,7 +72,7 @@ with a slow run since it tries every method before failing.
 - [ ] Add ability to match user-provided arguments case-insensitively
 - [ ] Add ability to get the mac address of a Python socket's interface (`socket.socket`)
 - [ ] API to add/remove methods at runtime (including new, custom methods)
-    - [ ] Document this API and how the method API functions work more generally
+    - [x] Document this API and how the method API functions work more generally (`docs/module_api.rst`)
 
 # Platform support
 
@@ -121,17 +138,12 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Test against non-ethernet interfaces (WiFi, LTE, etc.)
 
 
-# Documentation
-- [ ] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc.
-- [ ] Write a short guide on how to add and test a new method
-
-
 # Dev
 - [ ] OpenSSF best practices badge
 - [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 - [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
 - [ ] Move method classes into a separate file
-- [ ] Automate publishing in GitHub Actions. When a tag is created, publish release to PyPI, and generate a GitHub release.
+- [ ] Generate a GitHub release in GitHub Actions when a version tag is pushed (publishing to PyPI is already automated).
     - This is going to require re-doing how changelogs are created a bit.
 - [ ] Use towncrier for release notes (or another fragment-file based system, avoid merge conflicts)
 - [ ] Use `prek` for linting
@@ -194,6 +206,7 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [x] Fix `UuidLanscan` for Python 3.9+
 
 ### Before releasing
+- [x] Add the 0.9.6 entry from `main`'s CHANGELOG to this branch's CHANGELOG
 - [x] Update supported versions table in [SECURITY.md](../SECURITY.md)
 
 ### Done for 1.0.0
@@ -216,6 +229,11 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [x] CLI: put "override" and other debugging-related arguments into a separate argparse argument group
 - [x] Remove all Python "Scripts" from the path, so they don't interfere with the commands we actually want (e.g. "ping").
 
+## Documentation
+- [x] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc. (`docs/module_api.rst`)
+- [x] Write a short guide on how to add and test a new method (`docs/adding_methods.rst`)
+
 ## Dev
+- [x] Publish releases to PyPI from GitHub Actions when a version tag is pushed (Trusted Publishing, with attestations on PyPI and GitHub)
 - [x] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 - [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
