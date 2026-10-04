@@ -139,7 +139,7 @@ cmd = "ruff check --fix getmac tests scripts"
 
 [tool.pdm.scripts.unused]
 help = "Check for unused code using Vulture"
-cmd = "vulture --min-confidence 100 getmac tests scripts"
+cmd = "vulture --min-confidence 80 getmac tests scripts"
 
 [tool.pdm.scripts.check_format]
 help = "Check code formatting is correct"
