@@ -34,6 +34,12 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
 }
 
+# Developer notes (TODO list, release steps, etc.) aren't part of the published docs
+exclude_patterns = ["misc_docs"]
+
+# Generate anchors for Markdown headings, so links like "#ai-policy" work
+myst_heading_anchors = 3
+
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -49,6 +55,26 @@ man_pages = [
     ('cli', 'getmac', 'Cross-platform Python package to get MAC addresses',
      [author], 1)
 ]
+
+
+def _tabs_to_paragraphs(app, doctree, docname):
+    """
+    The manpage writer doesn't support the labels of tabs from sphinx_inline_tabs.
+    For manpages, replace each tab's label with a bold paragraph instead.
+    """
+    if app.builder.format != "man":
+        return
+
+    from docutils import nodes
+    from sphinx_inline_tabs._impl import TabContainer
+
+    for label in list(doctree.findall(nodes.label)):
+        if isinstance(label.parent, TabContainer):
+            label.replace_self(nodes.paragraph("", "", nodes.strong(text=f"{label.astext()}:")))
+
+
+def setup(app):
+    app.connect("doctree-resolved", _tabs_to_paragraphs)
 
 
 # -- Options for automodapi --------------------------------------------------

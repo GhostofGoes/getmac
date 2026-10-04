@@ -15,13 +15,13 @@ Your code *must*:
 * Work on all *supported* platforms
 * Pass linting (code quality checks)
 * Pass CI (GitHub Actions)
-* Adhere to the [Code of Conduct](CODE_OF_CONDUCT.md)
+* Adhere to the [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/main/CODE_OF_CONDUCT.md)
 * Adhere to the [AI policy below](#ai-policy)
 * Branch names and commits must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) notation, e.g. a branch should be `feat-my-feature`, not `patch-1`, and commits should be `feat: myfeature description`, not `add some cool thing check it out`.
 
 Most of these requirements are checked in CI (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Ruff's formatter](https://docs.astral.sh/ruff/formatter/). You can write whatever format you want, as long as you run the formatter before pushing, you're good (`pdm run format`).
 
-Please be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Memes, references, and jokes are OK. Be nice, we're all human (well, most of us), and code is the great equalizer.
+Please be respectful and follow the [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/main/CODE_OF_CONDUCT.md). Memes, references, and jokes are OK. Be nice, we're all human (well, most of us), and code is the great equalizer.
 
 ### AI Policy
 
@@ -42,8 +42,8 @@ It's a (hopefully) straightforward and easy to follow policy. Therefore, if you 
     * [ ] Tests: `pdm run test`
     * [ ] Benchmarks: `pdm run benchmark`
     * [ ] Lint: `pdm run lint`
-* [ ] Update the [CHANGELOG](CHANGELOG.md) (if applicable, for non-trivial changes)
-* [ ] Add your name to the contributors list in the [README](README.md) (please include what your contribution was after your name)
+* [ ] Update the [CHANGELOG](https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md) (if applicable, for non-trivial changes)
+* [ ] Add your name to the contributors list in the [README](https://github.com/GhostofGoes/getmac/blob/main/README.md) (please include what your contribution was after your name)
 * [ ] (AI Bots) The AI policy was followed
 
 ## Checklist before a Pull Request will be merged
@@ -188,6 +188,8 @@ To build docs locally (requires Python 3.12 or newer):
 ```shell
 pdm run docs
 ```
+
+Sphinx warnings fail the build (the same as in CI), so fix any warnings before submitting a pull request.
 
 ## Docker
 

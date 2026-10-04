@@ -55,6 +55,7 @@
 * Updated GitHub Actions and pinned them to commit SHAs, and added `pdm run update-actions` to update the pins.
 * CI publishes releases to PyPI when a version tag is pushed, using Trusted Publishing, with attestations on PyPI and GitHub.
 * CI tests on PyPy 3.10 and 3.11.
+* The docs build fails on Sphinx warnings.
 
 ## 0.9.5 (07/15/2024)
 
