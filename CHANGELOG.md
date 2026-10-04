@@ -57,6 +57,11 @@
 * CI tests on PyPy 3.10 and 3.11.
 * The docs build fails on Sphinx warnings.
 
+## 0.9.6 (10/03/2026)
+
+### Changed
+* Made library py.typed
+
 ## 0.9.5 (07/15/2024)
 
 ### Changed
