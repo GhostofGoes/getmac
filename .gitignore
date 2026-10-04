@@ -3,6 +3,7 @@
 .vagrant/
 .pdm-python
 .claude/
+/*.tar.gz
 
 built_docs/
 html_docs/
