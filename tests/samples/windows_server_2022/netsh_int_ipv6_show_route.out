@@ -1,0 +1,12 @@
+
+Publish  Type      Met  Prefix                    Idx  Gateway/Interface Name
+-------  --------  ---  ------------------------  ---  ------------------------
+No       System    256  ::1/128                     1  Loopback Pseudo-Interface 1
+No       System    256  fe80::/64                  14  Ethernet 3
+No       System    256  fe80::/64                  11  vEthernet (nat)
+No       System    256  fe80::a200:a210:a220:a230/128   11  vEthernet (nat)
+No       System    256  fe80::a100:a110:a120:a130/128   14  Ethernet 3
+No       System    256  ff00::/8                    1  Loopback Pseudo-Interface 1
+No       System    256  ff00::/8                   14  Ethernet 3
+No       System    256  ff00::/8                   11  vEthernet (nat)
+

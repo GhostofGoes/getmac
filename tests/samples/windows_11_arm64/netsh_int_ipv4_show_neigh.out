@@ -1,0 +1,31 @@
+
+Interface 1: Loopback Pseudo-Interface 1
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+224.0.0.22                                                       Permanent 
+239.255.255.250                                                  Permanent 
+
+Interface 16: Ethernet 5
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+10.9.0.1                                      12-34-56-78-9a-bc  Reachable 
+10.9.15.255                                   ff-ff-ff-ff-ff-ff  Permanent 
+224.0.0.22                                    01-00-5e-00-00-16  Permanent 
+224.0.0.252                                   01-00-5e-00-00-fc  Permanent 
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent 
+255.255.255.255                               ff-ff-ff-ff-ff-ff  Permanent 
+
+Interface 13: vEthernet (Default Switch)
+
+
+Internet Address                              Physical Address   Type
+--------------------------------------------  -----------------  -----------
+172.31.207.255                                ff-ff-ff-ff-ff-ff  Permanent 
+224.0.0.22                                    01-00-5e-00-00-16  Permanent 
+239.255.255.250                               01-00-5e-7f-ff-fa  Permanent 
+255.255.255.255                               ff-ff-ff-ff-ff-ff  Permanent 
+

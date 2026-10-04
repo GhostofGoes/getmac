@@ -9,6 +9,9 @@
 tests/samples/**/*.out         text eol=lf
 tests/samples/*.out            text eol=lf
 tests/samples/windows*/*.out   text eol=crlf
+# WMIC ends lines with "\r\r\n", which line ending conversion can't keep, so store
+# its output as is
+tests/samples/windows_server_2022/wmic_*.out  -text
 
 # Windows
 *.ps1       text eol=crlf

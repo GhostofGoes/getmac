@@ -1,0 +1,42 @@
+
+Windows IP Configuration
+
+   Host Name . . . . . . . . . . . . : runnervm00011
+   Primary Dns Suffix  . . . . . . . : 
+   Node Type . . . . . . . . . . . . : Hybrid
+   IP Routing Enabled. . . . . . . . : No
+   WINS Proxy Enabled. . . . . . . . : No
+
+Ethernet adapter Ethernet 5:
+
+   Connection-specific DNS Suffix  . : example.internal.cloudapp.net
+   Description . . . . . . . . . . . : Microsoft Hyper-V Network Adapter #3
+   Physical Address. . . . . . . . . : 00-0D-3A-A1-B0-10
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+   Link-local IPv6 Address . . . . . : fe80::a100:a110:a120:a130%16(Preferred) 
+   IPv4 Address. . . . . . . . . . . : 10.9.0.100(Preferred) 
+   Subnet Mask . . . . . . . . . . . : 255.255.240.0
+   Lease Obtained. . . . . . . . . . : Sunday, October 4, 2026 12:38:48 AM
+   Lease Expires . . . . . . . . . . : Wednesday, November 10, 2162 7:10:38 AM
+   Default Gateway . . . . . . . . . : 10.9.0.1
+   DHCP Server . . . . . . . . . . . : 203.0.113.160
+   DHCPv6 IAID . . . . . . . . . . . : 268438842
+   DHCPv6 Client DUID. . . . . . . . : 00-01-00-01-12-34-56-78-00-15-5D-A0-B0-01
+   DNS Servers . . . . . . . . . . . : 203.0.113.160
+   NetBIOS over Tcpip. . . . . . . . : Enabled
+
+Ethernet adapter vEthernet (Default Switch):
+
+   Connection-specific DNS Suffix  . : 
+   Description . . . . . . . . . . . : Hyper-V Virtual Ethernet Adapter
+   Physical Address. . . . . . . . . : 00-15-5D-A1-B0-11
+   DHCP Enabled. . . . . . . . . . . : No
+   Autoconfiguration Enabled . . . . : Yes
+   Link-local IPv6 Address . . . . . : fe80::a200:a210:a220:a230%13(Preferred) 
+   IPv4 Address. . . . . . . . . . . : 172.31.192.1(Preferred) 
+   Subnet Mask . . . . . . . . . . . : 255.255.240.0
+   Default Gateway . . . . . . . . . : 
+   DHCPv6 IAID . . . . . . . . . . . : 218109277
+   DHCPv6 Client DUID. . . . . . . . : 00-01-00-01-12-34-56-78-00-15-5D-A0-B0-01
+   NetBIOS over Tcpip. . . . . . . . : Enabled

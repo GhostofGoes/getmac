@@ -1,0 +1,22 @@
+
+Publish  Type      Met  Prefix                    Idx  Gateway/Interface Name
+-------  --------  ---  ------------------------  ---  ------------------------
+No       Manual    0    0.0.0.0/0                  14  10.9.0.1
+No       System    256  10.9.0.0/20                14  Ethernet 3
+No       System    256  10.9.0.112/32              14  Ethernet 3
+No       System    256  10.9.15.255/32             14  Ethernet 3
+No       System    256  127.0.0.0/8                 1  Loopback Pseudo-Interface 1
+No       System    256  127.0.0.1/32                1  Loopback Pseudo-Interface 1
+No       System    256  127.255.255.255/32          1  Loopback Pseudo-Interface 1
+No       Manual    1    203.0.113.160/32           14  10.9.0.1
+No       Manual    1    169.254.169.254/32         14  10.9.0.1
+No       System    256  172.31.208.0/20            11  vEthernet (nat)
+No       System    256  172.31.208.1/32            11  vEthernet (nat)
+No       System    256  172.31.223.255/32          11  vEthernet (nat)
+No       System    256  224.0.0.0/4                 1  Loopback Pseudo-Interface 1
+No       System    256  224.0.0.0/4                14  Ethernet 3
+No       System    256  224.0.0.0/4                11  vEthernet (nat)
+No       System    256  255.255.255.255/32          1  Loopback Pseudo-Interface 1
+No       System    256  255.255.255.255/32         14  Ethernet 3
+No       System    256  255.255.255.255/32         11  vEthernet (nat)
+

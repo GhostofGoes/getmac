@@ -51,7 +51,7 @@ https://web.archive.org/web/20220814083605/https://www.prodjim.com/how-to-arp-a-
 - [x] IPv4: `netsh int ipv4 show neigh`
 
 ### Interface MACs
-- [ ] New method for PowerShell's `Get-NetAdapter` (e.g. `powershell.exe -NoProfile -NonInteractive -Command "Get-NetAdapter | Format-List -Property Name,InterfaceDescription,MacAddress"`). Its property names and values aren't translated, and it replaces WMIC, which is being removed from Windows 11 (`WmicExe`). PowerShell is slow to start (about 0.3 to 1 seconds), so it should come after `GetmacExe` and `IpconfigExe` in `METHODS`. `scripts/collect_samples.py` already collects its output (`powershell_Get-NetAdapter.out`), but there aren't any samples of it yet.
+- [ ] New method for PowerShell's `Get-NetAdapter` (e.g. `powershell.exe -NoProfile -NonInteractive -Command "Get-NetAdapter | Format-List -Property Name,InterfaceDescription,MacAddress"`). Its property names and values aren't translated, and it replaces WMIC, which is being removed from Windows 11 (`WmicExe`). PowerShell is slow to start (about 0.3 to 1 seconds), so it should come after `GetmacExe` and `IpconfigExe` in `METHODS`. `scripts/collect_samples.py` collects its output (`powershell_Get-NetAdapter.out`), and there are samples from Windows Server 2022 and 2025.
 - [ ] `netsh int ipv6`
 - [ ] win32 API (`ctypes`)
 
@@ -63,6 +63,9 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] IPv4: `route print -4`
 - [ ] IPv6: `route print -6`
 - [ ] Windows API
+
+## OSX (Darwin) IPv6
+- [ ] macOS doesn't have a working IPv6 method: `ArpVariousArgs` runs `arp`, which is IPv4-only. Add a method for `ndp -an` (samples in `tests/samples/macos_15.7.9/` and `macos_26.6.2/`).
 
 ## POSIX
 - [ ] `arping` (command): investigate for remote macs

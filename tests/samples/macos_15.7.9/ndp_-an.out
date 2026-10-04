@@ -1,0 +1,7 @@
+Neighbor                                Linklayer Address  Netif Expire    St Flgs Prbs
+fe80::1%lo0                             (incomplete)         lo0 permanent R      
+fe80::a10:a110:a120:a130%en0            12:34:56:15:a0:10    en0 permanent R      
+fe80::a200:a210:a220:a230%utun0         (incomplete)       utun0 permanent R      
+fe80::a300:a310:a320:a330%utun1         (incomplete)       utun1 permanent R      
+fe80::a400:a410:a420:a430%utun2         (incomplete)       utun2 permanent R      
+fe80::a500:a51:a520:a53%utun3           (incomplete)       utun3 permanent R      

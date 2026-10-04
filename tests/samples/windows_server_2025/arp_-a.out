@@ -1,0 +1,13 @@
+
+Interface: 172.31.16.1 --- 0xb
+  Internet Address      Physical Address      Type
+  172.31.31.255         ff-ff-ff-ff-ff-ff     static    
+  224.0.0.22            01-00-5e-00-00-16     static    
+
+Interface: 10.9.0.110 --- 0xe
+  Internet Address      Physical Address      Type
+  10.9.0.1              12-34-56-78-9a-bc     dynamic   
+  10.9.15.255           ff-ff-ff-ff-ff-ff     static    
+  224.0.0.22            01-00-5e-00-00-16     static    
+  224.0.0.252           01-00-5e-00-00-fc     static    
+  255.255.255.255       ff-ff-ff-ff-ff-ff     static    

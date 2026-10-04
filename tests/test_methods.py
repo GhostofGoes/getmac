@@ -15,14 +15,26 @@ from getmac.variables import consts
 # TODO: netstat_-ian_unknown.out
 # TODO: macos_10.12.6/netstat_-i.out
 # TODO: macos_10.12.6/netstat_-ia.out
+# TODO: these samples from GitHub's runners aren't read by any method yet:
+#   macos_15.7.9/ and macos_26.6.2/: ndp_-an.out (IPv6 neighbors, there's no working
+#     IPv6 method on macOS), netstat_-i.out, netstat_-ia.out,
+#     networksetup_-listallhardwareports.out, sw_vers.out
+#   windows_server_2025/, windows_server_2022/, windows_11_arm64/: arp_-a.out,
+#     getmac_-NH_-V.out (table format), netsh_int_ipv6_show_route.out,
+#     netsh_int_show_interface.out, route_print_-4.out, route_print_-6.out
+#   windows_server_2025/ and windows_server_2022/: powershell_Get-NetAdapter.out
+#     (for a future Get-NetAdapter method)
+#   windows_server_2022/: wmic_nic_get_MACAddress,NetConnectionID_-value.out
 
 
 @pytest.mark.parametrize(
     ("mac", "iface", "sample_file"),
     [
         ("08:00:27:2b:c2:ed", "en0", "macos_10.12.6/networksetup_-getmacaddress_en0.out"),
-        ("02:00:00:00:00:10", "en0", "macos_26.6.2/networksetup_-getmacaddress_en0.out"),
-        ("02:00:00:00:00:11", "en1", "macos_26.6.2/networksetup_-getmacaddress_en1.out"),
+        ("12:34:56:15:a0:10", "en0", "macos_15.7.9/networksetup_-getmacaddress_en0.out"),
+        ("12:34:56:15:a0:11", "en1", "macos_15.7.9/networksetup_-getmacaddress_en1.out"),
+        ("12:34:56:26:a0:10", "en0", "macos_26.6.2/networksetup_-getmacaddress_en0.out"),
+        ("12:34:56:26:a0:11", "en1", "macos_26.6.2/networksetup_-getmacaddress_en1.out"),
     ],
 )
 def test_darwinnetworksetupiface_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
@@ -41,6 +53,23 @@ def test_darwinnetworksetupiface(mocker):
     mocker.patch("getmac.utils.check_command", return_value=False)
     assert getmac.DarwinNetworksetupIface().test() is False
     utils.check_command.assert_called_once_with("networksetup")
+
+
+# Interfaces on GitHub's macOS runners that aren't hardware ports
+NOT_HARDWARE_PORTS = ["lo0", "gif0", "stf0", "XHC12", "anpi0", "utun0", "utun1", "utun2", "utun3"]
+
+
+@pytest.mark.parametrize("version", ["macos_15.7.9", "macos_26.6.2"])
+@pytest.mark.parametrize("iface", NOT_HARDWARE_PORTS)
+def test_darwinnetworksetupiface_not_a_hardware_port_samples(mocker, get_sample, version, iface):
+    """networksetup printed this and exited with code 4 for each of these interfaces."""
+    output = get_sample(f"{version}/networksetup_-getmacaddress_{iface}.out")
+    assert output == "** Error: The parameters were not valid.\n"
+    cpe = CalledProcessError(
+        cmd=f"networksetup -getmacaddress {iface}", returncode=4, output=output.encode()
+    )
+    mocker.patch("getmac.utils.popen", side_effect=cpe)
+    assert getmac.DarwinNetworksetupIface().get(iface) is None
 
 
 def test_darwinnetworksetupiface_not_a_hardware_port(mocker, get_sample):
@@ -96,6 +125,13 @@ ifconfigether_samples = [
     ("82:17:0e:93:9d:00", "bridge0", "third_party/facter/ifconfig_mac"),
     ("06:5a:ed:ea:5c:81", "p2p0", "third_party/facter/ifconfig_mac"),
     ("2e:ba:e4:83:4b:b7", "awdl0", "third_party/facter/ifconfig_mac"),
+    # GitHub's macOS runners (anpi0 isn't a hardware port, but ifconfig shows its MAC)
+    *(
+        (f"12:34:56:{version[6:8]}:a0:{suffix}", iface, f"{version}/{sample}")
+        for version in ("macos_15.7.9", "macos_26.6.2")
+        for iface, suffix in (("en0", "10"), ("en1", "11"), ("anpi0", "12"))
+        for sample in ("ifconfig.out", f"ifconfig_{iface}.out")
+    ),
 ]
 
 
@@ -118,6 +154,14 @@ def test_ifconfigether_darwin(benchmark, mocker, get_sample, mac, iface, sample_
     assert not getmac.IfconfigEther().get("utun0")
     # "." isn't a wildcard
     assert not getmac.IfconfigEther().get("en.")
+
+
+@pytest.mark.parametrize("version", ["macos_15.7.9", "macos_26.6.2"])
+@pytest.mark.parametrize("iface", [i for i in NOT_HARDWARE_PORTS if i != "anpi0"])
+def test_ifconfigether_no_mac_samples(mocker, get_sample, version, iface):
+    """Loopback, tunnel, and USB (XHC12) interfaces don't have a MAC."""
+    mocker.patch("getmac.utils.popen", return_value=get_sample(f"{version}/ifconfig_{iface}.out"))
+    assert getmac.IfconfigEther().get(iface) is None
 
 
 def test_ifconfigether_iface_arg(mocker, get_sample):
@@ -727,6 +771,63 @@ def test_getmac_exe_samples(benchmark, mocker, get_sample, mac, iface):
     utils.popen.assert_called_with("getmac.exe", "/NH /V /FO CSV")  # codespell:ignore fo
 
 
+# GitHub's Windows runners: (samples, default interface, Mellanox virtual function
+# with the same MAC, Hyper-V virtual switch interface, MAC, virtual switch MAC)
+WINDOWS_RUNNERS = [
+    (
+        "windows_server_2025",
+        "Ethernet 3",
+        "Ethernet 4",
+        "vEthernet (nat)",
+        "70-A8-A5-A5-B0-10",
+        "00-15-5D-A5-B0-11",
+    ),
+    (
+        "windows_server_2022",
+        "Ethernet 3",
+        "Ethernet 4",
+        "vEthernet (nat)",
+        "7C-1E-52-A2-B0-10",
+        "00-15-5D-A2-B0-11",
+    ),
+    (
+        "windows_11_arm64",
+        "Ethernet 5",
+        "Ethernet 6",
+        "vEthernet (Default Switch)",
+        "00-0D-3A-A1-B0-10",
+        "00-15-5D-A1-B0-11",
+    ),
+]
+
+
+@pytest.mark.parametrize("sample", ["getmac_-NH_-V_-FO_CSV.out", "getmac_-V_-FO_CSV.out"])
+@pytest.mark.parametrize(("version", "iface", "vf", "vswitch", "mac", "_"), WINDOWS_RUNNERS)
+def test_getmac_exe_runner_samples(
+    mocker, get_sample, sample, version, iface, vf, vswitch, mac, _
+):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(f"{version}/{sample}"))
+    assert getmac.GetmacExe().get(iface) == mac
+    assert getmac.GetmacExe().get("Microsoft Hyper-V Network Adapter #3") == mac
+    # Azure's accelerated networking adds a Mellanox adapter with the same MAC
+    assert getmac.GetmacExe().get(vf) == mac
+    # getmac.exe doesn't list the Hyper-V virtual switch interface
+    assert getmac.GetmacExe().get(vswitch) is None
+
+
+@pytest.mark.parametrize(
+    ("version", "iface", "_", "vswitch", "mac", "vswitch_mac"), WINDOWS_RUNNERS
+)
+def test_ipconfig_exe_runner_samples(
+    mocker, get_sample, version, iface, _, vswitch, mac, vswitch_mac
+):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(f"{version}/ipconfig_-all.out"))
+    assert getmac.IpconfigExe().get(iface) == mac
+    assert getmac.IpconfigExe().get("Microsoft Hyper-V Network Adapter #3") == mac
+    assert getmac.IpconfigExe().get(vswitch) == vswitch_mac
+    assert getmac.IpconfigExe().get("Hyper-V Virtual Ethernet Adapter") == vswitch_mac
+
+
 def test_getmac_exe_no_mac(mocker):
     # Disabled adapters don't have a MAC
     output = '"Ethernet","Intel(R) Ethernet Connection I217-V","N/A","Disconnected"\r\n'
@@ -749,6 +850,21 @@ def test_getmac_exe_no_mac(mocker):
         ("33-33-00-00-00-fb", "FF02::FB", "windows_10/netsh_int_ipv6_show_neigh.out"),
         (None, "fe80::42b0:34ff:fe74:afdd", "windows_10/netsh_int_ipv6_show_neigh.out"),
         (None, "fe80::1", "windows_10/netsh_int_ipv6_show_neigh.out"),
+        # GitHub's Windows runners
+        *(
+            entry
+            for runner in WINDOWS_RUNNERS
+            for entry in (
+                ("12-34-56-78-9a-bc", "10.9.0.1", f"{runner[0]}/netsh_int_ipv4_show_neigh.out"),
+                (None, "10.9.0.2", f"{runner[0]}/netsh_int_ipv4_show_neigh.out"),
+                ("33-33-00-00-00-01", "ff02::1", f"{runner[0]}/netsh_int_ipv6_show_neigh.out"),
+                (
+                    "33-33-ff-20-a1-30",
+                    "ff02::1:ff20:a130",
+                    f"{runner[0]}/netsh_int_ipv6_show_neigh.out",
+                ),
+            )
+        ),
     ],
 )
 def test_netsh_neighbors_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -762,11 +878,18 @@ def test_netsh_neighbors_samples(benchmark, mocker, get_sample, mac, ip, sample_
     utils.check_command.assert_called_once_with("netsh.exe")
 
 
-def test_default_iface_netsh(benchmark, mocker, get_sample):
-    content = get_sample("windows_10/netsh_int_ipv4_show_route.out")
+@pytest.mark.parametrize(
+    ("iface", "sample_file"),
+    [
+        # The default route goes through gateway 10.0.0.1, on interface 5 ("Ethernet 4")
+        ("Ethernet 4", "windows_10/netsh_int_ipv4_show_route.out"),
+        *((runner[1], f"{runner[0]}/netsh_int_ipv4_show_route.out") for runner in WINDOWS_RUNNERS),
+    ],
+)
+def test_default_iface_netsh(benchmark, mocker, get_sample, iface, sample_file):
+    content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
-    # The default route goes through gateway 10.0.0.1, on interface 5 ("Ethernet 4")
-    assert "Ethernet 4" == benchmark(getmac.DefaultIfaceNetsh().get)
+    assert iface == benchmark(getmac.DefaultIfaceNetsh().get)
     utils.popen.assert_called_with("netsh.exe", "int ipv4 show route")
 
     mocker.patch("getmac.utils.check_command", return_value=False)
@@ -816,6 +939,21 @@ def test_getmac_exe_error(mocker):
     assert inst.unusable is True
 
 
+def test_wmic_exe_runner_samples(mocker, get_sample):
+    content = get_sample(
+        "windows_server_2022/wmic_nic_where_NetConnectionID_Ethernet-3_get_MACAddress.out"
+    )
+    mocker.patch("getmac.utils.popen", return_value=content)
+    assert getmac.WmicExe().get("Ethernet 3") == "7C:1E:52:A2:B0:10"
+
+    # The Hyper-V virtual switch interface isn't a network adapter in WMI
+    content = get_sample(
+        "windows_server_2022/wmic_nic_where_NetConnectionID_vEthernet-nat-_get_MACAddress.out"
+    )
+    mocker.patch("getmac.utils.popen", return_value=content)
+    assert not getmac.WmicExe().get("vEthernet (nat)")
+
+
 def test_windows_10_iface_wmic(benchmark, mocker, get_sample):
     content = get_sample("windows_10/wmic_nic.out")
     mocker.patch("getmac.utils.popen", return_value=content)
@@ -830,6 +968,11 @@ def test_windows_10_iface_wmic(benchmark, mocker, get_sample):
         ("00-80-0c-07-ae-d3", "192.168.0.1", "third_party/glpi_agent/generic/arp/win32"),
         # French Windows, "No ARP Entries Found."
         (None, "192.168.0.1", "third_party/glpi_agent/generic/arp/none"),
+        # GitHub's Windows runners (Azure's gateway always has this MAC)
+        *(
+            ("12-34-56-78-9a-bc", "10.9.0.1", f"{runner[0]}/arp_-a_10-9-0-1.out")
+            for runner in WINDOWS_RUNNERS
+        ),
     ],
 )
 def test_arpexe_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -1283,6 +1426,10 @@ def test_defaultifaceiproute(mocker):
     ("iface", "sample_file"),
     [
         ("en0", "macos_10.12.6/route_-n_get_default.out"),
+        ("en0", "macos_15.7.9/route_get_default.out"),
+        ("en0", "macos_15.7.9/route_-n_get_default.out"),
+        ("en0", "macos_26.6.2/route_get_default.out"),
+        ("en0", "macos_26.6.2/route_-n_get_default.out"),
         ("em0", "freebsd11/route_get_default.out"),
         # Solaris (uses the "other" platform methods)
         ("net0", "third_party/facter/route_n_get_default"),
@@ -1336,6 +1483,21 @@ def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, ifac
         ("52:54:00:12:35:02", "52:54:00:12:35:02", "10.0.2.2", "netbsd8.2/arp_10-0-2-2.out"),
         ("52:54:00:12:35:03", "52:54:00:12:35:03", "10.0.2.3", "netbsd8.2/arp_a.out"),
         ("52:54:00:12:35:02", "52:54:0:12:35:2", "10.0.2.2", "solaris10/arp_10-0-2-2.out"),
+        # GitHub's macOS runners. macOS 15 prints "0" instead of "00".
+        *(
+            (mac, raw_mac, ip, f"{version}/{sample}")
+            for version, mac, raw_mac in (
+                ("macos_15.7.9", "12:34:56:00:a0:20", "12:34:56:0:a0:20"),
+                ("macos_26.6.2", "12:34:56:26:a0:20", "12:34:56:26:a0:20"),
+            )
+            for sample in ("arp_-a.out", "arp_-an.out", "arp_198-51-100-1.out")
+            for ip in ["198.51.100.1"]
+        ),
+        *(
+            ("01:00:5e:00:00:fb", "1:0:5e:0:0:fb", "224.0.0.251", f"{version}/{sample}")
+            for version in ("macos_15.7.9", "macos_26.6.2")
+            for sample in ("arp_-a.out", "arp_-an.out")
+        ),
         # Linux net-tools "arp <ip>" prints a table instead of "? (ip) at mac"
         ("02:42:3a:5c:7e:91", "02:42:3a:5c:7e:91", "172.17.0.1", "debian_13/arp_172-17-0-1.out"),
     ],

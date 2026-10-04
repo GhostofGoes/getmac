@@ -938,7 +938,7 @@ def test_get_mac_address_default_interface_vpn_macos(mocker, get_sample):
 
     # en1 comes before en0, so its MAC is used. Finding the interface the VPN goes
     # over (here, en0) is a TODO for issue #91.
-    assert getmac.get_mac_address() == "02:00:00:00:00:11"
+    assert getmac.get_mac_address() == "12:34:56:26:a0:11"
     assert networksetup.unusable is False
     assert getmac.METHOD_CACHE["iface"] is networksetup
 

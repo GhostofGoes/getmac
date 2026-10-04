@@ -225,6 +225,11 @@ def test_sample_filename(collect_samples, argv, strip_exe, expected):
         ("ubuntu_18.04/route_-n.out", ["lo", "ens33"], ("ens33", "192.168.16.2")),
         ("freebsd11/route_get_default.out", [], ("em0", "10.0.2.2")),
         ("macos_10.12.6/netstat_-rn.out", ["lo0", "en0"], ("en0", "10.0.2.2")),
+        *(
+            (f"{version}/{sample}", ["lo0", "en0", "utun0"], ("en0", "198.51.100.1"))
+            for version in ("macos_15.7.9", "macos_26.6.2")
+            for sample in ("netstat_-rn.out", "route_get_default.out", "route_-n_get_default.out")
+        ),
         ("third_party/glpi_agent/hpux/netstat/hpux1", ["lo0", "lan0"], ("lan0", "10.0.4.33")),
     ],
 )
@@ -232,13 +237,61 @@ def test_parse_default_route(collect_samples, get_sample, sample_file, interface
     assert collect_samples.parse_default_route(get_sample(sample_file), interfaces) == expected
 
 
-def test_parse_ipconfig_and_proc_net_route(collect_samples, get_sample):
-    adapters, iface, gateway = collect_samples.parse_ipconfig(
-        get_sample("windows_10/ipconfig-all.out")
+@pytest.mark.parametrize(
+    ("sample_file", "adapters", "default_iface", "gateway"),
+    [
+        (
+            "windows_10/ipconfig-all.out",
+            [
+                "Ethernet 3",
+                # "Adapter" in a name isn't mistaken for the "adapter" before it
+                "VMware Network Adapter VMnet1",
+                "VMware Network Adapter VMnet8",
+                "Local Area Connection* 1",
+            ],
+            "Ethernet 3",
+            "10.0.0.1",
+        ),
+        (
+            "windows_server_2025/ipconfig_-all.out",
+            ["Ethernet 3", "vEthernet (nat)"],
+            "Ethernet 3",
+            "10.9.0.1",
+        ),
+        (
+            "windows_server_2022/ipconfig_-all.out",
+            ["Ethernet 3", "vEthernet (nat)"],
+            "Ethernet 3",
+            "10.9.0.1",
+        ),
+        (
+            "windows_11_arm64/ipconfig_-all.out",
+            ["Ethernet 5", "vEthernet (Default Switch)"],
+            "Ethernet 5",
+            "10.9.0.1",
+        ),
+    ],
+)
+def test_parse_ipconfig(
+    collect_samples, get_sample, sample_file, adapters, default_iface, gateway
+):
+    assert collect_samples.parse_ipconfig(get_sample(sample_file)) == (
+        adapters,
+        default_iface,
+        gateway,
     )
-    assert adapters == ["Ethernet 3", "VMnet1", "VMnet8", "Local Area Connection* 1"]
-    assert (iface, gateway) == ("Ethernet 3", "10.0.0.1")
 
+
+@pytest.mark.parametrize("version", ["macos_15.7.9", "macos_26.6.2"])
+@pytest.mark.parametrize("sample", ["ifconfig_-a.out", "netstat_-in.out"])
+def test_parse_interface_names(collect_samples, get_sample, version, sample):
+    assert collect_samples.parse_interface_names(get_sample(f"{version}/{sample}")) == [
+        *("lo0", "gif0", "stf0", "XHC12", "anpi0", "en1", "en0"),
+        *("utun0", "utun1", "utun2", "utun3"),
+    ]
+
+
+def test_parse_proc_net_route(collect_samples, get_sample):
     data = get_sample("ubuntu_18.10/proc_net_route.out")
     assert collect_samples.parse_proc_net_route(data) == ("ens33", "192.168.16.2")
 

@@ -74,6 +74,7 @@
 * Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
 * CI tests on PyPy 3.10 and 3.11.
 * 100% code coverage! (a significant milestone for this project)
+* Added samples from GitHub's macOS 15 and 26, Windows Server 2022 and 2025, and Windows 11 Arm runners, collected with `scripts/collect_samples.py`. Fixed the script cutting adapter names with "Adapter" in them short on Windows (e.g. "VMware Network Adapter VMnet1").
 * `settings` and `__version__` are now published in `getmac.__all__`, for type checkers.
 
 ## 0.9.6 (10/03/2026)

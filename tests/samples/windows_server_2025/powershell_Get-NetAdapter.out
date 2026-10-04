@@ -1,0 +1,19 @@
+
+
+Name                 : Ethernet 4
+InterfaceDescription : Mellanox ConnectX-5 Virtual Adapter
+Status               : Up
+MacAddress           : 70-A8-A5-A5-B0-10
+
+Name                 : Ethernet 3
+InterfaceDescription : Microsoft Hyper-V Network Adapter #3
+Status               : Up
+MacAddress           : 70-A8-A5-A5-B0-10
+
+Name                 : vEthernet (nat)
+InterfaceDescription : Hyper-V Virtual Ethernet Adapter
+Status               : Up
+MacAddress           : 00-15-5D-A5-B0-11
+
+
+

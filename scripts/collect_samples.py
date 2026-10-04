@@ -532,7 +532,7 @@ def parse_ipconfig(output: str) -> tuple[list[str], str, str]:
 
     for line in output.splitlines():
         if line and not line[0].isspace():
-            match = re.match(r".*[ -]adapter (.+):$", line.strip(), re.IGNORECASE)
+            match = re.match(r".*?[ -]adapter (.+):$", line.strip(), re.IGNORECASE)
             adapter = match.group(1) if match else ""
             if adapter:
                 adapters.append(adapter)
