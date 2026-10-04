@@ -32,8 +32,8 @@
 
 # NOTE: for Android, use the official emulators included with Android Studio
 
-# wget --no-check-certificate https://github.com/GhostofGoes/getmac/archive/refs/heads/refactor.tar.gz
-# tar -xzvf refactor.tar.gz
+# wget --no-check-certificate https://github.com/GhostofGoes/getmac/archive/refs/heads/main.tar.gz
+# tar -xzvf main.tar.gz
 
 Vagrant.configure(2) do |config|
 
@@ -120,7 +120,7 @@ Vagrant.configure(2) do |config|
     end
     netbsd.vbguest.auto_update = false
     # To test code:
-    #   wget --no-check-certificate https://github.com/ghostofgoes/getmac/archive/refactor.zip
+    #   wget --no-check-certificate https://github.com/GhostofGoes/getmac/archive/refs/heads/main.zip
     #   sudo pkgin install python37
     #
     # NOTE: this requires SMB, since no guest extensions

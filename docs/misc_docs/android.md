@@ -33,7 +33,7 @@ adb shell
 
 how do we add wifi?
 "When using an AVD with API level 25 or higher, the emulator provides a simulated Wi-Fi access point ("AndroidWifi"), and Android automatically connects to it."
-https://developer.android.com/studio/run/emulator.html#wifi
+https://developer.android.com/studio/run/emulator-networking
 
 
 ## Identifying Android in Python

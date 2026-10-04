@@ -44,7 +44,7 @@ with a slow run since it tries every method before failing.
 ### Remote hosts
 do this next, i guess, to get ipv6 working on windows + WSL
 also, on WSL, do netsh.exe instead of netsh
-https://www.prodjim.com/how-to-arp-a-in-ipv6
+https://web.archive.org/web/20220814083605/https://www.prodjim.com/how-to-arp-a-in-ipv6
 
 - [x] IPv6: `netsh int ipv6 show neigh`
 - [x] IPv4: `netsh int ipv4 show neigh`
@@ -124,7 +124,7 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Add new regexes to `IpLinkIface` and improve it's parsing so it's more robust, especially on Android
 - [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
 - [ ] address all TODOs in the code
-- [ ] Support IPv6 hosts: https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
+- [ ] Support IPv6 hosts: https://web.archive.org/web/20210730102525/https://www.practicalcodeuse.com/how-to-arp-a-in-ipv6
 - [ ] Support IPv4+IPv6 remote hosts on WSL (see "Platform support" section in this document)
 - [ ] New method for "ip addr"? (this would be useful for CentOS and others as a fallback)
 - [ ] Method-specific loggers? dynamically set logger name based on subclass name, so we don't have to manually set it in the string
