@@ -207,14 +207,15 @@ composite = [
 help = "Pin GitHub Actions in the workflows to the latest commit SHA for each version tag"
 # Rewrites each "uses: owner/action@vN" to "owner/action@<commit SHA> # vN", and on
 # later runs updates the SHA to the newest commit for the tag in the comment.
-# No GitHub token is passed to the container (unauthenticated API limits apply).
+# Only the workflows folder is shared with the container, and no GitHub token is passed
+# to it (unauthenticated API limits apply).
 shell = """
 docker run --rm \
   --user "$(id -u):$(id -g)" \
   -e GITHUB_TOKEN="" \
-  -v "$(pwd):/workflows" \
+  -v "$(pwd)/.github/workflows:/workflows" \
   docker.io/mheap/pin-github-action:3.5.2@sha256:ba17de75e22e81510b0ac11a712a60c76ec45892abaef2fa9094b5ebeb01bed0 \
-  .github/workflows
+  .
 """
 
 [tool.pdm.scripts.build-docker]
