@@ -3,9 +3,12 @@
 Collect samples of command output for getmac's tests.
 
 Runs the commands (and reads the files) that getmac uses on the current
-platform, plus some closely related commands that are useful when writing
-parsers, and saves the output of each one to its own ``.out`` file in
-``tests/samples/<platform>_<version>/`` (e.g. ``tests/samples/ubuntu_24.04/``).
+platform, including the ones getmac falls back to on platforms it doesn't fully
+support, plus some closely related commands that are useful when writing parsers.
+The output of each one is saved to its own ``.out`` file in
+``tests/samples/<platform>_<version>/`` (e.g. ``tests/samples/ubuntu_24.04/``),
+or in ``./samples/<platform>_<version>/`` when the script isn't in a getmac
+checkout (use ``--output-root`` to change this).
 Exit codes and error output are logged to ``collect_samples.log`` in the same directory.
 
 This only uses the Python standard library (Python 3.9+) and doesn't import getmac,
@@ -14,7 +17,7 @@ sync with the methods in ``getmac/getmac.py`` by ``tests/test_collect_samples.py
 
 Usage::
 
-    python scripts/collect_samples.py --dry-run   # list what would be run
+    python scripts/collect_samples.py --dry-run   # list what would be collected
     python scripts/collect_samples.py             # collect the samples
     python scripts/collect_samples.py --help      # all options
 
@@ -45,6 +48,7 @@ from typing import Optional, Union
 
 LOG_NAME = "collect_samples.log"
 REPO_SAMPLES_DIR = Path(__file__).resolve().parent.parent / "tests" / "samples"
+SYS_CLASS_NET = "/sys/class/net"
 
 
 @dataclass(frozen=True)
@@ -79,7 +83,8 @@ def cmd(
 # Commands and files, grouped by the platforms they're found on. Anything that isn't
 # installed is skipped, so it's fine for a group to include commands that only exist
 # on some of its platforms. tests/test_collect_samples.py checks that every command
-# and file used by a Method in getmac/getmac.py is included for that Method's platforms.
+# and file used by a Method in getmac/getmac.py is included for that Method's platforms,
+# and for the platforms where getmac falls back to the "other" Methods (see below).
 GROUPS: dict[str, tuple[Spec, ...]] = {
     # Unix-like platforms
     "posix": (
@@ -211,23 +216,51 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
         cmd("lanscan -ai"),
         cmd("nwmgr"),
     ),
+    # Commands used by getmac's "other" Methods. When getmac doesn't have any Methods
+    # for a type of lookup on a platform, it falls back to the "other" Methods for it.
+    # There's a group for each type of lookup, so platforms only get the ones they use.
+    "other_ip": (  # MAC of a remote host
+        cmd("arp {ip}"),
+        cmd("arp -an"),
+        cmd("arp -an {ip}"),
+        cmd("arp -a"),
+        cmd("arp -a {ip}"),
+        cmd("ip neighbor show {ip}"),
+    ),
+    "other_iface": (  # MAC of an interface
+        cmd("ifconfig"),
+        cmd("ifconfig -a"),
+        cmd("ifconfig -v"),
+        cmd("ifconfig -av"),
+        cmd("ifconfig {iface}"),
+        cmd("netstat -iae"),
+        cmd("ip link"),
+        cmd("ip link show {iface}"),
+    ),
+    "other_default_iface": (  # Default interface
+        cmd("route -n"),
+        cmd("route get default"),
+        cmd("ip route list 0/0"),
+    ),
 }
 
 # The groups to collect for each platform. Platform names are the same as the ones
 # used by getmac's Method.platforms, plus "netbsd". Unlike getmac, "wsl" is used for
-# both WSL1 and WSL2, since both can run Windows commands.
+# both WSL1 and WSL2, since both can run Windows commands. The "other_*" groups are
+# for the types of lookups that getmac doesn't have Methods for on the platform, e.g.
+# IPv6 hosts and the default interface on Windows, where "arp" and "route" exist.
 PLATFORMS: dict[str, tuple[str, ...]] = {
     "linux": ("posix", "linux", "busybox"),
-    "android": ("posix", "linux", "busybox"),
+    "android": ("posix", "linux", "busybox", "other_ip", "other_default_iface"),
     "wsl": ("posix", "linux", "busybox", "wsl"),
-    "windows": ("windows",),
+    "windows": ("windows", "other_ip", "other_default_iface"),
     "darwin": ("posix", "darwin"),
     "freebsd": ("posix", "bsd"),
     "openbsd": ("posix", "bsd", "openbsd"),
-    "netbsd": ("posix", "bsd", "netbsd"),
-    "sunos": ("posix", "sunos"),
-    "hp-ux": ("posix", "hpux"),
-    # Unknown platform, try everything Unix-like
+    "netbsd": ("posix", "bsd", "netbsd", "other_ip", "other_iface", "other_default_iface"),
+    "sunos": ("posix", "sunos", "other_iface", "other_default_iface"),
+    "hp-ux": ("posix", "hpux", "other_ip", "other_default_iface"),
+    # Unknown platform, try everything Unix-like (this has all of the "other_*" commands)
     "other": ("posix", "linux", "busybox", "bsd"),
 }
 
@@ -314,6 +347,8 @@ def is_wsl2(uname: platform.uname_result) -> bool:
 def detect_platform() -> str:
     """Name of the current platform, using the names in :data:`PLATFORMS`."""
     system = platform.system()
+    if system == "Android":  # Python 3.13+ on Android (older versions say "Linux")
+        return "android"
     if system == "Linux":
         if is_android():
             return "android"
@@ -373,7 +408,7 @@ def default_dir_name(uname: platform.uname_result, os_release: dict[str, str]) -
     elif system == "Darwin":
         version = platform.mac_ver()[0] or run_quiet(("sw_vers", "-productVersion"), 10)
         name = "macos_" + version.strip()
-    elif system == "Linux" and is_android():
+    elif system == "Android" or (system == "Linux" and is_android()):
         version = run_quiet(("getprop", "ro.build.version.release"), 10).strip()
         name = "android_" + version
     elif os_release.get("ID"):  # Linux distros, and some others (e.g. OpenIndiana)
@@ -573,8 +608,11 @@ def find_interfaces(platform_name: str, timeout: float) -> list[str]:
     if platform_name == "windows":
         return parse_ipconfig(run_quiet(("ipconfig.exe", "/all"), timeout))[0]
 
+    # Interfaces are directories (symlinks to them), but there can be files
+    # too, e.g. "bonding_masters" when the bonding driver is loaded
     try:
-        return sorted(os.listdir("/sys/class/net"))
+        names = os.listdir(SYS_CLASS_NET)
+        return sorted(n for n in names if os.path.isdir(os.path.join(SYS_CLASS_NET, n)))
     except OSError:
         pass
     try:
@@ -736,8 +774,13 @@ class Collector:
             output = result.stdout
             sample.stderr = result.stderr.decode(errors="replace").strip()
 
-            if result.returncode is None:
+            if result.returncode is None:  # Couldn't run it, or it timed out
                 sample.status, sample.detail = "failed", result.error
+                if output:
+                    # Output from a command that timed out is incomplete. Saving it would
+                    # make it look like a real sample, and stop it being run again.
+                    sample.detail += ", partial output not saved"
+                    output = b""
             elif result.returncode != 0:
                 sample.status = "failed"
                 sample.detail = f"exit code {result.returncode}"
@@ -799,6 +842,11 @@ def write_log(log_path: Path, header: list[str], samples: list[Sample]) -> None:
         f.write("\n".join(lines) + "\n\n")
 
 
+def wrote_files(samples: list[Sample]) -> bool:
+    """If any samples were collected, in which case the log (and maybe samples) was saved."""
+    return any(s.status in ("saved", "no output", "failed") for s in samples)
+
+
 def print_summary(samples: list[Sample], out_dir: Path, dry_run: bool) -> None:
     counts = {status: sum(s.status == status for s in samples) for status in _STATUSES}
     print("\nSummary: " + ", ".join(f"{n} {status}" for status, n in counts.items() if n))
@@ -810,11 +858,18 @@ def print_summary(samples: list[Sample], out_dir: Path, dry_run: bool) -> None:
             print(f"  {sample.label}  ({sample.detail})")
 
     if dry_run:
-        print("\nDry run: nothing was run or saved.")
-    elif counts.get("saved") or failed:
-        print(f"\nSamples saved to: {out_dir}")
-        print(f"Log: {out_dir / LOG_NAME}")
+        print(
+            "\nDry run: no samples were collected or saved. Some read-only commands may\n"
+            "still have been run to find the interfaces, the default gateway, and the\n"
+            "commands BusyBox has (e.g. 'ip route list 0/0', 'busybox --list',\n"
+            "'ipconfig.exe /all')."
+        )
 
+    if not wrote_files(samples):
+        return  # Nothing to review
+
+    print(f"\nSaved to: {out_dir}")
+    print(f"Log: {out_dir / LOG_NAME}")
     print(
         "\n"
         "!!! IMPORTANT !!!\n"
@@ -842,7 +897,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="list what would be run and saved, without running or saving anything",
+        help="list the samples that would be collected, without collecting or saving anything. "
+        "A few read-only commands (e.g. 'ip route list 0/0', 'busybox --list') may still be "
+        "run to find the interfaces, the default gateway, and the commands BusyBox has",
     )
     parser.add_argument("-f", "--force", action="store_true", help="overwrite existing samples")
     parser.add_argument(
@@ -958,7 +1015,7 @@ def main(args: Optional[list[str]] = None) -> int:
         for sample in samples:
             sample.status = sample.status or "not run"
 
-    if any(s.status in ("saved", "no output", "failed") for s in samples):
+    if wrote_files(samples):
         write_log(out_dir / LOG_NAME, header, samples)
 
     print_summary(samples, out_dir, opts.dry_run)

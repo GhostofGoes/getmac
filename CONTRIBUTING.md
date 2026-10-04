@@ -82,10 +82,10 @@ Collection examples of output of various commands is an easy way to contribute i
 
 Samples go in `tests/samples/`, in a folder named after the platform and version (e.g. `ubuntu_18.04`, `macos_10.12.6`, `windows_10`).
 
-The easiest way is to run `scripts/collect_samples.py`. It runs all the commands getmac uses on your platform (plus a few related ones), and saves the output of each one to a `.out` file in `tests/samples/<platform>_<version>/`. It only needs Python 3.9+, getmac doesn't need to be installed, so you can copy it to any machine and run it there.
+The easiest way is to run `scripts/collect_samples.py`. It runs all the commands getmac uses on your platform (plus a few related ones), including the generic commands getmac falls back to on platforms it doesn't fully support, and saves the output of each one to a `.out` file in `tests/samples/<platform>_<version>/`. It only needs Python 3.9+, getmac doesn't need to be installed, so you can copy it to any machine and run it there. When run from a copy outside a getmac checkout, it saves to `./samples/<platform>_<version>/` in the current directory instead (or use `--output-root`); copy that folder into `tests/samples/`.
 
 ```bash
-# See what would be run, without running anything
+# List the samples that would be collected, without collecting or saving them
 python scripts/collect_samples.py --dry-run
 
 # Collect the samples
@@ -93,8 +93,10 @@ python scripts/collect_samples.py
 ```
 
 Some notes:
+* `--dry-run` doesn't collect or save anything, but it may run a few read-only commands (e.g. `ip route list 0/0` or `busybox --list`) to find the interfaces, the default gateway, and the commands BusyBox has.
 * Existing samples aren't overwritten, unless you use `--force`
 * Commands that aren't installed are skipped. Exit codes and errors are written to `collect_samples.log` in the same folder.
+* If a command times out, its output isn't saved, and it's run again the next time. Use `--timeout` to wait longer.
 * Some commands only work as root or Administrator (e.g. `arping`).
 * Run `python scripts/collect_samples.py --help` for all the options, e.g. `--name` to change the folder name, `--interface` and `--ip` to choose the interfaces and hosts to look up.
 

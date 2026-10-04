@@ -4,13 +4,16 @@ import importlib.util
 import inspect
 import platform
 import shlex
-from contextlib import suppress
+import warnings
+from contextlib import ExitStack, suppress
 from pathlib import Path
 from subprocess import CalledProcessError
+from unittest import mock
 
 import pytest
 
 from getmac import getmac
+from getmac.variables import settings
 
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "scripts" / "collect_samples.py"
 
@@ -66,6 +69,10 @@ def _record_method(mocker, method_class):
     mocker.patch("getmac.utils.check_command", side_effect=lambda c: checked.add(c) or True)
     mocker.patch("getmac.utils.read_file", side_effect=lambda path: files.add(path))
     mocker.patch("getmac.getmac.socket.gethostbyname", side_effect=OSError)  # CtypesHost
+    # FcntlIface: with a fake socket, ioctl fails before it does anything real
+    mocker.patch("getmac.getmac.socket.socket")
+    # Record the default path, even if ARP_PATH is set in the environment
+    mocker.patch.object(getmac.ArpFile, "_path", "/proc/net/arp")
     with suppress(Exception):
         method_class().test()
 
@@ -83,13 +90,32 @@ def _record_method(mocker, method_class):
     return checked, commands, files
 
 
+def _not_collected(collect_samples, platform_name, recorded):
+    """
+    The commands and files recorded by _record_method that scripts/collect_samples.py
+    doesn't collect for a platform, as sorted strings.
+    """
+    checked, commands, files = recorded
+    specs = collect_samples.specs_for_platform(platform_name)
+    script_commands = {s.argv for s in specs if isinstance(s, collect_samples.Command)}
+    script_files = {s.path for s in specs if isinstance(s, collect_samples.File)}
+
+    missing = (
+        (commands - script_commands)
+        | (files - script_files)
+        | (checked - {argv[0] for argv in script_commands})
+    )
+    return sorted(map(str, missing))
+
+
 @pytest.mark.parametrize("method_class", _method_classes(), ids=lambda m: m.__name__)
 def test_collects_everything_methods_use(mocker, collect_samples, method_class):
     """
     Fails if a Method uses a command or file that isn't collected by
     scripts/collect_samples.py for all of the Method's platforms.
     """
-    checked, commands, files = _record_method(mocker, method_class)
+    recorded = _record_method(mocker, method_class)
+    _, commands, files = recorded
 
     # Make sure the recording worked, so this can't pass by accident
     source = inspect.getsource(method_class)
@@ -102,19 +128,67 @@ def test_collects_everything_methods_use(mocker, collect_samples, method_class):
             f"add platform '{platform_name}' to PLATFORMS in scripts/collect_samples.py"
         )
 
-        specs = collect_samples.specs_for_platform(platform_name)
-        script_commands = {s.argv for s in specs if isinstance(s, collect_samples.Command)}
-        script_files = {s.path for s in specs if isinstance(s, collect_samples.File)}
-
-        missing = (
-            (commands - script_commands)
-            | (files - script_files)
-            | (checked - {argv[0] for argv in script_commands})
-        )
+        missing = _not_collected(collect_samples, platform_name, recorded)
         assert not missing, (
-            f"add {sorted(map(str, missing))} to GROUPS in scripts/collect_samples.py "
-            f"for platform '{platform_name}'"
+            f"add {missing} to GROUPS in scripts/collect_samples.py for platform '{platform_name}'"
         )
+
+
+# The platforms getmac uses for each of the script's platforms, if they're different.
+# getmac detects WSL2 as "linux" ("wsl" is WSL1). It detects Android as "linux", or as
+# "android" when platform.system() returns "Android" (CPython 3.13+ built for Android), so
+# check both. See the comment above PLATFORMS in the script.
+_GETMAC_PLATFORMS = {"wsl": ("wsl", "linux"), "android": ("android", "linux")}
+
+
+def _methods_getmac_uses(platform_name, method_type):
+    """
+    The Methods getmac uses for a type of lookup on a platform, in order. This runs
+    initialize_method_cache() with the platform as OVERRIDE_PLATFORM and every Method's
+    test passing, so it includes the "other" Methods that getmac falls back to when
+    there aren't any Methods for the platform (e.g. on NetBSD).
+    """
+    with ExitStack() as stack:
+        for method in getmac.METHODS:
+            stack.enter_context(mock.patch.object(method, "test", return_value=True))
+        stack.enter_context(
+            mock.patch.object(getmac, "METHOD_CACHE", dict.fromkeys(getmac.METHOD_CACHE))
+        )
+        stack.enter_context(
+            mock.patch.object(getmac, "FALLBACK_CACHE", {k: [] for k in getmac.FALLBACK_CACHE})
+        )
+        stack.enter_context(mock.patch.object(settings, "OVERRIDE_PLATFORM", platform_name))
+        stack.enter_context(warnings.catch_warnings())
+        warnings.simplefilter("ignore", RuntimeWarning)  # Warning about the fallback
+
+        assert getmac.initialize_method_cache(method_type)
+        methods = [getmac.METHOD_CACHE[method_type], *getmac.FALLBACK_CACHE[method_type]]
+
+    return [type(method) for method in methods]
+
+
+@pytest.mark.parametrize("method_type", ["ip4", "ip6", "iface", "default_iface"])
+def test_collects_everything_getmac_uses_on_each_platform(mocker, collect_samples, method_type):
+    """
+    Fails if getmac can use a command or file on one of the script's platforms that
+    the script doesn't collect for that platform. Unlike test_collects_everything_methods_use,
+    this includes the "other" Methods that getmac falls back to on platforms that don't have
+    their own Methods for a type of lookup (e.g. NetBSD, or interfaces on Solaris).
+    """
+    recordings = {}
+    missing = {}
+    for script_platform in collect_samples.PLATFORMS:
+        for platform_name in _GETMAC_PLATFORMS.get(script_platform, (script_platform,)):
+            for method_class in _methods_getmac_uses(platform_name, method_type):
+                if method_class not in recordings:
+                    recordings[method_class] = _record_method(mocker, method_class)
+                not_collected = _not_collected(
+                    collect_samples, script_platform, recordings[method_class]
+                )
+                if not_collected:
+                    missing[f"{script_platform} ({method_class.__name__})"] = not_collected
+
+    assert not missing, f"add these to GROUPS in scripts/collect_samples.py: {missing}"
 
 
 @pytest.mark.parametrize(
@@ -215,14 +289,41 @@ def test_default_dir_name(mocker, collect_samples, uname, os_release, expected):
     assert collect_samples.default_dir_name(uname, os_release) == expected
 
 
+@pytest.mark.parametrize("system", ["Linux", "Android"])
+def test_default_dir_name_android(mocker, collect_samples, system):
+    """On Android, platform.system() is "Linux" on Python 3.12 and older, "Android" on 3.13+."""
+    mocker.patch.object(collect_samples, "is_android", return_value=True)
+    run_quiet = mocker.patch.object(collect_samples, "run_quiet", return_value="14\n")
+    uname = platform.uname_result(system, "localhost", "14", "#1 SMP PREEMPT", "aarch64")
+    assert collect_samples.default_dir_name(uname, {}) == "android_14"
+    run_quiet.assert_called_once_with(("getprop", "ro.build.version.release"), 10)
+
+
+@pytest.mark.parametrize(
+    ("system", "android", "expected"),
+    [
+        ("Linux", False, "linux"),
+        ("Linux", True, "android"),  # Python 3.12 and older on Android
+        ("Android", True, "android"),  # Python 3.13+ on Android
+        ("NetBSD", False, "netbsd"),
+        ("AIX", False, "other"),
+    ],
+)
+def test_detect_platform(mocker, collect_samples, system, android, expected):
+    mocker.patch("platform.system", return_value=system)
+    mocker.patch.object(collect_samples, "is_android", return_value=android)
+    mocker.patch.object(collect_samples, "is_wsl", return_value=False)
+    assert collect_samples.detect_platform() == expected
+
+
 def test_main(mocker, capsys, tmp_path, collect_samples):
     """Collect samples with fake commands, without running anything for real."""
 
     def fake_run_command(argv, *_args):
         if argv[0] == "/bin/ndp":
             return collect_samples.RunResult(1, b"some output\n", b"ndp: error!")
-        if argv[0] == "/bin/arping":
-            return collect_samples.RunResult(None, b"", b"", "timed out after 15.0s")
+        if argv[0] == "/bin/arping":  # Timed out, after printing some output
+            return collect_samples.RunResult(None, b"partial\n", b"", "timed out after 15.0s")
         return collect_samples.RunResult(0, " ".join(argv).encode() + b"\r\n", b"")
 
     mocker.patch.object(
@@ -237,8 +338,12 @@ def test_main(mocker, capsys, tmp_path, collect_samples):
     out_dir = tmp_path / "macos"
 
     assert collect_samples.main([*args, "--dry-run"]) == 0
-    assert "would run  route -n get default -> route_-n_get_default.out" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "would run  route -n get default -> route_-n_get_default.out" in output
+    assert "Dry run: no samples were collected or saved" in output
     assert not out_dir.exists()
+    # There's nothing to review, so there's no warning to review it
+    assert "real MAC addresses" not in output
 
     assert collect_samples.main([*args, "--default-interface-only"]) == 0
     output = capsys.readouterr().out
@@ -252,7 +357,9 @@ def test_main(mocker, capsys, tmp_path, collect_samples):
     # Failures are recorded and don't stop the other commands
     assert (out_dir / "ndp_-an.out").read_bytes() == b"some output\n"
     assert "ndp -an  (exit code 1, output saved)" in output
-    assert "arping -f -c 1 10.0.0.1  (timed out after 15.0s)" in output
+    # Partial output from a command that timed out isn't saved as a sample
+    timed_out = "arping -f -c 1 10.0.0.1  (timed out after 15.0s, partial output not saved)"
+    assert timed_out in output
     assert not list(out_dir.glob("arping*"))
     assert (
         "[failed] ndp -an (exit code 1, output saved)\n    stderr: ndp: error!"
@@ -263,7 +370,49 @@ def test_main(mocker, capsys, tmp_path, collect_samples):
     # Existing samples are only overwritten with --force
     (out_dir / "sw_vers.out").write_bytes(b"old")
     collect_samples.main(args)
-    assert "exists  sw_vers -> sw_vers.out" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "exists  sw_vers -> sw_vers.out" in output
     assert (out_dir / "sw_vers.out").read_bytes() == b"old"
+    # Commands that timed out are run again
+    assert timed_out in output
+    assert "arping -f -c 1 10.0.0.1 ->" not in output
     collect_samples.main([*args, "--force"])
     assert (out_dir / "sw_vers.out").read_bytes() == b"/bin/sw_vers\r\n"
+
+
+def _sample(collect_samples, status):
+    return collect_samples.Sample("arp -a", "arp_-a.out", argv=("arp", "-a"), status=status)
+
+
+@pytest.mark.parametrize(
+    ("statuses", "dry_run", "warning"),
+    [
+        (["saved", "exists"], False, True),
+        # The log is saved, and it has interface names and IPs
+        (["no output"], False, True),
+        (["failed"], False, True),
+        # Nothing was saved
+        (["exists", "not installed", "skipped"], False, False),
+        (["would run", "would read", "exists"], True, False),
+    ],
+)
+def test_print_summary_warning(capsys, tmp_path, collect_samples, statuses, dry_run, warning):
+    """The warning to review the files is only shown if something was saved."""
+    samples = [_sample(collect_samples, status) for status in statuses]
+    collect_samples.print_summary(samples, tmp_path, dry_run)
+    output = capsys.readouterr().out
+    assert ("real MAC addresses, IP addresses, and hostnames" in output) == warning
+    assert (str(tmp_path / collect_samples.LOG_NAME) in output) == warning
+    assert ("Dry run:" in output) == dry_run
+
+
+def test_find_interfaces_sysfs(mocker, tmp_path, collect_samples):
+    """Only the directories in /sys/class/net are interfaces, not files like bonding_masters."""
+    (tmp_path / "lo").mkdir()
+    (tmp_path / "eth0").mkdir()
+    (tmp_path / "bonding_masters").write_text("bond0\n")
+    mocker.patch.object(collect_samples, "SYS_CLASS_NET", str(tmp_path))
+    run_quiet = mocker.patch.object(collect_samples, "run_quiet")
+
+    assert collect_samples.find_interfaces("linux", 1.0) == ["eth0", "lo"]
+    run_quiet.assert_not_called()
