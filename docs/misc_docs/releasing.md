@@ -1,7 +1,9 @@
+## One-time setup
+CI publishes releases to PyPI with [Trusted Publishing](https://docs.pypi.org/trusted-publishers/), so no PyPI token is stored in GitHub.
+
 ## Requirements
 - PDM: https://pdm-project.org/en/latest/#installation
-- [twine](https://twine.readthedocs.io/) 6.1.0 or newer (for publishing to PyPI)
-- Configured `~/.pypirc` file with a token for `getmac` (used by twine)
+- Python 3.12 or newer to build the manpage locally
 
 ## Cutting a release
 1. Increment version number in `getmac/getmac.py` (in `__version__`)
@@ -12,20 +14,35 @@
 ```bash
 pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
-1. Clean the environment: `bash ./scripts/clean.sh`
-1. Build the sdist (`.tar.gz`) and wheel (`.whl`)
+1. Tag the release commit with the version (no `v` prefix) and push the tag:
 ```bash
-pdm build
+git tag 1.0.0
+git push origin 1.0.0
 ```
-1. Upload the sdist (`.tar.gz`) and wheel (`.whl`) to PyPI. Use twine, not `pdm publish`: PDM doesn't upload the `License-Expression` metadata, so PyPI would show no license for the release.
+1. CI runs the checks, builds the sdist (`.tar.gz`) and wheel (`.whl`), creates build provenance attestations for them, and publishes them to PyPI (the `publish-pypi` job in `ci.yml`). The Docker workflow publishes the container image for the tag at the same time.
+1. Approve the deployment for the `pypi` environment in the workflow run.
+1. Check the release on PyPI, and verify the attestation of the published files:
 ```bash
-twine upload dist/*
+pip download --no-deps getmac==1.0.0 -d dist/
+gh attestation verify dist/getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac
 ```
-1. Build the manpage (writes `manpage/getmac.1`). This needs the `docs` dependency group (`pdm install -d`, Python 3.10+).
+1. Get the manpage: download the `manpage` artifact from the tag's CI run, or build it (writes `manpage/getmac.1`):
 ```bash
 pdm run manpage
 ```
 1. Create a tagged release on GitHub including:
     a) The relevant section of the CHANGELOG in the body
-    b) The source and binary wheels
-    c) The manpage (`manpage/getmac.1`)
+    b) The source and binary wheels (the `python-package-distributions` artifact of the tag's CI run)
+    c) The manpage (`getmac.1`)
+
+## Publishing manually
+Only if CI can't publish the release. This needs [twine](https://twine.readthedocs.io/) 6.1.0 or newer, and a `~/.pypirc` file with a PyPI token for `getmac`.
+1. Clean the environment: `bash ./scripts/clean.sh`
+1. Build the sdist (`.tar.gz`) and wheel (`.whl`)
+```bash
+pdm build
+```
+1. Upload the sdist and wheel to PyPI. Use twine, not `pdm publish`: PDM doesn't upload the `License-Expression` metadata, so PyPI would show no license for the release.
+```bash
+twine upload dist/*
+```

@@ -1,19 +1,40 @@
 name: CI
 on:
-  - release
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+      - 1.0.0-wip
+    # Version tags, e.g. 1.0.0 or 1.0.0rc1. Pushing one also publishes the release to PyPI.
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+  pull_request:
+
+# Jobs only get read access to the repository unless they ask for more (e.g. deploy)
+permissions:
+  contents: read
+
+# Cancel runs for older commits on the same pull request. Runs for branches and tags
+# can deploy docs or publish a release, so they wait for the previous run instead.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint:
     name: Run lint checks
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Setup PDM
         uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
         with:
           python-version: "3.11"
           cache: true
+      - name: Check that pdm.lock is up to date with pyproject.toml
+        run: pdm lock --check
       - name: Install dependencies
         # NOTE: test is needed here to evaluate imports for pytest
         run: pdm sync -d -G lint,test
@@ -22,6 +43,7 @@ jobs:
   test:
     name: Run tests
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 20
     # Python 3.15 is a pre-release, so failures there are reported but don't fail the workflow.
     # TODO: remove this once Python 3.15.0 is released
     continue-on-error: ${{ matrix.python-version == '3.15' }}
@@ -41,43 +63,49 @@ jobs:
           - "3.13"
           - "3.14"
           - "3.15"
+          - "pypy3.10"
+          - "pypy3.11"
         architecture:
           - x86
           - x64
           - arm64
         platform:
-          - ubuntu-22.04
-          - windows-latest
-          - macos-latest
+          - ubuntu-24.04
+          - windows-2025
+          - macos-26
         exclude:
-          - platform: ubuntu-22.04
+          - platform: ubuntu-24.04
             architecture: x86
-          - platform: ubuntu-22.04
+          - platform: ubuntu-24.04
             architecture: arm64
-          - platform: windows-latest
+          - platform: windows-2025
             architecture: arm64
-          - platform: macos-latest
+          - platform: macos-26
             architecture: x86
-          - platform: macos-latest
+          - platform: macos-26
             architecture: x64
+          # PyPy has no 32-bit Windows builds
+          - platform: windows-2025
+            architecture: x86
+            python-version: "pypy3.10"
+          - platform: windows-2025
+            architecture: x86
+            python-version: "pypy3.11"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Setup PDM
         uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
           allow-python-prereleases: true
-      - name: Display platform and environment information
-        run: |
-          python --version
-          pdm run python --version
-          python -c "import sys; print('sys.version: %s' % str(sys.version))"
-          python -c "import sys; print('sys.platform: %s' % str(sys.platform))"
-          python -c "import os; print('os.name: %s' % str(os.name))"
-          python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
+          cache: true
       - name: Install dependencies
         run: pdm sync -d -G test
+      - name: Show platform and environment information
+        run: pdm run python -c "import os, platform, sys; print(sys.version); print(platform.python_implementation(), platform.machine()); print('sys.platform:', sys.platform, 'os.name:', os.name); print(platform.uname())"
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
         run: pdm run test
@@ -85,11 +113,16 @@ jobs:
         with:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ${{ runner.os }},${{ matrix.python-version }}
+          name: ${{ matrix.platform }}-${{ matrix.python-version }}-${{ matrix.architecture }}
   docs:
     name: Build HTML docs and manpage
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Setup PDM
         uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
         with:
@@ -113,8 +146,14 @@ jobs:
   deploy:
     name: Publish docs to GitHub Pages
     needs: docs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/1.0.0-wip'
+    # Only one deployment to GitHub Pages at a time. A newer deployment waits for the
+    # current one to finish instead of cancelling it.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write
@@ -126,37 +165,64 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
 
-# TODO: publish releases using CI
-# TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
-# https://docs.pypi.org/trusted-publishers/adding-a-publisher/
-# https://pdm-project.org/en/latest/usage/publish/
-  # publish:
-  #   name: Publish Release
-  #   needs: [test, lint, docs]
-  #   runs-on: ubuntu-latest
-  #   if: startsWith(github.ref, 'refs/tags/') && github.event_name == 'push'
-  #   permissions:
-  #     contents: write
-  #     id-token: write
-  #   steps:
-  #     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-  #     - name: Setup PDM
-  #       uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
-  #       with:
-  #         python-version: "3.11"
-  #         cache: true
-  #     - name: Build artifacts
-  #       run: pdm build
-  #     - name: Publish to PyPI
-  #       run: pdm publish
-  #     - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-  #       with:
-  #         name: manpage
-  #         path: manpage_dist
-  #     - name: Create GitHub Release
-  #       uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
-  #       with:
-  #         files: |
-  #           dist/*
-  #           manpage_dist/getmac.1
-  #         generate_release_notes: true
+  # Publishing to PyPI follows the Python Packaging User Guide:
+  # https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
+  # The package is built in a job without any special permissions, and only the
+  # publish job can get a PyPI token (through Trusted Publishing).
+  build:
+    name: Build distributions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
+        with:
+          python-version: "3.13"
+      - name: Build the sdist and wheel
+        run: pdm build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [lint, test, docs, build]
+    # Only for version tags pushed to this repository (not forks)
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && github.repository == 'GhostofGoes/getmac'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/getmac/${{ github.ref_name }}/
+    permissions:
+      id-token: write # Trusted Publishing to PyPI, and signing the attestations
+      attestations: write # Save the build provenance attestations to GitHub
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Check that the tag matches the package version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [ ! -f "dist/getmac-${TAG}.tar.gz" ]; then
+            echo "::error::Tag '${TAG}' doesn't match the version of the built package:"
+            ls dist/
+            exit 1
+          fi
+      # Attestations stored on GitHub, which can be checked with:
+      #   gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac
+      - name: Generate build provenance attestations
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: "dist/*"
+      # Also uploads PEP 740 attestations to PyPI (on by default with Trusted Publishing)
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        with:
+          attestations: true

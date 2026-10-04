@@ -53,6 +53,8 @@
 * Use [Ruff's formatter](https://docs.astral.sh/ruff/formatter/) instead of Black and isort
 * Updated development dependencies to their latest versions (pytest 8/9, Sphinx 9, mypy 2, etc.)
 * Updated GitHub Actions and pinned them to commit SHAs, and added `pdm run update-actions` to update the pins.
+* CI publishes releases to PyPI when a version tag is pushed, using Trusted Publishing, with attestations on PyPI and GitHub.
+* CI tests on PyPy 3.10 and 3.11.
 
 ## 0.9.5 (07/15/2024)
 
