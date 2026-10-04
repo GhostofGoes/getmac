@@ -110,7 +110,6 @@ This is going to be a bit more complicated since the highest metric routes are g
 
 # Dev
 - [ ] OpenSSF best practices badge
-- [ ] Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released ([guide](https://github.com/python/typeshed/blob/master/CONTRIBUTING.md))
 - [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
 - [ ] Move method classes into a separate file
 - [ ] Generate a GitHub release in GitHub Actions when a version tag is pushed (publishing to PyPI is already automated).
@@ -241,6 +240,7 @@ methods (list): Optional list of methods to use for MAC address lookup.
 - [x] Write a short guide on how to add and test a new method (`docs/adding_methods.rst`)
 
 ## Dev
+- [x] ~~Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released~~ Not needed: getmac ships its own type hints and a `py.typed` marker (PEP 561), and typeshed doesn't take stubs for packages that do.
 - [x] Publish releases to PyPI from GitHub Actions when a version tag is pushed (Trusted Publishing, with attestations on PyPI and GitHub)
 - [x] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 - [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
