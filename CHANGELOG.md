@@ -27,10 +27,9 @@
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
 * **BREAKING CHANGE**: `RuntimeError` is now raised in cases where no methods are found matching the type of request and platform, or if all matching methods fail to test. This should almost never happen unless you're on an exotic platform or have an unusual configuration, or a recent platform update changed commands such that getmac no longer functions. If you encounter a `RuntimeError` exception, it means something went horribly wrong, and you should considor reporting the [issue on GitHub](https://github.com/GhostofGoes/getmac/issues).
 * Reduce size of wheel distribution (`.whl` file).
-* Package metadata now declares the license as an SPDX expression
 * Fixed `get_mac_address()` returning an old MAC for an IP that is no longer in use on Linux. Incomplete and failed entries (Flags `0x0`) and proxy ARP entries (Flags `0xc`) in `/proc/net/arp` are now ignored and return `None`. Also fixed a lookup for an IP like `92.168.0.1` matching the entry for `192.168.0.1`. (Fixes issue [#76](https://github.com/GhostofGoes/getmac/issues/76))
 * Fixed the default interface name from `ip route` including extra text when the route has no `proto` field, e.g. `ens193 onlink` instead of `ens193` for `default via 192.168.1.254 dev ens193 onlink`.
-* Fixed `ifconfig` parsing returning a wrong MAC for some interfaces. InfiniBand interfaces (20 byte `HWaddr`) and FireWire interfaces on macOS (8 byte `lladdr`) returned the first 6 bytes of their address, and an interface without a MAC (e.g. `lo` or `sit0`) could return the MAC of the interface listed after it. These now return `None`.
+* Fixed `ifconfig` parsing returning a wrong MAC for some interfaces.
 * Fixed `ifconfig` parsing on Solaris and Debian GNU/kFreeBSD, which print MACs without leading zeros (e.g. `0:c:29:c1:70:2a`).
 * Fixed the `CtypesHost` method on Windows passing a string instead of bytes to `inet_addr()` when looking up a hostname.
 * Fixed the `FcntlIface` method on Linux not closing its socket after each lookup.
