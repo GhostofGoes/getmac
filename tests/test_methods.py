@@ -982,9 +982,11 @@ def test_defaultifaceiproute_samples(benchmark, mocker, get_sample, iface, sampl
         # Route with multiple next hops (multipath), "proto" is before "dev"
         (
             "eth0",
-            "default proto static metric 100\n"
-            "\tnexthop via 10.0.0.1 dev eth0 weight 1\n"
-            "\tnexthop via 10.0.0.2 dev eth1 weight 1\n",
+            (
+                "default proto static metric 100\n"
+                "\tnexthop via 10.0.0.1 dev eth0 weight 1\n"
+                "\tnexthop via 10.0.0.2 dev eth1 weight 1\n"
+            ),
         ),
     ],
 )

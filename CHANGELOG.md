@@ -51,6 +51,7 @@
 * Switched to CodeCov from Coveralls
 * Refactored source code documentation and added an API reference to the docs
 * Use [Ruff's formatter](https://docs.astral.sh/ruff/formatter/) instead of Black and isort
+* Updated development dependencies to their latest versions (pytest 8/9, Sphinx 9, mypy 2, etc.)
 
 ## 0.9.5 (07/15/2024)
 

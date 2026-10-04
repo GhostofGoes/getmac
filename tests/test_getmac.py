@@ -229,7 +229,7 @@ def test_initialize_method_cache_unsupported_platform(mocker):
     getmac.METHOD_CACHE["iface"] = None
     mocker.patch("getmac.getmac.METHODS", [StubMethod])
     with pytest.warns(RuntimeWarning):
-        with pytest.raises(RuntimeError, match="No valid methods found .* platform 'fakeos'"):
+        with pytest.raises(RuntimeError, match=r"No valid methods found .* platform 'fakeos'"):
             getmac.initialize_method_cache("iface")
 
 

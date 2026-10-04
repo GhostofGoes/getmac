@@ -382,14 +382,18 @@ def test_main_no_flags_skips_logging_config(mocker):
         (
             ["--override-platform", " FakeOS "],
             FAKEOS_MAC,
-            "WARNING  Platform override is set, using 'fakeos' as platform instead of "
-            f"detected platform '{consts.PLATFORM}'\n",
+            (
+                "WARNING  Platform override is set, using 'fakeos' as platform instead of "
+                f"detected platform '{consts.PLATFORM}'\n"
+            ),
         ),
         (
             ["--force-method", " StubFakeOsIface "],
             FAKEOS_MAC,
-            "WARNING  Forcing method 'stubfakeosiface' to be used for 'iface' lookup "
-            "(arg: 'eth0')\n",
+            (
+                "WARNING  Forcing method 'stubfakeosiface' to be used for 'iface' lookup "
+                "(arg: 'eth0')\n"
+            ),
         ),
     ],
 )

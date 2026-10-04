@@ -184,7 +184,7 @@ pdm run getmac --version
 
 The docs are built using Sphinx. They are located in the `docs/` folder, and the configuration is in `docs/conf.py`.
 
-To build docs locally:
+To build docs locally (requires Python 3.12 or newer):
 ```shell
 pdm run docs
 ```

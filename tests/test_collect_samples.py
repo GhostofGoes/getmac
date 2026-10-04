@@ -67,7 +67,7 @@ def _record_method(mocker, method_class):
 
     checked, commands, files = set(), set(), set()
     mocker.patch("getmac.utils.check_command", side_effect=lambda c: checked.add(c) or True)
-    mocker.patch("getmac.utils.read_file", side_effect=lambda path: files.add(path))
+    mocker.patch("getmac.utils.read_file", side_effect=files.add)
     mocker.patch("getmac.getmac.socket.gethostbyname", side_effect=OSError)  # CtypesHost
     # FcntlIface: with a fake socket, ioctl fails before it does anything real
     mocker.patch("getmac.getmac.socket.socket")
