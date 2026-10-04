@@ -1,13 +1,6 @@
-
-# 1.0.0 release
-
-## Before releasing
-- [ ] After the first Docker image is published, make the GHCR package public
-
-
 # Etc
 - [ ] cache the result of executable checks in `getmac.utils.popen()`
-- TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
+- [ ] Resolve MAC to an IP (basically reverse getmac). "to_find='mac'"? (create GitHub issue?)
 
 
 # Bugs or potential issues
@@ -25,8 +18,7 @@
 - [ ] Docstrings that don't match the code: `get_default_interface()` can raise `RuntimeError`, `get_instance_from_cache()` returns an instance (not a class), `utils.search()` uses `groups()` (not `groupdict()`), `get_method_by_name()` has no docstring, and `Method.get()` returns raw output (not a cleaned MAC).
 - [ ] Remote host that is actually an interface should resolve to localhost MAC
 - [ ] [Issue #91](https://github.com/GhostofGoes/getmac/issues/91): when the default interface is a VPN tunnel without a MAC (e.g. `utun0` on macOS), `get_mac_address()` falls back to the first interface (in `socket.if_nameindex()` order) that has a MAC. That may not be the interface the VPN traffic goes over, e.g. a Thunderbolt port (`en1`) instead of Wi-Fi (`en0`) on Apple Silicon Macs. Prefer the interface of another default route (`netstat -rn` lists scoped default routes on macOS, `ip route` can list several on Linux), or the macOS network service order (`networksetup -listnetworkserviceorder`). Collect samples on macOS with a VPN connected first.
-- [ ] Reduce the cost of failures. Currently, failures are penalized
-with a slow run since it tries every method before failing.
+- [ ] Reduce the cost of failures. Currently, failures are penalized with a slow run since it tries every method before failing.
 - [ ] Detect if an interface exists before trying to find it's MAC.
 - [ ] **Security**. Spend some quality time ensuring our sources of input (the arguments to `get_mac_address()`) don't result in unexpected code execution. A lot of stuff is running system commands, so we should focus the most effort on the `subprocess.Popen()` calls.
 
@@ -109,23 +101,18 @@ This is going to be a bit more complicated since the highest metric routes are g
 
 
 # Dev
-- [ ] OpenSSF best practices badge
 - [ ] Add to Conda Forge ([example here](https://github.com/conda-forge/staged-recipes/pull/26828/files))
 - [ ] Move method classes into a separate file
 - [ ] Generate a GitHub release in GitHub Actions when a version tag is pushed (publishing to PyPI is already automated).
     - This is going to require re-doing how changelogs are created a bit.
 - [ ] Use towncrier for release notes (or another fragment-file based system, avoid merge conflicts)
 - [ ] Use `prek` for linting
-- [ ] Debian packaging (`.deb`) for 1.0.0. The 0.9.x releases built one with `stdeb` from `setup.py` (see `docs/releasing.md` on the `main` branch), and this branch doesn't have a `setup.py`. Options:
-    - A `debian/` directory, built with `dh-python` (`pybuild`) and its `pyproject` support, with `pdm-backend` as a build dependency. Add the steps to `docs/misc_docs/releasing.md`, or build it in CI.
-    - Stop attaching `.deb` files to GitHub releases, and leave Debian packages to the distros (see "OS Packaging Status" in the README).
 
 
 # Post-1.0.0
 - [ ] Cleanup `ifconfig` methods
   - [ ] Split `IfconfigOther` into IfconfigWithArg/IfconfigNoArg
   - [ ] Combine `IfconfigEther` into other Ifconfig methods
-  - [ ] Improve unit test coverage and platform markers
 - [ ] `IpLinkIface`: improve regex to not need extra portion for no arg
 - [ ] Add new regexes to `IpLinkIface` and improve it's parsing so it's more robust, especially on Android
 - [ ] finer-grained platform support identification for methods by versions/releases, e.g. Windows 7 vs 10, Ubuntu 12 vs 20
@@ -168,6 +155,9 @@ methods (list): Optional list of methods to use for MAC address lookup.
 # Completed tasks
 
 ## 1.0.0 release
+
+### Before releasing
+- [x] After the first Docker image is published, make the GHCR package public
 
 ### Documentation
 - [x] Single page on RTD/publish with GitHub actions built with Sphinx and Furo
@@ -244,3 +234,4 @@ methods (list): Optional list of methods to use for MAC address lookup.
 - [x] Publish releases to PyPI from GitHub Actions when a version tag is pushed (Trusted Publishing, with attestations on PyPI and GitHub)
 - [x] Create a script to collect samples for all relevant commands on a platform and save output into the appropriately named sub-directory in `samples/`.
 - [x] Add [isort](https://pycqa.github.io/isort/) (requires python 3.8+)
+- [x] OpenSSF best practices badge
