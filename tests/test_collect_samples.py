@@ -43,8 +43,11 @@ def _method_classes():
 
 
 def _fake_popen(commands, result):
-    def popen(command, args):
-        commands.add((command, *shlex.split(args)))
+    def popen(command, args="", arg=None):
+        parts = [command, *shlex.split(args)]
+        if arg is not None:
+            parts.append(arg)
+        commands.add(tuple(parts))
         if isinstance(result, Exception):
             raise result
         return result

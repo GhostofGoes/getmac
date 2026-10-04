@@ -7,7 +7,6 @@ internal use by getmac.
 import os
 import re
 import shlex
-import shutil
 import socket
 import subprocess
 from typing import Optional, Union
@@ -15,10 +14,47 @@ from typing import Optional, Union
 from .variables import consts, gvars, settings
 
 
+def find_executable(command: str) -> Optional[str]:
+    """
+    Find the absolute path of a command by searching the directories in
+    :data:`getmac.variables.Variables.PATH`.
+
+    Only absolute directories are searched, and the current directory is never
+    searched, even on Windows (where :func:`shutil.which` otherwise checks it first).
+    This avoids running an executable planted in the working directory, or one
+    reached through a relative or empty ``PATH`` entry
+    (`GitHub issue #51 <https://github.com/GhostofGoes/getmac/issues/51>`__).
+
+    Args:
+        command: command to find, e.g. ``ip`` or ``arp.exe``
+
+    Returns:
+        The absolute path of the executable, or :obj:`None` if it wasn't found
+    """
+    if consts.WINDOWS:
+        # On Windows, a command is run with its extension, e.g. "arp" -> "arp.exe".
+        # PATHEXT lists the extensions to try, in order. A command that already has
+        # an extension (e.g. "arp.exe") is matched by the bare name first.
+        exts = [ext for ext in os.environ.get("PATHEXT", ".EXE").split(os.pathsep) if ext]
+        names = [command, *(command + ext for ext in exts)]
+    else:
+        names = [command]
+
+    for directory in gvars.PATH:
+        if not os.path.isabs(directory):
+            continue
+        for name in names:
+            candidate = os.path.join(directory, name)
+            if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+                return candidate
+
+    return None
+
+
 def check_command(command: str) -> bool:
     """
-    Check if a command exists using :func:`shutil.which`. The result of the check
-    is cached in a global :class:`dict` to speed up subsequent lookups.
+    Check if a command exists, using :func:`find_executable`. The result of the
+    check is cached in a global :class:`dict` to speed up subsequent lookups.
 
     Args:
         command: command to check
@@ -27,7 +63,7 @@ def check_command(command: str) -> bool:
         If the command exists
     """
     if command not in gvars.CHECK_COMMAND_CACHE:
-        gvars.CHECK_COMMAND_CACHE[command] = bool(shutil.which(command, path=gvars.PATH_STR))
+        gvars.CHECK_COMMAND_CACHE[command] = find_executable(command) is not None
     return gvars.CHECK_COMMAND_CACHE[command]
 
 
@@ -152,46 +188,42 @@ def search(regex: str, text: str, group_index: int = 0, flags: int = 0) -> Optio
     return None
 
 
-def popen(command: str, args: str) -> str:
+def popen(command: str, args: str = "", arg: Optional[str] = None) -> str:
     """
     Execute a command with arguments and return the stdout (stderr is discarded).
 
-    Wrapper around :func:`getmac.utils.call_proc`, with checks
-    to ensure the command exists and is executable and some debug
-    logging. This should be used instead of
-    :func:`getmac.utils.call_proc`.
+    Wrapper around :func:`getmac.utils.call_proc`, which resolves the command to an
+    absolute path with :func:`find_executable` and adds some debug logging. This
+    should be used instead of :func:`getmac.utils.call_proc`.
 
     Args:
         command: command to run, e.g. ``ping`` or ``ping.exe``
-        args: arguments to pass to the command, or empty string
-            if there are no arguments.
+        args: fixed, trusted arguments to pass to the command, or an empty string if
+            there are none. These are split into separate arguments on POSIX.
+        arg: a single, possibly untrusted argument, such as an interface name or IP
+            address. It's passed as exactly one argument and is never split, so it
+            can't inject extra command-line arguments.
 
     Returns:
         stdout from the command (stderr is discarded)
 
     Raises:
         CalledProcessError: the command failed to execute
+        FileNotFoundError: the command wasn't found in the PATH directories
     """
-    for directory in gvars.PATH:
-        executable = os.path.join(directory, command)
-        # TODO: cache the result of these checks? these are system calls
-        # and they can add up.
-        if (
-            os.path.exists(executable)
-            and os.access(executable, os.F_OK | os.X_OK)
-            and not os.path.isdir(executable)
-        ):
-            break
-    else:
-        executable = command
+    executable = find_executable(command)
+    if executable is None:
+        # A method's test() checks the command exists before the method is used, so
+        # this normally only happens if the command was removed in the meantime.
+        raise FileNotFoundError(f"Command '{command}' not found in any PATH directory")
 
     if settings.DEBUG >= 3:
-        gvars.log.debug(f"Running: '{executable} {args}'")
+        gvars.log.debug(f"Running: '{executable} {args}' (arg: {arg!r})")
 
-    return call_proc(executable, args)
+    return call_proc(executable, args, arg)
 
 
-def call_proc(executable: str, args: str) -> str:
+def call_proc(executable: str, args: str, arg: Optional[str] = None) -> str:
     """
     Wrapper around :func:`subprocess.check_output` with some
     logging and type conversion.
@@ -201,7 +233,9 @@ def call_proc(executable: str, args: str) -> str:
 
     Args:
         executable: command to run
-        args: arguments to the command
+        args: fixed, trusted arguments to the command
+        arg: a single, possibly untrusted argument, passed as exactly one argument
+            (see :func:`popen`)
 
     Returns:
         stdout from the command (stderr is discarded)
@@ -209,10 +243,17 @@ def call_proc(executable: str, args: str) -> str:
     Raises:
         CalledProcessError: the command failed to execute
     """
+    cmd: Union[str, list[str]]
     if consts.WINDOWS:
-        cmd = executable + " " + args  # type: ignore
+        # Windows takes a single command-line string. list2cmdline() quotes the
+        # untrusted argument so it stays a single argument.
+        cmd = executable + " " + args if args else executable
+        if arg is not None:
+            cmd += " " + subprocess.list2cmdline([arg])
     else:
-        cmd = [executable, *shlex.split(args)]  # type: ignore
+        cmd = [executable, *shlex.split(args)]
+        if arg is not None:
+            cmd.append(arg)
 
     output: Union[str, bytes] = subprocess.check_output(
         cmd, stderr=subprocess.DEVNULL, env=gvars.ENV

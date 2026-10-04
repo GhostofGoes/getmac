@@ -1,3 +1,4 @@
+import os
 import sys
 
 import pytest
@@ -63,6 +64,27 @@ def test_call_proc(mocker):
     assert utils.call_proc("CMD", "arg") == "BYTES"
 
 
+def test_call_proc_untrusted_arg(mocker):
+    """The untrusted `arg` is passed as a single argument and is never split."""
+    mocker.patch("subprocess.DEVNULL", "DEVNULL")
+    mocker.patch.object(gvars, "ENV", "ENV")
+
+    # POSIX: the trusted args are split, the untrusted arg is appended as one argument,
+    # so it can't inject extra arguments even with spaces or a leading dash
+    mocker.patch.object(consts, "WINDOWS", False)
+    m = mocker.patch("subprocess.check_output", return_value="")
+    utils.call_proc("CMD", "neighbor show", "10.0.0.1 -s evil")
+    m.assert_called_once_with(
+        ["CMD", "neighbor", "show", "10.0.0.1 -s evil"], stderr="DEVNULL", env="ENV"
+    )
+
+    # Windows: a single command-line string, with the untrusted arg quoted
+    mocker.patch.object(consts, "WINDOWS", True)
+    m = mocker.patch("subprocess.check_output", return_value="")
+    utils.call_proc("CMD.exe", "-a", "10.0.0.1 -d *")
+    m.assert_called_once_with('CMD.exe -a "10.0.0.1 -d *"', stderr="DEVNULL", env="ENV")
+
+
 def test_call_proc_decode(mocker):
     mocker.patch.object(consts, "WINDOWS", False)
     mocker.patch("subprocess.check_output", return_value="Connexion au réseau local".encode())
@@ -100,7 +122,46 @@ def test_popen_path(mocker, tmp_path):
     m = mocker.patch("getmac.utils.call_proc", return_value="SUCCESS")
 
     assert utils.popen("testcmd", "ARGS") == "SUCCESS"
-    m.assert_called_once_with(str(has_cmd / "testcmd"), "ARGS")
+    m.assert_called_once_with(str(has_cmd / "testcmd"), "ARGS", None)
+
+
+def test_popen_not_found_raises(mocker, tmp_path):
+    """popen() raises instead of running a bare command name not found in the PATH."""
+    mocker.patch.object(gvars, "PATH", [str(tmp_path)])
+    m = mocker.patch("getmac.utils.call_proc")
+    with pytest.raises(FileNotFoundError, match="nonexistent"):
+        utils.popen("nonexistent")
+    m.assert_not_called()
+
+
+def test_find_executable_skips_relative_dirs(mocker, tmp_path):
+    """Relative PATH entries (including the current directory) are never searched."""
+    (tmp_path / "testcmd").write_text("")
+    (tmp_path / "testcmd").chmod(0o755)
+    # A relative entry and an empty entry (which means the current directory)
+    mocker.patch.object(gvars, "PATH", [".", "", "relative/dir"])
+    assert utils.find_executable("testcmd") is None
+    assert utils.check_command("testcmd") is False
+
+    mocker.patch.object(gvars, "PATH", [str(tmp_path)])
+    gvars.CHECK_COMMAND_CACHE.clear()
+    assert utils.find_executable("testcmd") == str(tmp_path / "testcmd")
+
+
+def test_find_executable_windows_extensions(mocker, tmp_path):
+    """On Windows a command is found with a PATHEXT extension, e.g. "arp" -> "arp.exe"."""
+    # The extension case matches PATHEXT, since this filesystem may be case-sensitive
+    # (Windows, where this matters, isn't)
+    (tmp_path / "cmd.EXE").write_text("")
+    (tmp_path / "cmd.EXE").chmod(0o755)
+    mocker.patch.object(consts, "WINDOWS", True)
+    mocker.patch.dict(os.environ, {"PATHEXT": os.pathsep.join([".COM", ".EXE", ".BAT"])})
+    mocker.patch.object(gvars, "PATH", [str(tmp_path)])
+
+    assert utils.find_executable("cmd") == str(tmp_path / "cmd.EXE")
+    # A name that already has the extension is found too
+    assert utils.find_executable("cmd.EXE") == str(tmp_path / "cmd.EXE")
+    assert utils.find_executable("missing") is None
 
 
 def test_fetch_ip_using_dns(mocker):

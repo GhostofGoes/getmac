@@ -200,15 +200,6 @@ class Variables(VarsClass):
     :meta hide-value:
     """
 
-    PATH_STR: str = os.pathsep.join(PATH)
-    """
-    The :attr:`~getmac.variables.Variables.PATH` as a string.
-    Used for lookups by :func:`getmac.utils.check_command`,
-    which uses :func:`shutil.which` under the hood.
-
-    :meta hide-value:
-    """
-
     ENV: dict[str, str] = dict(os.environ)
     """
     Use a copy of the environment so any modifications that need to be made
@@ -257,10 +248,6 @@ class Variables(VarsClass):
                 for path in self.PATH
                 if ntpath.basename(ntpath.normpath(path)).lower() != "scripts"
             ]
-
-        # Rebuild the combined PATH string after modifications are made
-        # This will be used with shutil.which() for PATH lookups
-        self.PATH_STR = os.pathsep.join(self.PATH)
 
 
 settings: Final[Settings] = Settings()

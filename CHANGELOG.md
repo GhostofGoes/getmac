@@ -25,6 +25,13 @@
 * New setting, `settings.ARP_TIMEOUT` (`--arp-timeout` on the command line). After sending the UDP packet to populate the ARP/NDP table, getmac keeps checking it for the host for up to this many seconds, for hosts that are slow to reply. It's off (`0`) by default. (Issue [#101](https://github.com/GhostofGoes/getmac/issues/101))
 * Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [#90](https://github.com/GhostofGoes/getmac/issues/90))
 
+### Security
+* Hardened how arguments are handled, so a program that passes untrusted values to `get_mac_address()` can't be tricked into running unexpected commands (Issues [#61](https://github.com/GhostofGoes/getmac/issues/61) and [#51](https://github.com/GhostofGoes/getmac/issues/51)).
+    * **BREAKING CHANGE**: the `interface`, `ip`, and `ip6` arguments are now validated, and raise a `ValueError` if they're invalid. IP addresses are parsed with the `ipaddress` module (so, for example, a string passed to `ip` must be a valid IPv4 address). Interface names that start with `-` or contain quotes, slashes, backslashes, control characters, or (on POSIX) whitespace are rejected.
+    * User-supplied values are passed to commands as a single argument and are never split, so they can't add extra command-line arguments.
+    * Commands are only run from absolute directories on the `PATH`, never from the current directory (even on Windows) or a relative `PATH` entry.
+    * Added a "Security model" section to [SECURITY.md](https://github.com/GhostofGoes/getmac/blob/main/SECURITY.md) describing the commands run, files read, network requests, and trust assumptions.
+
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
     * **NOTE: This will require code changes if your code modifies getmac settings variables**

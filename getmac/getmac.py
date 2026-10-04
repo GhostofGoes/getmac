@@ -207,7 +207,7 @@ class ArpFreebsd(Method):
 
     def get(self, arg: str) -> Optional[str]:
         regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + consts.MAC_RE_COLON
-        return utils.search(regex, utils.popen("arp", arg))
+        return utils.search(regex, utils.popen("arp", arg=arg))
 
 
 class ArpOpenbsd(Method):
@@ -272,13 +272,10 @@ class ArpVariousArgs(Method):
         if not self._args_tested:
             for pair_to_test in self._args:
                 try:
-                    cmd_args = [pair_to_test[0]]
-
-                    # if True, then include IP as a command argument
-                    if pair_to_test[1]:
-                        cmd_args.append(arg)
-
-                    command_output = utils.popen("arp", " ".join(cmd_args))
+                    # pair_to_test[1]: if True, include the IP as a command argument.
+                    # The IP is passed as the untrusted "arg", so it's a single argument.
+                    ip_arg = arg if pair_to_test[1] else None
+                    command_output = utils.popen("arp", pair_to_test[0], arg=ip_arg)
                     self._good_pair = pair_to_test
                     break
                 except CalledProcessError as ex:
@@ -298,13 +295,8 @@ class ArpVariousArgs(Method):
 
         # If tests aren't run (e.g. they ran previously), then run the good pair now
         if not command_output:
-            # if True, then include IP as a command argument
-            cmd_args = [self._good_pair[0]]
-
-            if self._good_pair[1]:
-                cmd_args.append(arg)
-
-            command_output = utils.popen("arp", " ".join(cmd_args))
+            ip_arg = arg if self._good_pair[1] else None
+            command_output = utils.popen("arp", self._good_pair[0], arg=ip_arg)
 
         # Do this here for testing reasons
         if consts.DARWIN or consts.SOLARIS:
@@ -343,7 +335,7 @@ class ArpExe(Method):
         return utils.check_command("arp.exe")
 
     def get(self, arg: str) -> Optional[str]:
-        return utils.search(consts.MAC_RE_DASH, utils.popen("arp.exe", f"-a {arg}"))
+        return utils.search(consts.MAC_RE_DASH, utils.popen("arp.exe", "-a", arg=arg))
 
 
 class NetshNeighbors(Method):
@@ -428,7 +420,7 @@ class ArpingHost(Method):
         # then re-try with Habets args.
         try:
             if self._is_iputils:
-                command_output = utils.popen("arping", f"{self._iputils_args} {arg}")
+                command_output = utils.popen("arping", self._iputils_args, arg=arg)
                 if command_output:
                     return utils.search(
                         r" from %s \[(%s)\]" % (re.escape(arg), consts.MAC_RE_COLON),
@@ -455,7 +447,7 @@ class ArpingHost(Method):
         return None
 
     def _call_habets(self, arg: str) -> Optional[str]:
-        command_output = utils.popen("arping", f"{self._habets_args} {arg}")
+        command_output = utils.popen("arping", self._habets_args, arg=arg)
         if command_output:
             return command_output.strip()
         else:
@@ -531,7 +523,7 @@ class IpNeighborShow(Method):
         return utils.check_command("ip")
 
     def get(self, arg: str) -> Optional[str]:
-        output = utils.popen("ip", f"neighbor show {arg}")
+        output = utils.popen("ip", "neighbor show", arg=arg)
         if not output:
             return None
 
@@ -789,7 +781,7 @@ class DarwinNetworksetupIface(Method):
 
     def get(self, arg: str) -> Optional[str]:
         try:
-            command_output = utils.popen("networksetup", f"-getmacaddress {arg}")
+            command_output = utils.popen("networksetup", "-getmacaddress", arg=arg)
         except CalledProcessError as ex:
             # Exit code 4 is networksetup's error for an invalid argument (it isn't
             # documented, but see https://github.com/meow-rs/meow-rs/pull/698). Here,
@@ -850,7 +842,7 @@ class IfconfigWithIfaceArg(Method):
 
     def get(self, arg: str) -> Optional[str]:
         try:
-            command_output = utils.popen("ifconfig", arg)
+            command_output = utils.popen("ifconfig", arg=arg)
         except CalledProcessError as err:
             # Return code of 1 means interface doesn't exist
             if err.returncode == 1:
@@ -883,7 +875,7 @@ class IfconfigEther(Method):
         # doesn't accept an interface argument
         if self._iface_arg or not self._tested_arg:
             try:
-                command_output = utils.popen("ifconfig", arg)
+                command_output = utils.popen("ifconfig", arg=arg)
             except CalledProcessError:
                 # The interface doesn't exist, or the argument isn't accepted
                 if self._iface_arg:
@@ -1035,7 +1027,7 @@ class IpLinkIface(Method):
 
         if not self._tested_arg:
             try:
-                command_output = utils.popen("ip", "link show " + arg)
+                command_output = utils.popen("ip", "link show", arg=arg)
                 self._iface_arg = True
             except CalledProcessError as err:
                 # Output: 'Command "eth0" is unknown, try "ip link help"'
@@ -1045,7 +1037,7 @@ class IpLinkIface(Method):
 
         if self._iface_arg:
             if not command_output:  # Don't repeat work on first run
-                command_output = utils.popen("ip", "link show " + arg)
+                command_output = utils.popen("ip", "link show", arg=arg)
             return utils.search(re.escape(arg) + self._regex, command_output)
         else:
             # TODO: improve this regex to not need extra portion for no arg
@@ -1750,6 +1742,65 @@ def _default_interface_mac(network_request: bool) -> Optional[str]:
     return None
 
 
+# Characters that must never appear in an interface name. They could be read as extra
+# command-line arguments, or break out of a quoted query (such as WMIC's WQL), when the
+# name is passed to a command. Interface names on the supported platforms don't use them.
+_INTERFACE_BAD_CHARS: Final[str] = "'\"`\\/"
+
+
+def _validate_interface(interface: str) -> str:
+    """
+    Check that an interface name is safe to pass to a command, and return it unchanged.
+
+    This guards against argument injection and command-injection-like behavior when the
+    name reaches a command (`GitHub issue #61 <https://github.com/GhostofGoes/getmac/issues/61>`__).
+
+    Raises:
+        ValueError: the name is empty, looks like a command-line flag, or has characters
+            that aren't valid in an interface name
+    """
+    if not interface:
+        raise ValueError("Interface name cannot be empty")
+    if interface.startswith("-"):
+        raise ValueError(f"Invalid interface name (cannot start with '-'): {interface!r}")
+    if any(ord(c) < 0x20 or ord(c) == 0x7F for c in interface):
+        raise ValueError(f"Invalid interface name (contains control characters): {interface!r}")
+    bad = sorted({c for c in interface if c in _INTERFACE_BAD_CHARS})
+    if bad:
+        raise ValueError(f"Invalid interface name (contains {bad}): {interface!r}")
+    # Interface names don't contain whitespace on POSIX. Windows connection names can,
+    # e.g. "Local Area Connection".
+    if not consts.WINDOWS and any(c.isspace() for c in interface):
+        raise ValueError(f"Invalid interface name (contains whitespace): {interface!r}")
+    return interface
+
+
+def _validate_ip4(ip: str) -> str:
+    """Parse an IPv4 address and return it in canonical form, or raise ``ValueError``."""
+    try:
+        return str(IPv4Address(ip))
+    except ValueError:
+        raise ValueError(f"Invalid IPv4 address: {ip!r}") from None
+
+
+def _validate_ip6(ip6: str) -> str:
+    """
+    Parse an IPv6 address and return it in canonical form, or raise ``ValueError``.
+
+    An interface scope ID is kept (e.g. ``fe80::1%eth0``) and validated as an interface
+    name, since it's passed through to commands the same way.
+    """
+    address, separator, scope = ip6.partition("%")
+    try:
+        canonical = str(IPv6Address(address))
+    except ValueError:
+        raise ValueError(f"Invalid IPv6 address: {ip6!r}") from None
+    if separator:
+        _validate_interface(scope)
+        return f"{canonical}%{scope}"
+    return canonical
+
+
 def get_mac_address(
     interface: Union[str, bytes, None] = None,
     ip: Union[str, bytes, IPv4Address, IPv4Interface, IPv6Address, IPv6Interface, None] = None,
@@ -1894,9 +1945,13 @@ def get_mac_address(
         elif not isinstance(ip6, str):
             raise ValueError(f"Unknown type for 'ip6' argument: '{ip6.__class__.__name__}'")
 
-        if ":" not in ip6:
-            gvars.log.error(f"Invalid IPv6 address (no ':'): {ip6}")
-            return None
+        ip6 = _validate_ip6(ip6)
+
+    if ip is not None:
+        ip = _validate_ip4(ip)
+
+    if interface is not None:
+        interface = _validate_interface(interface)
 
     mac = None
     udp_packet_sent = False

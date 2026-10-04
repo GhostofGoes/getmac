@@ -40,7 +40,7 @@ from getmac.variables import consts
 def test_darwinnetworksetupiface_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
     mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
     assert mac == benchmark(getmac.DarwinNetworksetupIface().get, arg=iface)
-    utils.popen.assert_called_with("networksetup", f"-getmacaddress {iface}")
+    utils.popen.assert_called_with("networksetup", "-getmacaddress", arg=iface)
 
 
 def test_darwinnetworksetupiface(mocker):
@@ -171,7 +171,7 @@ def test_ifconfigether_iface_arg(mocker, get_sample):
     inst = getmac.IfconfigEther()
     assert inst.get("en0") == "08:00:27:2b:c2:ed"
     # "ifconfig en0" is only run once
-    utils.popen.assert_called_once_with("ifconfig", "en0")
+    utils.popen.assert_called_once_with("ifconfig", arg="en0")
     assert inst._tested_arg is True
     assert inst._iface_arg is True
 
@@ -179,7 +179,7 @@ def test_ifconfigether_iface_arg(mocker, get_sample):
     cpe = CalledProcessError(cmd="ifconfig en9", returncode=1)
     mocker.patch("getmac.utils.popen", side_effect=cpe)
     assert inst.get("en9") is None
-    utils.popen.assert_called_once_with("ifconfig", "en9")
+    utils.popen.assert_called_once_with("ifconfig", arg="en9")
     assert inst._iface_arg is True
 
 
@@ -192,14 +192,14 @@ def test_ifconfigether_missing_iface_first(mocker, get_sample):
     inst = getmac.IfconfigEther()
     assert inst.get("en9") is None
     assert utils.popen.call_args_list == [
-        mocker.call("ifconfig", "en9"),
+        mocker.call("ifconfig", arg="en9"),
         mocker.call("ifconfig", ""),
     ]
     assert inst._tested_arg is False
 
     mocker.patch("getmac.utils.popen", return_value=get_sample("macos_10.12.6/ifconfig_en0.out"))
     assert inst.get("en0") == "08:00:27:2b:c2:ed"
-    utils.popen.assert_called_once_with("ifconfig", "en0")
+    utils.popen.assert_called_once_with("ifconfig", arg="en0")
     assert inst._iface_arg is True
 
 
@@ -561,7 +561,7 @@ def test_arping_host_habets_fallback(mocker, get_sample):
     ap = getmac.ArpingHost()
     assert ap.get("192.168.16.254") == "00:50:56:e8:32:3c"
     assert ap._is_iputils is False
-    utils.popen.assert_called_with("arping", "-r -C 1 -c 1 192.168.16.254")
+    utils.popen.assert_called_with("arping", "-r -C 1 -c 1", arg="192.168.16.254")
 
 
 @pytest.mark.parametrize("output_type", ["str", "invalid_utf8"])
@@ -591,7 +591,7 @@ def test_arping_host_busybox_error_no_fallback(mocker, get_sample):
     ap = getmac.ArpingHost()
     assert ap.get("172.29.16.1") is None
     assert ap._is_iputils is True
-    utils.popen.assert_called_once_with("arping", "-f -c 1 172.29.16.1")
+    utils.popen.assert_called_once_with("arping", "-f -c 1", arg="172.29.16.1")
 
 
 def test_arping_host_edge_cases(mocker):

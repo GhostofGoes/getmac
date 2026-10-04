@@ -86,10 +86,10 @@ def test_method_platform_strings_are_valid():
 
 
 def test_popen(mocker):
-    mocker.patch.object(gvars, "PATH", [])
+    mocker.patch("getmac.utils.find_executable", return_value="/sbin/TESTCMD")
     m = mocker.patch("getmac.utils.call_proc", return_value="SUCCESS")
-    assert utils.popen("TESTCMD", "ARGS") == "SUCCESS"
-    m.assert_called_once_with("TESTCMD", "ARGS")
+    assert utils.popen("TESTCMD", "ARGS", arg="eth0") == "SUCCESS"
+    m.assert_called_once_with("/sbin/TESTCMD", "ARGS", "eth0")
 
 
 def test_get_method_by_name():
@@ -452,7 +452,9 @@ def test_get_mac_address_ip6(mocker, mock_socket):
     assert getmac.get_mac_address(ip6="fe80::1") is None
 
     mocker.patch("socket.has_ipv6", True)
-    assert getmac.get_mac_address(ip6="192.168.0.1") is None
+    # An IPv4 address passed to ip6 is invalid
+    with pytest.raises(ValueError, match="Invalid IPv6 address"):
+        getmac.get_mac_address(ip6="192.168.0.1")
 
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:00")
     assert getmac.get_mac_address(ip6="fe80::1") == "00:01:02:04:00:00"
@@ -571,7 +573,7 @@ def test_get_by_method_network_request_false(mocker, get_sample):
 
     assert getmac.get_by_method("ip4", "10.0.0.175", network_request=False) == "78-28-ca-c4-66-fe"
     ctypes_get.assert_not_called()
-    utils.popen.assert_called_once_with("arp.exe", "-a 10.0.0.175")
+    utils.popen.assert_called_once_with("arp.exe", "-a", arg="10.0.0.175")
     # It's still used for lookups that allow network requests
     assert type(getmac.METHOD_CACHE["ip4"]) is getmac.CtypesHost
     assert getmac.get_by_method("ip4", "10.0.0.175") == MAC
@@ -746,7 +748,7 @@ def test_get_mac_address_ip_force_method(mocker, get_sample, mock_socket):
     )
 
     assert getmac.get_mac_address(ip="192.168.16.2") == "00:50:56:f1:4c:50"
-    utils.popen.assert_called_once_with("ip", "neighbor show 192.168.16.2")
+    utils.popen.assert_called_once_with("ip", "neighbor show", arg="192.168.16.2")
     utils.read_file.assert_not_called()
     arping_get.assert_not_called()
     mock_socket.return_value.sendto.assert_called_once_with(b"", ("192.168.16.2", settings.PORT))
@@ -849,6 +851,76 @@ def test_get_mac_address_invalid_types():
         getmac.get_mac_address(ip6=object())
 
 
+# --- Input validation (GitHub issues #51 and #61) ----------------------------
+
+
+@pytest.mark.parametrize(
+    "interface",
+    [
+        "",
+        "-i",  # looks like a command-line flag
+        "--version",
+        "eth0 down",  # whitespace (POSIX): could add a command argument
+        "eth0\ndown",  # control character
+        "eth0\tx",
+        "a'b",  # quote: could break out of a quoted query (e.g. WMIC WQL)
+        'a"b',
+        "a`b",
+        "eth0\\x",  # backslash
+        "../../etc/x",  # slash: also blocks path traversal in SysIfaceFile (#51)
+    ],
+)
+def test_get_mac_address_rejects_bad_interface(mocker, interface):
+    mocker.patch.object(consts, "WINDOWS", False)
+    with pytest.raises(ValueError, match=r"[Ii]nterface name"):
+        getmac.get_mac_address(interface=interface)
+
+
+def test_get_mac_address_interface_windows_allows_spaces(mocker):
+    """Windows connection names can contain spaces, e.g. "Local Area Connection"."""
+    mocker.patch.object(consts, "WINDOWS", True)
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:11:22:33:44:55")
+    assert getmac.get_mac_address(interface="Local Area Connection") == "00:11:22:33:44:55"
+    getmac.get_by_method.assert_called_once_with("iface", "Local Area Connection", True)
+    # A leading dash is still rejected, even on Windows
+    with pytest.raises(ValueError, match=r"[Ii]nterface name"):
+        getmac.get_mac_address(interface="-x")
+
+
+@pytest.mark.parametrize("ip", ["", "not-an-ip", "999.1.1.1", "10.0.0.1 -s x", "fe80::1"])
+def test_get_mac_address_rejects_bad_ip(ip):
+    with pytest.raises(ValueError, match="Invalid IPv4 address"):
+        getmac.get_mac_address(ip=ip)
+
+
+@pytest.mark.parametrize("ip6", ["", "not-an-ip", "10.0.0.1", "fe80::1 -s x"])
+def test_get_mac_address_rejects_bad_ip6(mocker, ip6):
+    mocker.patch("socket.has_ipv6", True)
+    with pytest.raises(ValueError, match="Invalid IPv6 address"):
+        getmac.get_mac_address(ip6=ip6)
+
+
+def test_get_mac_address_ip_canonical(mocker):
+    """A valid IP passes through unchanged; leading zeros (octal ambiguity) are rejected."""
+    mocker.patch("getmac.getmac.get_by_method", return_value=MAC)
+    getmac.get_mac_address(ip="192.168.0.1", network_request=False)
+    getmac.get_by_method.assert_called_once_with("ip4", "192.168.0.1", False)
+
+    with pytest.raises(ValueError, match="Invalid IPv4 address"):
+        getmac.get_mac_address(ip="192.168.000.001", network_request=False)
+
+
+def test_get_mac_address_ip6_scope_id(mocker):
+    """An IPv6 scope ID (e.g. fe80::1%eth0) is kept, and the scope is validated."""
+    mocker.patch("socket.has_ipv6", True)
+    mocker.patch("getmac.getmac.get_by_method", return_value=MAC)
+    getmac.get_mac_address(ip6="fe80::1%eth0", network_request=False)
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::1%eth0", False)
+
+    with pytest.raises(ValueError, match=r"[Ii]nterface name"):
+        getmac.get_mac_address(ip6="fe80::1%eth0 -s x")
+
+
 def test_get_mac_address_default_interface(mocker):
     """The default interface is used when no other arguments are given, and remembered."""
     mocker.patch.object(consts, "WINDOWS", False)
@@ -927,12 +999,13 @@ def test_get_mac_address_default_interface_vpn_macos(mocker, get_sample):
     mocker.patch("socket.if_nameindex", return_value=list(enumerate(interfaces, start=1)))
     hardware_ports = ("en0", "en1")
 
-    def popen(command, args):
-        iface = args.split()[-1]
-        if iface in hardware_ports:
-            return get_sample(f"macos_26.6.2/networksetup_-getmacaddress_{iface}.out")
+    def popen(command, args="", arg=None):
+        if arg in hardware_ports:
+            return get_sample(f"macos_26.6.2/networksetup_-getmacaddress_{arg}.out")
         output = get_sample("macos_26.6.2/networksetup_-getmacaddress_utun0.out")
-        raise CalledProcessError(returncode=4, cmd=f"{command} {args}", output=output.encode())
+        raise CalledProcessError(
+            returncode=4, cmd=f"{command} {args} {arg}", output=output.encode()
+        )
 
     mocker.patch("getmac.utils.popen", side_effect=popen)
 
@@ -1116,6 +1189,6 @@ def test_wsl1_get_mac_address_ip4_uses_arp_exe(mocker, mock_socket, get_sample):
 
     assert get_mac_address(ip="10.0.0.175") == "78:28:ca:c4:66:fe"
 
-    mock_popen.assert_called_once_with("arp.exe", "-a 10.0.0.175")
+    mock_popen.assert_called_once_with("arp.exe", "-a", arg="10.0.0.175")
     # Neither ArpingHost nor CtypesHost is used on WSL1, so a UDP packet populates the ARP table
     mock_socket.return_value.sendto.assert_called_once_with(b"", ("10.0.0.175", settings.PORT))

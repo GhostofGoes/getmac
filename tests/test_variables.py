@@ -142,6 +142,5 @@ def test_variables_path(mocker, windows, path, expected):
     variables = Variables()
 
     assert variables.PATH == expected
-    assert variables.PATH_STR == os.pathsep.join(expected)
     # Command output is parsed in English
     assert variables.ENV["LC_ALL"] == "C"
