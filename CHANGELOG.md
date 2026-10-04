@@ -50,6 +50,7 @@
 * Fixed `ArpVariousArgs` not parsing the output of the Linux `arp` command from the `net-tools` package.
 * Fixed getmac's own `getmac` command being run instead of Windows' `getmac.exe` when getmac is installed in a virtual environment.
 * Fixed `IfconfigEther` (macOS) running `ifconfig` twice on the first lookup.
+* Fixed `DarwinNetworksetupIface` (macOS) being dropped for the rest of the process after looking up an interface that isn't a hardware port, like a VPN tunnel. With the new default interface fallback, `get_mac_address()` with no arguments returns a MAC when connected to a VPN, instead of `None`. (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91))
 * Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android. (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95))
 
 ### Removed

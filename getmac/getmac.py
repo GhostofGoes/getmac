@@ -775,6 +775,9 @@ class DarwinNetworksetupIface(Method):
     If the command is present, it should always work, though naturally that is contingent
     upon the whims of Apple in newer MacOS releases.
 
+    It only knows about hardware ports (e.g. ``en0``), not other interfaces such as VPN
+    tunnels (``utun0``) or ``awdl0``, even if they have a MAC.
+
     Man page: `networksetup (8) <https://www.manpagez.com/man/8/networksetup/>`__
     """
 
@@ -785,7 +788,17 @@ class DarwinNetworksetupIface(Method):
         return utils.check_command("networksetup")
 
     def get(self, arg: str) -> Optional[str]:
-        command_output = utils.popen("networksetup", f"-getmacaddress {arg}")
+        try:
+            command_output = utils.popen("networksetup", f"-getmacaddress {arg}")
+        except CalledProcessError as ex:
+            # Exit code 4 is networksetup's error for an invalid argument (it isn't
+            # documented, but see https://github.com/meow-rs/meow-rs/pull/698). Here,
+            # that's an interface that isn't a hardware port, like a VPN tunnel ("utun0",
+            # see GitHub issue #91). That's not a problem with the method, so it isn't
+            # raised, which would mark the method unusable.
+            if ex.returncode == 4:
+                return None
+            raise
         return utils.search(consts.MAC_RE_COLON, command_output)
 
 

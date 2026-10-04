@@ -17,10 +17,21 @@ from getmac.variables import consts
 # TODO: macos_10.12.6/netstat_-ia.out
 
 
-def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
-    content = get_sample("macos_10.12.6/networksetup_-getmacaddress_en0.out")
-    mocker.patch("getmac.utils.popen", return_value=content)
-    assert "08:00:27:2b:c2:ed" == benchmark(getmac.DarwinNetworksetupIface().get, arg="en0")
+@pytest.mark.parametrize(
+    ("mac", "iface", "sample_file"),
+    [
+        ("08:00:27:2b:c2:ed", "en0", "macos_10.12.6/networksetup_-getmacaddress_en0.out"),
+        ("02:00:00:00:00:10", "en0", "macos_26.6.2/networksetup_-getmacaddress_en0.out"),
+        ("02:00:00:00:00:11", "en1", "macos_26.6.2/networksetup_-getmacaddress_en1.out"),
+    ],
+)
+def test_darwinnetworksetupiface_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
+    assert mac == benchmark(getmac.DarwinNetworksetupIface().get, arg=iface)
+    utils.popen.assert_called_with("networksetup", f"-getmacaddress {iface}")
+
+
+def test_darwinnetworksetupiface(mocker):
 
     mocker.patch("getmac.utils.popen", return_value=None)
     assert not getmac.DarwinNetworksetupIface().get("en0")
@@ -30,6 +41,27 @@ def test_darwinnetworksetupiface(benchmark, mocker, get_sample):
     mocker.patch("getmac.utils.check_command", return_value=False)
     assert getmac.DarwinNetworksetupIface().test() is False
     utils.check_command.assert_called_once_with("networksetup")
+
+
+def test_darwinnetworksetupiface_not_a_hardware_port(mocker, get_sample):
+    """
+    networksetup exits with code 4 for interfaces that aren't hardware ports, like VPN
+    tunnels (GitHub issue #91). That's "no MAC", so it isn't raised (marking it unusable).
+    The sample is from macOS 26.6.2, where it printed this to stdout and exited with 4.
+    """
+    output = get_sample("macos_26.6.2/networksetup_-getmacaddress_utun0.out")
+    assert output == "** Error: The parameters were not valid.\n"
+    cpe = CalledProcessError(
+        cmd="networksetup -getmacaddress utun0", returncode=4, output=output.encode()
+    )
+    mocker.patch("getmac.utils.popen", side_effect=cpe)
+    assert getmac.DarwinNetworksetupIface().get("utun0") is None
+
+    # Other errors are still raised
+    cpe = CalledProcessError(cmd="networksetup -getmacaddress en0", returncode=2)
+    mocker.patch("getmac.utils.popen", side_effect=cpe)
+    with pytest.raises(CalledProcessError):
+        getmac.DarwinNetworksetupIface().get("en0")
 
 
 FACTER_IFCONFIG = "third_party/facter/ifconfig/"

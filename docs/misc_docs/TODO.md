@@ -24,6 +24,7 @@
 - [ ] Exceptions from a method forced with `FORCE_METHOD` aren't caught, which contradicts the `get_mac_address()` docstring and `docs/usage.rst`.
 - [ ] Docstrings that don't match the code: `get_default_interface()` can raise `RuntimeError`, `get_instance_from_cache()` returns an instance (not a class), `utils.search()` uses `groups()` (not `groupdict()`), `get_method_by_name()` has no docstring, and `Method.get()` returns raw output (not a cleaned MAC).
 - [ ] Remote host that is actually an interface should resolve to localhost MAC
+- [ ] [Issue #91](https://github.com/GhostofGoes/getmac/issues/91): when the default interface is a VPN tunnel without a MAC (e.g. `utun0` on macOS), `get_mac_address()` falls back to the first interface (in `socket.if_nameindex()` order) that has a MAC. That may not be the interface the VPN traffic goes over, e.g. a Thunderbolt port (`en1`) instead of Wi-Fi (`en0`) on Apple Silicon Macs. Prefer the interface of another default route (`netstat -rn` lists scoped default routes on macOS, `ip route` can list several on Linux), or the macOS network service order (`networksetup -listnetworkserviceorder`). Collect samples on macOS with a VPN connected first.
 - [ ] Reduce the cost of failures. Currently, failures are penalized
 with a slow run since it tries every method before failing.
 - [ ] Detect if an interface exists before trying to find it's MAC.

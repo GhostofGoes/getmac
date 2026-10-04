@@ -911,6 +911,38 @@ def test_get_mac_address_default_interface_network_namespace(mocker):
     getmac.get_by_method.assert_called_once_with("default_iface", network_request=True)
 
 
+def test_get_mac_address_default_interface_vpn_macos(mocker, get_sample):
+    """
+    macOS connected to a VPN (GitHub issue #91): the default interface is the VPN tunnel,
+    which has no MAC. networksetup exits with code 4 for it and the other interfaces that
+    aren't hardware ports, but it's still used to find the first hardware port's MAC.
+    The interfaces, in order, and the networksetup output are from macOS 26.6.2.
+    """
+    mocker.patch.object(consts, "WINDOWS", False)
+    mocker.patch.object(gvars, "DEFAULT_IFACE", "utun0")
+    networksetup = getmac.DarwinNetworksetupIface()
+    getmac.METHOD_CACHE["iface"] = networksetup
+    getmac.FALLBACK_CACHE["iface"] = [getmac.IfconfigEther()]
+    interfaces = "lo0 gif0 stf0 XHC12 anpi0 en1 en0 utun0 utun1 utun2 utun3".split()
+    mocker.patch("socket.if_nameindex", return_value=list(enumerate(interfaces, start=1)))
+    hardware_ports = ("en0", "en1")
+
+    def popen(command, args):
+        iface = args.split()[-1]
+        if iface in hardware_ports:
+            return get_sample(f"macos_26.6.2/networksetup_-getmacaddress_{iface}.out")
+        output = get_sample("macos_26.6.2/networksetup_-getmacaddress_utun0.out")
+        raise CalledProcessError(returncode=4, cmd=f"{command} {args}", output=output.encode())
+
+    mocker.patch("getmac.utils.popen", side_effect=popen)
+
+    # en1 comes before en0, so its MAC is used. Finding the interface the VPN goes
+    # over (here, en0) is a TODO for issue #91.
+    assert getmac.get_mac_address() == "02:00:00:00:00:11"
+    assert networksetup.unusable is False
+    assert getmac.METHOD_CACHE["iface"] is networksetup
+
+
 @pytest.mark.parametrize("error", [OSError(19, "No such device"), AttributeError("if_nameindex")])
 def test_get_mac_address_default_interface_cant_list_interfaces(mocker, error):
     mocker.patch.object(consts, "WINDOWS", False)
