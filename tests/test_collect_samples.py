@@ -135,9 +135,9 @@ def test_collects_everything_methods_use(mocker, collect_samples, method_class):
 
 
 # The platforms getmac uses for each of the script's platforms, if they're different.
-# getmac detects WSL2 as "linux" ("wsl" is WSL1). It detects Android as "linux", or as
-# "android" when platform.system() returns "Android" (CPython 3.13+ built for Android), so
-# check both. See the comment above PLATFORMS in the script.
+# getmac detects WSL2 as "linux" ("wsl" is WSL1). It detects Android as "linux", but
+# "android" is also a valid OVERRIDE_PLATFORM, so check both. See the comment above
+# PLATFORMS in the script.
 _GETMAC_PLATFORMS = {"wsl": ("wsl", "linux"), "android": ("android", "linux")}
 
 

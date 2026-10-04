@@ -3,6 +3,7 @@ Global variables, constants, and settings for the getmac package.
 """
 
 import logging
+import ntpath
 import os
 import platform
 import sys
@@ -45,6 +46,23 @@ class Settings(VarsClass):
     """
     Force a specific method to be used for all lookups.
     Used for debugging and testing.
+    """
+
+    # Added for https://github.com/GhostofGoes/getmac/issues/101
+    ARP_TIMEOUT: float = 0
+    """
+    How long to keep checking the ARP table (IPv4) or NDP list (IPv6) for a host,
+    in seconds, after sending the UDP packet to populate it
+    (see :attr:`~getmac.variables.Settings.PORT`).
+
+    The host's entry is only added once it replies, which often takes longer than
+    getmac takes to check the table. If it isn't there, getmac checks again with
+    short, growing delays until the host is found or this much time has passed.
+    Lookups of hosts that don't reply take this much longer.
+    ``0`` (the default) checks once, without waiting.
+
+    This doesn't apply when getmac sends an ARP request itself and waits for the reply
+    instead (:class:`~getmac.getmac.ArpingHost` or :class:`~getmac.getmac.CtypesHost`).
     """
 
 
@@ -104,9 +122,9 @@ class Constants(VarsClass):
     :meta hide-value:
     """
 
-    LINUX: Final[bool] = _SYST == "Linux" and not WSL1
+    LINUX: Final[bool] = _SYST in ("Linux", "Android") and not WSL1
     """
-    If the system is running Linux (excluding WSL1).
+    If the system is running Linux (excluding WSL1), including Android.
 
     :meta hide-value:
     """
@@ -122,14 +140,16 @@ class Constants(VarsClass):
     """
 
     # TODO: change "wsl" to "wsl1", since WSL2 method should just work like normal linux
-    PLATFORM: Final[str] = "wsl" if WSL1 else _SYST.lower()
+    # Android uses the Linux methods. platform.system() is "Linux" on Android before
+    # Python 3.13, and "Android" on Python 3.13 and newer.
+    PLATFORM: Final[str] = "wsl" if WSL1 else "linux" if _SYST == "Android" else _SYST.lower()
     """
     Generic platform identifier used for filtering methods.
 
     Possible values:
 
     - wsl (WSL1 only, see :attr:`~getmac.variables.Constants.WSL1`. WSL2 is ``linux``.)
-    - linux
+    - linux (including Android)
     - windows
     - darwin
     - openbsd
@@ -228,20 +248,15 @@ class Variables(VarsClass):
         if not Constants.WINDOWS:
             self.PATH.extend(("/sbin", "/usr/sbin"))
         else:
-            # Prevent edge case on Windows where our script "getmac.exe"
-            # gets added to the path ahead of the actual Windows getmac.exe.
-            # This also prevents Python Scripts folders from being added, e.g.
-            # ...\\Python\\Python38\\Scripts. This prevents the aforementioned edge
-            # case, and also prevents stuff like a pip-installed "ping.exe" from
-            # being used instead of the Windows ping.exe.
-            new_path = []
-            for path in self.PATH:
-                if "\\getmac\\Scripts" not in path and not (
-                    "\\Python" in path and "\\Scripts" in path
-                ):
-                    new_path.append(path)
-
-            self.PATH = new_path
+            # Remove Python "Scripts" folders, e.g. ...\\Python\\Python313\\Scripts or a
+            # virtual environment's .venv\\Scripts. Otherwise our script "getmac.exe"
+            # could be found ahead of the actual Windows getmac.exe, and something like
+            # a pip-installed "ping.exe" could be used instead of the Windows ping.exe.
+            self.PATH = [
+                path
+                for path in self.PATH
+                if ntpath.basename(ntpath.normpath(path)).lower() != "scripts"
+            ]
 
         # Rebuild the combined PATH string after modifications are made
         # This will be used with shutil.which() for PATH lookups

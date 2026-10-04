@@ -8,6 +8,16 @@ from . import getmac
 from .variables import gvars, settings
 
 
+def _seconds(value: str) -> float:
+    try:
+        seconds = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a number of seconds: '{value}'") from None
+    if seconds < 0:
+        raise argparse.ArgumentTypeError(f"must be 0 or more seconds: '{value}'")
+    return seconds
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="getmac",
@@ -52,6 +62,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         dest="NO_NET",
         help="Do not use arping or send a UDP packet to refresh the ARP table",
+    )
+    parser.add_argument(
+        "--arp-timeout",
+        type=_seconds,
+        default=None,
+        metavar="SECONDS",
+        help="After sending the UDP packet to refresh the ARP table, keep checking it for "
+        "the host for up to this many seconds (default: 0, check once)",
     )
 
     tshooting = parser.add_argument_group("troubleshooting")
@@ -115,6 +133,9 @@ def main() -> None:
         port = int(args.override_port)
         gvars.log.debug(f"Using UDP port {port} (overriding the default port {settings.PORT})")
         settings.PORT = port
+
+    if args.arp_timeout is not None:
+        settings.ARP_TIMEOUT = args.arp_timeout
 
     if args.override_platform:
         settings.OVERRIDE_PLATFORM = args.override_platform.strip().lower()

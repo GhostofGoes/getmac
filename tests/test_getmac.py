@@ -1,3 +1,4 @@
+import importlib
 import inspect
 import socket
 from ipaddress import (
@@ -238,7 +239,12 @@ def test_initialize_method_cache_failed_tests(mocker):
     mocker.patch.object(consts, "PLATFORM", "linux")
     mocker.patch("getmac.getmac.METHODS", [StubUnavailableMethod, StubBrokenTestMethod])
 
-    with pytest.raises(RuntimeError, match="All 2 'iface' methods failed to test!"):
+    # The error says what may be wrong, and which methods failed (GitHub issue #95)
+    with pytest.raises(
+        RuntimeError,
+        match=r"All 2 'iface' methods failed to test! The commands or files they use may be "
+        r"missing or not accessible \(StubUnavailableMethod, StubBrokenTestMethod\)",
+    ):
         getmac.initialize_method_cache("iface")
     assert getmac.METHOD_CACHE["iface"] is None
 
@@ -406,7 +412,7 @@ def test_get_mac_address_localhost():
 def test_get_mac_address_interface(mocker):
     mocker.patch("getmac.getmac.get_by_method", return_value="00:0c:29:b5:72:37")
     assert getmac.get_mac_address(interface="ens33") == "00:0c:29:b5:72:37"
-    getmac.get_by_method.assert_called_once_with("iface", "ens33")
+    getmac.get_by_method.assert_called_once_with("iface", "ens33", True)
 
     # bytes
     assert getmac.get_mac_address(interface=b"ens33") == "00:0c:29:b5:72:37"
@@ -415,7 +421,7 @@ def test_get_mac_address_interface(mocker):
 def test_get_mac_address_ip(mocker):
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:12")
     assert getmac.get_mac_address(ip="192.0.2.2") == "00:01:02:04:00:12"
-    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.2")
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.2", True)
 
     # bytes
     assert getmac.get_mac_address(ip=b"192.0.2.2") == "00:01:02:04:00:12"
@@ -423,22 +429,22 @@ def test_get_mac_address_ip(mocker):
     # IPv4Address
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:55")
     assert getmac.get_mac_address(ip=IPv4Address("192.0.2.55")) == "00:01:02:04:00:55"
-    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.55")
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.55", True)
 
     # IPv4Interface
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:66")
     assert getmac.get_mac_address(ip=IPv4Interface("192.0.2.66/24")) == "00:01:02:04:00:66"
-    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.66")
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.66", True)
 
     # IPv6Address
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:33")
     assert getmac.get_mac_address(ip=IPv6Address("fe80::33")) == "00:01:02:04:00:33"
-    getmac.get_by_method.assert_called_once_with("ip6", "fe80::33")
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::33", True)
 
     # IPv6Interface
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:44")
     assert getmac.get_mac_address(ip=IPv6Interface("fe80::44/24")) == "00:01:02:04:00:44"
-    getmac.get_by_method.assert_called_once_with("ip6", "fe80::44")
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::44", True)
 
 
 def test_get_mac_address_ip6(mocker, mock_socket):
@@ -450,7 +456,7 @@ def test_get_mac_address_ip6(mocker, mock_socket):
 
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:00")
     assert getmac.get_mac_address(ip6="fe80::1") == "00:01:02:04:00:00"
-    getmac.get_by_method.assert_called_once_with("ip6", "fe80::1")
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::1", True)
     # A UDP packet is sent to the host first, to populate the NDP table
     mock_socket.assert_called_once_with(socket.AF_INET6, socket.SOCK_DGRAM)
     mock_socket.return_value.sendto.assert_called_once_with(b"", ("fe80::1", settings.PORT))
@@ -461,12 +467,12 @@ def test_get_mac_address_ip6(mocker, mock_socket):
     # IPv6Address
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:11")
     assert getmac.get_mac_address(ip6=IPv6Address("fe80::11")) == "00:01:02:04:00:11"
-    getmac.get_by_method.assert_called_once_with("ip6", "fe80::11")
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::11", True)
 
     # IPv6Interface
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:22")
     assert getmac.get_mac_address(ip6=IPv6Interface("fe80::22/24")) == "00:01:02:04:00:22"
-    getmac.get_by_method.assert_called_once_with("ip6", "fe80::22")
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::22", True)
 
 
 def test_get_mac_address_hostname(mocker):
@@ -477,7 +483,7 @@ def test_get_mac_address_hostname(mocker):
     mocker.patch("socket.gethostbyname", return_value="192.0.2.22")
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:22")
     assert getmac.get_mac_address(hostname="test_hostname") == "00:01:02:04:00:22"
-    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.22")
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.22", True)
 
     # bytes
     assert getmac.get_mac_address(hostname=b"test_hostname") == "00:01:02:04:00:22"
@@ -553,6 +559,178 @@ def test_get_mac_address_ip_arpfile_issue_76(mocker, get_sample, mock_socket):
     mock_socket.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
 
 
+def test_get_by_method_network_request_false(mocker, get_sample):
+    """
+    Methods that send network requests aren't used if network_request is False,
+    even if the cache was initialized by a lookup that allowed them.
+    """
+    getmac.METHOD_CACHE["ip4"] = getmac.CtypesHost()
+    getmac.FALLBACK_CACHE["ip4"] = [getmac.ArpExe()]
+    ctypes_get = mocker.patch.object(getmac.CtypesHost, "get", return_value=MAC)
+    mocker.patch("getmac.utils.popen", return_value=get_sample("windows_10/arp_-a_10.0.0.175.out"))
+
+    assert getmac.get_by_method("ip4", "10.0.0.175", network_request=False) == "78-28-ca-c4-66-fe"
+    ctypes_get.assert_not_called()
+    utils.popen.assert_called_once_with("arp.exe", "-a 10.0.0.175")
+    # It's still used for lookups that allow network requests
+    assert type(getmac.METHOD_CACHE["ip4"]) is getmac.CtypesHost
+    assert getmac.get_by_method("ip4", "10.0.0.175") == MAC
+
+
+def test_get_by_method_network_request_false_fallback(mocker, get_sample):
+    """Methods that send network requests are skipped when falling back, too."""
+    arp_file, arping, ip_neighbor = getmac.ArpFile(), getmac.ArpingHost(), getmac.IpNeighborShow()
+    getmac.METHOD_CACHE["ip4"] = arp_file
+    getmac.FALLBACK_CACHE["ip4"] = [arping, ip_neighbor]
+    mocker.patch("getmac.utils.read_file", return_value=None)  # Marks ArpFile unusable
+    arping_get = mocker.patch.object(getmac.ArpingHost, "get", return_value=MAC)
+    mocker.patch(
+        "getmac.utils.popen", return_value=get_sample("ubuntu_18.04/ip_neighbor_show.out")
+    )
+
+    result = getmac.get_by_method("ip4", "192.168.16.2", network_request=False)
+
+    assert result == "00:50:56:f1:4c:50"
+    arping_get.assert_not_called()
+    # ArpingHost is the cached method now, for lookups that allow network requests
+    assert getmac.METHOD_CACHE["ip4"] is arping
+    assert getmac.FALLBACK_CACHE["ip4"] == [ip_neighbor]
+
+
+def test_get_by_method_network_request_false_no_methods(mocker, caplog):
+    getmac.METHOD_CACHE["ip4"] = getmac.CtypesHost()
+    ctypes_get = mocker.patch.object(getmac.CtypesHost, "get", return_value=MAC)
+
+    assert getmac.get_by_method("ip4", "192.0.2.10", network_request=False) is None
+    ctypes_get.assert_not_called()
+    assert "all of its methods send network requests" in caplog.text
+
+
+def test_get_mac_address_network_request_false(mocker, mock_socket):
+    """network_request=False is passed on to get_by_method() (and no UDP packet is sent)."""
+    mocker.patch("getmac.getmac.get_by_method", return_value=MAC)
+
+    assert getmac.get_mac_address(ip="192.0.2.10", network_request=False) == MAC
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.10", False)
+    assert getmac.get_mac_address(ip6="fe80::1", network_request=False) == MAC
+    getmac.get_by_method.assert_called_with("ip6", "fe80::1", False)
+    assert getmac.get_mac_address(interface="eth0", network_request=False) == MAC
+    getmac.get_by_method.assert_called_with("iface", "eth0", False)
+    mock_socket.assert_not_called()
+
+
+def test_get_mac_address_ip_arpfile_fallback_unusable(mocker, mock_socket):
+    """
+    If ArpFile is a fallback and becomes unusable when it's checked first, it's removed
+    from the fallbacks, and the cached method is still used (once).
+    """
+    arping, arp_file, ip_neighbor = getmac.ArpingHost(), getmac.ArpFile(), getmac.IpNeighborShow()
+    getmac.METHOD_CACHE["ip4"] = arping
+    getmac.FALLBACK_CACHE["ip4"] = [arp_file, ip_neighbor]
+    mocker.patch("getmac.utils.read_file", return_value=None)  # /proc/net/arp can't be read
+    arping_get = mocker.patch.object(getmac.ArpingHost, "get", return_value=MAC)
+
+    assert getmac.get_mac_address(ip="192.0.2.10") == MAC
+
+    arping_get.assert_called_once_with("192.0.2.10")
+    assert arp_file.unusable is True
+    assert getmac.METHOD_CACHE["ip4"] is arping
+    assert getmac.FALLBACK_CACHE["ip4"] == [ip_neighbor]
+    mock_socket.assert_not_called()
+
+
+@pytest.mark.parametrize("force_method", ["arpinghost", "ArpingHost"])
+def test_get_mac_address_ip_force_arp_request_method(mocker, mock_socket, force_method):
+    """Forcing a method that sends an ARP request means a UDP packet isn't needed."""
+    getmac.METHOD_CACHE["ip4"] = getmac.ArpFile()
+    getmac.FALLBACK_CACHE["ip4"] = [getmac.ArpingHost()]
+    mocker.patch.object(settings, "FORCE_METHOD", force_method)
+    arping_get = mocker.patch.object(getmac.ArpingHost, "get", return_value=MAC)
+
+    assert getmac.get_mac_address(ip="192.0.2.10") == MAC
+    arping_get.assert_called_once_with("192.0.2.10")
+    mock_socket.assert_not_called()
+
+
+@pytest.fixture
+def fake_clock(mocker):
+    """time.sleep() advances time.monotonic() instead of waiting."""
+    clock = {"now": 1000.0}
+    mocker.patch("time.monotonic", side_effect=lambda: clock["now"])
+
+    def sleep(seconds):
+        clock["now"] += seconds
+
+    return mocker.patch("time.sleep", side_effect=sleep)
+
+
+def test_get_mac_address_ip_arp_timeout(mocker, get_sample, mock_socket, fake_clock):
+    """
+    With ARP_TIMEOUT, the ARP table is checked again until the host's entry is added
+    after the UDP packet, waiting longer each time (GitHub issue #101).
+    """
+    getmac.METHOD_CACHE["ip4"] = getmac.ArpFile()
+    arp_table = get_sample("ubuntu_18.04/cat_proc-net-arp.out")
+    empty_arp_table = arp_table.splitlines(keepends=True)[0]
+    mocker.patch(
+        "getmac.utils.read_file",
+        side_effect=[empty_arp_table, empty_arp_table, empty_arp_table, arp_table],
+    )
+    mocker.patch.object(settings, "ARP_TIMEOUT", 1.0)
+
+    assert getmac.get_mac_address(ip="192.168.16.2") == "00:50:56:f1:4c:50"
+    mock_socket.return_value.sendto.assert_called_once()
+    assert fake_clock.call_args_list == [mocker.call(0.01), mocker.call(0.02)]
+
+
+def test_get_mac_address_ip6_arp_timeout_not_found(mocker, mock_socket, fake_clock):
+    """The wait ends after ARP_TIMEOUT seconds if the host isn't found."""
+    mocker.patch("getmac.getmac.get_by_method", return_value=None)
+    mocker.patch.object(settings, "ARP_TIMEOUT", 0.1)
+
+    assert getmac.get_mac_address(ip6="fe80::1") is None
+    mock_socket.return_value.sendto.assert_called_once()
+    # 0.01 + 0.02 + 0.04, then the rest of the 0.1 seconds
+    waits = [c.args[0] for c in fake_clock.call_args_list]
+    assert waits == pytest.approx([0.01, 0.02, 0.04, 0.03])
+    assert getmac.get_by_method.call_count == 5
+
+
+@pytest.mark.parametrize(
+    ("arp_timeout", "network_request", "send_error"),
+    [
+        # The default: don't wait
+        (0, True, None),
+        # No UDP packet was sent, so there's nothing to wait for
+        (1.0, False, None),
+        (1.0, True, OSError(101, "Network is unreachable")),
+    ],
+)
+def test_get_mac_address_ip_arp_timeout_no_wait(
+    mocker, mock_socket, fake_clock, arp_timeout, network_request, send_error
+):
+    mocker.patch("getmac.getmac.get_by_method", return_value=None)
+    mocker.patch.object(settings, "ARP_TIMEOUT", arp_timeout)
+    mock_socket.return_value.sendto.side_effect = send_error
+
+    assert getmac.get_mac_address(ip="192.0.2.10", network_request=network_request) is None
+    getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.10", network_request)
+    fake_clock.assert_not_called()
+
+
+def test_public_api():
+    """Everything the README imports from getmac is exported, for type checkers."""
+    package = importlib.import_module("getmac")
+    assert sorted(package.__all__) == [
+        "__version__",
+        "get_default_interface",
+        "get_mac_address",
+        "settings",
+    ]
+    for name in package.__all__:
+        assert hasattr(package, name)
+
+
 def test_get_mac_address_ip_force_method(mocker, get_sample, mock_socket):
     """
     A forced method is used instead of ArpFile and ARP request methods,
@@ -574,16 +752,72 @@ def test_get_mac_address_ip_force_method(mocker, get_sample, mock_socket):
     mock_socket.return_value.sendto.assert_called_once_with(b"", ("192.168.16.2", settings.PORT))
 
 
-def test_get_mac_address_default_args_windows_net_request_true(mocker):
-    mocker.patch.object(consts, "WINDOWS", True)
-    mocker.patch("getmac.getmac.get_by_method", return_value="00:FF:17:15:F8:C8")
-    assert getmac.get_mac_address(network_request=False) == "00:ff:17:15:f8:c8"
-    getmac.get_by_method.assert_called_once_with("iface", "Ethernet")
+def _fake_get_by_method(macs, default_iface=None):
+    """
+    A fake get_by_method(): "default_iface" lookups return default_iface,
+    and other lookups return the MAC for the argument in macs, or None.
+    """
 
-    mocker.patch("getmac.getmac.get_by_method", return_value="78:28:ca:c4:66:fe")
+    def get_by_method(method_type, arg="", network_request=True):  # noqa: ARG001
+        if method_type == "default_iface":
+            return default_iface
+        return macs.get(arg)
+
+    return get_by_method
+
+
+@pytest.mark.parametrize("network_request", [True, False])
+def test_get_mac_address_default_interface_windows(mocker, network_request):
+    """
+    On Windows, the default interface comes from DefaultIfaceNetsh (GitHub issue #90). With
+    network_request, the IP of the default interface is looked up first.
+    """
+    mocker.patch.object(consts, "WINDOWS", True)
+    mocker.patch("getmac.utils.fetch_ip_using_dns", return_value="10.0.0.185")
+    fake = _fake_get_by_method({"Ethernet 4": "00-FF-17-15-F8-C8"}, default_iface="Ethernet 4")
+    mocker.patch("getmac.getmac.get_by_method", side_effect=fake)
+    if_nameindex = mocker.patch("socket.if_nameindex")
+
+    assert getmac.get_mac_address(network_request=network_request) == "00:ff:17:15:f8:c8"
+
+    calls = [
+        mocker.call("default_iface", network_request=network_request),
+        mocker.call("iface", "Ethernet 4", network_request),
+    ]
+    if network_request:
+        # The IP lookup failed, so the default interface is used
+        calls.insert(0, mocker.call("ip4", "10.0.0.185", True))
+    assert getmac.get_by_method.call_args_list == calls
+    if_nameindex.assert_not_called()
+
+
+def test_get_mac_address_default_interface_windows_ip(mocker):
+    mocker.patch.object(consts, "WINDOWS", True)
     mocker.patch("getmac.utils.fetch_ip_using_dns", return_value="10.0.0.175")
+    mocker.patch("getmac.getmac.get_by_method", return_value="78:28:ca:c4:66:fe")
+
     assert getmac.get_mac_address(network_request=True) == "78:28:ca:c4:66:fe"
-    getmac.get_by_method.assert_called_once_with("ip4", "10.0.0.175")
+    getmac.get_by_method.assert_called_once_with("ip4", "10.0.0.175", True)
+
+
+def test_get_mac_address_default_interface_windows_no_network(mocker):
+    """If there's no route to the internet, the default interface is used instead."""
+    mocker.patch.object(consts, "WINDOWS", True)
+    mocker.patch("getmac.utils.fetch_ip_using_dns", side_effect=OSError(10051, "unreachable"))
+    fake = _fake_get_by_method({"Ethernet 4": "00-FF-17-15-F8-C8"}, default_iface="Ethernet 4")
+    mocker.patch("getmac.getmac.get_by_method", side_effect=fake)
+
+    assert getmac.get_mac_address() == "00:ff:17:15:f8:c8"
+
+
+def test_get_mac_address_default_interface_windows_not_found(mocker):
+    """Windows interface names aren't listed, since if_nameindex() names aren't usable."""
+    mocker.patch.object(consts, "WINDOWS", True)
+    mocker.patch("getmac.getmac.get_by_method", side_effect=_fake_get_by_method({}))
+    if_nameindex = mocker.patch("socket.if_nameindex")
+
+    assert getmac.get_mac_address(network_request=False) is None
+    if_nameindex.assert_not_called()
 
 
 def test_get_mac_address_default_args_fallback_global(mocker):
@@ -591,7 +825,7 @@ def test_get_mac_address_default_args_fallback_global(mocker):
     mocker.patch.object(gvars, "DEFAULT_IFACE", "eth0")
     mocker.patch("getmac.getmac.get_by_method", return_value="08:00:27:e8:81:6f")
     assert getmac.get_mac_address() == "08:00:27:e8:81:6f"
-    getmac.get_by_method.assert_called_once_with("iface", "eth0")
+    getmac.get_by_method.assert_called_once_with("iface", "eth0", True)
 
 
 def test_get_mac_address_invalid_types():
@@ -616,89 +850,74 @@ def test_get_mac_address_invalid_types():
 
 
 def test_get_mac_address_default_interface(mocker):
-    """
-    Test default interface is used when no other arguments are given.
-    """
-    # need to mock get_by_method called with:
-    #   "default_iface" => test_iface
-    #   "iface", "test_iface" => MAC address
-    comp_mac = "00:11:22:33:44:55"
-
-    def __test_iface_default(a1, a2=None):  # noqa: ARG001
-        if a1 == "default_iface":
-            return "test_iface"
-        return comp_mac
-
+    """The default interface is used when no other arguments are given, and remembered."""
     mocker.patch.object(consts, "WINDOWS", False)
-    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
-    mocker.patch(
-        "getmac.getmac.get_by_method",
-        side_effect=__test_iface_default,
-    )
-    assert getmac.get_mac_address() == comp_mac
+    fake = _fake_get_by_method({"ens33": "00:0c:29:b5:72:37"}, default_iface="ens33\n")
+    mocker.patch("getmac.getmac.get_by_method", side_effect=fake)
+
+    assert getmac.get_mac_address() == "00:0c:29:b5:72:37"
+    assert gvars.DEFAULT_IFACE == "ens33"
+
+    getmac.get_by_method.reset_mock()
+    assert getmac.get_mac_address(network_request=False) == "00:0c:29:b5:72:37"
+    getmac.get_by_method.assert_called_once_with("iface", "ens33", False)
 
 
-def test_get_mac_address_default_interface_fallback(mocker):
+# Names from socket.if_nameindex(), in index order
+_INTERFACES = [(1, "lo"), (2, "docker0"), (3, "ens33"), (4, "wg0")]
+_DOCKER0_MAC = "02:42:33:bf:3e:40"
+_ENS33_MAC = "00:0c:29:b5:72:37"
+
+
+@pytest.mark.parametrize(
+    ("default_iface", "macs", "expected"),
+    [
+        # There aren't any routes, so the default interface isn't found (GitHub issue #78).
+        # The first interface that isn't loopback and has a MAC is used.
+        (None, {"docker0": _DOCKER0_MAC, "ens33": _ENS33_MAC}, _DOCKER0_MAC),
+        (None, {"ens33": _ENS33_MAC}, _ENS33_MAC),
+        # Interfaces with an all-zero MAC are skipped too
+        (None, {"docker0": "00:00:00:00:00:00", "ens33": _ENS33_MAC}, _ENS33_MAC),
+        # The default interface doesn't have a MAC, e.g. a VPN tunnel
+        ("wg0", {"ens33": _ENS33_MAC}, _ENS33_MAC),
+        # Loopback isn't used, so there's no MAC (instead of 00:00:00:00:00:00)
+        (None, {"lo": "00:00:00:00:00:00"}, None),
+    ],
+)
+def test_get_mac_address_default_interface_not_found(mocker, default_iface, macs, expected):
+    mocker.patch.object(consts, "WINDOWS", False)
+    mocker.patch("socket.if_nameindex", return_value=_INTERFACES)
+    fake = _fake_get_by_method(macs, default_iface=default_iface)
+    mocker.patch("getmac.getmac.get_by_method", side_effect=fake)
+
+    assert getmac.get_mac_address() == expected
+    looked_up = [c.args[1] for c in getmac.get_by_method.call_args_list if c.args[0] == "iface"]
+    assert "lo" not in looked_up
+    # The default interface isn't looked up again
+    if default_iface:
+        assert looked_up.count(default_iface) == 1
+
+
+def test_get_mac_address_default_interface_network_namespace(mocker):
     """
-    More coverage of the fallback logic if default interface can't be determined.
+    A network namespace with only a loopback interface and no routes (GitHub issue #78).
     """
     mocker.patch.object(consts, "WINDOWS", False)
-    comp_mac = "00:11:22:33:44:44"
+    mocker.patch("socket.if_nameindex", return_value=[(1, "lo")])
+    mocker.patch("getmac.getmac.get_by_method", side_effect=_fake_get_by_method({}))
 
-    def __test_iface_fallback(a1, a2=None):  # noqa: ARG001
-        if a1 == "default_iface":
-            return ""
-        return comp_mac
+    assert getmac.get_mac_address() is None
+    assert gvars.DEFAULT_IFACE == ""
+    getmac.get_by_method.assert_called_once_with("default_iface", network_request=True)
 
-    # BSD fallback path
-    mocker.patch.object(consts, "BSD", True)
-    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
-    mocker.patch(
-        "getmac.getmac.get_by_method",
-        side_effect=__test_iface_fallback,
-    )
-    assert getmac.get_mac_address() == comp_mac
-    assert gvars.DEFAULT_IFACE == "em0"
 
-    # Darwin fallback path
-    mocker.patch.object(consts, "BSD", False)
-    mocker.patch.object(consts, "DARWIN", True)
-    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
-    mocker.patch(
-        "getmac.getmac.get_by_method",
-        side_effect=__test_iface_fallback,
-    )
-    assert getmac.get_mac_address() == comp_mac
-    assert gvars.DEFAULT_IFACE == "en0"
+@pytest.mark.parametrize("error", [OSError(19, "No such device"), AttributeError("if_nameindex")])
+def test_get_mac_address_default_interface_cant_list_interfaces(mocker, error):
+    mocker.patch.object(consts, "WINDOWS", False)
+    mocker.patch("socket.if_nameindex", side_effect=error)
+    mocker.patch("getmac.getmac.get_by_method", side_effect=_fake_get_by_method({}))
 
-    # HPUX fallback path
-    mocker.patch.object(consts, "DARWIN", False)
-    mocker.patch.object(consts, "HPUX", True)
-    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
-    mocker.patch(
-        "getmac.getmac.get_by_method",
-        side_effect=__test_iface_fallback,
-    )
-    assert getmac.get_mac_address() == comp_mac
-    assert gvars.DEFAULT_IFACE == "lan0"
-
-    # eth0 fallback path
-    mocker.patch.object(consts, "HPUX", False)
-    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
-    mocker.patch(
-        "getmac.getmac.get_by_method",
-        side_effect=__test_iface_fallback,
-    )
-    assert getmac.get_mac_address() == comp_mac
-    assert gvars.DEFAULT_IFACE == "eth0"
-
-    # test hack to fallback to loopback
-    mocker.patch.object(gvars, "DEFAULT_IFACE", "")
-    mocker.patch(
-        "getmac.getmac.get_by_method",
-        side_effect=lambda a1, a2=None: "00:11:22:33:44:04" if a2 == "lo" else "",  # noqa: ARG005
-    )
-    assert getmac.get_mac_address() == "00:11:22:33:44:04"
+    assert getmac.get_mac_address() is None
 
 
 def test_get_default_interface(mocker, get_sample):
@@ -743,6 +962,11 @@ def _cached_method_names(method_type):
             ["DefaultIfaceLinuxRouteFile", "DefaultIfaceIpRoute", "DefaultIfaceRouteCommand"],
         ),
         ("Windows", "iface", ["GetmacExe", "IpconfigExe", "WmicExe"]),
+        # Windows has its own methods for every type of lookup, so it doesn't fall back to
+        # the "other" methods (and warn), which run Unix commands (GitHub issue #90)
+        ("Windows", "ip4", ["CtypesHost", "ArpExe", "NetshNeighbors"]),
+        ("Windows", "ip6", ["NetshNeighbors"]),
+        ("Windows", "default_iface", ["DefaultIfaceNetsh"]),
         ("Darwin", "iface", ["DarwinNetworksetupIface", "IfconfigEther"]),
         ("FreeBSD", "default_iface", ["DefaultIfaceRouteGetCommand", "DefaultIfaceFreeBsd"]),
         ("OpenBSD", "ip6", ["ArpOpenbsd"]),

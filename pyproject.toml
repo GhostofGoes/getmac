@@ -242,7 +242,7 @@ exclude_also = ['if __name__ == "__main__":']
 [tool.codespell]
 check-filenames = true
 skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.idea,.vscode,_build,.doctrees,htmlcov,.venv,.mypy_cache,deb_dist,built_docs,.pytest_cache,.pdm-build,manpage,html_docs,third_party'
-ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso'
+ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso,connexion,adresse'
 
 
 # --- Ruff configuration ---

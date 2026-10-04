@@ -84,6 +84,63 @@ def test_ifconfigether_darwin(benchmark, mocker, get_sample, mac, iface, sample_
     assert not getmac.IfconfigEther().get("stf0")
     assert not getmac.IfconfigEther().get("XHC20")
     assert not getmac.IfconfigEther().get("utun0")
+    # "." isn't a wildcard
+    assert not getmac.IfconfigEther().get("en.")
+
+
+def test_ifconfigether_iface_arg(mocker, get_sample):
+    content = get_sample("macos_10.12.6/ifconfig_en0.out")
+    mocker.patch("getmac.utils.popen", return_value=content)
+
+    inst = getmac.IfconfigEther()
+    assert inst.get("en0") == "08:00:27:2b:c2:ed"
+    # "ifconfig en0" is only run once
+    utils.popen.assert_called_once_with("ifconfig", "en0")
+    assert inst._tested_arg is True
+    assert inst._iface_arg is True
+
+    # A missing interface doesn't change that, and "ifconfig" isn't run without it
+    cpe = CalledProcessError(cmd="ifconfig en9", returncode=1)
+    mocker.patch("getmac.utils.popen", side_effect=cpe)
+    assert inst.get("en9") is None
+    utils.popen.assert_called_once_with("ifconfig", "en9")
+    assert inst._iface_arg is True
+
+
+def test_ifconfigether_missing_iface_first(mocker, get_sample):
+    """If the first lookup is for a missing interface, the argument is tried again later."""
+    cpe = CalledProcessError(cmd="ifconfig en9", returncode=1)
+    content = get_sample("macos_10.12.6/ifconfig.out")
+    mocker.patch("getmac.utils.popen", side_effect=[cpe, content])
+
+    inst = getmac.IfconfigEther()
+    assert inst.get("en9") is None
+    assert utils.popen.call_args_list == [
+        mocker.call("ifconfig", "en9"),
+        mocker.call("ifconfig", ""),
+    ]
+    assert inst._tested_arg is False
+
+    mocker.patch("getmac.utils.popen", return_value=get_sample("macos_10.12.6/ifconfig_en0.out"))
+    assert inst.get("en0") == "08:00:27:2b:c2:ed"
+    utils.popen.assert_called_once_with("ifconfig", "en0")
+    assert inst._iface_arg is True
+
+
+def test_ifconfigether_no_iface_arg(mocker, get_sample):
+    """If "ifconfig <iface>" fails for an interface that exists, "ifconfig" is used."""
+    cpe = CalledProcessError(cmd="ifconfig en0", returncode=1)
+    content = get_sample("macos_10.12.6/ifconfig.out")
+    mocker.patch("getmac.utils.popen", side_effect=[cpe, content])
+
+    inst = getmac.IfconfigEther()
+    assert inst.get("en0") == "08:00:27:2b:c2:ed"
+    assert inst._tested_arg is True
+    assert inst._iface_arg is False
+
+    mocker.patch("getmac.utils.popen", return_value=content)
+    assert inst.get("en0") == "08:00:27:2b:c2:ed"
+    utils.popen.assert_called_once_with("ifconfig", "")
 
 
 @pytest.mark.parametrize(
@@ -431,6 +488,21 @@ def test_arping_host_habets_fallback(mocker, get_sample):
     utils.popen.assert_called_with("arping", "-r -C 1 -c 1 192.168.16.254")
 
 
+@pytest.mark.parametrize("output_type", ["str", "invalid_utf8"])
+def test_arping_host_habets_fallback_output_types(mocker, get_sample, output_type):
+    """The Habets fallback also works when the error output is a str or isn't valid UTF-8."""
+    output = get_sample("WSL2_kali_2023.1/habets_arping_-f_-c_1_172-29-16-1.out")
+    if output_type == "invalid_utf8":
+        output = output.encode() + b"\xff\n"
+    cpe = CalledProcessError(cmd="arping -f -c 1 192.168.16.254", returncode=1, output=output)
+    habets_output = get_sample("ubuntu_18.04/arping-habets.out")
+    mocker.patch("getmac.utils.popen", side_effect=[cpe, habets_output])
+
+    ap = getmac.ArpingHost()
+    assert ap.get("192.168.16.254") == "00:50:56:e8:32:3c"
+    assert ap._is_iputils is False
+
+
 def test_arping_host_busybox_error_no_fallback(mocker, get_sample):
     # BusyBox's usage error doesn't mention Habets, so the Habets arguments aren't tried
     cpe = CalledProcessError(
@@ -530,22 +602,186 @@ def test_ctypes_host_hostname(mocker, windll):
     assert windll.Iphlpapi.SendARP.call_args[0][0] == 0x0A0200C0
 
 
-def test_windows_10_iface_getmac_exe(benchmark, mocker, get_sample):
-    content = get_sample("windows_10/getmac.out")
-    mocker.patch("getmac.utils.popen", return_value=content)
-    assert "74-D4-35-E9-45-71" == benchmark(getmac.GetmacExe().get, arg="Ethernet 2")
+@pytest.mark.parametrize(
+    ("mac", "iface", "sample_file"),
+    [
+        ("74-D4-35-E9-45-71", "Ethernet 3", "windows_10/ipconfig-all.out"),
+        # Case is ignored, like on Windows
+        ("74-D4-35-E9-45-71", "ethernet 3", "windows_10/ipconfig-all.out"),
+        # The name must match the whole adapter name, not the start of one
+        # ("Ethernet adapter Ethernet 3") or part of another adapter's description
+        (None, "Ethernet", "windows_10/ipconfig-all.out"),
+        (None, "Ethernet 33", "windows_10/ipconfig-all.out"),
+        ("00-50-56-C0-00-08", "VMware Network Adapter VMnet8", "windows_10/ipconfig-all.out"),
+        # Descriptions work too
+        (
+            "74-D4-35-E9-45-71",
+            "Intel(R) Ethernet Connection I217-V",
+            "windows_10/ipconfig-all.out",
+        ),
+        # Tunnel adapters have an 8-byte "Physical Address", which isn't a MAC. Their
+        # names and characters like "*", "(" and "." in them are matched literally.
+        (None, "Local Area Connection* 1", "windows_10/ipconfig-all.out"),
+        (None, "Microsoft Teredo Tunneling Adapter", "windows_10/ipconfig-all.out"),
+        (None, "Teredo", "windows_10/ipconfig-all.out"),
+        (None, "Local Area Connection.. 1", "windows_10/ipconfig-all.out"),
+        (None, "Ethernet (", "windows_10/ipconfig-all.out"),
+    ],
+)
+def test_ipconfig_exe_samples(benchmark, mocker, get_sample, mac, iface, sample_file):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
+    assert mac == benchmark(getmac.IpconfigExe().get, arg=iface)
+    utils.popen.assert_called_with("ipconfig.exe", "/all")
 
-    # The regex that worked is reused for the next lookup
-    inst = getmac.GetmacExe()
-    assert inst.get("Ethernet 2") == "74-D4-35-E9-45-71"
-    assert inst._champ
-    assert inst.get("Ethernet 2") == "74-D4-35-E9-45-71"
 
-
-def test_windows_10_iface_ipconfig(benchmark, mocker, get_sample):
+@pytest.mark.parametrize(
+    "label",
+    [
+        "Adresse physique . . . . . . . . . . .",  # French
+        "Physikalische Adresse . . . . . . . . .",  # German
+        "Dirección física . . . . . . . . . . . .",  # Spanish
+    ],
+)
+def test_ipconfig_exe_translated_mac_label(mocker, get_sample, label):
+    """
+    The MAC is found when "Physical Address" is translated. There aren't any non-English
+    samples yet, so this uses the English sample with the label replaced.
+    """
     content = get_sample("windows_10/ipconfig-all.out")
+    content = content.replace("Physical Address. . . . . . . . .", label)
     mocker.patch("getmac.utils.popen", return_value=content)
-    assert "74-D4-35-E9-45-71" == benchmark(getmac.IpconfigExe().get, arg="Ethernet 3")
+
+    assert getmac.IpconfigExe().get("Ethernet 3") == "74-D4-35-E9-45-71"
+    assert getmac.IpconfigExe().get("Intel(R) Ethernet Connection I217-V") == "74-D4-35-E9-45-71"
+    # The 8-byte address of a tunnel adapter still isn't a MAC
+    assert getmac.IpconfigExe().get("Local Area Connection* 1") is None
+
+
+def test_ipconfig_exe_no_physical_address(mocker, get_sample):
+    """The start of the DHCPv6 client DUID (14 bytes) isn't mistaken for a MAC."""
+    lines = get_sample("windows_10/ipconfig-all.out").splitlines(keepends=True)
+    content = "".join(line for line in lines if "Physical Address" not in line)
+    assert "DHCPv6 Client DUID" in content
+    mocker.patch("getmac.utils.popen", return_value=content)
+
+    assert getmac.IpconfigExe().get("Ethernet 3") is None
+
+
+@pytest.mark.parametrize(
+    ("mac", "iface"),
+    [
+        ("A0-36-BC-12-34-56", "Ethernet 7"),
+        ("4C-03-4F-65-43-21", "Wi-Fi 2"),
+        # Case is ignored, like on Windows
+        ("4C-03-4F-65-43-21", "wi-fi 2"),
+        # Names longer than 15 characters (the table format cuts them off)
+        ("00-50-56-C0-00-01", "VMware Network Adapter VMnet1"),
+        ("00-50-56-C0-00-08", "VMware Network Adapter VMnet8"),
+        # Network adapters work too
+        ("4C-03-4F-65-43-21", "Intel(R) Wi-Fi 6 AX201 160MHz"),
+        ("00-50-56-C0-00-08", "VMware Virtual Ethernet Adapter for VMnet8"),
+        # The name must match the whole connection name or network adapter
+        (None, "Wi-Fi"),
+        (None, "Ethernet"),
+        (None, "Ethernet ("),
+        # The header (when getmac.exe is run without /NH)
+        (None, "Connection Name"),
+    ],
+)
+def test_getmac_exe_samples(benchmark, mocker, get_sample, mac, iface):
+    content = get_sample("windows_11/getmac_-V_-FO_CSV.out")
+    mocker.patch("getmac.utils.popen", return_value=content)
+    assert mac == benchmark(getmac.GetmacExe().get, arg=iface)
+    utils.popen.assert_called_with("getmac.exe", "/NH /V /FO CSV")  # codespell:ignore fo
+
+
+def test_getmac_exe_no_mac(mocker):
+    # Disabled adapters don't have a MAC
+    output = '"Ethernet","Intel(R) Ethernet Connection I217-V","N/A","Disconnected"\r\n'
+    mocker.patch("getmac.utils.popen", return_value=output)
+    assert getmac.GetmacExe().get("Ethernet") is None
+
+
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"),
+    [
+        # IPv4 uses "netsh int ipv4 show neigh"
+        ("6a-d7-9a-29-2b-82", "10.0.0.1", "windows_10/netsh_int_ipv4_show_neigh.out"),
+        ("78-28-ca-c4-66-fe", "10.0.0.175", "windows_10/netsh_int_ipv4_show_neigh.out"),
+        (None, "10.0.0.17", "windows_10/netsh_int_ipv4_show_neigh.out"),
+        (None, "0.0.1", "windows_10/netsh_int_ipv4_show_neigh.out"),
+        # Unreachable entries have an all-zero MAC
+        (None, "192.168.17.1", "windows_10/netsh_int_ipv4_show_neigh.out"),
+        # IPv6 uses "netsh int ipv6 show neigh". Case is ignored.
+        ("33-33-00-00-00-fb", "ff02::fb", "windows_10/netsh_int_ipv6_show_neigh.out"),
+        ("33-33-00-00-00-fb", "FF02::FB", "windows_10/netsh_int_ipv6_show_neigh.out"),
+        (None, "fe80::42b0:34ff:fe74:afdd", "windows_10/netsh_int_ipv6_show_neigh.out"),
+        (None, "fe80::1", "windows_10/netsh_int_ipv6_show_neigh.out"),
+    ],
+)
+def test_netsh_neighbors_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
+    assert mac == benchmark(getmac.NetshNeighbors().get, arg=ip)
+    version = "ipv6" if ":" in ip else "ipv4"
+    utils.popen.assert_called_with("netsh.exe", f"int {version} show neigh")
+
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.NetshNeighbors().test() is False
+    utils.check_command.assert_called_once_with("netsh.exe")
+
+
+def test_default_iface_netsh(benchmark, mocker, get_sample):
+    content = get_sample("windows_10/netsh_int_ipv4_show_route.out")
+    mocker.patch("getmac.utils.popen", return_value=content)
+    # The default route goes through gateway 10.0.0.1, on interface 5 ("Ethernet 4")
+    assert "Ethernet 4" == benchmark(getmac.DefaultIfaceNetsh().get)
+    utils.popen.assert_called_with("netsh.exe", "int ipv4 show route")
+
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.DefaultIfaceNetsh().test() is False
+    utils.check_command.assert_called_once_with("netsh.exe")
+
+
+@pytest.mark.parametrize(
+    ("expected", "routes"),
+    [
+        # The lowest metric wins, and an on-link default route has the interface name
+        (
+            "Wi-Fi",
+            [
+                "No       Manual    25   0.0.0.0/0                   5  10.0.0.1",
+                "No       Manual    10   0.0.0.0/0                  12  Wi-Fi",
+                "No       System    256  10.0.0.0/24                 5  Ethernet 4",
+            ],
+        ),
+        (
+            "Ethernet 4",
+            [
+                "No       Manual    10   0.0.0.0/0                   5  10.0.0.1",
+                "No       Manual    25   0.0.0.0/0                  12  Wi-Fi",
+                "No       System    256  10.0.0.0/24                 5  Ethernet 4",
+            ],
+        ),
+        # No default route, or no name for its interface
+        (None, ["No       System    256  10.0.0.0/24                 5  Ethernet 4"]),
+        (None, ["No       Manual    0    0.0.0.0/0                   5  10.0.0.1"]),
+    ],
+)
+def test_default_iface_netsh_routes(mocker, expected, routes):
+    header = (
+        "\r\nPublish  Type      Met  Prefix                    Idx  Gateway/Interface Name\r\n"
+        "-------  --------  ---  ------------------------  ---  ------------------------\r\n"
+    )
+    mocker.patch("getmac.utils.popen", return_value=header + "\r\n".join(routes) + "\r\n")
+    assert getmac.DefaultIfaceNetsh().get() == expected
+
+
+def test_getmac_exe_error(mocker):
+    cpe = CalledProcessError(cmd="getmac.exe /NH /V /FO CSV", returncode=2)  # codespell:ignore fo
+    mocker.patch("getmac.utils.popen", side_effect=cpe)
+    inst = getmac.GetmacExe()
+    assert inst.get("Ethernet") is None
+    assert inst.unusable is True
 
 
 def test_windows_10_iface_wmic(benchmark, mocker, get_sample):
@@ -803,18 +1039,20 @@ def test_netstatiface_samples(benchmark, mocker, get_sample, mac, iface, sample_
     assert getmac.NetstatIface().get("docker") is None
     assert getmac.NetstatIface().get("eth") is None
     assert getmac.NetstatIface().get("eth00") is None
-    # TODO: improve netstat regex.
-    #   On Linux, it uses the same source as ifconfig (the Kernel Interface Table),
-    #   so we can just use the same regex that we use for Ifconfig* methods
-    # assert getmac.NetstatIface().get("Kernel") is None
-    # assert getmac.NetstatIface().get("e") is None
+    # The end of another interface's name doesn't match it
+    assert getmac.NetstatIface().get("h0") is None
+    assert getmac.NetstatIface().get("Kernel") is None
+    assert getmac.NetstatIface().get("e") is None
+    # "." isn't a wildcard
+    assert getmac.NetstatIface().get(iface[:-1] + ".") is None
 
-    # The regex that worked is reused for the next lookup
-    inst = getmac.NetstatIface()
-    assert mac == inst.get(iface)
-    assert inst._working_regex
-    assert mac == inst.get(iface)
-    assert inst.get("eth00") is None
+
+def test_netstatiface_no_mac_before_next_interface(mocker, get_sample):
+    """An interface without a MAC doesn't get the MAC of the interface after it."""
+    content = get_sample("ubuntu_18.04/netstat_iae.out")
+    lo = content[content.index("lo:") :]
+    mocker.patch("getmac.utils.popen", return_value=lo + "\n" + content)
+    assert getmac.NetstatIface().get("lo") is None
 
 
 def test_netstatiface_edge_cases(mocker):
@@ -839,6 +1077,9 @@ def test_netstatiface_edge_cases(mocker):
         ("00:ff:36:20:68:56", "eth15", "WSL_ubuntu_18.04/ip_link.out"),
         (None, "eth16", "WSL_ubuntu_18.04/ip_link.out"),
         (None, "eth", "WSL_ubuntu_18.04/ip_link.out"),
+        # The end of another interface's name doesn't match it, and "." isn't a wildcard
+        (None, "h0", "WSL_ubuntu_18.04/ip_link.out"),
+        (None, "eth.", "WSL_ubuntu_18.04/ip_link.out"),
         ("0a:15:3d:6f:80:b5", "dummy0", "android_6.0.1_no_root__ip_link.txt"),
         ("00:0a:f5:52:24:04", "wlan0", "android_6.0.1_no_root__ip_link.txt"),
         ("02:0a:f5:52:24:04", "p2p0", "android_6.0.1_no_root__ip_link.txt"),
@@ -1063,6 +1304,8 @@ def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, ifac
         ("52:54:00:12:35:02", "52:54:00:12:35:02", "10.0.2.2", "netbsd8.2/arp_10-0-2-2.out"),
         ("52:54:00:12:35:03", "52:54:00:12:35:03", "10.0.2.3", "netbsd8.2/arp_a.out"),
         ("52:54:00:12:35:02", "52:54:0:12:35:2", "10.0.2.2", "solaris10/arp_10-0-2-2.out"),
+        # Linux net-tools "arp <ip>" prints a table instead of "? (ip) at mac"
+        ("02:42:3a:5c:7e:91", "02:42:3a:5c:7e:91", "172.17.0.1", "debian_13/arp_172-17-0-1.out"),
     ],
 )
 def test_arp_various_args_samples(benchmark, mocker, get_sample, mac, raw_mac, ip, sample_file):
@@ -1094,6 +1337,21 @@ def test_arp_various_args_edge_cases(mocker, get_sample):
     inst._args_tested = True
     inst._good_pair = ("-an", True)
     assert inst.get("192.168.16.2") == "00:50:56:f1:4c:50"
+
+
+@pytest.mark.parametrize(
+    ("ip", "sample_file"),
+    [
+        # Incomplete entry: the host didn't reply (yet)
+        ("172.17.0.250", "debian_13/arp_172-17-0-250.out"),
+        ("172.17.0.25", "debian_13/arp_172-17-0-250.out"),
+        ("72.17.0.1", "debian_13/arp_172-17-0-1.out"),
+        ("10.11.12.13", "debian_13/arp_10-11-12-13.out"),
+    ],
+)
+def test_arp_various_args_linux_no_entry(mocker, get_sample, ip, sample_file):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
+    assert getmac.ArpVariousArgs().get(ip) is None
 
 
 def test_sys_iface_file(mocker):

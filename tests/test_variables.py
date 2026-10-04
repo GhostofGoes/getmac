@@ -68,6 +68,10 @@ def _load_constants(mocker, system, release, version):
             True,
             "linux",
         ),
+        # Android uses the Linux methods. platform.system() is "Linux" before Python 3.13,
+        # and "Android" (with the Android version as the release) on Python 3.13+.
+        (("Linux", "4.14.190-perf", "#1 SMP PREEMPT Wed Jan 4 2023"), False, False, True, "linux"),
+        (("Android", "14", "#1 SMP PREEMPT Wed Jan 4 2023"), False, False, True, "linux"),
         # Other platforms are the lowercase result of platform.system()
         (("Windows", "10", "10.0.19045"), False, False, False, "windows"),
         (("Darwin", "23.1.0", "Darwin Kernel Version 23.1.0"), False, False, False, "darwin"),
@@ -110,6 +114,9 @@ def test_load_constants_leaves_getmac_variables_alone(mocker):
                 "C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python313\\Scripts",
                 "C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python313",
                 "C:\\Users\\user\\getmac\\Scripts",
+                # Virtual environments and pipx, in any case and with a trailing slash
+                "C:\\proj\\.venv\\Scripts",
+                "C:\\Users\\user\\pipx\\venvs\\tool\\SCRIPTS\\",
                 "C:\\Windows",
             ],
             [

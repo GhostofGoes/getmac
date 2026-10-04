@@ -161,6 +161,7 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
         cmd("arp.exe -a"),
         cmd("arp.exe -a {ip}"),
         cmd("getmac.exe /NH /V"),
+        cmd("getmac.exe /NH /V /FO CSV"),  # codespell:ignore fo
         cmd("getmac.exe /V /FO CSV"),  # codespell:ignore fo
         cmd("ipconfig.exe /all"),
         cmd("wmic.exe nic get MACAddress,NetConnectionID /value"),
@@ -248,12 +249,12 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
 # used by getmac's Method.platforms, plus "netbsd". Unlike getmac, "wsl" is used for
 # both WSL1 and WSL2, since both can run Windows commands. The "other_*" groups are
 # for the types of lookups that getmac doesn't have Methods for on the platform, e.g.
-# IPv6 hosts and the default interface on Windows, where "arp" and "route" exist.
+# IPv6 hosts and the default interface on HP-UX, where "arp" and "route" exist.
 PLATFORMS: dict[str, tuple[str, ...]] = {
     "linux": ("posix", "linux", "busybox"),
     "android": ("posix", "linux", "busybox", "other_ip", "other_default_iface"),
     "wsl": ("posix", "linux", "busybox", "wsl"),
-    "windows": ("windows", "other_ip", "other_default_iface"),
+    "windows": ("windows",),
     "darwin": ("posix", "darwin"),
     "freebsd": ("posix", "bsd"),
     "openbsd": ("posix", "bsd", "openbsd"),

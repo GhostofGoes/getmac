@@ -36,9 +36,21 @@ def _restore_settings():
     not through anything `mocker.patch` can auto-undo, so snapshot/restore
     it around every test to avoid leaking state into other test modules.
     """
-    orig = (settings.PORT, settings.DEBUG, settings.OVERRIDE_PLATFORM, settings.FORCE_METHOD)
+    orig = (
+        settings.PORT,
+        settings.DEBUG,
+        settings.OVERRIDE_PLATFORM,
+        settings.FORCE_METHOD,
+        settings.ARP_TIMEOUT,
+    )
     yield
-    settings.PORT, settings.DEBUG, settings.OVERRIDE_PLATFORM, settings.FORCE_METHOD = orig
+    (
+        settings.PORT,
+        settings.DEBUG,
+        settings.OVERRIDE_PLATFORM,
+        settings.FORCE_METHOD,
+        settings.ARP_TIMEOUT,
+    ) = orig
 
 
 @pytest.fixture
@@ -126,6 +138,7 @@ def test_build_parser_defaults():
     assert args.verbose is False
     assert args.debug is None
     assert args.override_port is None
+    assert args.arp_timeout is None
     assert args.override_platform is None
     assert args.force_method is None
 
@@ -145,6 +158,8 @@ def test_build_parser_defaults():
         (["-dd"], "debug", 2),
         (["-dddd"], "debug", 4),
         (["--override-port", "12345"], "override_port", 12345),
+        (["--arp-timeout", "1.5"], "arp_timeout", 1.5),
+        (["--arp-timeout", "0"], "arp_timeout", 0),
         (["--override-platform", "freebsd"], "override_platform", "freebsd"),
         (["--force-method", "IpNeighborShow"], "force_method", "IpNeighborShow"),
     ],
@@ -222,6 +237,8 @@ def test_main_exit_code_failure(mock_get_mac, run_cli):
         *((a + b, "not allowed with argument") for a, b in itertools.combinations(TARGET_ARGS, 2)),
         (["--interface", "eth0", "--hostname", "myhost"], "not allowed with argument"),
         (["--override-port", "abc"], "argument --override-port: invalid int value: 'abc'"),
+        (["--arp-timeout", "abc"], "argument --arp-timeout: not a number of seconds: 'abc'"),
+        (["--arp-timeout=-1"], "argument --arp-timeout: must be 0 or more seconds: '-1'"),
         (["-i"], "argument -i/--interface: expected one argument"),
         (["--bogus"], "unrecognized arguments: --bogus"),
     ],
@@ -254,6 +271,7 @@ def test_main_help(mock_get_mac, run_cli, flag):
     ("args", "attr", "expected"),
     [
         (["--override-port", "44444"], "PORT", 44444),
+        (["--arp-timeout", "0.5"], "ARP_TIMEOUT", 0.5),
         (["--override-platform", " Linux "], "OVERRIDE_PLATFORM", "linux"),
         (["--override-platform", "FreeBSD"], "OVERRIDE_PLATFORM", "freebsd"),
         (["--force-method", " SomeMethod "], "FORCE_METHOD", "somemethod"),

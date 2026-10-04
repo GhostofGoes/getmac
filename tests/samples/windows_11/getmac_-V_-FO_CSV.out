@@ -1,0 +1,6 @@
+"Connection Name","Network Adapter","Physical Address","Transport Name"
+"Ethernet 7","Realtek Gaming 2.5GbE Family Controller","A0-36-BC-12-34-56","Media disconnected"
+"Local Area Connection 2","Private Internet Access Network Adapter","00-FF-5A-3C-91-7E","Media disconnected"
+"VMware Network Adapter VMnet1","VMware Virtual Ethernet Adapter for VMnet1","00-50-56-C0-00-01","\Device\Tcpip_{1D3F6B2A-7C4E-4A81-9F05-2B6E8C1D4A70}"
+"VMware Network Adapter VMnet8","VMware Virtual Ethernet Adapter for VMnet8","00-50-56-C0-00-08","\Device\Tcpip_{5E9A2C47-0B13-4D6F-8A2E-C47B19F3D058}"
+"Wi-Fi 2","Intel(R) Wi-Fi 6 AX201 160MHz","4C-03-4F-65-43-21","\Device\Tcpip_{9B4D7E10-3A6C-4F2B-B8D1-6E0A5C9F2B34}"

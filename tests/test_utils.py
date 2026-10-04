@@ -1,5 +1,7 @@
 import sys
 
+import pytest
+
 from getmac import utils
 from getmac.variables import consts, gvars
 
@@ -59,6 +61,23 @@ def test_call_proc(mocker):
     # check_output() returns bytes, since it isn't run in text mode
     mocker.patch("subprocess.check_output", return_value=b"BYTES")
     assert utils.call_proc("CMD", "arg") == "BYTES"
+
+
+def test_call_proc_decode(mocker):
+    mocker.patch.object(consts, "WINDOWS", False)
+    mocker.patch("subprocess.check_output", return_value="Connexion au réseau local".encode())
+    assert utils.call_proc("CMD", "arg") == "Connexion au réseau local"
+
+    # Bytes that aren't UTF-8 are replaced, instead of failing the method
+    mocker.patch("subprocess.check_output", return_value=b"Connexion au r\x82seau local")
+    assert utils.call_proc("CMD", "arg") == "Connexion au r\ufffdseau local"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="The 'oem' codec only exists on Windows")
+def test_call_proc_decode_windows_oem_code_page(mocker):
+    """Windows commands print in the OEM code page, where 0x82 is "é" (cp437 and cp850)."""
+    mocker.patch("subprocess.check_output", return_value=b"Connexion au r\x82seau local")
+    assert utils.call_proc("ipconfig.exe", "/all") == "Connexion au réseau local"
 
 
 def test_popen_path(mocker, tmp_path):

@@ -24,11 +24,13 @@ The key function is :func:`~getmac.getmac.get_mac_address`.
 
 # https://web.archive.org/web/20140718071917/http://multivax.com/last_question.html
 
+import csv
 import ctypes
 import os
 import re
 import socket
 import struct
+import time
 import traceback
 import warnings
 from ipaddress import (
@@ -38,6 +40,7 @@ from ipaddress import (
     IPv6Address,
     IPv6Interface,
     IPv6Network,
+    ip_address,
 )
 from subprocess import CalledProcessError
 from typing import Final, Optional, Union
@@ -234,6 +237,7 @@ class ArpVariousArgs(Method):
 
     _regex_std: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_COLON
     _regex_darwin: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_SHORT
+    _regex_table: Final[str] = r"[ \t]+\S+[ \t]+" + consts.MAC_RE_COLON + r"\s"
 
     # Possible arp arguments to try
     # Second element indicates whether to include IP as argument
@@ -308,7 +312,17 @@ class ArpVariousArgs(Method):
         else:
             regex = r"\(" + re.escape(arg) + self._regex_std
 
-        return utils.search(regex, command_output)
+        result = utils.search(regex, command_output)
+        if result:
+            return result
+
+        # The Linux "arp" from net-tools prints a table instead, e.g. for "arp 10.0.2.2":
+        #   Address                  HWtype  HWaddress           Flags Mask            Iface
+        #   10.0.2.2                 ether   52:54:00:12:35:02   C                     eth0
+        # Incomplete entries have "(incomplete)" instead of a MAC, so they don't match.
+        return utils.search(
+            r"^" + re.escape(arg) + self._regex_table, command_output, flags=re.MULTILINE
+        )
 
 
 class ArpExe(Method):
@@ -330,6 +344,38 @@ class ArpExe(Method):
 
     def get(self, arg: str) -> Optional[str]:
         return utils.search(consts.MAC_RE_DASH, utils.popen("arp.exe", f"-a {arg}"))
+
+
+class NetshNeighbors(Method):
+    """
+    Use ``netsh.exe`` to find the MAC address of a host in the Windows neighbor cache
+    (the ARP table for IPv4, and the NDP neighbor cache for IPv6).
+
+    Microsoft Documentation: `netsh <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/netsh>`__
+    """
+
+    platforms = {"windows"}
+    method_type = "ip"
+
+    def test(self) -> bool:
+        return utils.check_command("netsh.exe")
+
+    def get(self, arg: str) -> Optional[str]:
+        version = "ipv6" if ":" in arg else "ipv4"
+        command_output = utils.popen("netsh.exe", f"int {version} show neigh")
+
+        # Columns: Internet Address, Physical Address, Type
+        mac = utils.search(
+            r"^[ \t]*" + re.escape(arg) + r"[ \t]+" + consts.MAC_RE_DASH + r"[ \t]",
+            command_output,
+            flags=re.MULTILINE | re.IGNORECASE,
+        )
+
+        # Unreachable and incomplete entries don't have a MAC
+        if mac == "00-00-00-00-00-00":
+            return None
+
+        return mac
 
 
 class ArpingHost(Method):
@@ -393,7 +439,9 @@ class ArpingHost(Method):
         except CalledProcessError as ex:
             if ex.output and self._is_iputils:
                 if isinstance(ex.output, bytes):
-                    output = ex.output.decode("utf-8").lower()
+                    output = ex.output.decode("utf-8", errors="replace").lower()
+                else:
+                    output = str(ex.output).lower()
 
                 if "habets" in output or "invalid option" in output:
                     if settings.DEBUG:
@@ -587,19 +635,14 @@ class GetmacExe(Method):
     """
     Uses Windows-builtin ``getmac.exe`` to get a interface's MAC address.
 
+    The interface can be the connection name (e.g. ``Ethernet 2``) or the network
+    adapter (e.g. ``Intel(R) Ethernet Connection I217-V``). Case is ignored, like on Windows.
+
     Microsoft Documentation: `getmac <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/getmac>`__
     """
 
     platforms = {"windows"}
     method_type = "iface"
-
-    _regexes: Final[list[tuple[str, str]]] = [
-        # Connection Name
-        (r"\r\n", r".*" + consts.MAC_RE_DASH + r".*\r\n"),
-        # Network Adapter (the human-readable name)
-        (r"\r\n.*", r".*" + consts.MAC_RE_DASH + r".*\r\n"),
-    ]
-    _champ: Union[tuple, tuple[str, str]] = ()
 
     def test(self) -> bool:
         # NOTE: the scripts from this library (getmac) are excluded from the
@@ -609,23 +652,26 @@ class GetmacExe(Method):
 
     def get(self, arg: str) -> Optional[str]:
         try:
-            # /nh: Suppresses table headers
-            # /v:  Verbose
-            command_output = utils.popen("getmac.exe", "/NH /V")
+            # /NH: Suppresses table headers
+            # /V:  Verbose, adds the connection name and network adapter
+            # /FO CSV: The table format cuts names off at 15 characters  # codespell:ignore fo
+            command_output = utils.popen("getmac.exe", "/NH /V /FO CSV")  # codespell:ignore fo
         except CalledProcessError as ex:
             # This shouldn't cause an exception if it's valid command
             gvars.log.error(f"getmac.exe failed, marking unusable. Exception: {ex}")
             self.unusable = True
             return None
 
-        if self._champ:
-            return utils.search(self._champ[0] + arg + self._champ[1], command_output)
+        # Columns: Connection Name, Network Adapter, Physical Address, Transport Name
+        rows = [row for row in csv.reader(command_output.splitlines()) if len(row) >= 3]
+        name = arg.casefold()
 
-        for pair in self._regexes:
-            result = utils.search(pair[0] + arg + pair[1], command_output)
-            if result:
-                self._champ = pair
-                return result
+        # Connection names first, since a connection could be named after another adapter
+        for column in (0, 1):
+            for row in rows:
+                if row[column].strip().casefold() == name:
+                    # Adapters without a MAC have e.g. "N/A" or "Disabled" instead
+                    return utils.search(consts.MAC_RE_DASH, row[2])
 
         return None
 
@@ -637,19 +683,54 @@ class IpconfigExe(Method):
     This is generally pretty reliable and works across a wide array of
     versions and releases. I'm not sure if it works pre-XP though.
 
+    The interface can be the adapter name (e.g. ``Ethernet 3``) or its description
+    (e.g. ``Intel(R) Ethernet Connection I217-V``). Case is ignored, like on Windows.
+
+    .. note::
+       Adapter names are only found in English output, since the headers are
+       translated (e.g. "Ethernet adapter Ethernet 3:" is "Carte Ethernet Ethernet 3 :"
+       in French). Descriptions are found if the label is "Description".
+       The MAC is found in any language.
+
     Microsoft Documentation: `ipconfig <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ipconfig>`__
     """
 
     platforms = {"windows"}
     method_type = "iface"
 
-    _regex: Final[str] = r"(?:\n?[^\n]*){1,8}Physical Address[ .:]+" + consts.MAC_RE_DASH + r"\r\n"
+    # The "Physical Address" label is translated, so match the value instead. It's the
+    # only value that's exactly 6 bytes: the DHCPv6 client DUID is longer, and the 8-byte
+    # addresses of tunnel adapters aren't MACs.
+    _mac_regex: Final[str] = r"^[^:\r\n]*:[ \t]*" + consts.MAC_RE_DASH + r"[ \t\r]*$"
+    _description_regex: Final[str] = r"^\s*Description[ .]*:[ \t]*(.*?)[ \t\r]*$"
 
     def test(self) -> bool:
         return utils.check_command("ipconfig.exe")
 
     def get(self, arg: str) -> Optional[str]:
-        return utils.search(arg + self._regex, utils.popen("ipconfig.exe", "/all"))
+        command_output = utils.popen("ipconfig.exe", "/all")
+        name = arg.casefold()
+
+        # Each adapter's section starts with a line that isn't indented, e.g.
+        # "Ethernet adapter Ethernet 3:", followed by its indented details
+        sections = [
+            (header.strip().rstrip(":").rstrip(), details)
+            for header, _, details in (
+                section.partition("\n") for section in re.split(r"\n(?=\S)", command_output)
+            )
+        ]
+
+        # Adapter names first, then descriptions
+        for header, details in sections:
+            if header.casefold().partition(" adapter ")[2] == name:
+                return utils.search(self._mac_regex, details, flags=re.MULTILINE)
+
+        for _, details in sections:
+            description = utils.search(self._description_regex, details, flags=re.MULTILINE)
+            if description and description.casefold() == name:
+                return utils.search(self._mac_regex, details, flags=re.MULTILINE)
+
+        return None
 
 
 class WmicExe(Method):
@@ -737,7 +818,7 @@ def _parse_ifconfig(iface: str, command_output: str) -> Optional[str]:
     iface = iface.strip(":")
 
     # "(?:^|\s)": prevent an input of "h0" from matching on "eth0"
-    search_re = r"(?:^|\s)" + iface + IFCONFIG_REGEX
+    search_re = r"(?:^|\s)" + re.escape(iface) + IFCONFIG_REGEX
 
     return utils.search(search_re, command_output, flags=re.DOTALL)
 
@@ -785,23 +866,29 @@ class IfconfigEther(Method):
         return utils.check_command("ifconfig")
 
     def get(self, arg: str) -> Optional[str]:
-        # Check if this version of "ifconfig" accepts an interface argument
-        command_output = ""
-
-        if not self._tested_arg:
+        # Use "ifconfig <arg>", unless it's known that this version of "ifconfig"
+        # doesn't accept an interface argument
+        if self._iface_arg or not self._tested_arg:
             try:
                 command_output = utils.popen("ifconfig", arg)
-                self._iface_arg = True
             except CalledProcessError:
-                self._iface_arg = False
+                # The interface doesn't exist, or the argument isn't accepted
+                if self._iface_arg:
+                    return None
+            else:
+                self._tested_arg = True
+                self._iface_arg = True
+                return _parse_ifconfig(arg, command_output)
+
+        mac = _parse_ifconfig(arg, utils.popen("ifconfig", ""))
+
+        # "ifconfig <arg>" failed, but the interface exists, so the argument isn't accepted.
+        # If it doesn't exist, this is checked again on the next lookup.
+        if mac and not self._tested_arg:
             self._tested_arg = True
+            self._iface_arg = False
 
-        if self._iface_arg and not command_output:  # Don't repeat work on first run
-            command_output = utils.popen("ifconfig", arg)
-        else:
-            command_output = utils.popen("ifconfig", "")
-
-        return _parse_ifconfig(arg, command_output)
+        return mac
 
 
 # TODO: create new methods, IfconfigNoArgs and IfconfigVariousArgs
@@ -883,20 +970,9 @@ class NetstatIface(Method):
     platforms = {"linux", "wsl", "other"}
     method_type = "iface"
 
-    # ".*?": non-greedy
-    # https://docs.python.org/3/howto/regex.html#greedy-versus-non-greedy
-    _regexes: Final[list[str]] = [
-        r": .*?ether " + consts.MAC_RE_COLON,
-        r": .*?HWaddr " + consts.MAC_RE_COLON,
-        # Ubuntu 12.04 and other older kernels
-        r" .*?Link encap:Ethernet  HWaddr " + consts.MAC_RE_COLON,
-    ]
-    _working_regex: str = ""
-
     def test(self) -> bool:
         return utils.check_command("netstat")
 
-    # TODO: consolidate the parsing logic between IfconfigOther and netstat
     def get(self, arg: str) -> Optional[str]:
         # NOTE: netstat and ifconfig pull from the same kernel source and
         # therefore have the same output format on the same platform.
@@ -906,19 +982,7 @@ class NetstatIface(Method):
             self.unusable = True
             return None
 
-        if self._working_regex:
-            # Use regex that worked previously. This can still return None in
-            # the case of interface not existing, but at least it's a bit faster.
-            return utils.search(arg + self._working_regex, command_output, flags=re.DOTALL)
-
-        # See if either regex matches
-        for regex in self._regexes:
-            result = utils.search(arg + regex, command_output, flags=re.DOTALL)
-            if result:
-                self._working_regex = regex
-                return result
-
-        return None
+        return _parse_ifconfig(arg, command_output)
 
 
 # TODO: Add to IpLinkIface
@@ -969,11 +1033,12 @@ class IpLinkIface(Method):
         if self._iface_arg:
             if not command_output:  # Don't repeat work on first run
                 command_output = utils.popen("ip", "link show " + arg)
-            return utils.search(arg + self._regex, command_output)
+            return utils.search(re.escape(arg) + self._regex, command_output)
         else:
             # TODO: improve this regex to not need extra portion for no arg
+            # "(?:^|\s)": prevent an input of "h0" from matching on "eth0"
             command_output = utils.popen("ip", "link")
-            return utils.search(arg + r":" + self._regex, command_output)
+            return utils.search(r"(?:^|\s)" + re.escape(arg) + r":" + self._regex, command_output)
 
 
 class DefaultIfaceLinuxRouteFile(Method):
@@ -1139,6 +1204,53 @@ class DefaultIfaceFreeBsd(Method):
         return utils.search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", output)
 
 
+class DefaultIfaceNetsh(Method):
+    """
+    Use ``netsh.exe`` to find the default interface on Windows:
+    the interface of the IPv4 default route (``0.0.0.0/0``) with the lowest metric.
+
+    Microsoft Documentation: `netsh <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/netsh>`__
+    """
+
+    platforms = {"windows"}
+    method_type = "default_iface"
+
+    # Columns: Publish, Type, Met, Prefix, Idx, Gateway/Interface Name
+    _regex: Final[str] = (
+        r"^[ \t]*\S+[ \t]+\S+[ \t]+(\d+)[ \t]+(\S+)[ \t]+(\d+)[ \t]+(.+?)[ \t\r]*$"
+    )
+
+    def test(self) -> bool:
+        return utils.check_command("netsh.exe")
+
+    def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
+        command_output = utils.popen("netsh.exe", "int ipv4 show route")
+        routes = re.findall(self._regex, command_output, flags=re.MULTILINE)
+
+        # Default routes, lowest metric first
+        default_routes = sorted(
+            (route for route in routes if route[1] == "0.0.0.0/0"), key=lambda r: int(r[0])
+        )
+
+        # A default route through a gateway shows the gateway's IP instead of the
+        # interface name, so the name comes from another route on the same interface
+        # (the same "Idx"), such as the route for its subnet.
+        for _, _, default_idx, _ in default_routes:
+            for _, _, idx, name in routes:
+                if idx == default_idx and not _is_ip_address(name):
+                    return name
+
+        return None
+
+
+def _is_ip_address(text: str) -> bool:
+    try:
+        ip_address(text)
+    except ValueError:
+        return False
+    return True
+
+
 # TODO: order methods by effectiveness/reliability
 #   Use a class attribute maybe? e.g. "score", then sort by score in cache
 METHODS: list[type[Method]] = [
@@ -1153,6 +1265,7 @@ METHODS: list[type[Method]] = [
     IpconfigExe,
     WmicExe,
     ArpExe,
+    NetshNeighbors,
     DarwinNetworksetupIface,
     ArpFreebsd,
     ArpOpenbsd,
@@ -1169,6 +1282,7 @@ METHODS: list[type[Method]] = [
     DefaultIfaceRouteGetCommand,
     DefaultIfaceOpenBsd,
     DefaultIfaceFreeBsd,
+    DefaultIfaceNetsh,
 ]
 
 # TODO: move to gvars class? gotta love import loops with type annotations.
@@ -1239,7 +1353,7 @@ def _swap_method_fallback(method_type: str, swap_with: str) -> bool:
     if str(METHOD_CACHE[method_type]) == swap_with:
         return True
 
-    found = None  # type: Optional[Method]
+    found: Optional[Method] = None
     for f_meth in FALLBACK_CACHE[method_type]:
         if str(f_meth) == swap_with:
             found = f_meth
@@ -1355,7 +1469,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
     tested_methods: list[Method] = []
 
     for method_class in filtered_methods:
-        method_instance = method_class()  # type: Method
+        method_instance: Method = method_class()
         try:
             test_result = method_instance.test()
         except Exception:
@@ -1369,7 +1483,11 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
             gvars.log.debug(f"Test failed for method '{method_instance!s}'")
 
     if not tested_methods:
-        raise RuntimeError(f"All {len(filtered_methods)} '{method_type}' methods failed to test!")
+        names = ", ".join(m.__name__ for m in filtered_methods)
+        raise RuntimeError(
+            f"All {len(filtered_methods)} '{method_type}' methods failed to test! The "
+            f"commands or files they use may be missing or not accessible ({names})"
+        )
 
     if settings.DEBUG >= 2:
         tested_strs = ", ".join(str(ts) for ts in tested_methods)
@@ -1396,21 +1514,49 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
 
 
 def _remove_unusable(method: Method, method_type: str) -> Optional[Method]:
-    if not FALLBACK_CACHE[method_type]:
-        gvars.log.warning(f"No fallback method for unusable method '{method!s}'!")
-        METHOD_CACHE[method_type] = None
-    else:
-        METHOD_CACHE[method_type] = FALLBACK_CACHE[method_type].pop(0)
-        gvars.log.warning(
-            f"Falling back to '{METHOD_CACHE[method_type]!s}' for unusable method '{method!s}'"
-        )
+    if method is METHOD_CACHE[method_type]:
+        if not FALLBACK_CACHE[method_type]:
+            gvars.log.warning(f"No fallback method for unusable method '{method!s}'!")
+            METHOD_CACHE[method_type] = None
+        else:
+            METHOD_CACHE[method_type] = FALLBACK_CACHE[method_type].pop(0)
+            gvars.log.warning(
+                f"Falling back to '{METHOD_CACHE[method_type]!s}' for unusable method '{method!s}'"
+            )
+    elif method in FALLBACK_CACHE[method_type]:
+        # E.g. ArpFile, which get_mac_address() uses before the cached method
+        FALLBACK_CACHE[method_type].remove(method)
+        gvars.log.warning(f"Removed unusable fallback method '{method!s}'")
 
     return METHOD_CACHE[method_type]
 
 
-def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[str]:
+def _select_method(method_type: str, network_request: bool = True) -> Optional[Method]:
+    """
+    The cached method to use: the one in :data:`~getmac.getmac.METHOD_CACHE`, or if it sends
+    network requests and ``network_request`` is :obj:`False`, the first one in
+    :data:`~getmac.getmac.FALLBACK_CACHE` that doesn't.
+    """
+    for method in (METHOD_CACHE[method_type], *FALLBACK_CACHE[method_type]):
+        if method and (network_request or not method.network_request):
+            return method
+
+    return None
+
+
+def _attempt_method_get(
+    method: Method,
+    method_type: str,
+    arg: str,
+    network_request: bool = True,
+    fallback: bool = True,
+) -> Optional[str]:
     """
     Attempt to use methods, and if they fail, fallback to the next method in the cache.
+
+    Methods that send network requests aren't used as fallbacks if ``network_request``
+    is :obj:`False`. If ``fallback`` is :obj:`False`, a method that fails is still removed
+    from the caches, but no other method is tried.
     """
     if not METHOD_CACHE[method_type] and not FALLBACK_CACHE[method_type]:
         raise RuntimeError(f"No usable methods found for MAC type '{method_type}'")
@@ -1448,12 +1594,13 @@ def _attempt_method_get(method: Method, method_type: str, arg: str) -> Optional[
     # When an unhandled exception occurs (or exit code other than 1), remove
     # the method from the cache and reinitialize with next candidate.
     if not result and method.unusable:
-        new_method = _remove_unusable(method, method_type)
+        _remove_unusable(method, method_type)
+        new_method = _select_method(method_type, network_request) if fallback else None
 
         if not new_method:
             return None
 
-        return _attempt_method_get(new_method, method_type, arg)
+        return _attempt_method_get(new_method, method_type, arg, network_request)
 
     return result
 
@@ -1490,35 +1637,104 @@ def get_by_method(method_type: str, arg: str = "", network_request: bool = True)
 
         return forced_method().get(arg)
 
-    method = METHOD_CACHE.get(method_type)  # type: Optional[Method]
-
-    if not method:
-        # Initialize the cache if it hasn't been already
-        if not initialize_method_cache(method_type, network_request):
-            gvars.log.error(
-                f"Failed to initialize method cache for method '{method_type}' (arg: '{arg}')"
-            )
-            return None
-
-        method = METHOD_CACHE[method_type]
-
-    if not method:
+    # Initialize the cache if it hasn't been already
+    if not METHOD_CACHE.get(method_type) and not initialize_method_cache(
+        method_type, network_request
+    ):
         gvars.log.error(
-            f"Initialization failed for method '{method_type}'. "
-            f"It may not be supported on this platform or another issue occurred."
+            f"Failed to initialize method cache for method '{method_type}' (arg: '{arg}')"
         )
         return None
 
-    # TODO: add a "net_ok" argument, check network_request attribute
-    #   on method in CACHE, if not then keep checking for method in
-    #   FALLBACK_CACHE that has network_request.
-    result = _attempt_method_get(method, method_type, arg)
+    # The cache can have methods that send network requests,
+    # if it was initialized by a lookup that allowed them
+    method = _select_method(method_type, network_request)
+
+    if not method:
+        gvars.log.error(
+            f"No usable methods for '{method_type}' lookups. It may not be supported on this "
+            f"platform, or all of its methods send network requests (network_request is False)."
+        )
+        return None
+
+    result = _attempt_method_get(method, method_type, arg, network_request)
 
     # Log normal get() failures if debugging is enabled
     if settings.DEBUG and not result:
         gvars.log.debug(f"Method '{method!s}' failed for '{method_type}' lookup")
 
     return result
+
+
+def _lookup_host(method_type: str, host: str, network_request: bool, wait: bool) -> Optional[str]:
+    """
+    Look up a host's MAC. If it isn't found and ``wait`` is :obj:`True` (the UDP packet
+    was sent), look it up again until it's found or
+    :attr:`~getmac.variables.Settings.ARP_TIMEOUT` seconds have passed, waiting longer each
+    time. It takes a moment for the host to reply to the request sent for the UDP packet,
+    and for its entry to be added to the table (GitHub issue #101).
+    """
+    mac = get_by_method(method_type, host, network_request)
+    if mac or not wait or settings.ARP_TIMEOUT <= 0:
+        return mac
+
+    deadline = time.monotonic() + settings.ARP_TIMEOUT
+    delay = 0.01
+
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            gvars.log.debug(f"Host {host} not found after waiting {settings.ARP_TIMEOUT}s")
+            return None
+
+        time.sleep(min(delay, remaining))
+        delay *= 2
+
+        mac = get_by_method(method_type, host, network_request)
+        if mac:
+            return mac
+
+
+def _default_interface_mac(network_request: bool) -> Optional[str]:
+    """
+    MAC of the default interface, or if it can't be found or doesn't have a MAC
+    (e.g. a VPN tunnel), the first interface that isn't a loopback interface and has one.
+    """
+    if not gvars.DEFAULT_IFACE:
+        default_iface = get_by_method("default_iface", network_request=network_request)
+        gvars.DEFAULT_IFACE = default_iface.strip() if default_iface else ""
+
+    if gvars.DEFAULT_IFACE:
+        mac = get_by_method("iface", gvars.DEFAULT_IFACE, network_request)
+        if mac:
+            return mac
+        gvars.log.debug(f"Default interface '{gvars.DEFAULT_IFACE}' doesn't have a MAC")
+    else:
+        # E.g. there aren't any routes (GitHub issue #78)
+        gvars.log.debug("Failed to find the default interface")
+
+    # On Windows, if_nameindex() names (e.g. "ethernet_32768") aren't the
+    # names the methods use (e.g. "Ethernet"), and loopback has no MAC anyway
+    if consts.WINDOWS:
+        return None
+
+    try:
+        interfaces = [name for _, name in socket.if_nameindex()]
+    except (AttributeError, OSError) as ex:
+        gvars.log.debug(f"Failed to list the interfaces: {ex}")
+        return None
+
+    for iface in interfaces:
+        # Loopback is "lo" on Linux, "lo0" on macOS, the BSDs, and Solaris
+        if iface == gvars.DEFAULT_IFACE or re.fullmatch(r"lo\d*", iface):
+            continue
+
+        mac = get_by_method("iface", iface, network_request)
+        if mac and utils.clean_mac(mac) != "00:00:00:00:00:00":
+            gvars.log.debug(f"Using the MAC of the first interface with a MAC, '{iface}'")
+            return mac
+
+    return None
 
 
 def get_mac_address(
@@ -1534,7 +1750,8 @@ def get_mac_address(
     Only ONE of the first four arguments may be used:
     ``interface``, ``ip``, ``ip6``, or ``hostname``.
     If none of the arguments are selected, the default network interface for
-    the system will be used.
+    the system will be used. If it can't be found or doesn't have a MAC, the first
+    interface that has a MAC and isn't a loopback interface is used (except on Windows).
 
     The MAC is usually a unicast IEEE 802 MAC-48 address.
 
@@ -1565,7 +1782,9 @@ def get_mac_address(
             If not, a UDP packet will be sent to the remote host to populate
             the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
             be configured using the setting :attr:`getmac.variables.Settings.PORT`
-            (by default, it's port 55555).
+            (by default, it's port 55555). To wait for the host to reply to it, set
+            :attr:`getmac.variables.Settings.ARP_TIMEOUT`. If this is :obj:`False`,
+            methods that send network requests (such as ``arping``) aren't used.
 
     Returns:
         Lowercase colon-separated MAC address. If no MAC was found, or an exception
@@ -1667,6 +1886,7 @@ def get_mac_address(
             return None
 
     mac = None
+    udp_packet_sent = False
 
     if network_request and (ip or ip6):
         send_udp_packet = True
@@ -1684,7 +1904,9 @@ def get_mac_address(
             if not settings.FORCE_METHOD or settings.FORCE_METHOD.lower() == "arpfile":
                 af_meth = get_instance_from_cache("ip4", "ArpFile")
                 if af_meth:
-                    mac = _attempt_method_get(af_meth, "ip4", ip)
+                    # If it fails, it's removed from the caches, but the
+                    # cached method isn't used yet (that's done below)
+                    mac = _attempt_method_get(af_meth, "ip4", ip, fallback=False)
 
             # TODO: add tests for this logic (arpfile => fallback)
             # This seems to be a common course of GitHub issues,
@@ -1693,7 +1915,7 @@ def get_mac_address(
 
             if not mac:
                 for arp_meth in ["CtypesHost", "ArpingHost"]:
-                    if settings.FORCE_METHOD and settings.FORCE_METHOD.lower() != arp_meth:
+                    if settings.FORCE_METHOD and settings.FORCE_METHOD.lower() != arp_meth.lower():
                         continue
 
                     if arp_meth == str(METHOD_CACHE["ip4"]):
@@ -1724,6 +1946,7 @@ def get_mac_address(
                     sock.sendto(b"", (ip, settings.PORT))
                 else:
                     sock.sendto(b"", (ip6, settings.PORT))
+                udp_packet_sent = True
             except Exception:
                 gvars.log.error("Failed to send ARP table population packet")
                 if settings.DEBUG:
@@ -1739,42 +1962,24 @@ def get_mac_address(
     # Setup the address hunt based on the arguments specified
     if not mac:
         if ip6:
-            mac = get_by_method("ip6", ip6)
+            mac = _lookup_host("ip6", ip6, network_request, wait=udp_packet_sent)
         elif ip:
-            mac = get_by_method("ip4", ip)
+            mac = _lookup_host("ip4", ip, network_request, wait=udp_packet_sent)
         elif interface:
-            mac = get_by_method("iface", interface)
+            mac = get_by_method("iface", interface, network_request)
         # === Default to searching for interface ===
-        elif consts.WINDOWS and network_request:
-            # Default to finding MAC of the interface with the default route
-            default_iface_ip = utils.fetch_ip_using_dns()
-            mac = get_by_method("ip4", default_iface_ip)
-        elif consts.WINDOWS:
-            # TODO: implement proper default interface detection on windows
-            #   (add a Method subclass to implement DefaultIface on Windows)
-            mac = get_by_method("iface", "Ethernet")
         else:
-            if not gvars.DEFAULT_IFACE:
-                gvars.DEFAULT_IFACE = get_by_method("default_iface")  # type: ignore
+            if consts.WINDOWS and network_request:
+                # The IP of the interface with the default route
+                try:
+                    default_iface_ip = utils.fetch_ip_using_dns()
+                except OSError as ex:
+                    gvars.log.warning(f"Failed to get the IP of the default interface: {ex}")
+                else:
+                    mac = get_by_method("ip4", default_iface_ip, network_request)
 
-                if gvars.DEFAULT_IFACE:
-                    gvars.DEFAULT_IFACE = str(gvars.DEFAULT_IFACE).strip()
-
-                # TODO: better fallback if default iface lookup fails
-                if not gvars.DEFAULT_IFACE and consts.BSD:
-                    gvars.DEFAULT_IFACE = "em0"
-                elif not gvars.DEFAULT_IFACE and consts.DARWIN:  # OSX, maybe?
-                    gvars.DEFAULT_IFACE = "en0"
-                elif not gvars.DEFAULT_IFACE and consts.HPUX:
-                    gvars.DEFAULT_IFACE = "lan0"
-                elif not gvars.DEFAULT_IFACE:
-                    gvars.DEFAULT_IFACE = "eth0"
-
-            mac = get_by_method("iface", gvars.DEFAULT_IFACE)
-
-            # TODO: hack to fallback to loopback if lookup fails
             if not mac:
-                mac = get_by_method("iface", "lo")
+                mac = _default_interface_mac(network_request)
 
     gvars.log.debug(f"Raw MAC found: {mac}")
 
@@ -1794,10 +1999,6 @@ def get_default_interface() -> Optional[str]:
     :func:`get_by_method` with the ``default_iface`` method type.
     The code is literally
     ``return getmac.getmac.get_by_method("default_iface")``.
-
-    .. note::
-       This currently doesn't work on Windows platforms.
-       It should work on other platforms, including Linux, OSX, and most BSDs.
 
     Returns:
         The name of the default network interface, or :obj:`None`

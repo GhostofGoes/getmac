@@ -221,10 +221,16 @@ def call_proc(executable: str, args: str) -> str:
     if settings.DEBUG >= 4:
         gvars.log.debug(f"Output from '{executable}' command: {output!s}")
 
-    if isinstance(output, bytes):
-        output = output.decode("utf-8")
+    if isinstance(output, str):
+        return output
 
-    return output
+    try:
+        return output.decode("utf-8")
+    except UnicodeDecodeError:
+        # Windows commands print in the console's OEM code page (e.g. cp850 on
+        # French or Spanish systems), not UTF-8. Characters that still can't be
+        # decoded are replaced, so the rest of the output can be parsed.
+        return output.decode("oem" if consts.WINDOWS else "utf-8", errors="replace")
 
 
 def fetch_ip_using_dns() -> str:
