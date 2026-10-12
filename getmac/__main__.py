@@ -98,18 +98,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         metavar="PLATFORM",
-        help="Override the platform detection with the given value "
-        "(e.g. 'linux', 'windows', 'freebsd', etc.'). "
-        "Any values returned by platform.system() are valid.",
+        help="Replace the detected platform with this value "
+        "(e.g. 'linux', 'windows', 'freebsd'). "
+        "All values that platform.system() returns are valid.",
     )
     tshooting.add_argument(
         "--force-method",
         type=str,
         default=None,
         metavar="METHOD",
-        help="Force a specific method to be used, e.g. 'IpNeighborShow'. "
-        "This will be used regardless of it's method type or platform "
-        "compatibility, and Method.test() will NOT be checked!",
+        help="Use only this method, e.g. 'IpNeighborShow'. "
+        "getmac ignores its method type and platforms, "
+        "and does NOT call Method.test().",
     )
 
     return parser

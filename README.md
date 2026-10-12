@@ -9,24 +9,40 @@
 [![PDM-managed](https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json)](https://pdm-project.org)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
+getmac is a pure-Python package. It gets the MAC addresses of network interfaces and of hosts on the local network.
 
-It provides a platform-independent interface to get the MAC addresses of:
+getmac uses the same interface on all supported platforms to get the MAC addresses of:
 
-- System network interfaces (by interface name)
-- Remote hosts on the local network (by IPv4/IPv6 address or hostname)
+- Network interfaces on this system, by interface name
+- Remote hosts on the local network, by IPv4 address, IPv6 address, or hostname
 
-It provides one primary function: `get_mac_address()`
+Its primary function is `get_mac_address()`.
+
+The full documentation is at https://ghostofgoes.github.io/getmac/.
 
 [![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.png)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
 
 
 ## Should you use this package?
-If you only need the addresses of network interfaces, have a limited set of platforms to support, and are able to handle C-extension modules, then you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/) package by Alastair Houghton ([@al45tair](https://github.com/al45tair)). It's significantly faster (thanks to it being C-code) and has been around a long time and seen widespread usage. However, unfortunately it is no longer maintained as of [May 2021](https://github.com/al45tair/netifaces/commit/ec55b59e27542776f55e0f9e3213a75bf8e0f367), so it may not be a great choice for new projects. Another great option that fits these requirements is the well-known and battle-hardened [psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola.
+Other packages can be a better choice in some conditions.
 
-If the only system you need to run on is Linux, you can run as root, and C-extensions modules are fine, then you should instead check out the [arpreq](https://pypi.org/project/arpreq/) package by Sebastian Schrader. In some cases it can be significantly faster.
+If all these conditions apply, look at the [netifaces](https://pypi.org/project/netifaces/) package by Alastair Houghton ([@al45tair](https://github.com/al45tair)):
 
-If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to do so in a [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
+- You need only the addresses of network interfaces.
+- You support a limited set of platforms.
+- You can use C-extension modules.
+
+netifaces is much faster, because it is C code. Many projects used it for a long time. But nobody maintains it since [May 2021](https://github.com/al45tair/netifaces/commit/ec55b59e27542776f55e0f9e3213a75bf8e0f367), so it may not be a good choice for new projects. The [psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola also agrees with these conditions. It is well known and widely used.
+
+If all these conditions apply, look at the [arpreq](https://pypi.org/project/arpreq/) package by Sebastian Schrader:
+
+- Your code runs only on Linux.
+- You can run as root.
+- You can use C-extension modules.
+
+In some cases, arpreq is much faster.
+
+To use `psutil`, `scapy`, or `netifaces`, see the examples in this [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
 ## Installation
 
@@ -43,7 +59,7 @@ pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
 
 ### Debian-based distributions
-`apt` may have it available, depending on your distro (see packaging status below):
+Some Linux distributions have a getmac package in `apt`. The packaging status below shows which distributions have it.
 
 ```bash
 sudo apt install getmac
@@ -68,12 +84,12 @@ updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 settings.DEBUG = 2  # DEBUG level 2
 print(get_mac_address(interface="Ethernet 3"))
 
-# Change the UDP port used for updating the ARP table (UDP packet)
-settings.PORT = 44444  # Default is 55555
+# Change the UDP port that getmac sends the packet to (the default port is 55555)
+settings.PORT = 44444
 print(get_mac_address(ip="192.168.0.1", network_request=True))
 
-# After sending the UDP packet, keep checking the ARP table for the host for up to
-# 1 second, since it can take a moment to reply. Default is 0 (check once).
+# After getmac sends the UDP packet, check the ARP table again for a maximum of 1 second.
+# The host can be slow to reply. The default is 0, which checks the table one time.
 settings.ARP_TIMEOUT = 1.0
 print(get_mac_address(ip="192.168.0.1"))
 
@@ -87,85 +103,88 @@ print(get_default_interface())
 getmac --help
 getmac --version
 
-# Invoking with no arguments will return MAC of the default interface
+# With no arguments, show the MAC address of the default interface
 getmac
 
-# Usage as a module
+# Start getmac as a Python module
 python3 -m getmac
 
-# Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
+# Give an interface name, an IPv4 or IPv6 address, or a hostname
 getmac --interface ens33
 getmac --ip 192.168.0.1
 getmac --ip6 ::1
 getmac --hostname home.router
 
-# Running as a Python module with shorthands for the arguments
+# Start getmac as a Python module, with the short forms of the arguments
 python -m getmac -i 'Ethernet 4'
 python -m getmac -4 192.168.0.1
 python -m getmac -6 ::1
 python -m getmac -n home.router
 
-# Getting the MAC address of a remote host requires the ARP table to be populated.
-# By default, getmac will populate the table by sending a UDP packet to a high port on the host (defaults to 55555).
-# This can be disabled with --no-network-request, as shown here:
-getmac --no-network-request --ip 192.168.0.1
-python -m getmac --no-network-request -n home.router
+# To get the MAC address of a remote host, the host must be in the ARP table.
+# By default, getmac sends a UDP packet to a high port on the host (55555) to populate the table.
+# To disable this, use --no-network-requests (or -N):
+getmac --no-network-requests --ip 192.168.0.1
+python -m getmac -N -n home.router
 
-# Enable output messages
+# Show the log messages
 getmac --verbose
 
-# Debug levels can be specified with '-d'
+# Set the debug level with '-d'
 getmac -v --debug
 python -m getmac -v -d -i enp11s4
 python -m getmac -v -dd -n home.router
 
-# Change the UDP port used for populating the ARP table when getting the MAC of a remote host
+# Change the UDP port that getmac sends the packet to, to populate the ARP table
 getmac --ip 192.168.0.1 --override-port 9001
 
-# Keep checking the ARP table for the host for up to 1 second after sending the UDP packet
+# After getmac sends the UDP packet, check the ARP table again for a maximum of 1 second
 getmac --ip 192.168.0.1 --arp-timeout 1
 
-# The platform detected by getmac can be overridden via '--override-platform'.
-# This is useful when debugging issues or if you know a method
-# for a different platform works on the current platform.
-# Any values returned by platform.system() are valid.
+# Replace the platform that getmac detects with '--override-platform'.
+# This is useful to debug problems. It is also useful when you know that a method
+# for a different platform works on this platform.
+# All values that platform.system() returns are valid.
 getmac -i eth0 --override-platform linux
 getmac --ip 192.168.0.1 --override-platform windows
 
-# Force a specific method to be used, regardless of the consequences or if it even works
+# Use one specific method, even if the method does not work on this system
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 ```
 
 ## API: `get_mac_address()`
-- `interface`: Name of a network interface on the system
-- `ip`: IPv4 address of a remote host
-- `ip6`: IPv6 address of a remote host
-- `hostname`: Hostname of a remote host
-- `network_request`: If an network request should be made to update and populate the ARP/NDP table of remote hosts used to lookup MACs in most circumstances. Disable this if you want to just use what's already in the table, or if you have requirements to prevent network traffic. The network request is a empty UDP packet sent to a high port, `55555` by default. This can be changed by setting `getmac.variables.Settings.PORT` to the desired integer value. Additionally, on Windows, this will send a UDP packet to `1.1.1.1:53` to attempt to determine the default interface (Note: the IP is [CloudFlare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/)).
+- `interface`: the name of a network interface on the system
+- `ip`: the IPv4 address of a remote host
+- `ip6`: the IPv6 address of a remote host
+- `hostname`: the hostname of a remote host
+- `network_request`: whether getmac sends a network request. In most conditions, the request populates the ARP table (IPv4) or NDP table (IPv6) that getmac uses to find the MAC of a remote host.
+    - Disable it to use only the entries that are already in the table, or if you must prevent network traffic.
+    - The network request is an empty UDP packet to a high port. The default port is `55555`. To change the port, set `getmac.variables.Settings.PORT` to a different integer.
+    - On Windows, getmac also sends a UDP packet to `1.1.1.1:53` to find the default interface. This IP address is [Cloudflare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/).
 
 ## Configuration
-- `logging.getLogger("getmac")`: Runtime messages and errors are recorded to the `getmac` logger using Python's [logging](https://docs.python.org/3/library/logging.html) module. They can be configured by using [logging.basicConfig()](https://docs.python.org/3/library/logging.html#logging.basicConfig) or adding handlers to the `"getmac"` logger.
-- `getmac.variables.Settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get.
-- `getmac.variables.Settings.PORT`: UDP port used to populate the ARP/NDP table (see the documentation of the `network_request` argument in `get_mac_address()` for details)
-- `getmac.variables.Settings.ARP_TIMEOUT`: How long to keep checking the ARP/NDP table for a host after sending the UDP packet, in seconds. The host's entry is only added once it replies, which can take longer than getmac takes to check. Default is `0` (check once, without waiting). Lookups of hosts that don't reply take this much longer.
-- `getmac.variables.Settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. `"linux"`, `"windows"`, `"freebsd"`, etc.'). Any values returned by `platform.system()` are valid.
-- `getmac.variables.Settings.FORCE_METHOD`: Force a specific method to be used, e.g. 'IpNeighborShow'. This will be used regardless of it's method type or platform compatibility, and `Method.test()` will NOT be checked! The list of available methods is in `getmac.getmac.METHODS`.
+- `logging.getLogger("getmac")`: getmac records messages and errors to the `getmac` logger of the Python [logging](https://docs.python.org/3/library/logging.html) module. To configure the logger, use [logging.basicConfig()](https://docs.python.org/3/library/logging.html#logging.basicConfig), or add handlers to the `"getmac"` logger.
+- `getmac.variables.Settings.DEBUG`: an integer that controls the debug output. A higher value gives more output.
+- `getmac.variables.Settings.PORT`: the UDP port that getmac sends a packet to, to populate the ARP or NDP table. For more information, see the `network_request` argument of `get_mac_address()`.
+- `getmac.variables.Settings.ARP_TIMEOUT`: the maximum time, in seconds, that getmac checks the ARP or NDP table for a host after it sends the UDP packet. The system adds the host to the table only when the host replies. The reply can arrive after getmac checks the table. The default is `0`, which checks the table one time and does not wait. A lookup of a host that does not reply takes this much more time.
+- `getmac.variables.Settings.OVERRIDE_PLATFORM`: replaces the detected platform with this value, for example `"linux"`, `"windows"` or `"freebsd"`. All values that `platform.system()` returns are valid.
+- `getmac.variables.Settings.FORCE_METHOD`: the name of a method that getmac must use, for example `"IpNeighborShow"`. getmac uses this method for every lookup, and ignores its type and platforms. getmac does **not** call `Method.test()` for it. `getmac.getmac.METHODS` lists the available methods.
 
 ## Features
-- Pure-Python (no compiled C-extensions required!)
-- Python 3.9+
-- Lightweight, with no dependencies and a relatively small package size (no binary extensions)
-- Supports most platforms with NO binary extensions required!
+- Pure Python, with no compiled C-extensions
+- Python 3.9 and later
+- No dependencies, and a small package size
+- Supports most platforms
 - Supports CPython and [PyPy](https://www.pypy.org/)
-- Provides a simple command line tool (when installed as a package)
-- MIT licensed!
+- Has a command-line tool, when you install it as a package
+- MIT license
 
 ## Notes
-- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, `None` is returned. On Windows, only the default interface is used.
-- "Remote hosts" refer to hosts in your local layer 2 network, also commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
-- The first four arguments are mutually exclusive. `network_request` does not have any functionality when the `interface` argument is specified, and can be safely set if using in a script.
-- The physical transport is assumed to be Ethernet (802.3). Others, such as Wi-Fi (802.11), are currently not tested or considered. I plan to address this in the future, and am definitely open to pull requests or issues related to this, including error reports.
-- **Most Exceptions will be handled silently and returned as a None.** If you run into problems, you can set `DEBUG` to true and get more information about what's happening. If you're still having issues, please create an [issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and include the output with `DEBUG` enabled. As of 1.0.0, a `RuntimeError` is raised in cases where no possible methods are found matching the type of request and platform or all methods found fail to test (in other words, don't work).
+- If you give none of the arguments, getmac uses the default network interface of the system. If getmac cannot find the default interface, or the default interface has no MAC, getmac uses a different interface. It uses the first interface that has a MAC and is not a loopback interface. For example, the default interface can be missing when the system has no routes. A VPN tunnel is an example of an interface with no MAC. If no interface agrees with these conditions, the result is `None`. On Windows, getmac uses only the default interface.
+- A "remote host" is a host in your local layer 2 network. Other names for this network are "broadcast domain", "LAN", and "VLAN". As far as I know, no reliable method gets the MAC address of a remote host outside the LAN. If you know a method, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or send me an email. I would like to be wrong about this.
+- You can use only one of the first four arguments. `network_request` has no effect with the `interface` argument. Thus, a script can set it for all lookups.
+- getmac assumes that the physical transport is Ethernet (802.3). I do not test or consider other transports at this time, such as Wi-Fi (802.11). I plan to address this in the future. Pull requests and issues about this are welcome, and error reports also.
+- **getmac catches most exceptions and returns `None`.** If you have problems, set `DEBUG` to `1` or more to get more information. If the problem continues, please create an [issue on GitHub](https://github.com/GhostofGoes/getmac/issues), and include the output with `DEBUG` enabled. Since 1.0.0, getmac raises a `RuntimeError` when no method can do the lookup. This occurs when no method agrees with the type of lookup and the platform, or when all those methods fail their test.
 
 ## Commands and techniques by platform
 - Windows
@@ -195,7 +214,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
     - The same commands and files as Linux, where they're available. See the note on Android below.
 
 ## Platforms currently supported
-All or almost all features should work on "supported" platforms. While other versions of the same family or distro may work, they are untested and may have bugs or missing features.
+All or almost all features should work on the supported platforms. Other versions of the same family or distribution may work, but I did not test them. They may have bugs or missing features.
 
 - Windows
     - Desktop: 7, 8, 8.1, 10, 11 (thanks @StevenLooman for testing Windows 11!)
@@ -208,15 +227,15 @@ All or almost all features should work on "supported" platforms. While other ver
 - Mac OSX (Darwin)
     - The latest release, though OSX 14 and 13 have been tested with success.
 - Android (6+)
-    - Newer versions of Android don't have many of the commands getmac uses, and restrict access to network information, so getmac may not find anything. Installing [BusyBox](https://busybox.net/) or the [Termux](https://termux.dev/) `iproute2` and `net-tools` packages adds the missing commands, but they can still be blocked by Android's restrictions.
+    - Newer versions of Android do not have many of the commands that getmac uses. They also restrict access to network information. Thus, getmac may find nothing. [BusyBox](https://busybox.net/), or the `iproute2` and `net-tools` packages from [Termux](https://termux.dev/), add the missing commands. Android's restrictions can still block these commands.
 - Windows Subsystem for Linux (WSL)
 - FreeBSD (11+)
 - OpenBSD
 - Docker
-- BusyBox (not technically a platform, but several of the methods work on this platform)
+- BusyBox. BusyBox is not a platform, but some of the methods work with it.
 
 ## Legacy Python versions
-If you are running an old Python (3.8 and older) or interpreter, then you can install an older version of `getmac` that supported that version. The wheels are available in the [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or from PyPI with a current version of `pip` and some special arguments.
+For an old Python (3.8 and earlier) or an old interpreter, install an older version of `getmac` that supports it. The wheels are on the [GitHub releases page](https://github.com/GhostofGoes/getmac/releases) and on PyPI. To install them from PyPI, you may need a current version of `pip` and some extra arguments.
 
 - Python 2.5: `get-mac==0.5.0`
 - Python 2.6: `getmac==0.6.0`
@@ -229,10 +248,10 @@ If you are running an old Python (3.8 and older) or interpreter, then you can in
 - Python 3.7: `getmac<1.0.0`
 - Python 3.8: `getmac<1.0.0`
 
-NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
+NOTE: these older versions do not have many of the performance improvements, platform support, and bug fixes of later releases. They usually work, but not as well.
 
 ## Docker
-A Docker image of the `getmac` command is published to the [GitHub Container Registry](https://github.com/GhostofGoes/getmac/pkgs/container/getmac) for `linux/amd64` and `linux/arm64`. The container runs `getmac` as an unprivileged user (`nobody`), and any arguments are passed to it.
+A Docker image of the `getmac` command is available from the [GitHub Container Registry](https://github.com/GhostofGoes/getmac/pkgs/container/getmac), for `linux/amd64` and `linux/arm64`. The container runs `getmac` as an unprivileged user (`nobody`). The container gives all arguments to `getmac`.
 
 ```bash
 docker run --rm ghcr.io/ghostofgoes/getmac --help
@@ -240,9 +259,14 @@ docker run --rm ghcr.io/ghostofgoes/getmac --version
 docker run --rm ghcr.io/ghostofgoes/getmac -n localhost
 ```
 
-The `latest` tag is the newest stable release, and releases are also tagged with their version (e.g. `1.0.0`, `1.0`, and `1`). Pre-releases are only tagged with their version. The `edge` tag is built from the `main` branch.
+The `latest` tag is the newest stable release. Each release also has tags for its version, for example `1.0.0`, `1.0`, and `1`. Pre-releases have only the tag for their version. The `edge` tag is built from the `main` branch.
 
-By default the container is on Docker's bridge network, so it sees its own interfaces and ARP table, not the host's. On Linux, use `--network host` to look up the host's interfaces. In bridge mode, add `-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp` to read the host's ARP table. With Docker Desktop on macOS and Windows, the container only sees the Docker VM's network, not your computer's. IPv6 lookups (`-6`) need a Docker network with IPv6 enabled.
+By default, the container is on the bridge network of Docker. Thus, the container sees its own interfaces and its own ARP table, not the interfaces and ARP table of the host.
+
+- On Linux, to look up the interfaces of the host, use `--network host`.
+- In bridge mode, to read the ARP table of the host, add `-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp`.
+- With Docker Desktop on macOS and Windows, the container sees only the network of the Docker VM, not the network of your computer.
+- IPv6 lookups (`-6`) need a Docker network with IPv6 enabled.
 
 ```bash
 docker run --rm --network host ghcr.io/ghostofgoes/getmac
@@ -252,21 +276,21 @@ docker run --rm -v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp ghcr.io/gh
 To build the image yourself, see the [Docker section of the contribution guide](https://ghostofgoes.github.io/getmac/contributing.html#docker).
 
 ## Caveats
-- Depending on the platform, there could be a performance detriment, due to heavy usage of regular expressions.
-- Platform test coverage is imperfect. If you're having issues, then you might be using a platform I haven't been able to test. Keep calm, open a GitHub issue, and I'd be more than happy to help.
+- On some platforms, getmac can be slow, because it uses many regular expressions.
+- The tests do not cover all platforms. If you have problems, your platform may be one that I did not test. Please open a GitHub issue, and I will help.
 
 ## Known Issues
-- Linux, WSL: Getting the mac of a local interface IP does not currently work (`getmac --ip 10.0.0.4` will fail if `10.0.0.4` is the IP address of a local interface). This issue may be present on other POSIX systems as well.
-- Hostnames for IPv6 devices are not yet supported.
-- Windows: `ipconfig.exe` (a fallback for when `getmac.exe` doesn't work) only finds interfaces by name in English output, since the adapter headers are translated.
-- IPv6 support is good but lags behind IPv4 in some places and isn't as well-tested across the supported platform set.
+- Linux, WSL: getmac cannot get the MAC address of the IP address of a local interface. For example, `getmac --ip 10.0.0.4` fails if `10.0.0.4` is the IP address of a local interface. Other POSIX systems may have this issue also.
+- getmac does not support hostnames for IPv6 devices yet.
+- Windows: `ipconfig.exe` is a fallback for when `getmac.exe` does not work. It finds interfaces by name only when its output is in English, because Windows translates the adapter headers.
+- IPv6 support is good, but it is less complete than IPv4 support in some areas. I also test IPv6 less on the supported platforms.
 
 ## Background and history
-The Python standard library has a robust set of networking functionality, such as `urllib`, `ipaddress`, `ftplib`, `telnetlib`, `ssl`, and more. Imagine my surprise, then, when I discovered there was not a way to get a seemingly simple piece of information: a MAC address. This package was born out of a need to get the MAC address of hosts on the network without needing admin permissions, and a cross-platform way get the addresses of local interfaces.
+The Python standard library has many networking modules, such as `urllib`, `ipaddress`, `ftplib`, `telnetlib`, and `ssl`. But I found that it had no way to get a MAC address. I wrote this package for two needs. The first need was to get the MAC address of hosts on the network without admin permissions. The second need was to get the addresses of local interfaces on all platforms.
 
-In Fall 2018 the package name changed to `getmac` from `get-mac`. This affected the package name, the CLI script, and some of the documentation. There were no changes to the core library code. While both package names will updated on PyPI, the use of `getmac` is preferred.
+In Fall 2018, the package name changed from `get-mac` to `getmac`. This changed the package name, the CLI script, and some of the documentation. The core library code did not change. I will update both package names on PyPI, but please use `getmac`.
 
-In Summer 2020, the code was significantly refactored, moving to a class-based structure and significantly improving performance and accuracy. See [rewrite.md](https://github.com/GhostofGoes/getmac/blob/main/docs/misc_docs/rewrite.md) for details.
+In Summer 2020, I changed the code to a class-based structure. This made getmac much faster and more accurate. See [rewrite.md](https://github.com/GhostofGoes/getmac/blob/main/docs/misc_docs/rewrite.md) for details.
 
 ## Contributing
 Contributors are more than welcome! See the [contribution guide](https://ghostofgoes.github.io/getmac/contributing.html) to get started, and checkout the [todo list](https://github.com/GhostofGoes/getmac/blob/main/docs/misc_docs/TODO.md) for a full list of tasks and bugs.

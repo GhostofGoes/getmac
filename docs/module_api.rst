@@ -2,23 +2,23 @@
 Using the module API
 ====================
 
-:func:`~getmac.getmac.get_mac_address` covers most uses of getmac. This page covers the internal methods used by getmac to resolve MAC addresses on various platforms.
+:func:`~getmac.getmac.get_mac_address` is sufficient for most uses of getmac. This page is about the internal methods that getmac uses to find MAC addresses on different platforms.
 
-Internally, getmac picks a *method* for each kind of lookup. The method is a class that knows a particular way of finding a MAC address, such as reading ``/sys/class/net/<iface>/address`` or running ``ip neighbor show``. This page explains how those methods work, and how to implement a new method.
+Internally, getmac selects a *method* for each type of lookup. A method is a class that uses one technique to find a MAC address. Examples are to read ``/sys/class/net/<iface>/address`` and to run ``ip neighbor show``. This page explains how methods work, and how to write a new method.
 
 .. warning::
-   Most of what this page describes lives in :mod:`getmac.getmac` and is an internal API that may change between releases. Use it with care.
+   Most of the items on this page are in :mod:`getmac.getmac`. They are an internal API, and they can change between releases. Use them carefully.
 
 
 Where things live
 =================
 
-- ``getmac``: :func:`~getmac.getmac.get_mac_address` and :func:`~getmac.getmac.get_default_interface` (the names in ``__all__``), plus ``settings`` and ``__version__``, which can also be imported from it. Nothing else is imported into the top-level package.
+- ``getmac``: :func:`~getmac.getmac.get_mac_address`, :func:`~getmac.getmac.get_default_interface`, ``settings`` and ``__version__`` (the names in ``__all__``). getmac imports nothing else into the top-level package.
 - :mod:`getmac.getmac`: the :class:`~getmac.getmac.Method` base class, the built-in methods, the :data:`~getmac.getmac.METHODS` list, the :data:`~getmac.getmac.METHOD_CACHE` and :data:`~getmac.getmac.FALLBACK_CACHE` dicts, and lower-level functions such as :func:`~getmac.getmac.get_by_method` and :func:`~getmac.getmac.initialize_method_cache`.
 - :mod:`getmac.variables`: the ``settings``, ``consts`` and ``gvars`` objects, documented as the :class:`~getmac.variables.Settings`, :class:`~getmac.variables.Constants` and :class:`~getmac.variables.Variables` classes.
 - :mod:`getmac.utils`: helper functions used by methods, such as :func:`~getmac.utils.popen` and :func:`~getmac.utils.search`.
 
-``Method`` isn't exported from the top-level package, so import it with ``from getmac.getmac import Method``. Every built-in method and its docstring is listed in the :doc:`api` reference.
+The top-level package does not export ``Method``. Import it with ``from getmac.getmac import Method``. The :doc:`api` reference lists each built-in method and its docstring.
 
 
 Methods 101
@@ -27,16 +27,16 @@ Methods 101
 Methods
 -------
 
-A method is a subclass of :class:`~getmac.getmac.Method` and should set 3 attributes:
+A method is a subclass of :class:`~getmac.getmac.Method`. It must set 3 attributes:
 
 - :attr:`~getmac.getmac.Method.platforms`: a set with the platforms it works on, such as ``{"linux", "darwin"}``.
-- :attr:`~getmac.getmac.Method.method_type`: the kind of lookup it does (see below).
-- :attr:`~getmac.getmac.Method.network_request`: whether using it sends traffic on the network.
+- :attr:`~getmac.getmac.Method.method_type`: the type of lookup that it does (see below).
+- :attr:`~getmac.getmac.Method.network_request`: whether the method sends traffic on the network.
 
 A method overrides two functions:
 
-- :meth:`~getmac.getmac.Method.test`: a cheap check that the method can work on this system, such as "is the ``ip`` command installed?"
-- :meth:`~getmac.getmac.Method.get`: performs the lookup. It takes one argument, and returns the result or :obj:`None`. The argument's meaning depends on the method, e.g. for an interface method, it would be the interface name (e.g. ``"eth0"``).
+- :meth:`~getmac.getmac.Method.test`: a fast check that the method can work on this system. An example is "is the ``ip`` command installed?"
+- :meth:`~getmac.getmac.Method.get`: does the lookup. It takes one argument, and returns the result or :obj:`None`. The meaning of the argument changes with the method type. For example, the argument of an interface method is the interface name, such as ``"eth0"``.
 
 .. _module-api-method-types:
 
@@ -73,9 +73,9 @@ Method types
      - Interface name
 
 .. note::
-   ``get_mac_address()`` with no arguments does a ``default_iface`` lookup, then an ``iface`` lookup of the interface it finds. If the default interface can't be found or it doesn't have a MAC, the first interface from :func:`socket.if_nameindex` that has a MAC and isn't a loopback interface is used instead, except on Windows.
+   ``get_mac_address()`` with no arguments does a ``default_iface`` lookup. Then it does an ``iface`` lookup of the interface that it found. If getmac cannot find the default interface, or the default interface has no MAC, getmac uses a different interface. It uses the first interface from :func:`socket.if_nameindex` that has a MAC and is not a loopback interface. Windows is an exception to this.
 
-   On Windows with ``network_request=True`` (the default), it first gets the IP address of the interface with the default route from :func:`~getmac.utils.fetch_ip_using_dns`, and does an ``ip4`` lookup of that address. The ``default_iface`` lookup is only done if that doesn't find a MAC.
+   On Windows with ``network_request=True`` (the default), getmac first gets the IP address of the interface with the default route. It uses :func:`~getmac.utils.fetch_ip_using_dns` for this. Then it does an ``ip4`` lookup of that address. getmac does the ``default_iface`` lookup only if that lookup does not find a MAC.
 
 .. note::
    There is one cache per lookup type: ``ip4``, ``ip6``, ``iface`` and ``default_iface``.
@@ -85,7 +85,7 @@ Method types
 Platforms
 ---------
 
-The platform is a lowercase identifier, :attr:`consts.PLATFORM <getmac.variables.Constants.PLATFORM>`, unless you override it with :attr:`settings.OVERRIDE_PLATFORM <getmac.variables.Settings.OVERRIDE_PLATFORM>`. To see what your system is detected as:
+The platform is a lowercase identifier, :attr:`consts.PLATFORM <getmac.variables.Constants.PLATFORM>`. :attr:`settings.OVERRIDE_PLATFORM <getmac.variables.Settings.OVERRIDE_PLATFORM>` replaces it if you set it. To see the platform that getmac detects on your system:
 
 .. code-block:: python
 
@@ -95,54 +95,60 @@ The platform is a lowercase identifier, :attr:`consts.PLATFORM <getmac.variables
 
 The identifiers used by the built-in methods are listed in :attr:`Method.VALID_PLATFORM_NAMES <getmac.getmac.Method.VALID_PLATFORM_NAMES>`.
 
-The platform ``"other"`` is used for methods that are generic enough to try on unknown systems, and are only used as a last resort if the current platform matches no method.
+The platform ``"other"`` is for general methods that getmac can try on unknown systems. getmac uses them only as a last option, when no method agrees with the current platform.
 
 .. _module-api-choosing:
 
 Choosing a method
 -----------------
 
-The first time a lookup is performed for a particular type (e.g. ``ip4``), the cache for that type is initialized by :func:`~getmac.getmac.initialize_method_cache`:
+At the first lookup of a type (for example, ``ip4``), :func:`~getmac.getmac.initialize_method_cache` builds the cache for that type. It does these steps:
 
-1. Selects methods in :data:`~getmac.getmac.METHODS` with a matching ``method_type``.
-2. Selects methods whose ``platforms`` set includes the current platform, or ``"other"`` if nothing matches (see the section above).
-3. If ``network_request=False``, it excludes methods that have ``network_request=True``.
-4. Creates instances of the selected methods and calls their ``test()``. The first method that passes (returns :obj:`True`) becomes the *primary* method, stored in :data:`METHOD_CACHE[type] <getmac.getmac.METHOD_CACHE>`. The others that pass become *fallbacks*, stored in order in :data:`FALLBACK_CACHE[type] <getmac.getmac.FALLBACK_CACHE>`. Methods whose ``test()`` returns :obj:`False` or raises an exception are left out.
+1. Select the methods in :data:`~getmac.getmac.METHODS` that have the same ``method_type``.
+2. Select the methods whose ``platforms`` set includes the current platform. If no method agrees, select the methods for ``"other"`` (see the section above).
+3. If ``network_request=False``, remove the methods that have ``network_request=True``.
+4. Make an instance of each selected method, and call its ``test()``. The first method that passes (returns :obj:`True`) becomes the *primary* method. getmac keeps it in :data:`METHOD_CACHE[type] <getmac.getmac.METHOD_CACHE>`. The other methods that pass become *fallbacks*. getmac keeps them, in order, in :data:`FALLBACK_CACHE[type] <getmac.getmac.FALLBACK_CACHE>`. getmac does not keep the methods whose ``test()`` returns :obj:`False` or raises an exception.
 
-:func:`~getmac.getmac.initialize_method_cache` will raise :class:`RuntimeError` if:
+:func:`~getmac.getmac.initialize_method_cache` raises :class:`RuntimeError` if:
 
 - No method has the requested type.
 - No method suits the platform, even after trying ``"other"``.
 - Every candidate method fails its ``test()``.
 
 .. note::
-   The cache is built lazily on first lookup and reused for the rest of the process's life. Methods aren't tested again, so later changes to :data:`~getmac.getmac.METHODS`, to ``OVERRIDE_PLATFORM``, or to the system itself (such as installing a command) don't affect a type whose cache is already built.
+   getmac builds the cache at the first lookup, and uses it until the process stops. getmac does not test the methods again. Thus, after the cache of a type exists, these changes have no effect on that type:
+
+   - Changes to :data:`~getmac.getmac.METHODS`
+   - Changes to ``OVERRIDE_PLATFORM``
+   - Changes to the system, such as a new command
 
 .. _module-api-fallback:
 
 Falling back during a lookup
 ----------------------------
 
-Each lookup calls ``get()`` on the primary method from the cache and:
+Each lookup calls ``get()`` on the primary method from the cache. Then:
 
-- If ``get()`` returns a value, winner winner chicken dinner, that's the result.
-- If ``get()`` returns :obj:`None`, the result is :obj:`None`. The fallbacks are **not** tried. :obj:`None` means "not found", for example "there's no such interface", *not* "this method doesn't work".
-- If ``get()`` raises an exception, or sets ``self.unusable = True`` and returns :obj:`None`, the method is removed from the cache. The first fallback becomes the primary method, and the lookup is retried with it using the same argument. The exception is logged as a warning, not raised.
-- A :class:`~subprocess.CalledProcessError` with exit code 1 is treated like returning :obj:`None`, because many commands exit with 1 when the interface or host doesn't exist. Any other exit code counts as a failure and leads to a fallback.
-- With ``network_request=False``, methods that send network requests (their ``network_request`` attribute is :obj:`True`) are skipped, both for the lookup and as fallbacks. They stay in the cache, since the cache may have been built by a lookup that allowed them.
+- If ``get()`` returns a value, that value is the result.
+- If ``get()`` returns :obj:`None`, the result is :obj:`None`. getmac does **not** try the fallbacks. :obj:`None` means "not found", for example "this interface does not exist". It does *not* mean "this method does not work".
+- If ``get()`` raises an exception, getmac removes the method from the cache. getmac also does this if ``get()`` sets ``self.unusable = True`` and returns :obj:`None`. The first fallback becomes the primary method, and getmac does the lookup again with it, with the same argument. getmac logs the exception as a warning, and does not raise it.
+- A :class:`~subprocess.CalledProcessError` with exit code 1 has the same result as :obj:`None`. Many commands exit with code 1 when the interface or host does not exist. All other exit codes are failures, and cause a fallback.
+- With ``network_request=False``, getmac skips the methods that send network requests (their ``network_request`` attribute is :obj:`True`). It skips them for the lookup and as fallbacks. They stay in the cache, because a lookup that permitted them may have built the cache.
 
 .. _module-api-ipv4-network:
 
 IPv4 lookups and network requests
 ---------------------------------
 
-When :func:`~getmac.getmac.get_mac_address` looks up an IPv4 address (``ip=`` or ``hostname=``) with ``network_request=True`` (the default), it first tries to make sure the host is in the system's ARP table:
+This section applies when :func:`~getmac.getmac.get_mac_address` looks up an IPv4 address (``ip=`` or ``hostname=``) with ``network_request=True`` (the default). Before the lookup, getmac tries to put the host in the ARP table of the system:
 
-1. If :class:`~getmac.getmac.ArpFile` is in the ``ip4`` cache, it's tried first, since reading ``/proc/net/arp`` is fast. If it fails, it's removed from the cache, but no other method is tried yet.
-2. Otherwise, if :class:`~getmac.getmac.CtypesHost` or :class:`~getmac.getmac.ArpingHost` is in the ``ip4`` cache, it's made the primary method, since it sends an ARP request itself.
-3. If neither applies, an empty UDP packet is sent to the host on the port specified by :attr:`settings.PORT <getmac.variables.Settings.PORT>` to force the system to populate the ARP table.
+1. If :class:`~getmac.getmac.ArpFile` is in the ``ip4`` cache, getmac tries it first, because it is fast to read ``/proc/net/arp``. If it fails, getmac removes it from the cache. getmac does not try another method yet.
+2. If not, and :class:`~getmac.getmac.CtypesHost` or :class:`~getmac.getmac.ArpingHost` is in the ``ip4`` cache, it becomes the primary method. These methods send an ARP request themselves.
+3. If neither step applies, getmac sends an empty UDP packet to the host. The packet goes to the port in :attr:`settings.PORT <getmac.variables.Settings.PORT>`. The packet causes the system to populate the ARP table.
 
-Then the host is looked up with the ``ip4`` cache. If the UDP packet was sent and the host isn't found, it's looked up again until it's found or :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` seconds have passed (by default, it isn't looked up again). IPv6 lookups send the UDP packet and use ``ARP_TIMEOUT`` the same way, but there's no ``ArpFile`` or ARP request step.
+Then getmac looks up the host with the ``ip4`` cache. If getmac sent the UDP packet and did not find the host, getmac looks up the host again. It stops when it finds the host, or when :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` seconds pass. By default, getmac does not look up the host again.
+
+IPv6 lookups send the UDP packet and use ``ARP_TIMEOUT`` in the same way. IPv6 lookups have no ``ArpFile`` step and no ARP request step.
 
 
 Seeing which methods are used
@@ -151,14 +157,14 @@ Seeing which methods are used
 Inspecting the caches
 ---------------------
 
-After a lookup, the caches show which methods were chosen. Converting a method instance to a string with :class:`str` gives its class name.
+After a lookup, the caches show the methods that getmac selected. :class:`str` converts a method instance to its class name.
 
 .. code-block:: python
 
    from getmac import get_mac_address
    from getmac.getmac import FALLBACK_CACHE, METHOD_CACHE
 
-   # Force caches to be populated
+   # Do a lookup, to populate the caches
    get_mac_address()
 
    # Print the name of each method in the cache
@@ -175,23 +181,23 @@ Example output on a Linux system:
    iface: SysIfaceFile, fallbacks: ['FcntlIface', 'IpLinkIface']
    default_iface: DefaultIfaceLinuxRouteFile, fallbacks: ['DefaultIfaceIpRoute']
 
-Two helper functions look methods up by name:
+Two helper functions find methods by name:
 
-- :func:`~getmac.getmac.get_instance_from_cache` returns the cached *instance* of a method, primary or fallback, for one lookup type. The name must match the class name exactly, for example ``get_instance_from_cache("iface", "SysIfaceFile")``.
-- :func:`~getmac.getmac.get_method_by_name` returns the *class* with a given name from :data:`~getmac.getmac.METHODS`, ignoring case. This is how ``FORCE_METHOD`` finds a method.
+- :func:`~getmac.getmac.get_instance_from_cache` returns the cached *instance* of a method, primary or fallback, for one lookup type. The name must be the same as the class name, with the same case. For example: ``get_instance_from_cache("iface", "SysIfaceFile")``.
+- :func:`~getmac.getmac.get_method_by_name` returns the *class* with a given name from :data:`~getmac.getmac.METHODS`. It ignores case. ``FORCE_METHOD`` uses this function to find a method.
 
 .. _module-api-logging:
 
 Logging and debug output
 ------------------------
 
-getmac logs to the ``getmac`` logger with Python's :mod:`logging` module. It attaches a :class:`~logging.NullHandler` to that logger, so nothing is shown until logging is configured. :attr:`settings.DEBUG <getmac.variables.Settings.DEBUG>` controls how much detail is logged:
+getmac logs to the ``getmac`` logger of the Python :mod:`logging` module. It attaches a :class:`~logging.NullHandler` to that logger. Thus, you see no messages until you configure logging. :attr:`settings.DEBUG <getmac.variables.Settings.DEBUG>` controls the quantity of detail in the log:
 
-- ``0`` (the default): warnings, errors, and a few debug messages, such as when a cache is built and the raw MAC that was found.
-- ``1``: failed tests, the contents of the caches, each ``get()`` attempt, and how long the lookup took.
+- ``0`` (the default): warnings, errors, and some debug messages. For example, a message when getmac builds a cache, and the raw MAC that getmac found.
+- ``1``: failed tests, the contents of the caches, each ``get()`` attempt, and the duration of the lookup.
 - ``2``: the methods left after filtering by type, by platform, and by ``test()``.
-- ``3``: every command that's run.
-- ``4``: the output of every command, and the full :data:`~getmac.getmac.METHODS` list.
+- ``3``: each command that getmac runs.
+- ``4``: the output of each command, and the full :data:`~getmac.getmac.METHODS` list.
 
 .. code-block:: python
 
@@ -219,7 +225,7 @@ Example output on Linux, shortened:
    DEBUG    Attempting get() (method='SysIfaceFile', method_type='iface', arg='lo')
    DEBUG    Raw MAC found: 00:00:00:00:00:00
 
-The command-line equivalent is ``getmac -v -dd -i lo``, see :doc:`cli`.
+The same command on the command line is ``getmac -v -dd -i lo``. See :doc:`cli`.
 
 
 Calling lookups directly
@@ -228,9 +234,9 @@ Calling lookups directly
 get_by_method()
 ---------------
 
-:func:`~getmac.getmac.get_by_method` does one lookup of a given type (e.g., ``"ip4"``) using the caches and fallbacks described above.
+:func:`~getmac.getmac.get_by_method` does one lookup of a given type, for example ``"ip4"``. It uses the caches and fallbacks that the sections above describe.
 
-It returns whatever the method's ``get()`` returned, without the clean-up that :func:`~getmac.getmac.get_mac_address` does. Many built-in methods return the MAC the way the command printed it, so pass the result through :func:`~getmac.utils.clean_mac` to get a lowercase, colon-separated MAC (aka what is normally returned from :func:`~getmac.getmac.get_mac_address`).
+It returns the value from ``get()`` of the method. It does not clean the value, as :func:`~getmac.getmac.get_mac_address` does. Many built-in methods return the MAC in the format that the command printed. To get a lowercase MAC with colons, use :func:`~getmac.utils.clean_mac` on the result. This is the same format that :func:`~getmac.getmac.get_mac_address` returns.
 
 .. code-block:: python
 
@@ -248,16 +254,16 @@ Example output on Linux:
    '00:00:00:00:00:00\n'
    00:00:00:00:00:00
 
-A few more things to know:
+More information:
 
-- An empty argument returns :obj:`None` and logs an error, except for ``default_iface`` type methods, which take no argument.
-- It raises :class:`RuntimeError` when no method can be used, as described in :ref:`module-api-choosing`.
-- Its ``network_request`` argument has the same effect as in :func:`~getmac.getmac.initialize_method_cache`, and **only applies if that type's cache hasn't been built yet**.
+- An empty argument returns :obj:`None` and logs an error. ``default_iface`` methods are an exception, because they take no argument.
+- It raises :class:`RuntimeError` when getmac can use no method. :ref:`module-api-choosing` describes when this occurs.
+- Its ``network_request`` argument has the same effect as in :func:`~getmac.getmac.initialize_method_cache`. The argument has an effect **only if the cache of that type does not exist yet**.
 
 get_default_interface()
 -----------------------
 
-:func:`~getmac.getmac.get_default_interface` is ``get_by_method("default_iface")``, so it can also raise :class:`RuntimeError`. It doesn't change the default interface that ``get_mac_address()`` remembers between calls (:attr:`gvars.DEFAULT_IFACE <getmac.variables.Variables.DEFAULT_IFACE>`).
+:func:`~getmac.getmac.get_default_interface` is the same as ``get_by_method("default_iface")``. Thus, it can also raise :class:`RuntimeError`. ``get_mac_address()`` keeps the default interface between calls, in :attr:`gvars.DEFAULT_IFACE <getmac.variables.Variables.DEFAULT_IFACE>`. ``get_default_interface()`` does not change that value.
 
 .. code-block:: python
 
@@ -272,40 +278,40 @@ get_default_interface()
 Settings
 ========
 
-The settings are attributes of ``getmac.settings``, an instance of :class:`~getmac.variables.Settings`. :ref:`configuration` has a short overview, and this section adds how each one interacts with method selection.
+The settings are attributes of ``getmac.settings``, an instance of :class:`~getmac.variables.Settings`. :ref:`configuration` gives a short summary. This section tells how each setting changes the method selection.
 
 :attr:`~getmac.variables.Settings.FORCE_METHOD`
-   The name of a method to use for every lookup, e.g. ``"IpLinkIface"``. The name is looked up in :data:`~getmac.getmac.METHODS`, ignoring case. If no method matches, the lookup logs an error and returns :obj:`None`. On the command line, use ``--force-method``.
+   The name of a method to use for each lookup, for example ``"IpLinkIface"``. getmac finds the name in :data:`~getmac.getmac.METHODS`, and ignores case. If no method has that name, the lookup logs an error and returns :obj:`None`. On the command line, use ``--force-method``.
 
-   - A new instance is created for each lookup, and ``test()`` is never called.
-   - ``platforms``, ``method_type`` and ``network_request`` are ignored, and the caches aren't used or changed.
-   - There's no fallback, and exceptions raised by the method are not caught.
-   - It applies to every lookup type, including ``get_mac_address()`` called with no arguments.
-   - For an IPv4 lookup with ``network_request=True``, ``get_mac_address()`` still builds the ``ip4`` cache and sends the UDP packet described in :ref:`module-api-ipv4-network` before calling the forced method. The UDP packet isn't sent if the forced method is ``"CtypesHost"`` or ``"ArpingHost"`` and it's in the ``ip4`` cache, since it sends an ARP request itself.
-   - One case differs: forcing ``"ArpFile"`` for an IPv4 lookup with ``network_request=True``. The :class:`~getmac.getmac.ArpFile` instance in the ``ip4`` cache is then tried first, as described in :ref:`module-api-ipv4-network`, and the points above don't apply to that attempt: it uses the cache, exceptions are caught, and a failure removes it from the cache. If that attempt finds a MAC, it's returned, no UDP packet is sent, and the forced method isn't called. Otherwise the UDP packet is sent and a new ArpFile instance runs as described above.
+   - getmac makes a new instance for each lookup. It never calls ``test()``.
+   - getmac ignores ``platforms``, ``method_type`` and ``network_request``. It does not use or change the caches.
+   - There is no fallback. getmac does not catch the exceptions that the method raises.
+   - The setting applies to all lookup types. This includes ``get_mac_address()`` with no arguments.
+   - For an IPv4 lookup with ``network_request=True``, ``get_mac_address()`` still builds the ``ip4`` cache. It also sends the UDP packet that :ref:`module-api-ipv4-network` describes, before it calls the forced method. The forced methods ``"CtypesHost"`` and ``"ArpingHost"`` are an exception, if they are in the ``ip4`` cache. These methods send an ARP request themselves, so getmac does not send the UDP packet.
+   - The forced method ``"ArpFile"``, for an IPv4 lookup with ``network_request=True``, is a special case. getmac first tries the :class:`~getmac.getmac.ArpFile` instance in the ``ip4`` cache, as :ref:`module-api-ipv4-network` describes. The points above do not apply to that attempt. That attempt uses the cache, getmac catches its exceptions, and a failure removes it from the cache. If that attempt finds a MAC, getmac returns the MAC. getmac then does not send a UDP packet, and does not call the forced method. If that attempt finds no MAC, getmac sends the UDP packet. Then a new ArpFile instance runs, as the points above describe.
 
 :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM`
-   Override the detected platform identifier to whatever you set, e.g. ``"linux"``. Use ``--override-platform`` on the command line. It's only read when a cache is built, so set it before the first lookup or :ref:`reset the caches <module-api-reset>` afterwards. It only changes which methods are chosen. Other platform-specific behavior in ``get_mac_address()``, such as how the default interface is found on Windows, still follows the detected platform.
+   Replaces the detected platform identifier with your value, for example ``"linux"``. On the command line, use ``--override-platform``. getmac reads this setting only when it builds a cache. Thus, set it before the first lookup, or :ref:`reset the caches <module-api-reset>` after you set it. The setting changes only the method selection. Other platform-specific behavior in ``get_mac_address()`` still uses the detected platform. An example is how getmac finds the default interface on Windows.
 
 :attr:`~getmac.variables.Settings.PORT`
    The UDP port used to populate the ARP table, as described in :ref:`module-api-ipv4-network`.
 
 :attr:`~getmac.variables.Settings.ARP_TIMEOUT`
-   How long to keep looking up a host after sending the UDP packet, as described in :ref:`module-api-ipv4-network`. Use ``--arp-timeout`` on the command line.
+   The maximum time that getmac looks up a host again after it sends the UDP packet. See :ref:`module-api-ipv4-network`. On the command line, use ``--arp-timeout``.
 
 :attr:`~getmac.variables.Settings.DEBUG`
-   How much detail is logged, see :ref:`module-api-logging`.
+   The quantity of detail in the log. See :ref:`module-api-logging`.
 
 
 Adding a custom method
 ======================
 
-You can add your own methods at runtime, for example to support a command getmac doesn't know about. If the method would be useful to others, consider contributing it to getmac, see :doc:`adding_methods`.
+You can add your own methods at runtime. For example, you can add a method for a command that getmac does not use. If the method can help other users, please think about adding it to getmac. See :doc:`adding_methods`.
 
 Writing the class
 -----------------
 
-The examples below use this method, which always returns the same MAC. Save it as ``my_methods.py``.
+The examples below use this method. It always returns the same MAC. Save it as ``my_methods.py``.
 
 .. code-block:: python
    :caption: my_methods.py
@@ -327,19 +333,25 @@ The examples below use this method, which always returns the same MAC. Save it a
        def get(self, arg: str) -> Optional[str]:
            return "02:00:00:00:00:01"
 
-Requirements to follow for implementing a method:
+A method must obey these rules:
 
-- ``platforms`` **must** include each platform the method should run on, see :ref:`module-api-platforms`.
+- ``platforms`` **must** include each platform that the method can run on. See :ref:`module-api-platforms`.
 - ``method_type`` **must** be one of the values in :ref:`module-api-method-types`.
-- Set ``network_request = True`` if ``get()`` can result in network traffic (e.g. an ARP request).
-- ``test()`` should be cheap, such as checking that a command or file exists. :func:`~getmac.utils.check_command` and :func:`~getmac.utils.check_path` do this. If it raises, getmac treats it as a failed test.
-- ``get()`` should return the MAC as a :class:`str`, or return :obj:`None` if it wasn't found.
-- When ``get()`` can't work on this system, it should raise an exception or set ``self.unusable = True``, so that getmac moves on to the next method. See :ref:`module-api-fallback`.
-- A ``default_iface`` method returns an interface name, and its ``get()`` is called with an empty string, so define it as ``def get(self, arg: str = "")``.
+- Set ``network_request = True`` if ``get()`` can send traffic on the network, for example an ARP request.
+- ``test()`` must be fast. For example, it can check that a command or file exists. :func:`~getmac.utils.check_command` and :func:`~getmac.utils.check_path` do these checks. If ``test()`` raises an exception, getmac records a failed test.
+- ``get()`` must return the MAC as a :class:`str`. If it does not find the MAC, it must return :obj:`None`.
+- If ``get()`` cannot work on this system, it must raise an exception or set ``self.unusable = True``. getmac then tries the next method. See :ref:`module-api-fallback`.
+- A ``default_iface`` method returns an interface name. getmac calls its ``get()`` with an empty string. Thus, define it as ``def get(self, arg: str = "")``.
 
-:mod:`getmac.utils` has helpers for running commands (:func:`~getmac.utils.popen`), reading files (:func:`~getmac.utils.read_file`) and matching output (:func:`~getmac.utils.search`), and :class:`~getmac.variables.Constants` has regular expressions for MAC addresses, such as :attr:`~getmac.variables.Constants.MAC_RE_COLON`.
+:mod:`getmac.utils` has helper functions:
 
-Here's a more realistic method. It parses the output of ``ip -brief link show dev <iface>``, which looks like ``lo  UNKNOWN  00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>``.
+- :func:`~getmac.utils.popen` runs commands.
+- :func:`~getmac.utils.read_file` reads files.
+- :func:`~getmac.utils.search` finds a match in the output.
+
+:class:`~getmac.variables.Constants` has regular expressions for MAC addresses, such as :attr:`~getmac.variables.Constants.MAC_RE_COLON`.
+
+The next method is more realistic. It parses the output of ``ip -brief link show dev <iface>``. An example of this output is ``lo  UNKNOWN  00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>``.
 
 .. code-block:: python
 
@@ -368,7 +380,7 @@ Here's a more realistic method. It parses the output of ``ip -brief link show de
 Registering it
 --------------
 
-Add the class to :data:`~getmac.getmac.METHODS` before the first lookup of its type (e.g. ``"iface"``). The order of :data:`~getmac.getmac.METHODS` is the order methods are tested in, so insert it at the front to make it the primary method:
+Add the class to :data:`~getmac.getmac.METHODS` before the first lookup of its type, for example ``"iface"``. getmac tests the methods in the order of :data:`~getmac.getmac.METHODS`. To make your method the primary method, put it at the start of the list:
 
 .. code-block:: python
 
@@ -387,16 +399,21 @@ Output:
 
    02:00:00:00:00:01
 
-If you append it instead, any built-in method of the same type that passes its test comes first, and yours becomes a fallback.
+If you add it at the end of the list, the built-in methods of the same type that pass their test come first. Your method then becomes a fallback.
 
-Change the list in place, as above, or replace the module attribute (``getmac.getmac.METHODS = [...]``).
+You can change the list in place, as in the example above. You can also replace the module attribute (``getmac.getmac.METHODS = [...]``).
 
 .. _module-api-reset:
 
 If lookups already happened
 ---------------------------
 
-Adding a method doesn't affect a type whose cache is already built. To make getmac choose again, set that type's entry in :data:`~getmac.getmac.METHOD_CACHE` to :obj:`None` and empty its :data:`~getmac.getmac.FALLBACK_CACHE` list. The next lookup of that type tests :data:`~getmac.getmac.METHODS` again.
+A new method has no effect on a type whose cache already exists. To make getmac select again, do these steps:
+
+1. Set the entry of that type in :data:`~getmac.getmac.METHOD_CACHE` to :obj:`None`.
+2. Set its list in :data:`~getmac.getmac.FALLBACK_CACHE` to an empty list.
+
+The next lookup of that type tests :data:`~getmac.getmac.METHODS` again.
 
 .. code-block:: python
 
@@ -408,7 +425,7 @@ Adding a method doesn't affect a type whose cache is already built. To make getm
    print(get_mac_address(interface="lo"))  # Builds the "iface" cache
 
    METHODS.insert(0, FixedMacIface)
-   print(get_mac_address(interface="lo"))  # Still uses the method chosen earlier
+   print(get_mac_address(interface="lo"))  # Still uses the method that getmac selected before
 
    METHOD_CACHE["iface"] = None  # Forget the "iface" selection
    FALLBACK_CACHE["iface"] = []
@@ -422,7 +439,7 @@ Example output on Linux:
    00:00:00:00:00:00
    02:00:00:00:00:01
 
-To start over completely, reset every type. Also clear :attr:`gvars.DEFAULT_IFACE <getmac.variables.Variables.DEFAULT_IFACE>`, where ``get_mac_address()`` remembers the default interface after the first call without arguments. Without that, a new ``default_iface`` method is never used by ``get_mac_address()``.
+To start again fully, reset all types. Also clear :attr:`gvars.DEFAULT_IFACE <getmac.variables.Variables.DEFAULT_IFACE>`. ``get_mac_address()`` keeps the default interface there after the first call without arguments. If you do not clear it, ``get_mac_address()`` never uses a new ``default_iface`` method.
 
 .. code-block:: python
 
@@ -437,14 +454,14 @@ To start over completely, reset every type. Also clear :attr:`gvars.DEFAULT_IFAC
            FALLBACK_CACHE[method_type] = []
        gvars.DEFAULT_IFACE = ""
 
-:func:`~getmac.utils.check_command` also caches whether each command exists, in :attr:`gvars.CHECK_COMMAND_CACHE <getmac.variables.Variables.CHECK_COMMAND_CACHE>`. Clear that dict as well if commands were installed or removed since the first lookup.
+:func:`~getmac.utils.check_command` also keeps a cache of the commands that exist, in :attr:`gvars.CHECK_COMMAND_CACHE <getmac.variables.Variables.CHECK_COMMAND_CACHE>`. If you installed or removed commands after the first lookup, also clear that dict.
 
 To undo these changes in tests, see :ref:`module-api-tests`.
 
 Using a method without registering it
 -------------------------------------
 
-You can also put an instance straight into :data:`~getmac.getmac.METHOD_CACHE`. This skips :data:`~getmac.getmac.METHODS`, ``test()`` and the platform check. Fallbacks that are already cached are kept, but if that type's cache hadn't been built yet, there are none.
+You can also put an instance directly into :data:`~getmac.getmac.METHOD_CACHE`. getmac then does not use :data:`~getmac.getmac.METHODS`, ``test()`` or the platform check. getmac keeps the fallbacks that are already in the cache. If the cache of that type did not exist yet, there are no fallbacks.
 
 .. code-block:: python
 
@@ -462,7 +479,7 @@ The instance stays the primary method until it fails and getmac falls back.
 Forcing a custom method
 -----------------------
 
-``FORCE_METHOD`` only finds methods that are in :data:`~getmac.getmac.METHODS`, so register the method first. Where it is in the list doesn't matter.
+``FORCE_METHOD`` finds only the methods in :data:`~getmac.getmac.METHODS`. Thus, register the method first. Its position in the list is not important.
 
 .. code-block:: python
 
@@ -480,7 +497,7 @@ Forcing a custom method
 Removing a built-in method
 ==========================
 
-To stop getmac from using a built-in method, for example one that misbehaves on your system, remove it from :data:`~getmac.getmac.METHODS`. As with adding a method, :ref:`reset the type's cache <module-api-reset>` if a lookup of that type already happened.
+To stop the use of a built-in method, remove it from :data:`~getmac.getmac.METHODS`. For example, do this for a method that gives incorrect results on your system. If a lookup of that type occurred already, :ref:`reset the cache of the type <module-api-reset>`, as when you add a method.
 
 .. code-block:: python
 
@@ -506,7 +523,7 @@ Example output on Linux:
 Undoing changes in tests
 ========================
 
-Changes to :data:`~getmac.getmac.METHODS`, :data:`~getmac.getmac.METHOD_CACHE`, :data:`~getmac.getmac.FALLBACK_CACHE` and settings affect the whole process, so tests that make them should undo them afterwards. With pytest, the built-in ``monkeypatch`` fixture can give each test its own copy of the list and caches, and puts the originals back when the test ends:
+Changes to :data:`~getmac.getmac.METHODS`, :data:`~getmac.getmac.METHOD_CACHE`, :data:`~getmac.getmac.FALLBACK_CACHE` and the settings apply to the full process. Thus, a test that makes these changes must undo them after the test. In pytest, the built-in ``monkeypatch`` fixture can give each test its own copy of the list and the caches. At the end of the test, the fixture puts back the original values:
 
 .. code-block:: python
 
@@ -530,4 +547,4 @@ Changes to :data:`~getmac.getmac.METHODS`, :data:`~getmac.getmac.METHOD_CACHE`, 
    def test_fixed_mac_is_used(isolated_getmac):
        assert get_mac_address(interface="eth0") == "02:00:00:00:00:01"
 
-Use ``monkeypatch.setattr(settings, "FORCE_METHOD", ...)`` in the same way to change a setting for one test.
+To change a setting for one test, use ``monkeypatch.setattr(settings, "FORCE_METHOD", ...)`` in the same way.

@@ -2,26 +2,26 @@
 Adding a new method
 ===================
 
-getmac finds MAC addresses using *methods*, which are subclasses of :class:`~getmac.getmac.Method` that implement a technique for getting a MAC, such as running a command or reading a file. Supporting a new command, file, or platform means adding a new method.
+getmac uses *methods* to find MAC addresses. A method is a subclass of :class:`~getmac.getmac.Method` that uses one technique to get a MAC. Examples are to run a command and to read a file. To support a new command, file, or platform, add a new method.
 
-To use a custom method in your own code without changing getmac, see :doc:`module_api` instead. For setting up a development environment and the rules for pull requests, see :doc:`contributing`.
+To use a custom method in your own code without a change to getmac, see :doc:`module_api`. To set up a development environment, and for the rules for pull requests, see :doc:`contributing`.
 
-The examples on this page use a hypothetical ``IpAddrIface`` method, which gets the MAC address of an interface on Linux from the output of ``ip addr show <iface>``. It isn't part of getmac.
+The examples on this page use an example method, ``IpAddrIface``. It is not part of getmac. It gets the MAC address of an interface on Linux from the output of ``ip addr show <iface>``.
 
 
 Collect sample output
 =====================
 
-Method tests run against real command output saved in ``tests/samples/``, so start by capturing output on the platform the method is for. In this context, a "command" would be ``ip addr`` on Linux.
+The method tests use real command output from ``tests/samples/``. Thus, first record the output on the platform of the method. For the example method, the command is ``ip addr`` on Linux.
 
-``scripts/collect_samples.py`` runs the commands that getmac uses on the current platform, and saves the output of each one to a file in ``tests/samples/<platform>_<version>/`` (e.g. ``tests/samples/ubuntu_24.04/``). Exit codes and error messages are logged to ``collect_samples.log`` in the same directory. The script only needs Python, so it can be copied to a machine that doesn't have getmac. A copy outside the repo saves to ``./samples/<platform>_<version>/`` instead (or the directory given with ``--output-root``).
+``scripts/collect_samples.py`` runs the commands that getmac uses on the current platform. It saves the output of each command to a file in ``tests/samples/<platform>_<version>/``, for example ``tests/samples/ubuntu_24.04/``. It writes the exit codes and error messages to ``collect_samples.log`` in the same directory. The script needs only Python. Thus, you can copy it to a machine that does not have getmac. A copy outside the repository saves to ``./samples/<platform>_<version>/``, or to the directory that you give with ``--output-root``.
 
 .. code-block:: shell
 
-   python scripts/collect_samples.py --dry-run  # list what would be collected
-   python scripts/collect_samples.py  # Run the collection
+   python scripts/collect_samples.py --dry-run  # Show the samples, but do not collect them
+   python scripts/collect_samples.py  # Collect the samples
 
-Alternatively, you can run the command by hand and save the output with ``tee``:
+You can also run the command manually, and save the output with ``tee``:
 
 .. code-block:: shell
 
@@ -31,18 +31,18 @@ Alternatively, you can run the command by hand and save the output with ``tee``:
 Guidelines
 ----------
 
-- Samples go in a directory for the OS and version, such as ``ubuntu_18.04``, ``macos_10.12.6`` or ``windows_10``.
-- Files are named after the command line with a ``.out`` extension, with spaces replaced by underscores, e.g. ``arp_-an.out``.
-- Redact MACs, IPs, and hostnames you don't want to be public, but keep the output format intact. Locally administered MACs (``02:00:00:00:00:01``) and `documentation IP ranges <https://www.rfc-editor.org/info/rfc5737/>`__ (``192.0.2.0/24``) make good replacements.
-- Windows samples must go in a directory whose name starts with ``windows``, so ``.gitattributes`` can preserve their Windows line endings (CRLF).
-- Output taken from other projects goes in ``tests/samples/third_party/<project>/``, along with that project's license, and gets credited in the README.
-- You should also capture what the command does for something that doesn't exist, along with the exit code (``echo $?`` when running it by hand). For example, ``ip addr show eth9`` prints ``Device "eth9" does not exist.`` and exits with code 1.
+- Put the samples in a directory for the OS and version, such as ``ubuntu_18.04``, ``macos_10.12.6`` or ``windows_10``.
+- Give each file the name of the command line, with underscores instead of spaces, and a ``.out`` extension. For example: ``arp_-an.out``.
+- Replace the MACs, IPs, and hostnames that you do not want to make public. Do not change the output format. Good replacements are locally administered MACs (``02:00:00:00:00:01``) and `documentation IP ranges <https://www.rfc-editor.org/info/rfc5737/>`__ (``192.0.2.0/24``).
+- Put Windows samples in a directory whose name starts with ``windows``. Then ``.gitattributes`` keeps their Windows line endings (CRLF).
+- Put output from other projects in ``tests/samples/third_party/<project>/``, with the license of that project. Credit the project in the README.
+- Also record the output of the command for an item that does not exist, and the exit code. To see the exit code when you run the command manually, use ``echo $?``. For example, ``ip addr show eth9`` prints ``Device "eth9" does not exist.`` and exits with code 1.
 
 
 Write the method
 ================
 
-Methods currently live in ``getmac/getmac.py``. Add the new class next to the methods with the same :attr:`~getmac.getmac.Method.method_type`. ``getmac/getmac.py`` already imports everything the example needs.
+The methods are in ``getmac/getmac.py``. Add the new class near the methods with the same :attr:`~getmac.getmac.Method.method_type`. ``getmac/getmac.py`` already imports all the items that the example needs.
 
 .. code-block:: python
 
@@ -73,18 +73,18 @@ Methods currently live in ``getmac/getmac.py``. Add the new class next to the me
            regex = r"^\d+: " + re.escape(arg) + r"(?:@\w+)?:.*\n\s+link/\S+ " + consts.MAC_RE_COLON
            return utils.search(regex, output, flags=re.MULTILINE)
 
-Start the docstring with what the method uses and on which platform, and link to useful documentation (if relevant). The docstring appears in the :doc:`API reference <api>` automatically.
+Start the docstring with the command or file that the method uses, and the platform. If useful documentation exists, add a link to it. The :doc:`API reference <api>` shows the docstring automatically.
 
 Class attributes
 ----------------
 
 :attr:`~getmac.getmac.Method.platforms`
-   The platforms the method works on, from :attr:`~getmac.getmac.Method.VALID_PLATFORM_NAMES`. getmac compares these with the detected platform, :attr:`~getmac.variables.Constants.PLATFORM` (the lowercase result of :func:`platform.system`), or with :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM` if it's set. Only list platforms where you've seen the method work.
+   The platforms that the method works on, from :attr:`~getmac.getmac.Method.VALID_PLATFORM_NAMES`. getmac compares these values with the detected platform, :attr:`~getmac.variables.Constants.PLATFORM`. This is the lowercase result of :func:`platform.system`. If :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM` is set, getmac uses that value instead. List only the platforms where you saw the method work.
 
-   ``"other"`` is special. Methods that list it are used on platforms that have no methods of that type of their own.
+   ``"other"`` is a special value. getmac uses the methods that list it on platforms that have no methods of that type.
 
 :attr:`~getmac.getmac.Method.method_type`
-   What the method looks up.
+   The type of lookup that the method does.
 
    - ``ip4``, ``ip6`` and ``ip`` (both) methods are given an IP address and return that host's MAC
    - ``iface`` methods are given an interface name (``"eth0"``) and return its MAC
@@ -93,11 +93,11 @@ Class attributes
    :ref:`module-api-method-types` lists where each type is used.
 
 :attr:`~getmac.getmac.Method.network_request`
-   Set this to :obj:`True` if ``get()`` sends packets on the network, as :class:`~getmac.getmac.ArpingHost` and :class:`~getmac.getmac.CtypesHost` do.
+   Set this to :obj:`True` if ``get()`` sends packets on the network. :class:`~getmac.getmac.ArpingHost` and :class:`~getmac.getmac.CtypesHost` are examples.
 
-The class name matters too. It's what :attr:`~getmac.variables.Settings.FORCE_METHOD` and ``--force-method`` match against (ignoring case), and it shows up in log messages, so renaming a method later can break things for users.
+The class name is also important. :attr:`~getmac.variables.Settings.FORCE_METHOD` and ``--force-method`` use it to find the method, and ignore case. The name also shows in log messages. Thus, a new name for a method in a later release can break the configuration of users.
 
-Follow the existing naming patterns, or use your own if none of the below apply:
+Use the naming patterns below. If none of them apply, use your own name:
 
 - ``...Iface`` for interface lookups
 - ``...Exe`` for Windows executables
@@ -108,43 +108,43 @@ Follow the existing naming patterns, or use your own if none of the below apply:
 test()
 ------
 
-:meth:`~getmac.getmac.Method.test` is a cheap check that the method could work on this system. getmac calls it the first time it needs a method of that type, so it shouldn't run the command or do anything slow.
+:meth:`~getmac.getmac.Method.test` is a fast check that the method can work on this system. getmac calls it the first time that it needs a method of that type. Thus, it must not run the command or do other slow operations.
 
-Common checks are:
+Usual checks are:
 
-- :func:`utils.check_command("ip") <getmac.utils.check_command>`: the command is on the ``PATH`` and executable (a cached wrapper around :func:`shutil.which`).
+- :func:`utils.check_command("ip") <getmac.utils.check_command>`: the command is on the ``PATH`` and you can run it. This function keeps the results of :func:`shutil.which` in a cache.
 - :func:`utils.check_path(path) <getmac.utils.check_path>`: a file or directory exists and is readable.
-- Importing a standard library module inside a ``try`` block, as :class:`~getmac.getmac.FcntlIface` does.
+- An import of a standard library module in a ``try`` block. :class:`~getmac.getmac.FcntlIface` does this.
 
-If ``test()`` raises an exception, it's treated as if it returned :obj:`False`.
+If ``test()`` raises an exception, getmac uses the result :obj:`False`.
 
-Some things can only be found out by running the command, such as which arguments the installed version accepts. Methods like :class:`~getmac.getmac.IpLinkIface` and :class:`~getmac.getmac.ArpVariousArgs` check this on their first ``get()`` call and cache the result.
+Some information is available only when the command runs. An example is the arguments that the installed version accepts. Methods such as :class:`~getmac.getmac.IpLinkIface` and :class:`~getmac.getmac.ArpVariousArgs` check this at their first ``get()`` call, and keep the result in a cache.
 
 get()
 -----
 
-:meth:`~getmac.getmac.Method.get` does the lookup. It returns the MAC address as a string, or :obj:`None` if it wasn't found. The MAC doesn't need to be pretty, since :func:`~getmac.getmac.get_mac_address` passes it through :func:`~getmac.utils.clean_mac`.
+:meth:`~getmac.getmac.Method.get` does the lookup. It returns the MAC address as a string, or :obj:`None` if it does not find the MAC. The format of the MAC is not important, because :func:`~getmac.getmac.get_mac_address` cleans it with :func:`~getmac.utils.clean_mac`.
 
-``default_iface`` methods don't use the argument, so they're declared as ``def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002``.
+``default_iface`` methods do not use the argument. Thus, declare them as ``def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002``.
 
-Return :obj:`None` when the interface or host isn't there.
+Return :obj:`None` when the interface or host does not exist.
 
-Raise an exception or set ``self.unusable = True`` when the method itself doesn't work on this system (see :ref:`module-api-fallback`).
+If the method does not work on this system, raise an exception or set ``self.unusable = True``. See :ref:`module-api-fallback`.
 
 Helpers
 -------
 
-- :func:`utils.popen(command, args) <getmac.utils.popen>` runs a command and returns its output (stdout only) as a string. ``args`` is a single string. A non-zero exit code raises :class:`~subprocess.CalledProcessError`. Always call it as ``utils.popen(...)`` so tests can patch ``getmac.utils.popen``.
-- :func:`utils.read_file(path) <getmac.utils.read_file>` returns a file's contents, or :obj:`None` if it can't be read.
+- :func:`utils.popen(command, args) <getmac.utils.popen>` runs a command and returns its output (stdout only) as a string. ``args`` is one string. An exit code that is not zero raises :class:`~subprocess.CalledProcessError`. Always call it as ``utils.popen(...)``, so that tests can patch ``getmac.utils.popen``.
+- :func:`utils.read_file(path) <getmac.utils.read_file>` returns the contents of a file. If it cannot read the file, it returns :obj:`None`.
 - :func:`utils.search(regex, text) <getmac.utils.search>` returns the first capture group of the first match, or :obj:`None`. Use non-capturing groups (``(?:...)``) for everything except the MAC address.
 - :attr:`consts.MAC_RE_COLON <getmac.variables.Constants.MAC_RE_COLON>`, :attr:`consts.MAC_RE_DASH <getmac.variables.Constants.MAC_RE_DASH>` (Windows style), and :attr:`consts.MAC_RE_SHORT <getmac.variables.Constants.MAC_RE_SHORT>` (allows single-digit octets, like ``58:6d:8f:7:c9:94``) match a MAC address in a single capture group.
-- Log with ``gvars.log``, and wrap detailed debug messages in ``if settings.DEBUG:``.
+- Use ``gvars.log`` for log messages. Put detailed debug messages in an ``if settings.DEBUG:`` block.
 
-When parsing output:
+When you parse output:
 
-- Escape the argument with :func:`re.escape` before putting it in a regular expression.
-- Make sure a partial argument can't match: ``eth`` must not match ``eth0``, and ``10.0.0.1`` must not match ``10.0.0.10``.
-- Don't let a match run on into the next interface or host in the output, especially with :data:`re.DOTALL`.
+- Use :func:`re.escape` on the argument before you put it in a regular expression.
+- Make sure that a partial argument does not match. ``eth`` must not match ``eth0``, and ``10.0.0.1`` must not match ``10.0.0.10``.
+- Make sure that a match does not continue into the next interface or host in the output. This is important with :data:`re.DOTALL`.
 
 
 Register it in METHODS
@@ -162,16 +162,19 @@ Add the class to ``METHODS``, the list after the method classes in ``getmac/getm
        ...
    ]
 
-The position in the list matters. getmac uses the first method of a type that passes ``test()`` on the current platform, in ``METHODS`` order, and keeps the others that pass as fallbacks (see :ref:`module-api-choosing`).
+The position in the list is important. getmac uses the first method of a type that passes ``test()`` on the current platform, in the order of ``METHODS``. It keeps the other methods that pass as fallbacks. See :ref:`module-api-choosing`.
 
-Put faster and more reliable methods first: reading a file or calling a library before running a command (which spawns a process and is slow), and specific commands before generic catch-alls.
+Put faster and more reliable methods first:
+
+- Put methods that read a file or call a library before methods that run a command. A command starts a new process, which is slow.
+- Put methods for specific commands before general methods.
 
 Write tests
 ===========
 
-Method tests go in ``tests/test_methods.py``. They must not run real commands or depend on what's installed on the system. Instead, load the sample with the ``get_sample`` fixture and patch the appropriate functions with ``mocker.patch``.
+Put the method tests in ``tests/test_methods.py``. The tests must not run real commands. They must not depend on the software that is installed on the system. Load the sample with the ``get_sample`` fixture instead, and patch the necessary functions with ``mocker.patch``.
 
-Most methods have two tests: one parametrized over the samples, and one for edge cases. ``tests/test_methods.py`` already imports everything these need. Additionally, the sample tests are usually wrapped in ``benchmark(...)`` to run performance benchmarks (when enabled, e.g. ``pdm run benchmark``).
+Most methods have two tests. One test is parametrized over the samples, and one test is for edge cases. ``tests/test_methods.py`` already imports all the items that these tests need. The sample tests usually call the method through ``benchmark(...)``. This runs performance benchmarks when you enable them, for example with ``pdm run benchmark``.
 
 .. code-block:: python
 
@@ -212,16 +215,16 @@ Most methods have two tests: one parametrized over the samples, and one for edge
        with pytest.raises(CalledProcessError):
            getmac.IpAddrIface().get("eth0")
 
-Things to cover:
+The tests must cover these items:
 
-- The expected value is what ``get()`` returns, before :func:`~getmac.utils.clean_mac`.
+- The expected value is the value that ``get()`` returns, before :func:`~getmac.utils.clean_mac`.
 - Partial and wrong names or addresses return :obj:`None`.
 - ``test()`` checks the right command or path (``assert_called_once_with``).
-- Empty output, exit codes, and anything that sets ``unusable``.
+- Empty output, exit codes, and all conditions that set ``unusable``.
 
-Tests run in parallel and in random order, so only change global state (settings, caches, platform flags in ``consts``) with ``mocker``, which undoes the change after the test, e.g. ``mocker.patch.object(consts, "DARWIN", True)``.
+The tests run in parallel and in a random order. Thus, change global state only with ``mocker``, which undoes the change after the test. Global state includes the settings, the caches, and the platform flags in ``consts``. For example: ``mocker.patch.object(consts, "DARWIN", True)``.
 
-To run just the new tests:
+To run only the new tests:
 
 .. code-block:: shell
 
@@ -237,18 +240,18 @@ Try it on a real system
 
 ``-dddd`` logs the command and its raw output.
 
-``-dd`` logs which methods were considered, which passed ``test()``, and which one was chosen:
+``-dd`` logs the methods that getmac examined, the methods that passed ``test()``, and the method that getmac selected:
 
 .. code-block:: shell
 
    pdm run getmac -dd -i ens33
 
-``--override-platform`` makes getmac choose methods as if it were running on a different platform.
+``--override-platform`` makes getmac select methods for a different platform.
 
 
 Finish up
 =========
 
-- Add the command, file, or library to "Commands and techniques by platform" in ``README.md``, and update "Platforms currently supported" if needed.
-- Add an entry to ``CHANGELOG.md`` under "Added" for the upcoming release, in plain language.
-- Follow the checklist in :doc:`contributing` and open a pull request!
+- Add the command, file, or library to :doc:`platforms` and to "Commands and techniques by platform" in ``README.md``. If necessary, also update the supported platforms in the same files.
+- Add an entry to ``CHANGELOG.md``, under "Added" for the next release. Use plain language.
+- Do the checklist in :doc:`contributing`, and open a pull request.
