@@ -1,0 +1,6 @@
+# Code owners: GitHub asks them to review each pull request that changes the files they own,
+# and the branch ruleset on main requires a code owner's approval before a pull request merges.
+# GOVERNANCE.md ("Code owners") says who is a code owner and how to change this file.
+# The last matching line wins, so keep the catch-all line first.
+
+*       @GhostofGoes

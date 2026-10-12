@@ -1,4 +1,6 @@
 # -*- mode: ruby -*-
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
 # vi: set ft=ruby :
 
 # Vagrant Documentation: https://docs.vagrantup.com/v2/

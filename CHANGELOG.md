@@ -8,6 +8,8 @@
 ## 1.0.0 (TBD)
 
 ### Added
+* Project governance ([GOVERNANCE.md](https://github.com/GhostofGoes/getmac/blob/main/GOVERNANCE.md)), a roadmap ([ROADMAP.md](https://github.com/GhostofGoes/getmac/blob/main/ROADMAP.md)), an [architecture](https://ghostofgoes.github.io/getmac/architecture.html) page, and a security [assurance case](https://ghostofgoes.github.io/getmac/assurance.html), as part of working toward the OpenSSF Best Practices silver and gold badges. The security policy now says what getmac does and doesn't do on your system and how vulnerability reports are handled.
+* OpenSSF Scorecard and zizmor (GitHub Actions workflow audit) run in CI, and every source file has SPDX copyright and license headers.
 * Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
 * Support Python 3.10 - 3.14
 * New function, `getmac.get_default_interface()`, which returns the name of the system's default interface.
@@ -26,6 +28,7 @@
 * Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [#90](https://github.com/GhostofGoes/getmac/issues/90))
 
 ### Changed
+* The `ip` and `ip6` arguments to `get_mac_address()` (and `--ip`/`--ip6` on the command line) must now be valid IP addresses of the right family when given as strings. A string that isn't one, such as `192.168.0` or `fe80::zz`, is rejected with a logged error and `None` before any command runs, instead of being passed to commands like `arp` as is. Scoped IPv6 addresses (`fe80::1%eth0`) are still accepted.
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
     * **NOTE: This will require code changes if your code modifies getmac settings variables**
 * **BREAKING CHANGE**: `RuntimeError` is now raised in cases where no methods are found matching the type of request and platform, or if all matching methods fail to test.

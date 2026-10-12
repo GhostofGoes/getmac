@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 # Ignore file for packaging/Dockerfile. The build context is the repository root.
 # Exclude everything, then include only the files needed to build the package.
 # README.md and LICENSE are needed because pyproject.toml references them.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 name: CI
 on:
   push:
@@ -107,8 +110,9 @@ jobs:
       - name: Show platform and environment information
         run: pdm run python -c "import os, platform, sys; print(sys.version); print(platform.python_implementation(), platform.machine()); print('sys.platform:', sys.platform, 'os.name:', os.name); print(platform.uname())"
       # TODO: fix benchmark results (maybe a separate Job?)
+      # Coverage of statements and branches must stay at 90% or more (OpenSSF gold criteria)
       - name: Run tests
-        run: pdm run test
+        run: pdm run test --cov-fail-under=90
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7
         with:
           fail_ci_if_error: false

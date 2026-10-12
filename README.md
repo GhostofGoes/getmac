@@ -4,6 +4,7 @@
 [![GitHub Actions Pipeline Status](https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostofGoes/getmac/actions)
 ![Python Version](https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14-blue.svg)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9388/badge)](https://www.bestpractices.dev/projects/9388)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/GhostofGoes/getmac/badge)](https://scorecard.dev/viewer/?uri=github.com/GhostofGoes/getmac)
 [![Weekly PyPI downloads](https://pepy.tech/badge/getmac/week)](https://pepy.tech/project/getmac)
 [![PyPI downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
 [![PDM-managed](https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json)](https://pdm-project.org)
@@ -272,6 +273,8 @@ In Summer 2020, the code was significantly refactored, moving to a class-based s
 Contributors are more than welcome! See the [contribution guide](https://ghostofgoes.github.io/getmac/contributing.html) to get started, and checkout the [todo list](https://github.com/GhostofGoes/getmac/blob/main/docs/misc_docs/TODO.md) for a full list of tasks and bugs.
 
 Before submitting a PR, please make sure you've completed the [pull request checklist](https://ghostofgoes.github.io/getmac/contributing.html#checklist-before-submitting-a-pull-request)!
+
+How the project is run is in [GOVERNANCE.md](https://github.com/GhostofGoes/getmac/blob/main/GOVERNANCE.md), and the plans for the next year (and what the project won't do) are in [ROADMAP.md](https://github.com/GhostofGoes/getmac/blob/main/ROADMAP.md). The [architecture](https://ghostofgoes.github.io/getmac/architecture.html) page explains how getmac is put together, and the [security policy](https://github.com/GhostofGoes/getmac/blob/main/SECURITY.md) and [assurance case](https://ghostofgoes.github.io/getmac/assurance.html) explain what it does on your system.
 
 The [Python Discord server](https://discord.gg/python) is a good place to ask questions or discuss the project (handle: `@knownerror`).
 

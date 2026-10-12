@@ -5,6 +5,10 @@ Thanks for taking an interest in this awesome little project. We love to bring n
 ## Resources
 * Features suggestions and bug reports: [GitHub](https://github.com/GhostofGoes/getmac/issues)
 * Discussion and general questions/help: [GitHub discussions](https://github.com/GhostofGoes/getmac/discussions) or the [Python Discord server](https://discord.gg/python)
+* A first task: issues labelled [good first issue](https://github.com/GhostofGoes/getmac/labels/good%20first%20issue) are small, self-contained tasks for new contributors. The "Good for beginners" section below has more.
+* Security problems: don't open a public issue, follow the [security policy](https://github.com/GhostofGoes/getmac/blob/main/SECURITY.md) instead.
+* How the project is run: [GOVERNANCE.md](https://github.com/GhostofGoes/getmac/blob/main/GOVERNANCE.md) says who decides and who has which role, and how code review works. [ROADMAP.md](https://github.com/GhostofGoes/getmac/blob/main/ROADMAP.md) lists the plans for the next year, and what the project won't do.
+* How getmac works: the [architecture](https://ghostofgoes.github.io/getmac/architecture.html) page explains the design, and the [assurance case](https://ghostofgoes.github.io/getmac/assurance.html) explains what it does on a system and why that's safe.
 
 
 ## Code requirements
@@ -18,10 +22,25 @@ Your code *must*:
 * Adhere to the [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/main/CODE_OF_CONDUCT.md)
 * Adhere to the [AI policy below](#ai-policy)
 * Branch names and commits must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) notation, e.g. a branch should be `feat-my-feature`, not `patch-1`, and commits should be `feat: myfeature description`, not `add some cool thing check it out`.
+* Commits must be signed off (see [Developer Certificate of Origin](#developer-certificate-of-origin) below)
+* New source files start with the two SPDX comment lines the other files have (`SPDX-FileCopyrightText` and `SPDX-License-Identifier: MIT`). A test checks this.
+* Not move a trust boundary (run a new kind of command, read a new file, send new network traffic, add a dependency) without updating the [security policy](https://github.com/GhostofGoes/getmac/blob/main/SECURITY.md) and the [assurance case](https://ghostofgoes.github.io/getmac/assurance.html) in the same pull request
+
+Tests are required for new functionality, and a bug fix must come with a regression test that fails without the fix. This is a project policy, not a suggestion: a pull request that adds functionality without tests won't be merged. Tests go in `tests/`, and parsing changes are tested against real command output in `tests/samples/` (see "Sample collection" below).
 
 Most of these requirements are checked in CI (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Ruff's formatter](https://docs.astral.sh/ruff/formatter/). You can write whatever format you want, as long as you run the formatter before pushing, you're good (`pdm run format`).
 
 Please be respectful and follow the [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/main/CODE_OF_CONDUCT.md). Memes, references, and jokes are OK. Be nice, we're all human (well, most of us), and code is the great equalizer.
+
+### Developer Certificate of Origin
+
+By making a contribution, you certify that you wrote it or have the right to submit it under the MIT license, as the [Developer Certificate of Origin](https://developercertificate.org/) (DCO) says. To agree, add a `Signed-off-by` line with your real name and email address to every commit. Git does this for you with the `-s` flag:
+
+```bash
+git commit -s -m "fix: handle empty arp output"
+```
+
+The line looks like `Signed-off-by: Jane Doe <jane@example.com>`. A pull request with commits that aren't signed off will be asked to add the sign-off before it's merged. Commits authored with an AI agent carry the human contributor's sign-off, plus the AI co-authorship the AI policy requires.
 
 ### AI Policy
 
@@ -48,8 +67,9 @@ It's a (hopefully) straightforward and easy to follow policy. Therefore, if you 
 
 ## Checklist before a Pull Request will be merged
 * [ ] *All* tests pass in GitHub Actions
-* [ ] Code has been reviewed by at least one maintainer
-* [ ] Coverage has NOT decreased
+* [ ] Code has been reviewed by at least one maintainer (what the review checks is in [GOVERNANCE.md](https://github.com/GhostofGoes/getmac/blob/main/GOVERNANCE.md#code-review))
+* [ ] Coverage has NOT decreased (CI fails below 90% statement and branch coverage)
+* [ ] Every review comment has been answered or resolved, and the branch is up to date with `main`
 
 
 ## Where to contribute

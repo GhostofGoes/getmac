@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 """
 Get the MAC address of remote hosts or network interfaces.
 
@@ -1872,6 +1875,16 @@ def get_mac_address(
                 gvars.log.debug(traceback.format_exc())
             return None
 
+    # Check that address strings are addresses of the right family, before any
+    # method uses them as a command argument. A hostname was already resolved
+    # to a dotted decimal address above.
+    if ip is not None:
+        try:
+            IPv4Address(ip)
+        except ValueError:
+            gvars.log.error(f"Invalid IPv4 address for 'ip' argument: '{ip}'")
+            return None
+
     if ip6 is not None:  # "is not None" check makes mypy happier
         if not socket.has_ipv6:
             # TODO: raise exception instead of returning None?
@@ -1894,8 +1907,10 @@ def get_mac_address(
         elif not isinstance(ip6, str):
             raise ValueError(f"Unknown type for 'ip6' argument: '{ip6.__class__.__name__}'")
 
-        if ":" not in ip6:
-            gvars.log.error(f"Invalid IPv6 address (no ':'): {ip6}")
+        try:
+            IPv6Address(ip6)
+        except ValueError:
+            gvars.log.error(f"Invalid IPv6 address for 'ip6' argument: '{ip6}'")
             return None
 
     mac = None
