@@ -81,6 +81,7 @@
 * Added test samples from GitHub's macOS and Windows runners, collected with `scripts/collect_samples.py`.
 * Added test samples from two third-party projects, significantly increasing test coverage. To maintain license compatibility, these samples were checked into git as-is, and are not included in the source distribution.
 * `settings` and `__version__` are now published in `getmac.__all__`, for type checkers.
+* Added an [OpenSSF Scorecard](https://scorecard.dev) workflow that publishes supply-chain security results to the code scanning dashboard and the public Scorecard API, and a Scorecard badge to the README.
 
 ## 0.9.6 (10/03/2026)
 
