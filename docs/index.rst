@@ -1,19 +1,24 @@
-getmac is a pure-Python package to get the MAC addresses of network interfaces and hosts on the local network.
+getmac is a pure-Python package. It gets the MAC addresses of network interfaces and of hosts on the local network.
 
-It provides a platform-independent interface to get the MAC addresses of:
+getmac gets the MAC addresses of these items on all supported platforms:
 
-- System network interfaces (by interface name)
-- Remote hosts on the local network (by IPv4/IPv6 address or hostname)
+- Network interfaces on this system, by interface name
+- Remote hosts on the local network, by IPv4 address, IPv6 address, or hostname
 
-It provides a Python function, :func:`~getmac.getmac.get_mac_address`, and a command-line interface, :ref:`getmac <args>`.
+getmac has a Python function, :func:`~getmac.getmac.get_mac_address`, and a command-line interface, :ref:`getmac <args>`.
 
 .. toctree::
    :hidden:
    :titlesonly:
 
    installation
+   upgrading
    usage
    cli
+   platforms
+   docker
+   troubleshooting
+   glossary
    api
    module_api
    adding_methods

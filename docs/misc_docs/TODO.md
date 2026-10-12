@@ -238,6 +238,8 @@ methods (list): Optional list of methods to use for MAC address lookup.
 ## Documentation
 - [x] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc. (`docs/module_api.rst`)
 - [x] Write a short guide on how to add and test a new method (`docs/adding_methods.rst`)
+- [x] Rewrite the Sphinx pages and README prose in plain, ASD-STE100-style English, and add upgrading, platforms, Docker, troubleshooting, and glossary pages
+- [ ] Apply the same ASD-STE100-style pass to the docstrings (they make up the API reference page), `CONTRIBUTING.md`, and `SECURITY.md`
 
 ## Dev
 - [x] ~~Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released~~ Not needed: getmac ships its own type hints and a `py.typed` marker (PEP 561), and typeshed doesn't take stubs for packages that do.
