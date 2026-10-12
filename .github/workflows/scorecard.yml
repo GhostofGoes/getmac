@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 # OpenSSF Scorecard supply-chain security analysis: https://github.com/ossf/scorecard-action
 # Results are published to the Security tab (code scanning) and to the
 # public Scorecard API, which backs the badge in README.md.
