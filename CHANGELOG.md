@@ -9,7 +9,7 @@
 
 ### Added
 * Project governance ([GOVERNANCE.md](https://github.com/GhostofGoes/getmac/blob/main/GOVERNANCE.md)), a roadmap ([ROADMAP.md](https://github.com/GhostofGoes/getmac/blob/main/ROADMAP.md)), an [architecture](https://ghostofgoes.github.io/getmac/architecture.html) page, and a security [assurance case](https://ghostofgoes.github.io/getmac/assurance.html), as part of working toward the OpenSSF Best Practices silver and gold badges. The security policy now says what getmac does and doesn't do on your system and how vulnerability reports are handled.
-* OpenSSF Scorecard and zizmor (GitHub Actions workflow audit) run in CI, and every source file has SPDX copyright and license headers.
+* zizmor (a GitHub Actions workflow security audit) runs in CI, and every source file has SPDX copyright and license headers.
 * Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
 * Support Python 3.10 - 3.14
 * New function, `getmac.get_default_interface()`, which returns the name of the system's default interface.
