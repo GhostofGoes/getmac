@@ -9,7 +9,7 @@ from ipaddress import (
     IPv6Interface,
     IPv6Network,
 )
-from subprocess import CalledProcessError
+from subprocess import CalledProcessError, TimeoutExpired
 
 import pytest
 
@@ -330,6 +330,8 @@ def test_get_by_method_force_method(mocker):
         # Unexpected errors, e.g. the command was removed after the method was tested
         (FileNotFoundError(2, "No such file or directory"), True),
         (CalledProcessError(returncode=255, cmd="ip neighbor show 192.168.16.2"), True),
+        # The command took longer than settings.COMMAND_TIMEOUT
+        (TimeoutExpired(cmd="ip neighbor show 192.168.16.2", timeout=15), True),
         # Exit code 1 usually means the lookup failed, not the method
         # (e.g. "ifconfig eth8" if there's no eth8), so the method is kept
         (CalledProcessError(returncode=1, cmd="ip neighbor show 192.168.16.2"), False),

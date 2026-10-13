@@ -1,9 +1,10 @@
 import sys
+from subprocess import TimeoutExpired
 
 import pytest
 
 from getmac import utils
-from getmac.variables import consts, gvars
+from getmac.variables import consts, gvars, settings
 
 MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
 
@@ -48,19 +49,47 @@ def test_call_proc(mocker):
     mocker.patch("subprocess.DEVNULL", "DEVNULL")
     mocker.patch.object(gvars, "ENV", "ENV")
 
+    mocker.patch.object(settings, "COMMAND_TIMEOUT", 15.0)
+
     mocker.patch.object(consts, "WINDOWS", True)
     m = mocker.patch("subprocess.check_output", return_value="WINSUCCESS")
     assert utils.call_proc("CMD", "arg") == "WINSUCCESS"
-    m.assert_called_once_with("CMD arg", stderr="DEVNULL", env="ENV")
+    m.assert_called_once_with('"CMD" arg', stderr="DEVNULL", env="ENV", timeout=15.0)
 
     mocker.patch.object(consts, "WINDOWS", False)
     m = mocker.patch("subprocess.check_output", return_value="YAY")
     assert utils.call_proc("CMD", "arg1 arg2") == "YAY"
-    m.assert_called_once_with(["CMD", "arg1", "arg2"], stderr="DEVNULL", env="ENV")
+    m.assert_called_once_with(["CMD", "arg1", "arg2"], stderr="DEVNULL", env="ENV", timeout=15.0)
 
     # check_output() returns bytes, since it isn't run in text mode
     mocker.patch("subprocess.check_output", return_value=b"BYTES")
     assert utils.call_proc("CMD", "arg") == "BYTES"
+
+
+def test_call_proc_windows_path_with_spaces(mocker):
+    """The path is quoted, so CreateProcess doesn't run "C:\\Program.exe" instead."""
+    mocker.patch.object(consts, "WINDOWS", True)
+    m = mocker.patch("subprocess.check_output", return_value=b"")
+    utils.call_proc(r"C:\Program Files\Tools\arp.exe", "-a 192.0.2.1")
+    assert m.call_args.args[0] == r'"C:\Program Files\Tools\arp.exe" -a 192.0.2.1'
+
+
+@pytest.mark.parametrize(("setting", "expected"), [(5.0, 5.0), (0, None), (None, None)])
+def test_call_proc_timeout_setting(mocker, setting, expected):
+    mocker.patch.object(settings, "COMMAND_TIMEOUT", setting)
+    mocker.patch.object(consts, "WINDOWS", False)
+    m = mocker.patch("subprocess.check_output", return_value=b"")
+    utils.call_proc("CMD", "arg")
+    assert m.call_args.kwargs["timeout"] == expected
+
+
+# On Windows, a virtual environment's python.exe is a launcher for the real one, and the
+# child it starts would keep the output pipe open (and the test waiting) after the timeout
+@pytest.mark.skipif(sys.platform == "win32", reason="The venv launcher outlives the timeout")
+def test_call_proc_timeout_stops_command(mocker):
+    mocker.patch.object(settings, "COMMAND_TIMEOUT", 0.1)
+    with pytest.raises(TimeoutExpired):
+        utils.call_proc(sys.executable, '-c "import time; time.sleep(10)"')
 
 
 def test_call_proc_decode(mocker):

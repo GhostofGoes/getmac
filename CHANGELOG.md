@@ -9,7 +9,7 @@
 
 ### Added
 * Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
-* Support Python 3.10 - 3.14
+* Support Python 3.10 - 3.15
 * New function, `getmac.get_default_interface()`, which returns the name of the system's default interface.
 * Support for [ipaddress](https://docs.python.org/3/library/ipaddress.html) objects from the Python standard library: `IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`
     - These can be used with the `ip` and `ip6` arguments to `get_mac_address()`
@@ -24,6 +24,7 @@
     * Added platform detection for HP-UX
 * New setting, `settings.ARP_TIMEOUT` (`--arp-timeout` on the command line). After sending the UDP packet to populate the ARP/NDP table, getmac keeps checking it for the host for up to this many seconds, for hosts that are slow to reply. It's off (`0`) by default. (Issue [#101](https://github.com/GhostofGoes/getmac/issues/101))
 * Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [#90](https://github.com/GhostofGoes/getmac/issues/90))
+* New setting, `settings.COMMAND_TIMEOUT`. Commands that getmac runs (such as `arp` or `ipconfig.exe`) are stopped if they take longer than this many seconds (15 by default), and the next method is tried. Before, a command that never finished made the lookup hang forever.
 
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
@@ -55,6 +56,7 @@
 * Fixed getmac's own `getmac` command being run instead of Windows' `getmac.exe` when getmac is installed in a virtual environment.
 * Fixed `IfconfigEther` (macOS) running `ifconfig` twice on the first lookup.
 * Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91)).
+* Windows: the path of each command getmac runs is now quoted. Before, a path with a space in it (e.g. `C:\Program Files\...`) could make Windows run a different program, such as `C:\Program.exe`.
 * Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95)).
 
 ### Removed
@@ -75,6 +77,8 @@
 * Use [Ruff's formatter](https://docs.astral.sh/ruff/formatter/) instead of Black and isort
 * Updated development dependencies to their latest versions (pytest 8/9, Sphinx 9, mypy 2, etc.)
 * Updated GitHub Actions and pinned them to commit SHAs, and added `pdm run update-actions` to update the pins.
+* mypy type checks the package in strict mode, and every `# type: ignore` comment now specifies the error being ignored.
+* Stricter pytest settings (unknown markers and settings are errors, and so are passing `xfail` tests), and more ruff rules (refurb, Perflint, flake8-logging, flynt).
 * Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
 * CI tests on PyPy 3.10 and 3.11.
 * 100% code coverage! (a significant milestone for this project)

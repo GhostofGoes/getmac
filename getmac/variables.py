@@ -7,7 +7,7 @@ import ntpath
 import os
 import platform
 import sys
-from typing import Final
+from typing import Final, Optional
 
 
 class VarsClass:
@@ -63,6 +63,18 @@ class Settings(VarsClass):
 
     This doesn't apply when getmac sends an ARP request itself and waits for the reply
     instead (:class:`~getmac.getmac.ArpingHost` or :class:`~getmac.getmac.CtypesHost`).
+    """
+
+    COMMAND_TIMEOUT: Optional[float] = 15.0
+    """
+    How long to wait for a command that getmac runs (e.g. ``arp`` or ``ipconfig.exe``)
+    to finish, in seconds. A command that takes longer is stopped, and the method that
+    ran it is treated as failed, so the next method is tried.
+
+    This keeps a lookup from hanging forever on a command that never exits.
+    Commands usually finish in well under a second, but some, such as ``arp`` without
+    ``-n`` on macOS, can be slow due to DNS lookups.
+    :obj:`None` or ``0`` waits for as long as the command takes.
     """
 
 
