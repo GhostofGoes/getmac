@@ -228,7 +228,10 @@ cmd = "bash packaging/build-docker.sh"
 [tool.pytest.ini_options]
 testpaths = "tests"
 norecursedirs = ".github getmac samples scripts .git .tox .vagrant .idea .vscode dist build *.egg .* .venv"
-addopts = "--tb=short"
+# -ra: summarize skipped and failed tests at the end. Typos in marker names and in this
+# configuration are errors, and an "xfail" test that passes fails the run.
+addopts = "--tb=short -ra --strict-markers --strict-config"
+xfail_strict = true
 
 
 # --- Coverage configuration ---
@@ -325,6 +328,10 @@ select = [
     "PLR",  # Pylint - Refactor
     "PLW",  # Pylint - Warnings
     "UP",   # pyupgrade
+    "FURB", # refurb
+    "PERF", # Perflint
+    "LOG",  # flake8-logging
+    "FLY",  # flynt
     "RUF",  # Ruff-specific rules
 ]
 
@@ -342,7 +349,6 @@ ignore = [
     "PLR0915",
     "PLR0912",
     "PLR2004",
-    "UP031",
 ]
 
 [tool.ruff.lint.per-file-ignores]

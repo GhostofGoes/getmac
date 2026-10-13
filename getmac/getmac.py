@@ -430,7 +430,7 @@ class ArpingHost(Method):
                 command_output = utils.popen("arping", f"{self._iputils_args} {arg}")
                 if command_output:
                     return utils.search(
-                        r" from %s \[(%s)\]" % (re.escape(arg), consts.MAC_RE_COLON),
+                        rf" from {re.escape(arg)} \[({consts.MAC_RE_COLON})\]",
                         command_output,
                     )
             else:
@@ -625,7 +625,7 @@ class FcntlIface(Method):
             # 0x8927 = SIOCGIFHWADDR, get the hardware (MAC) address
             info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15]))
 
-        return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
+        return ":".join(f"{byte:02x}" for byte in info[18:24])
 
 
 class GetmacExe(Method):
@@ -1942,7 +1942,7 @@ def get_mac_address(
             if settings.DEBUG:
                 gvars.log.debug(
                     f"Attempting to populate ARP table with UDP packet "
-                    f"to {ip if ip else ip6}:{settings.PORT}"
+                    f"to {ip or ip6}:{settings.PORT}"
                 )
 
             if ip:

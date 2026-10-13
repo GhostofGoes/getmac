@@ -78,6 +78,7 @@
 * Updated development dependencies to their latest versions (pytest 8/9, Sphinx 9, mypy 2, etc.)
 * Updated GitHub Actions and pinned them to commit SHAs, and added `pdm run update-actions` to update the pins.
 * mypy type checks the package in strict mode, and every `# type: ignore` comment now specifies the error being ignored.
+* Stricter pytest settings (unknown markers and settings are errors, and so are passing `xfail` tests), and more ruff rules (refurb, Perflint, flake8-logging, flynt).
 * Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
 * CI tests on PyPy 3.10 and 3.11.
 * 100% code coverage! (a significant milestone for this project)
