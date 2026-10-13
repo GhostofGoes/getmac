@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
 
 sudo pkg_add python-2.7.15p0 python-3.6.6p1 \
      py-pip-9.0.3 py3-pip-9.0.3 \

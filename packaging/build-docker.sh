@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 # Build the getmac Docker image from packaging/Dockerfile, with the version,
 # git commit, and build time labels filled in. It can be run from any directory.
 #

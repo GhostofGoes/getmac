@@ -27,6 +27,7 @@ Please select the type of change your pull request introduces:
 - [ ] This PR follows the [Contributing Guide](https://github.com/GhostofGoes/getmac/blob/main/CONTRIBUTING.md).
 - [ ] I have checked that there aren't other open [pull requests](https://github.com/GhostofGoes/getmac/pulls) for the same change.
 - [ ] My branch name, commits, and PR title follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) notation.
+- [ ] My commits are signed off (`git commit -s`), per the [Developer Certificate of Origin](https://github.com/GhostofGoes/getmac/blob/main/CONTRIBUTING.md#developer-certificate-of-origin).
 - [ ] I have included no sensitive information in my code or the PR, including in any command output samples (redact MAC addresses, IP addresses, or hostnames you don't want to be public).
 - [ ] If AI was used, ensure this PR complies with the [AI policy](https://github.com/GhostofGoes/getmac/blob/main/CONTRIBUTING.md#ai-policy): commits have AI co-authorship, the description notes AI use, and I (the human) have reviewed all non-test changes.
 

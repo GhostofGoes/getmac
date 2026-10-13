@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 [build-system]
 requires = ["pdm-backend>=2.4.0"]
 build-backend = "pdm.backend"
@@ -183,6 +186,7 @@ cmd = """
 pytest
   --benchmark-disable
   --cov=getmac
+  --cov-branch
   --cov-report term
   --cov-report html
   --cov-report xml
@@ -229,6 +233,8 @@ cmd = "bash packaging/build-docker.sh"
 # --- Pytest configuration ---
 [tool.pytest.ini_options]
 testpaths = "tests"
+# Warnings are errors, so deprecations in Python or in getmac are caught by the tests
+filterwarnings = ["error"]
 norecursedirs = ".github getmac samples scripts .git .tox .vagrant .idea .vscode dist build *.egg .* .venv"
 # -ra: summarize skipped and failed tests at the end. Typos in marker names and in this
 # configuration are errors, and an "xfail" test that passes fails the run.

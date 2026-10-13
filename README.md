@@ -274,6 +274,8 @@ Contributors are more than welcome! See the [contribution guide](https://ghostof
 
 Before submitting a PR, please make sure you've completed the [pull request checklist](https://ghostofgoes.github.io/getmac/contributing.html#checklist-before-submitting-a-pull-request)!
 
+How the project is run is in [GOVERNANCE.md](https://github.com/GhostofGoes/getmac/blob/main/GOVERNANCE.md), and the plans for the next year (and what the project won't do) are in [ROADMAP.md](https://github.com/GhostofGoes/getmac/blob/main/ROADMAP.md). The [architecture](https://ghostofgoes.github.io/getmac/architecture.html) page explains how getmac is put together, and the [security policy](https://github.com/GhostofGoes/getmac/blob/main/SECURITY.md) and [assurance case](https://ghostofgoes.github.io/getmac/assurance.html) explain what it does on your system.
+
 The [Python Discord server](https://discord.gg/python) is a good place to ask questions or discuss the project (handle: `@knownerror`).
 
 ## Contributors

@@ -17,7 +17,11 @@ It provides a Python function, :func:`~getmac.getmac.get_mac_address`, and a com
    api
    module_api
    adding_methods
+   architecture
    changelog
    contributing
+   governance
+   roadmap
    security
+   assurance
    code_of_conduct

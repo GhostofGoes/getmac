@@ -14,9 +14,9 @@ CI publishes releases to PyPI with [Trusted Publishing](https://docs.pypi.org/tr
 ```bash
 pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
-1. Tag the release commit with the version (no `v` prefix) and push the tag:
+1. Tag the release commit with the version (no `v` prefix), sign the tag with your GPG key, and push the tag. Signed tags let anyone check that a release tag was made by the maintainer (`git verify-tag 1.0.0`):
 ```bash
-git tag 1.0.0
+git tag -s 1.0.0 -m "getmac 1.0.0"
 git push origin 1.0.0
 ```
 1. CI runs the checks, builds the sdist (`.tar.gz`) and wheel (`.whl`), creates build provenance attestations for them, and publishes them to PyPI (the `publish-pypi` job in `ci.yml`). The Docker workflow publishes the container image for the tag at the same time.
@@ -34,6 +34,8 @@ pdm run manpage
     a) The relevant section of the CHANGELOG in the body
     b) The source and binary wheels (the `python-package-distributions` artifact of the tag's CI run)
     c) The manpage (`getmac.1`)
+
+1. Never move or delete a release tag. A bad release is fixed by the next patch version, and yanked on PyPI if it must not be installed.
 
 ## Publishing manually
 Only if CI can't publish the release. This needs [twine](https://twine.readthedocs.io/) 6.1.0 or newer, and a `~/.pypirc` file with a PyPI token for `getmac`.

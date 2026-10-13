@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 import importlib
 import inspect
 import socket
@@ -849,6 +852,52 @@ def test_get_mac_address_invalid_types():
 
     with pytest.raises(ValueError, match="Unknown type for 'ip6' argument"):
         getmac.get_mac_address(ip6=object())
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"ip": "-x"},
+        {"ip": "192.168.0.1 -n"},
+        {"ip": "192.168.0"},
+        {"ip": "192.168.0.256"},
+        {"ip": "fe80::1"},
+        {"ip": "router.lan"},
+        {"ip": ""},
+        {"ip6": "-x"},
+        {"ip6": "fe80::1 -n"},
+        {"ip6": "fe80::zz"},
+        {"ip6": "192.168.0.1"},
+        {"ip6": ""},
+    ],
+)
+def test_get_mac_address_invalid_ip_strings(mocker, mock_socket, kwargs):
+    """
+    A string that isn't an address of the right family is rejected before any
+    method runs or any packet is sent, so it can't become a command argument.
+    """
+    mocker.patch("getmac.getmac.get_by_method")
+    mocker.patch("getmac.utils.popen")
+    assert getmac.get_mac_address(**kwargs) is None
+    getmac.get_by_method.assert_not_called()
+    getmac.utils.popen.assert_not_called()
+    mock_socket.return_value.sendto.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"ip": "192.168.0.1"},
+        {"ip6": "fe80::1"},
+        {"ip6": "fe80::1%eth0"},
+        {"ip6": "2001:db8::0123:4567:89ab:cdef"},
+    ],
+)
+def test_get_mac_address_valid_ip_strings(mocker, kwargs):
+    """Valid addresses, including a scoped IPv6 address, reach the lookup."""
+    mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:00")
+    assert getmac.get_mac_address(**kwargs, network_request=False) == "00:01:02:04:00:00"
+    getmac.get_by_method.assert_called_once()
 
 
 def test_get_mac_address_default_interface(mocker):

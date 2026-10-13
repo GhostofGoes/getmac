@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 """Tests for scripts/collect_samples.py, the script that collects samples for these tests."""
 
 import importlib.util

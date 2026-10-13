@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
 
 # Image for the getmac command-line tool. Build it with packaging/build-docker.sh
 # ("pdm run build-docker"), which also sets the label build arguments, or from the
