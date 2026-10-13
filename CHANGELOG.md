@@ -9,7 +9,7 @@
 
 ### Added
 * Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
-* Support Python 3.10 - 3.14
+* Support Python 3.10 - 3.15
 * New function, `getmac.get_default_interface()`, which returns the name of the system's default interface.
 * Support for [ipaddress](https://docs.python.org/3/library/ipaddress.html) objects from the Python standard library: `IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`
     - These can be used with the `ip` and `ip6` arguments to `get_mac_address()`

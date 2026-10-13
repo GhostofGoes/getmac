@@ -86,7 +86,7 @@ When fixing a parsing bug for a specific platform/command version, add the raw c
 
 ## Compatibility constraints
 
-- Must run on Python 3.9–3.14, CPython and PyPy — no C-extensions, stdlib only, no runtime dependencies.
+- Must run on Python 3.9–3.15, CPython and PyPy — no C-extensions, stdlib only, no runtime dependencies.
 - Prefer real type annotations (`def foo(x: str) -> Optional[str]:`) — the code has already moved off the `# type:` comment style used on `0.9.x`.
 - Settings/constants are accessed through the `settings` / `consts` / `gvars` singletons in `getmac/variables.py`, not as bare module attributes on `getmac.getmac` (that was the 0.9.x pattern).
 

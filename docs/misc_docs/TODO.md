@@ -196,7 +196,7 @@ methods (list): Optional list of methods to use for MAC address lookup.
 - [x] Raise exceptions on critical failures (stuff that were warnings in 0.9.0), all calls to `_warn_critical()`.
 
 ### Enhancements/fixes/misc.
-- [x] Python 3.15 (pre-release) in CI
+- [x] Python 3.15
 - [x] [issue #76](https://github.com/GhostofGoes/getmac/issues/76): get_mac_address() is caching an old mac address, no longer present in local ARP
   - get_mac_address() is caching an old mac address for a given IP, even when it has timeout from OS ARP table. Only an explicit delete of the ARP entry on the OS make it return '00:00:00:00:00:00' again.
   - Fixed by only using `/proc/net/arp` entries with the `ATF_COM` (completed, `0x2`) flag set, which ignores incomplete, failed (`0x0`) and proxy (`0xc`) entries.
