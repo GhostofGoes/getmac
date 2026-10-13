@@ -77,6 +77,7 @@
 * Use [Ruff's formatter](https://docs.astral.sh/ruff/formatter/) instead of Black and isort
 * Updated development dependencies to their latest versions (pytest 8/9, Sphinx 9, mypy 2, etc.)
 * Updated GitHub Actions and pinned them to commit SHAs, and added `pdm run update-actions` to update the pins.
+* mypy type checks the package in strict mode, and every `# type: ignore` comment now specifies the error being ignored.
 * Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
 * CI tests on PyPy 3.10 and 3.11.
 * 100% code coverage! (a significant milestone for this project)

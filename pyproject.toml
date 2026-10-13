@@ -245,6 +245,33 @@ skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.
 ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso,connexion,adresse'
 
 
+# --- Mypy configuration ---
+[tool.mypy]
+strict = true
+# Check as if on Linux, so results are the same on every OS. The Windows-only
+# ctypes.windll calls are ignored (they're guarded by consts.WINDOWS at runtime).
+platform = "linux"
+enable_error_code = [
+    "ignore-without-code",
+    "possibly-undefined",
+    "redundant-expr",
+    "truthy-bool",
+]
+
+[[tool.mypy.overrides]]
+# getmac/__init__.py re-exports "settings", which getmac.getmac imports from getmac.variables
+module = ["getmac.getmac"]
+implicit_reexport = true
+
+[[tool.mypy.overrides]]
+# Tests use pytest fixtures and mocks, which aren't annotated (ruff's ANN rules are off for them)
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+check_untyped_defs = false
+
+
 # --- Ruff configuration ---
 # https://docs.astral.sh/ruff/
 [tool.ruff]
@@ -308,7 +335,6 @@ ignore = [
     "PLW2901", # for loop variable overwritten by assignment target
     "G004",    # Logging statement uses f-string
     "PIE790",  # no-unnecessary-pass
-    "PGH003",  # Use specific rule codes when ignoring type issues
     # "PLC1901", # compare-to-empty-string
     "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
     "S603",    # subprocess-without-shell-equals-true

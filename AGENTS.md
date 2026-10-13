@@ -51,7 +51,7 @@ pdm run getmac --help
 pdm run -l
 ```
 
-`pdm run lint` runs, in order: `spelling` (codespell), `check` (ruff check), `unused` (vulture, dead code), `check_format` (ruff import-sort + format check), `typing` (mypy). Run this locally before committing. Ruff config (rule selection, per-file ignores, line length 99) lives in `pyproject.toml` under `[tool.ruff]`.
+`pdm run lint` runs, in order: `spelling` (codespell), `check` (ruff check), `unused` (vulture, dead code), `check_format` (ruff import-sort + format check), `typing` (mypy). Run this locally before committing. Ruff config (rule selection, per-file ignores, line length 99) lives in `pyproject.toml` under `[tool.ruff]`, and mypy runs in strict mode (`[tool.mypy]`), so new code in `getmac/` needs complete type annotations and any `# type: ignore` must name its error code.
 
 ## Architecture: the `Method` pattern
 

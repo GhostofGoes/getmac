@@ -44,7 +44,7 @@ def check_path(filepath: str) -> bool:
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
-def clean_mac(mac: Optional[str]) -> Optional[str]:
+def clean_mac(mac: Union[str, bytes, None]) -> Optional[str]:
     """
     Check and format a string result to be lowercase colon-separated MAC.
 
@@ -55,7 +55,7 @@ def clean_mac(mac: Optional[str]) -> Optional[str]:
     is returned. The specific issue is logged as a warning.
 
     Args:
-        mac: MAC address string to clean
+        mac: MAC address string to clean (``bytes`` are decoded as UTF-8)
 
     Returns:
         Cleaned and formatted MAC address string, or :obj:`None` if
@@ -257,4 +257,5 @@ def fetch_ip_using_dns() -> str:
     """
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.connect(("1.1.1.1", 53))
-        return s.getsockname()[0]
+        address: str = s.getsockname()[0]
+        return address

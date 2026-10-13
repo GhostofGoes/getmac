@@ -255,7 +255,7 @@ class ArpVariousArgs(Method):
     # If arguments have been tested
     _args_tested: bool = False
     # arguments that worked
-    _good_pair: Union[tuple, tuple[str, bool]] = ()
+    _good_pair: tuple[str, bool] = ("", False)
 
     def test(self) -> bool:
         return utils.check_command("arp")
@@ -287,9 +287,8 @@ class ArpVariousArgs(Method):
                             f"ArpVariousArgs pair test failed for "
                             f"({pair_to_test[0]}, {pair_to_test[1]}): {ex}"
                         )
-
-            # if no valid argument pair was found, mark unusable
-            if not self._good_pair:
+            else:
+                # if no valid argument pair was found, mark unusable
                 self.unusable = True
                 return None
 
@@ -479,14 +478,14 @@ class CtypesHost(Method):
 
     def test(self) -> bool:
         try:
-            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # type: ignore
+            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # type: ignore[attr-defined,no-any-return]
         except Exception:
             return False
 
     def get(self, arg: str) -> Optional[str]:
         try:
             # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
-            inetaddr = ctypes.windll.wsock32.inet_addr(arg.encode())  # type: ignore
+            inetaddr = ctypes.windll.wsock32.inet_addr(arg.encode())  # type: ignore[attr-defined]
             if inetaddr in (0, -1):
                 raise Exception
         except Exception:
@@ -494,13 +493,13 @@ class CtypesHost(Method):
             #   We should be explicit about only accepting ipv4 addresses
             #   and handle any hostname resolution in calling code
             hostip = socket.gethostbyname(arg)
-            inetaddr = ctypes.windll.wsock32.inet_addr(hostip.encode())  # type: ignore
+            inetaddr = ctypes.windll.wsock32.inet_addr(hostip.encode())  # type: ignore[attr-defined]
 
         buffer = ctypes.c_buffer(6)
         addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
 
         # https://docs.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp
-        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
+        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore[attr-defined]
         if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
             return None
 
@@ -624,9 +623,7 @@ class FcntlIface(Method):
 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             # 0x8927 = SIOCGIFHWADDR, get the hardware (MAC) address
-            info = fcntl.ioctl(  # type: ignore
-                s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15])
-            )
+            info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15]))
 
         return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
@@ -939,7 +936,7 @@ class IfconfigOther(Method):
             for pair_to_test in self._args:
                 try:
                     command_output = utils.popen("ifconfig", pair_to_test[0])
-                    self._good_pair = list(pair_to_test)  # type: ignore
+                    self._good_pair = list(pair_to_test)
                     if isinstance(self._good_pair[1], str):
                         self._good_pair[1] += consts.MAC_RE_COLON + _IFCONFIG_MAC_END
                     break
@@ -1238,7 +1235,9 @@ class DefaultIfaceNetsh(Method):
 
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
         command_output = utils.popen("netsh.exe", "int ipv4 show route")
-        routes = re.findall(self._regex, command_output, flags=re.MULTILINE)
+        routes: list[tuple[str, str, str, str]] = re.findall(
+            self._regex, command_output, flags=re.MULTILINE
+        )
 
         # Default routes, lowest metric first
         default_routes = sorted(
@@ -1378,7 +1377,7 @@ def _swap_method_fallback(method_type: str, swap_with: str) -> bool:
     curr = METHOD_CACHE[method_type]
     FALLBACK_CACHE[method_type].remove(found)
     METHOD_CACHE[method_type] = found
-    FALLBACK_CACHE[method_type].insert(0, curr)  # type: ignore
+    FALLBACK_CACHE[method_type].insert(0, curr)  # type: ignore[arg-type]
 
     return True
 
@@ -1508,7 +1507,7 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
 
     # Populate fallback cache with all the tested methods, minus the currently active method
     if METHOD_CACHE[method_type] and METHOD_CACHE[method_type] in tested_methods:
-        tested_methods.remove(METHOD_CACHE[method_type])  # type: ignore
+        tested_methods.remove(METHOD_CACHE[method_type])  # type: ignore[arg-type]
 
     FALLBACK_CACHE[method_type] = tested_methods
 
@@ -1809,10 +1808,7 @@ def get_mac_address(
     """
 
     # If debugging, start the timer
-    if settings.DEBUG:
-        import timeit
-
-        start_time = timeit.default_timer()
+    start_time = time.perf_counter() if settings.DEBUG else 0.0
 
     # Convert bytes to str, assuming UTF-8 encoding
     if isinstance(interface, bytes):
@@ -1998,7 +1994,7 @@ def get_mac_address(
 
     # Log how long it took
     if settings.DEBUG:
-        duration = timeit.default_timer() - start_time
+        duration = time.perf_counter() - start_time
         gvars.log.debug(f"getmac took {duration:0.4f} seconds")
 
     return utils.clean_mac(mac)
