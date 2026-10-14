@@ -58,6 +58,11 @@
 * Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91)).
 * Windows: the path of each command getmac runs is now quoted. Before, a path with a space in it (e.g. `C:\Program Files\...`) could make Windows run a different program, such as `C:\Program.exe`.
 * Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95)).
+* Fixed several issues found with fuzz testing using [Hypothesis](https://hypothesis.readthedocs.io/):
+    * Fixed `DefaultIfaceLinuxRouteFile` failing, and being marked unusable, when a line in `/proc/net/route` has fewer than two fields.
+    * Fixed `LanscanIface` (HP-UX) failing when the interface name is empty or whitespace and `lanscan` prints a blank line.
+    * Fixed `GetmacExe` (Windows) failing on Python 3.10 and older when `getmac.exe` output contains a NUL character.
+    * MACs are now checked for non-hexadecimal characters before they're returned. Before, a value like `zz:zz:zz:zz:zz:zz` from a command's output was returned as a MAC.
 
 ### Removed
 * Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
@@ -89,6 +94,7 @@
 * Releases are fully automated in CI (no more manual cutting)
 * Added a weekly dependency report workflow for outdated dependencies
 * CodeQL runs on all pull requests
+* Added fuzz tests using [Hypothesis](https://hypothesis.readthedocs.io). They run with the regular tests with a small number of inputs (50) and with more inputs (5000) weekly in a "Fuzz" workflow or manually with `pdm run fuzz`.
 
 ## 0.9.6 (10/03/2026)
 

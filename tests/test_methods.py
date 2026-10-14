@@ -835,6 +835,13 @@ def test_getmac_exe_no_mac(mocker):
     assert getmac.GetmacExe().get("Ethernet") is None
 
 
+def test_getmac_exe_nul_characters(mocker):
+    # The csv module raises an error for NUL characters before Python 3.11 (found by fuzzing)
+    output = '"Ethernet","Intel(R) Ethernet\0","00-1A-2B-3C-4D-5E","\\Device\\Tcpip_{1}"\r\n\0'
+    mocker.patch("getmac.utils.popen", return_value=output)
+    assert getmac.GetmacExe().get("Ethernet") == "00-1A-2B-3C-4D-5E"
+
+
 @pytest.mark.parametrize(
     ("mac", "ip", "sample_file"),
     [
@@ -1370,6 +1377,13 @@ def test_defaultifacelinuxroutefile(mocker):
     mocker.patch("getmac.utils.read_file", return_value="")
     assert getmac.DefaultIfaceLinuxRouteFile().get() is None
 
+    # Lines without a destination are skipped (found by fuzzing)
+    mocker.patch(
+        "getmac.utils.read_file",
+        return_value="Iface\tDestination\tGateway\nbogus\n\t\nens33\t00000000\t0210A8C0\n",
+    )
+    assert getmac.DefaultIfaceLinuxRouteFile().get() == "ens33"
+
 
 @pytest.mark.parametrize(
     ("iface", "sample_file"),
@@ -1677,3 +1691,9 @@ def test_lanscan_iface_edge_cases(mocker):
     mocker.patch("getmac.utils.popen", return_value="")
     assert not getmac.LanscanIface().get("lan0")
     utils.popen.assert_called_once_with("lanscan", "-ai")
+
+    # An empty or whitespace name doesn't match blank lines (found by fuzzing)
+    mocker.patch("getmac.utils.popen", return_value="0x0012317D6209 lan0 snap0\n \n")
+    assert getmac.LanscanIface().get("") is None
+    assert getmac.LanscanIface().get(" ") is None
+    assert getmac.LanscanIface().get("lan0") == "00:12:31:7D:62:09"

@@ -89,6 +89,9 @@ test = [
     "pytest-sugar",
     "psutil",
     "pygments>=2.13",
+    # Hypothesis ships compiled wheels that don't load on PyPy, so the
+    # fuzz tests (tests/test_fuzz.py) are skipped on PyPy
+    "hypothesis; platform_python_implementation != 'PyPy'",
 ]
 lint = [
     "codespell>=2.2.4",
@@ -188,6 +191,11 @@ pytest
   --cov-report xml
   -n auto
 """
+
+[tool.pdm.scripts.fuzz]
+help = "Run the fuzz tests with many more generated inputs (takes several minutes)"
+cmd = "pytest tests/test_fuzz.py --benchmark-disable -n auto"
+env = { HYPOTHESIS_PROFILE = "fuzz" }
 
 [tool.pdm.scripts.html]
 help = "Build HTML documentation using Sphinx"
