@@ -24,6 +24,9 @@ def test_clean_mac():
     assert utils.clean_mac("000000000000") == "00:00:00:00:00:00"
     assert utils.clean_mac("00:00:00:00:00:00") == "00:00:00:00:00:00"
     assert utils.clean_mac(b"00:00:00:00:00:00") == "00:00:00:00:00:00"
+    # Not hexadecimal digits (found by fuzzing)
+    assert utils.clean_mac("zz:zz:zz:zz:zz:zz") is None
+    assert utils.clean_mac("0g:11:22:33:44:55") is None
 
 
 def test_read_file_return(mocker, get_sample):

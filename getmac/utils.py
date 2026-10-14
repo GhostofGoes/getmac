@@ -14,6 +14,10 @@ from typing import Optional, Union
 
 from .variables import consts, gvars, settings
 
+# A clean MAC: lowercase hexadecimal digits in six colon-separated pairs.
+# Compiled once, since clean_mac() checks every MAC that getmac returns.
+_CLEAN_MAC_RE = re.compile(r"[0-9a-f]{2}(?::[0-9a-f]{2}){5}")
+
 
 def check_command(command: str) -> bool:
     """
@@ -48,7 +52,7 @@ def clean_mac(mac: Union[str, bytes, None]) -> Optional[str]:
     """
     Check and format a string result to be lowercase colon-separated MAC.
 
-    It will clean out any garbage and ensure the length and colons are correct,
+    It will clean out any garbage and ensure the length, colons and hexadecimal digits are correct,
     and replace ``-`` characters with ``:`` characters.
 
     If string is invalid after as much cleanup as possible, then :obj:`None`
@@ -101,6 +105,9 @@ def clean_mac(mac: Union[str, bytes, None]) -> Optional[str]:
         mac = None
     elif mac.count(":") != 5:
         gvars.log.warning(f"MAC address {mac} is missing colon (':') characters")
+        mac = None
+    elif not _CLEAN_MAC_RE.fullmatch(mac):
+        gvars.log.warning(f"MAC address {mac} has characters that aren't hexadecimal digits")
         mac = None
     return mac
 

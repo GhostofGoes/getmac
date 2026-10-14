@@ -580,6 +580,9 @@ class LanscanIface(Method):
         return utils.check_command("lanscan")
 
     def get(self, arg: str) -> Optional[str]:
+        if not arg:
+            return None
+
         # -a: Display station addresses only. No headings.
         # -i: Display interface names only. No headings.
         output = utils.popen("lanscan", "-ai")
@@ -589,11 +592,12 @@ class LanscanIface(Method):
         # Find the line containing the interface name, e.g. "lan0"
         search_for = arg + " "  # space to prevent partial matches
         for line in output.splitlines():
-            if search_for in line:
+            fields = line.split()
+            if fields and search_for in line:
                 # Extract MAC address from the line
                 # The raw MAC will be something like "0x0012317D6209"
                 # Turn that into a 12-character string, then add colons
-                raw_mac = line.split()[0].replace("0x", "").strip()
+                raw_mac = fields[0].replace("0x", "").strip()
                 return ":".join(raw_mac[i : i + 2] for i in range(0, len(raw_mac), 2))
 
         return None
@@ -660,7 +664,9 @@ class GetmacExe(Method):
             return None
 
         # Columns: Connection Name, Network Adapter, Physical Address, Transport Name
-        rows = [row for row in csv.reader(command_output.splitlines()) if len(row) >= 3]
+        # The csv module raises an error for NUL characters before Python 3.11
+        lines = command_output.replace("\0", "").splitlines()
+        rows = [row for row in csv.reader(lines) if len(row) >= 3]
         name = arg.casefold()
 
         # Connection names first, since a connection could be named after another adapter
@@ -1075,20 +1081,11 @@ class DefaultIfaceLinuxRouteFile(Method):
 
         if data is not None and len(data) > 1:
             for line in data.split("\n")[1:-1]:
-                line = line.strip()
-                if not line:
-                    continue
-
-                # Some have tab separators, some have spaces
-                if "\t" in line:
-                    sep = "\t"
-                else:
-                    sep = "    "
-
-                iface_name, dest = line.split(sep)[:2]
-
-                if dest == "00000000":
-                    return iface_name
+                # Some have tab separators, some have spaces. Skip lines without
+                # an interface name and a destination, instead of failing.
+                fields = line.split()
+                if len(fields) >= 2 and fields[1] == "00000000":
+                    return fields[0]
 
             if settings.DEBUG:
                 gvars.log.debug(
