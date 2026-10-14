@@ -215,11 +215,87 @@ jobs:
       # Attestations stored on GitHub, which can be checked with:
       #   gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac
       - name: Generate build provenance attestations
+        id: attest
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-path: "dist/*"
+      # The signed attestation bundle is also attached to the GitHub release (see the
+      # github-release job). It's kept out of dist/ so it isn't uploaded to PyPI.
+      - name: Save the attestation bundle
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir provenance
+          jq -c . "$BUNDLE" > "provenance/getmac-${TAG}.intoto.jsonl"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: provenance
+          path: provenance/
+          if-no-files-found: error
       # Also uploads PEP 740 attestations to PyPI (on by default with Trusted Publishing)
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           attestations: true
+
+  # Creates a draft GitHub release for the tag, with the CHANGELOG section as its
+  # notes and the sdist, wheel, manpage, and signed build provenance as its files.
+  # The maintainer checks the draft and publishes it. The provenance file is what
+  # OpenSSF Scorecard's Signed-Releases check looks for, and it can be verified with:
+  #   gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac \
+  #     --bundle getmac-1.0.0.intoto.jsonl
+  github-release:
+    name: Create the GitHub release
+    needs: publish-pypi
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # Create the release and upload its files
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: python-package-distributions
+          path: release/
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: provenance
+          path: release/
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: manpage
+          path: release/
+      # The notes are the CHANGELOG section for the version, e.g. "## 1.0.0 (10/13/2026)"
+      - name: Get the release notes from the CHANGELOG
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          awk -v tag="$TAG" '
+            /^## / { if (found) exit; if (index($0, "## " tag " ") == 1) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::warning::No CHANGELOG section for '${TAG}', so the release notes are empty"
+            echo "See the [CHANGELOG](https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md)." > release-notes.md
+          fi
+      # Pre-releases (e.g. 1.0.0rc1) are marked as such. If the release already
+      # exists, its files are replaced and its notes are left as they are.
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ls -l release/
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" release/* --clobber
+          else
+            prerelease=()
+            if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.post[0-9]+)?$ ]]; then
+              prerelease=(--prerelease)
+            fi
+            gh release create "$TAG" release/* --draft --verify-tag "${prerelease[@]}" \
+              --title "getmac $TAG" --notes-file release-notes.md
+          fi

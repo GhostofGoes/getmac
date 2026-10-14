@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
+# Weekly report of dependency updates, used instead of Dependabot or Renovate.
+# It doesn't change anything: it lists what's out of date in the job summary, and
+# fails if something needs attention, so GitHub sends a notification.
+#   - Development dependencies in pdm.lock with newer versions (pdm outdated).
+#     Update them with "pdm update", or "pdm update <package>".
+#   - Known vulnerabilities in pdm.lock (pip-audit). getmac itself has no runtime
+#     dependencies. Accepted ones are listed in osv-scanner.toml.
+#   - GitHub Actions whose pinned commit is behind the newest commit for their
+#     version tag. Update them with "pdm run update-actions".
+# OpenSSF Scorecard's Dependency-Update-Tool check only detects Dependabot and
+# Renovate, so it doesn't count this workflow.
+name: Dependency report
+
+on:
+  schedule:
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: Check for dependency updates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    if: github.repository == 'GhostofGoes/getmac' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
+        with:
+          python-version: "3.13"
+      # Only lists the packages whose locked version is older than the newest release
+      - name: Check for outdated dependencies
+        id: outdated
+        run: |
+          pdm outdated --json > outdated.json
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os
+          rows = [p for p in json.load(open("outdated.json")) if p["pinned_version"] != p["latest_version"]]
+          print("## Outdated dependencies (pdm outdated)\n")
+          if rows:
+              print("| Package | Groups | Locked | Latest |\n|---|---|---|---|")
+              for p in rows:
+                  print(f"| {p['package']} | {', '.join(p['groups'])} | {p['pinned_version']} | {p['latest_version']} |")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+                  out.write("found=true\n")
+          else:
+              print("All dependencies in pdm.lock are up to date.")
+          print()
+          PY
+      - name: Export the locked dependencies
+        run: pdm export --group :all --format requirements --no-hashes --output requirements-audit.txt
+      # Writes its own section to the job summary
+      - name: Check for known vulnerabilities (pip-audit)
+        id: audit
+        continue-on-error: true
+        uses: pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266 # v1.1.0
+        with:
+          inputs: requirements-audit.txt
+          # Keep in sync with osv-scanner.toml
+          ignore-vulns: PYSEC-2026-1845 GHSA-6w46-j5rx-g56g
+      - name: Check the GitHub Actions pins
+        id: actions
+        run: |
+          pdm run update-actions
+          {
+            echo "## GitHub Actions pins (pdm run update-actions)"
+            echo
+            if git diff --quiet -- .github/workflows; then
+              echo "All GitHub Actions are pinned to the newest commit for their version tag."
+            else
+              echo '```diff'
+              git diff -- .github/workflows
+              echo '```'
+              echo "found=true" >> "$GITHUB_OUTPUT"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Fail if anything needs attention
+        if: steps.outdated.outputs.found == 'true' || steps.actions.outputs.found == 'true' || steps.audit.outcome == 'failure'
+        run: |
+          echo "::error::Some dependencies need attention, see the job summary"
+          exit 1

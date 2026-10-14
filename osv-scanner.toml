@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
+# Known vulnerabilities in getmac's development dependencies (pdm.lock) that are
+# accepted, read by OSV-Scanner and by OpenSSF Scorecard's Vulnerabilities check.
+# getmac itself has no runtime dependencies. Remove an entry once it's fixed.
+# https://google.github.io/osv-scanner/configuration/
+
+# pytest's tmpdir handling on shared UNIX hosts (CVE-2025-71176). Fixed in pytest
+# 9.0.3, which the lock file uses on Python 3.10 and newer. pytest 9 doesn't support
+# Python 3.9, so the tests on Python 3.9 still use pytest 8.4.2. pytest only runs in
+# CI and on developer machines, on single-user hosts. Remove this when Python 3.9
+# support is dropped.
+[[IgnoredVulns]]
+id = "PYSEC-2026-1845"
+reason = "Development-only dependency (pytest 8.4.2 for Python 3.9 tests); no fixed release supports Python 3.9"
+
+[[IgnoredVulns]]
+id = "GHSA-6w46-j5rx-g56g"
+reason = "Same as PYSEC-2026-1845"

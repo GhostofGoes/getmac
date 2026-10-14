@@ -79,13 +79,16 @@
 * Updated GitHub Actions and pinned them to commit SHAs, and added `pdm run update-actions` to update the pins.
 * mypy type checks the package in strict mode, and every `# type: ignore` comment now specifies the error being ignored.
 * Stricter pytest settings (unknown markers and settings are errors, and so are passing `xfail` tests), and more ruff rules (refurb, Perflint, flake8-logging, flynt).
-* Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
+* Setup PyPI Trusted Publishing with GitHub, and added [GitHub Attestations](https://github.com/GhostofGoes/getmac/blob/main/SECURITY.md#verifying-releases).
 * CI tests on PyPy 3.10 and 3.11.
 * 100% code coverage! (a significant milestone for this project)
 * Added test samples from GitHub's macOS and Windows runners, collected with `scripts/collect_samples.py`.
-* Added test samples from two third-party projects, significantly increasing test coverage. To maintain license compatibility, these samples were checked into git as-is, and are not included in the source distribution.
+* Added test samples from two third-party projects (`facter` and `glpi_agent`), significantly increasing test coverage.
 * `settings` and `__version__` are now published in `getmac.__all__`, for type checkers.
 * Added an [OpenSSF Scorecard](https://scorecard.dev) workflow that publishes supply-chain security results to the code scanning dashboard and the public Scorecard API, and a Scorecard badge to the README.
+* Releases are fully automated in CI (no more manual cutting)
+* Added a weekly dependency report workflow for outdated dependencies
+* CodeQL runs on all pull requests
 
 ## 0.9.6 (10/03/2026)
 

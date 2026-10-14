@@ -28,6 +28,12 @@ pip download --no-deps getmac==1.0.0 -d dist/
 gh attestation verify dist/getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac
 ```
 
+The files attached to a [GitHub release](https://github.com/GhostofGoes/getmac/releases), with the provenance file attached to the same release:
+
+```bash
+gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac --bundle getmac-1.0.0.intoto.jsonl
+```
+
 Docker images on the GitHub Container Registry:
 
 ```bash
