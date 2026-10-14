@@ -95,6 +95,7 @@
 * Added a weekly dependency report workflow for outdated dependencies
 * CodeQL runs on all pull requests
 * Added fuzz tests using [Hypothesis](https://hypothesis.readthedocs.io). They run with the regular tests with a small number of inputs (50) and with more inputs (5000) weekly in a "Fuzz" workflow or manually with `pdm run fuzz`.
+* Tests cover 100% of branches as well as lines, including the branches taken when debug logging is off.
 
 ## 0.9.6 (10/03/2026)
 

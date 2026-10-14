@@ -1502,11 +1502,9 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         tested_strs = ", ".join(str(ts) for ts in tested_methods)
         gvars.log.debug(f"{len(tested_methods)} tested methods for '{method_type}': {tested_strs}")
 
-    # Populate fallback cache with all the tested methods, minus the currently active method
-    if METHOD_CACHE[method_type] and METHOD_CACHE[method_type] in tested_methods:
-        tested_methods.remove(METHOD_CACHE[method_type])  # type: ignore[arg-type]
-
-    FALLBACK_CACHE[method_type] = tested_methods
+    # The cache was empty, so the first tested method is the active method in METHOD_CACHE.
+    # The rest of the tested methods are the fallbacks.
+    FALLBACK_CACHE[method_type] = tested_methods[1:]
 
     if settings.DEBUG:
         gvars.log.debug(
