@@ -1,11 +1,14 @@
-## One-time setup
-CI publishes releases to PyPI with [Trusted Publishing](https://docs.pypi.org/trusted-publishers/), so no PyPI token is stored in GitHub.
+# Creating Releases
 
-## Requirements
-- PDM: https://pdm-project.org/en/latest/#installation
-- Python 3.12 or newer to build the manpage locally
+CI publishes releases to PyPI with [Trusted Publishing](https://docs.pypi.org/trusted-publishers/).
 
-## Cutting a release
+Manual publishing is no longer done, all releases should go through GitHub Actions:
+- Provenance and trust
+- Less potential for token compromise
+- Less potential for me to screw something up (good ole' human error)
+
+## Process
+
 1. Increment version number in `getmac/getmac.py` (in `__version__`)
 1. Update the CHANGELOG header for the release (e.g. `## 1.0.0 (TBD)`), replacing `TBD` with the release date in `MM/DD/YYYY` format
 1. Run static analysis checks (`pdm run lint`)
@@ -14,7 +17,7 @@ CI publishes releases to PyPI with [Trusted Publishing](https://docs.pypi.org/tr
 ```bash
 pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
 ```
-1. Tag the release commit with the version (no `v` prefix) and push the tag:
+1. Tag the release commit with the version (no `v` prefix) and push the tag. If it's a pre-release, tag it as such, e.g. `1.0.0a1`, `1.0.0b1`, `1.0.0rc1`.
 ```bash
 git tag 1.0.0
 git push origin 1.0.0
@@ -26,17 +29,16 @@ git push origin 1.0.0
 pip download --no-deps getmac==1.0.0 -d dist/
 gh attestation verify dist/getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac
 ```
-1. Get the manpage: download the `manpage` artifact from the tag's CI run, or build it (writes `manpage/getmac.1`):
-```bash
-pdm run manpage
-```
-1. Create a tagged release on GitHub including:
-    a) The relevant section of the CHANGELOG in the body
-    b) The source and binary wheels (the `python-package-distributions` artifact of the tag's CI run)
+1. Check and publish the draft release on GitHub. After publishing to PyPI, CI creates it (the `github-release` job in `ci.yml`) with:
+    a) The CHANGELOG section for the version as the notes
+    b) The sdist and wheel
     c) The manpage (`getmac.1`)
+    d) The signed build provenance (`getmac-1.0.0.intoto.jsonl`)
 
 ## Publishing manually
-Only if CI can't publish the release. This needs [twine](https://twine.readthedocs.io/) 6.1.0 or newer, and a `~/.pypirc` file with a PyPI token for `getmac`.
+
+Only for backported releases or the old package name (`get-mac`). This needs [twine](https://twine.readthedocs.io/) 6.1.0 or newer, and a `~/.pypirc` file with a PyPI token for `getmac`.
+
 1. Clean the environment: `bash ./scripts/clean.sh`
 1. Build the sdist (`.tar.gz`) and wheel (`.whl`)
 ```bash
