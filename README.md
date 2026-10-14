@@ -1,14 +1,18 @@
 
-[![PyPI - Current Version](https://img.shields.io/pypi/v/getmac?label=PyPI)](https://pypi.org/project/getmac/)
-[![codecov](https://codecov.io/github/GhostofGoes/getmac/branch/main/graph/badge.svg?token=5NxlAE9eGY)](https://codecov.io/github/GhostofGoes/getmac)
-[![GitHub Actions Pipeline Status](https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostofGoes/getmac/actions)
-![Python Version](https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14|3.15-blue.svg)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9388/badge)](https://www.bestpractices.dev/projects/9388)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/GhostofGoes/getmac/badge)](https://scorecard.dev/viewer/?uri=github.com/GhostofGoes/getmac)
-[![Weekly PyPI downloads](https://pepy.tech/badge/getmac/week)](https://pepy.tech/project/getmac)
-[![PyPI downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
-[![PDM-managed](https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json)](https://pdm-project.org)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+<p align="center">
+  <a href="https://pypi.org/project/getmac/"><img alt="PyPI - Current Version" src="https://img.shields.io/pypi/v/getmac?label=PyPI"></a>
+  <img alt="Python Version" src="https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14|3.15-blue.svg">
+  <a href="https://pepy.tech/project/getmac"><img alt="Weekly PyPI downloads" src="https://pepy.tech/badge/getmac/week"></a>
+  <a href="https://pepy.tech/project/getmac"><img alt="PyPI downloads" src="https://pepy.tech/badge/getmac"></a>
+  <br>
+  <a href="https://github.com/GhostofGoes/getmac/actions"><img alt="GitHub Actions Pipeline Status" src="https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://codecov.io/github/GhostofGoes/getmac"><img alt="codecov" src="https://codecov.io/github/GhostofGoes/getmac/branch/main/graph/badge.svg?token=5NxlAE9eGY"></a>
+  <a href="https://www.bestpractices.dev/projects/9388"><img alt="OpenSSF Best Practices" src="https://www.bestpractices.dev/projects/9388/badge"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/GhostofGoes/getmac"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/GhostofGoes/getmac/badge"></a>
+  <br>
+  <a href="https://pdm-project.org"><img alt="PDM-managed" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json"></a>
+  <a href="https://github.com/astral-sh/ruff"><img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
+</p>
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 
@@ -19,7 +23,7 @@ It provides a platform-independent interface to get the MAC addresses of:
 
 It provides one primary function: `get_mac_address()`
 
-[![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.png)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
+[![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.svg)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
 
 
 ## Should you use this package?
