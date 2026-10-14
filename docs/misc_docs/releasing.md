@@ -11,12 +11,7 @@ Manual publishing is no longer done, all releases should go through GitHub Actio
 
 1. Increment version number in `getmac/getmac.py` (in `__version__`)
 1. Update the CHANGELOG header for the release (e.g. `## 1.0.0 (TBD)`), replacing `TBD` with the release date in `MM/DD/YYYY` format
-1. Run static analysis checks (`pdm run lint`)
-1. Ensure CI ([GitHub Actions](https://github.com/GhostofGoes/getmac/actions)) is passing on all checks and on all platforms
-1. Ensure a pip install from source works on the main platforms:
-```bash
-pip install https://github.com/ghostofgoes/getmac/archive/main.tar.gz
-```
+1. Ensure [CI](https://github.com/GhostofGoes/getmac/actions) is passing on all checks and on all platforms
 1. Tag the release commit with the version (no `v` prefix) and push the tag. If it's a pre-release, tag it as such, e.g. `1.0.0a1`, `1.0.0b1`, `1.0.0rc1`.
 ```bash
 git tag 1.0.0
