@@ -22,6 +22,7 @@ getmac has a Python function, :func:`~getmac.getmac.get_mac_address`, and a comm
    api
    module_api
    adding_methods
+   architecture
    changelog
    contributing
    security
