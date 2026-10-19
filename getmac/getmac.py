@@ -1084,15 +1084,38 @@ class DefaultIfaceLinuxRouteFile(Method):
     def test(self) -> bool:
         return utils.check_path(self._path)
 
+    # Route flags, from include/uapi/linux/route.h
+    _RTF_UP: Final[int] = 0x0001
+    _RTF_REJECT: Final[int] = 0x0200
+
+    def _is_default(self, fields: list[str]) -> bool:
+        """
+        If a route to ``00000000`` is a usable default route. Routes like ``0.0.0.0/1``
+        (used by VPNs such as OpenVPN, to override the default route without replacing it)
+        have a mask that isn't ``00000000``. Unreachable, prohibit and blackhole routes don't
+        have an interface (``*``), and unreachable and prohibit routes have the reject flag.
+        """
+        if fields[0] == "*":
+            return False
+        # Columns: Iface, Destination, Gateway, Flags, RefCnt, Use, Metric, Mask, ...
+        try:
+            if len(fields) > 3:
+                flags = int(fields[3], 16)
+                if not flags & self._RTF_UP or flags & self._RTF_REJECT:
+                    return False
+        except ValueError:
+            return False
+        return len(fields) <= 7 or fields[7] == "00000000"
+
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
         data = utils.read_file(self._path)
 
         if data is not None and len(data) > 1:
-            for line in data.split("\n")[1:-1]:
+            for line in data.splitlines()[1:]:
                 # Some have tab separators, some have spaces. Skip lines without
                 # an interface name and a destination, instead of failing.
                 fields = line.split()
-                if len(fields) >= 2 and fields[1] == "00000000":
+                if len(fields) >= 2 and fields[1] == "00000000" and self._is_default(fields):
                     return fields[0]
 
             if settings.DEBUG:

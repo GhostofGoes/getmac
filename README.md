@@ -308,6 +308,7 @@ Many of the methods used to acquire an address and the core logic framework are 
 - [String joining](https://stackoverflow.com/a/3258612/2214380)
 - [Facter](https://github.com/puppetlabs/facter) - Command output examples from Facter are leveraged for better test coverage
 - [GLPI Agent](https://github.com/glpi-project/glpi-agent) - Command output examples from GLPI Agent are leveraged for better test coverage
+- [octoglow](https://github.com/slomkowski/octoglow) and [meow-rs](https://github.com/meow-rs/meow-rs) - `/proc/net/route` examples with VPN tunnels are used in tests
 
 ## License
-The code is licensed MIT. The test data contains Apache 2.0 and GPLv2 licensed files, in the `tests/samples/third_party/` directory. These files are not included in the packages published to PyPI.
+The code is licensed MIT. The test data contains Apache 2.0, GPLv2 and MIT licensed files, in the `tests/samples/third_party/` directory. These files are not included in the packages published to PyPI.
