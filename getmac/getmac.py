@@ -1646,17 +1646,15 @@ def get_by_method(method_type: str, arg: str = "", network_request: bool = True)
 
         return forced_method().get(arg)
 
-    # Initialize the cache if it hasn't been already
-    if not METHOD_CACHE.get(method_type) and not initialize_method_cache(
-        method_type, network_request
-    ):
+    # Initialize the cache if it hasn't been already. It always includes the methods that
+    # send network requests, otherwise a first lookup with network_request=False would
+    # leave them out for every later lookup. They're skipped below if they aren't allowed.
+    if not METHOD_CACHE.get(method_type) and not initialize_method_cache(method_type):
         gvars.log.error(
             f"Failed to initialize method cache for method '{method_type}' (arg: '{arg}')"
         )
         return None
 
-    # The cache can have methods that send network requests,
-    # if it was initialized by a lookup that allowed them
     method = _select_method(method_type, network_request)
 
     if not method:
