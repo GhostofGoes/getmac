@@ -26,6 +26,7 @@ The key function is :func:`~getmac.getmac.get_mac_address`.
 
 import csv
 import ctypes
+import errno
 import os
 import re
 import socket
@@ -627,7 +628,14 @@ class FcntlIface(Method):
 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             # 0x8927 = SIOCGIFHWADDR, get the hardware (MAC) address
-            info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15]))
+            try:
+                info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15]))
+            except OSError as ex:
+                # The interface doesn't exist. That's not a problem with the method,
+                # so it isn't raised, which would mark the method unusable.
+                if ex.errno == errno.ENODEV:
+                    return None
+                raise
 
         return ":".join(f"{byte:02x}" for byte in info[18:24])
 
