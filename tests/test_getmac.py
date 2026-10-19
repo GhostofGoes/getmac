@@ -682,6 +682,25 @@ def test_get_mac_address_ip6_socket_error(mocker, mock_socket):
     getmac.get_by_method.assert_called_once_with("ip6", "fe80::1", True)
 
 
+def test_get_mac_address_network_request_false_first(mocker, mock_socket):
+    """
+    A first lookup with network_request=False doesn't leave the methods that send
+    network requests out of the cache for later lookups that allow them.
+    """
+    mocker.patch.object(getmac, "METHODS", [getmac.ArpFile, getmac.ArpingHost])
+    mocker.patch.object(consts, "PLATFORM", "linux")
+    mocker.patch("getmac.utils.check_path", return_value=True)
+    mocker.patch("getmac.utils.check_command", return_value=True)
+    mocker.patch("getmac.utils.read_file", return_value="")
+    arping_get = mocker.patch.object(getmac.ArpingHost, "get", return_value=MAC)
+
+    assert getmac.get_mac_address(ip="192.0.2.10", network_request=False) is None
+    arping_get.assert_not_called()
+    assert getmac.get_mac_address(ip="192.0.2.10") == MAC
+    arping_get.assert_called_once_with("192.0.2.10")
+    mock_socket.assert_not_called()
+
+
 @pytest.mark.parametrize("force_method", ["arpinghost", "ArpingHost"])
 def test_get_mac_address_ip_force_arp_request_method(mocker, mock_socket, force_method):
     """Forcing a method that sends an ARP request means a UDP packet isn't needed."""
