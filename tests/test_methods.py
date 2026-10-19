@@ -1607,12 +1607,19 @@ def test_fcntl_iface(mocker):
     reason="Can't reliably mock fcntl on non-Linux platforms",
 )
 def test_fcntl_iface_no_such_device(mocker):
-    """The socket is closed even if the ioctl fails, e.g. for an interface that doesn't exist."""
+    """
+    An interface that doesn't exist has no MAC. That isn't raised, which would mark the
+    method unusable. Other errors are still raised. The socket is closed either way.
+    """
     mocker.patch("fcntl.ioctl", side_effect=OSError(errno.ENODEV, "No such device"))
     m = mocker.patch("socket.socket")
-    with pytest.raises(OSError, match="No such device"):
-        getmac.FcntlIface().get("nope0")
+    assert getmac.FcntlIface().get("nope0") is None
     m.return_value.__exit__.assert_called_once()
+
+    mocker.patch("fcntl.ioctl", side_effect=OSError(errno.EPERM, "Operation not permitted"))
+    with pytest.raises(OSError, match="Operation not permitted"):
+        getmac.FcntlIface().get("eth0")
+    assert m.return_value.__exit__.call_count == 2
 
 
 def test_fcntl_iface_test(mocker):

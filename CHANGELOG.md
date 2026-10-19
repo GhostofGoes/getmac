@@ -65,6 +65,7 @@
     * MACs are now checked for non-hexadecimal characters before they're returned. Before, a value like `zz:zz:zz:zz:zz:zz` from a command's output was returned as a MAC.
 * Fixed IPv4 lookups returning `None` when `arping` can't send ARP requests (e.g. it doesn't have permission to). The ARP table is now checked after sending the UDP packet, as it is without `arping`. Also fixed IPv6 lookups raising `OSError` on systems with IPv6 turned off.
 * Fixed a lookup with `network_request=False` stopping later lookups from using `arping` or `SendARP` for the rest of the process.
+* Fixed `FcntlIface` being marked unusable after looking up an interface that doesn't exist.
 
 ### Removed
 * Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.

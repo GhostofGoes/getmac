@@ -1,5 +1,7 @@
+import errno
 import importlib
 import inspect
+import platform
 import socket
 from ipaddress import (
     IPv4Address,
@@ -699,6 +701,27 @@ def test_get_mac_address_network_request_false_first(mocker, mock_socket):
     assert getmac.get_mac_address(ip="192.0.2.10") == MAC
     arping_get.assert_called_once_with("192.0.2.10")
     mock_socket.assert_not_called()
+
+
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Can't reliably mock fcntl on non-Linux platforms",
+)
+def test_get_mac_address_bad_interface_keeps_fcntl(mocker):
+    """An interface that doesn't exist doesn't remove FcntlIface from the caches."""
+    fcntl_iface, ifconfig = getmac.FcntlIface(), getmac.IfconfigWithIfaceArg()
+    getmac.METHOD_CACHE["iface"] = fcntl_iface
+    getmac.FALLBACK_CACHE["iface"] = [ifconfig]
+    mocker.patch("fcntl.ioctl", side_effect=OSError(errno.ENODEV, "No such device"))
+    mocker.patch("socket.socket")
+    popen = mocker.patch("getmac.utils.popen")
+
+    assert getmac.get_mac_address(interface="nope0") is None
+
+    popen.assert_not_called()
+    assert fcntl_iface.unusable is False
+    assert getmac.METHOD_CACHE["iface"] is fcntl_iface
+    assert getmac.FALLBACK_CACHE["iface"] == [ifconfig]
 
 
 @pytest.mark.parametrize("force_method", ["arpinghost", "ArpingHost"])
