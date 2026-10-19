@@ -62,7 +62,9 @@ class Settings(VarsClass):
     ``0`` (the default) checks once, without waiting.
 
     This doesn't apply when getmac sends an ARP request itself and waits for the reply
-    instead (:class:`~getmac.getmac.ArpingHost` or :class:`~getmac.getmac.CtypesHost`).
+    instead (:class:`~getmac.getmac.ArpingHost` or :class:`~getmac.getmac.CtypesHost`),
+    unless that doesn't find the host. Then the UDP packet is sent and this applies,
+    but getmac checks for at least 0.25 seconds.
     """
 
     COMMAND_TIMEOUT: Optional[float] = 15.0

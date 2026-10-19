@@ -1675,25 +1675,36 @@ def get_by_method(method_type: str, arg: str = "", network_request: bool = True)
     return result
 
 
-def _lookup_host(method_type: str, host: str, network_request: bool, wait: bool) -> Optional[str]:
+ARP_FALLBACK_TIMEOUT: Final[float] = 0.25
+"""
+Minimum time, in seconds, to wait for a host's ARP entry after the UDP packet is sent
+because an ARP request didn't find it (see :func:`get_mac_address`).
+"""
+
+
+def _lookup_host(
+    method_type: str, host: str, network_request: bool, wait: bool, min_timeout: float = 0.0
+) -> Optional[str]:
     """
     Look up a host's MAC. If it isn't found and ``wait`` is :obj:`True` (the UDP packet
     was sent), look it up again until it's found or
-    :attr:`~getmac.variables.Settings.ARP_TIMEOUT` seconds have passed, waiting longer each
-    time. It takes a moment for the host to reply to the request sent for the UDP packet,
-    and for its entry to be added to the table (GitHub issue #101).
+    :attr:`~getmac.variables.Settings.ARP_TIMEOUT` seconds (at least ``min_timeout``) have
+    passed, waiting longer each time. It takes a moment for the host to reply to the
+    request sent for the UDP packet, and for its entry to be added to the table
+    (GitHub issue #101).
     """
     mac = get_by_method(method_type, host, network_request)
-    if mac or not wait or settings.ARP_TIMEOUT <= 0:
+    timeout = max(settings.ARP_TIMEOUT, min_timeout)
+    if mac or not wait or timeout <= 0:
         return mac
 
-    deadline = time.monotonic() + settings.ARP_TIMEOUT
+    deadline = time.monotonic() + timeout
     delay = 0.01
 
     while True:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
-            gvars.log.debug(f"Host {host} not found after waiting {settings.ARP_TIMEOUT}s")
+            gvars.log.debug(f"Host {host} not found after waiting {timeout}s")
             return None
 
         time.sleep(min(delay, remaining))
@@ -1702,6 +1713,38 @@ def _lookup_host(method_type: str, host: str, network_request: bool, wait: bool)
         mac = get_by_method(method_type, host, network_request)
         if mac:
             return mac
+
+
+def _send_udp_packet(host: str) -> bool:
+    """
+    Send an empty UDP packet to ``host`` (an IPv4 or IPv6 address), so the OS adds it to
+    its ARP table (IPv4) or NDP neighbor cache (IPv6). Returns if the packet was sent.
+    """
+    if settings.DEBUG:
+        gvars.log.debug(
+            f"Attempting to populate ARP table with UDP packet to {host}:{settings.PORT}"
+        )
+
+    family = socket.AF_INET6 if ":" in host else socket.AF_INET
+
+    try:
+        # Creating the socket fails if e.g. IPv6 is disabled in the kernel
+        sock = socket.socket(family, socket.SOCK_DGRAM)
+    except OSError as ex:
+        gvars.log.error(f"Failed to create a socket for the ARP table population packet: {ex}")
+        return False
+
+    try:
+        sock.sendto(b"", (host, settings.PORT))
+    except Exception:
+        gvars.log.error("Failed to send ARP table population packet")
+        if settings.DEBUG:
+            gvars.log.debug(traceback.format_exc())
+        return False
+    finally:
+        sock.close()
+
+    return True
 
 
 def _default_interface_mac(network_request: bool) -> Optional[str]:
@@ -1788,9 +1831,10 @@ def get_mac_address(
         hostname: DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
         network_request: If network requests should be made when attempting to find the
             MAC of a remote host. If the ``arping`` command is available, this will be used.
-            If not, a UDP packet will be sent to the remote host to populate
-            the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
-            be configured using the setting :attr:`getmac.variables.Settings.PORT`
+            If not, or if ``arping`` doesn't find the host, a UDP packet will be sent to the
+            remote host to populate the ARP/NDP tables for IPv4/IPv6. The port this packet
+            is sent to can be configured using the setting
+            :attr:`getmac.variables.Settings.PORT`
             (by default, it's port 55555). To wait for the host to reply to it, set
             :attr:`getmac.variables.Settings.ARP_TIMEOUT`. If this is :obj:`False`,
             methods that send network requests (such as ``arping``) aren't used.
@@ -1893,6 +1937,8 @@ def get_mac_address(
 
     mac = None
     udp_packet_sent = False
+    # The method that sends an ARP request instead of the UDP packet, if one is used
+    arp_request_method = ""
 
     if network_request and (ip or ip6):
         send_udp_packet = True
@@ -1926,39 +1972,19 @@ def get_mac_address(
 
                     if arp_meth == str(METHOD_CACHE["ip4"]):
                         send_udp_packet = False
+                        arp_request_method = arp_meth
                         break
 
                     if any(
                         arp_meth == str(x) for x in FALLBACK_CACHE["ip4"]
                     ) and _swap_method_fallback("ip4", arp_meth):
                         send_udp_packet = False
+                        arp_request_method = arp_meth
                         break
 
         # Populate the ARP table by sending an empty UDP packet to a high port
         if send_udp_packet and not mac:
-            if settings.DEBUG:
-                gvars.log.debug(
-                    f"Attempting to populate ARP table with UDP packet "
-                    f"to {ip or ip6}:{settings.PORT}"
-                )
-
-            if ip:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            else:
-                sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-
-            try:
-                if ip:
-                    sock.sendto(b"", (ip, settings.PORT))
-                else:
-                    sock.sendto(b"", (ip6, settings.PORT))
-                udp_packet_sent = True
-            except Exception:
-                gvars.log.error("Failed to send ARP table population packet")
-                if settings.DEBUG:
-                    gvars.log.debug(traceback.format_exc())
-            finally:
-                sock.close()
+            udp_packet_sent = _send_udp_packet(ip or ip6)  # type: ignore[arg-type]
         elif settings.DEBUG:
             gvars.log.debug(
                 f"Not sending UDP packet, using network request "
@@ -1971,6 +1997,21 @@ def get_mac_address(
             mac = _lookup_host("ip6", ip6, network_request, wait=udp_packet_sent)
         elif ip:
             mac = _lookup_host("ip4", ip, network_request, wait=udp_packet_sent)
+
+            # The ARP request didn't find the host. That's also what happens if it can't be
+            # sent, e.g. arping doesn't have permission to (its exit codes don't tell these
+            # apart), so populate the table with the UDP packet and check it instead. Wait
+            # a little for the reply even if ARP_TIMEOUT is 0, since the ARP request already
+            # took far longer than that, and the table is empty when checked right away.
+            if (
+                not mac
+                and arp_request_method
+                and not settings.FORCE_METHOD
+                and _send_udp_packet(ip)
+            ):
+                mac = _lookup_host(
+                    "ip4", ip, network_request=False, wait=True, min_timeout=ARP_FALLBACK_TIMEOUT
+                )
         elif interface:
             mac = get_by_method("iface", interface, network_request)
         # === Default to searching for interface ===

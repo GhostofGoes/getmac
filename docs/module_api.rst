@@ -142,7 +142,7 @@ When :func:`~getmac.getmac.get_mac_address` looks up an IPv4 address (``ip=`` or
 2. Otherwise, if :class:`~getmac.getmac.CtypesHost` or :class:`~getmac.getmac.ArpingHost` is in the ``ip4`` cache, it's made the primary method, since it sends an ARP request itself.
 3. If neither applies, an empty UDP packet is sent to the host on the port specified by :attr:`settings.PORT <getmac.variables.Settings.PORT>` to force the system to populate the ARP table.
 
-Then the host is looked up with the ``ip4`` cache. If the UDP packet was sent and the host isn't found, it's looked up again until it's found or :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` seconds have passed (by default, it isn't looked up again). IPv6 lookups send the UDP packet and use ``ARP_TIMEOUT`` the same way, but there's no ``ArpFile`` or ARP request step.
+Then the host is looked up with the ``ip4`` cache. If the UDP packet was sent and the host isn't found, it's looked up again until it's found or :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` seconds have passed (by default, it isn't looked up again). If the ARP request from step 2 doesn't find the host, which is also what happens when it can't be sent (e.g. ``arping`` doesn't have permission to), the UDP packet is sent, and the host is looked up again without the methods that send network requests, the same way, but for at least 0.25 seconds even if ``ARP_TIMEOUT`` is lower. This isn't done if :attr:`settings.FORCE_METHOD <getmac.variables.Settings.FORCE_METHOD>` is set. IPv6 lookups send the UDP packet and use ``ARP_TIMEOUT`` the same way, but there's no ``ArpFile`` or ARP request step.
 
 
 Seeing which methods are used

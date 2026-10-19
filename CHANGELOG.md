@@ -63,6 +63,7 @@
     * Fixed `LanscanIface` (HP-UX) failing when the interface name is empty or whitespace and `lanscan` prints a blank line.
     * Fixed `GetmacExe` (Windows) failing on Python 3.10 and older when `getmac.exe` output contains a NUL character.
     * MACs are now checked for non-hexadecimal characters before they're returned. Before, a value like `zz:zz:zz:zz:zz:zz` from a command's output was returned as a MAC.
+* Fixed IPv4 lookups returning `None` when `arping` can't send ARP requests (e.g. it doesn't have permission to). The UDP packet is now sent, and the ARP table is checked for up to 0.25 seconds (or `ARP_TIMEOUT`, if it's longer). Also fixed IPv6 lookups raising `OSError` on systems with IPv6 turned off.
 
 ### Removed
 * Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
