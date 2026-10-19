@@ -1357,6 +1357,27 @@ def test_default_iface_route_command(benchmark, mocker, get_sample, expected_ifa
         ("ens160", "third_party/facter/proc_net_route"),
         # Only the header line, no routes
         (None, "third_party/facter/proc_net_route_empty"),
+        # The VPN's "0.0.0.0/1" route (OpenVPN's "def1") comes first, but isn't a default route
+        ("eth0", "linux_openvpn_def1/proc_net_route.out"),
+        # VPNs that add "0.0.0.0/1" routes (OpenVPN's "def1") ahead of the real default
+        ("eth0", "linux_vpn/proc_net_route_openvpn_def1_tun.out"),
+        ("eth0", "linux_vpn/proc_net_route_openvpn_def1_tap.out"),
+        ("eth0", "linux_vpn/proc_net_route_wireguard_def1.out"),
+        ("eth0", "third_party/meow_rs/proc_net_route_tun_def1"),
+        # VPNs that replace the default route
+        ("tun0", "linux_vpn/proc_net_route_openvpn_redirect_gateway.out"),
+        ("wg0", "linux_vpn/proc_net_route_wireguard_table_main.out"),
+        # VPNs that only add routes to their own networks
+        ("eth0", "linux_vpn/proc_net_route_openvpn_split.out"),
+        ("eth0", "linux_vpn/proc_net_route_wireguard_full.out"),
+        ("eth0", "linux_vpn/proc_net_route_wireguard_split.out"),
+        ("br0", "third_party/octoglow/proc_net_route_openvpn_server"),
+        # Unreachable, prohibit and blackhole defaults have no interface ("*")
+        (None, "linux_reject_routes/proc_net_route_unreachable_only.out"),
+        (None, "third_party/facter/proc_net_route_blackhole"),
+        ("eth0", "linux_reject_routes/proc_net_route_unreachable.out"),
+        ("eth0", "linux_reject_routes/proc_net_route_prohibit.out"),
+        ("eth0", "linux_reject_routes/proc_net_route_blackhole.out"),
     ],
 )
 def test_defaultifacelinuxroutefile_samples(benchmark, mocker, get_sample, iface, sample_file):
@@ -1383,6 +1404,15 @@ def test_defaultifacelinuxroutefile(mocker):
         return_value="Iface\tDestination\tGateway\nbogus\n\t\nens33\t00000000\t0210A8C0\n",
     )
     assert getmac.DefaultIfaceLinuxRouteFile().get() == "ens33"
+
+    # Default routes that are down, rejects, or have flags that aren't hexadecimal are
+    # skipped, and the next default route is used
+    header = "Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\n"
+    route = "{}\t00000000\t0210A8C0\t{}\t0\t0\t0\t00000000\n"
+    for flags in ("0002", "0203", "zz"):
+        data = header + route.format("eth1", flags) + route.format("eth0", "0003")
+        mocker.patch("getmac.utils.read_file", return_value=data)
+        assert getmac.DefaultIfaceLinuxRouteFile().get() == "eth0"
 
 
 @pytest.mark.parametrize(
@@ -1607,12 +1637,19 @@ def test_fcntl_iface(mocker):
     reason="Can't reliably mock fcntl on non-Linux platforms",
 )
 def test_fcntl_iface_no_such_device(mocker):
-    """The socket is closed even if the ioctl fails, e.g. for an interface that doesn't exist."""
+    """
+    An interface that doesn't exist has no MAC. That isn't raised, which would mark the
+    method unusable. Other errors are still raised. The socket is closed either way.
+    """
     mocker.patch("fcntl.ioctl", side_effect=OSError(errno.ENODEV, "No such device"))
     m = mocker.patch("socket.socket")
-    with pytest.raises(OSError, match="No such device"):
-        getmac.FcntlIface().get("nope0")
+    assert getmac.FcntlIface().get("nope0") is None
     m.return_value.__exit__.assert_called_once()
+
+    mocker.patch("fcntl.ioctl", side_effect=OSError(errno.EPERM, "Operation not permitted"))
+    with pytest.raises(OSError, match="Operation not permitted"):
+        getmac.FcntlIface().get("eth0")
+    assert m.return_value.__exit__.call_count == 2
 
 
 def test_fcntl_iface_test(mocker):

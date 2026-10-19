@@ -1,0 +1,1 @@
+The file in this folder is from the octoglow project (https://github.com/slomkowski/octoglow) and is licensed with the MIT license. It is `software/octoglowd/src/test/resources/proc-net-route/2.txt` at commit 1418ff7, unmodified, and only used as input data for unit tests. It is the routing table of a host running an OpenVPN server on `tun0`.
