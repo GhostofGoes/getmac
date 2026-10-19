@@ -1357,6 +1357,27 @@ def test_default_iface_route_command(benchmark, mocker, get_sample, expected_ifa
         ("ens160", "third_party/facter/proc_net_route"),
         # Only the header line, no routes
         (None, "third_party/facter/proc_net_route_empty"),
+        # The VPN's "0.0.0.0/1" route (OpenVPN's "def1") comes first, but isn't a default route
+        ("eth0", "linux_openvpn_def1/proc_net_route.out"),
+        # VPNs that add "0.0.0.0/1" routes (OpenVPN's "def1") ahead of the real default
+        ("eth0", "linux_vpn/proc_net_route_openvpn_def1_tun.out"),
+        ("eth0", "linux_vpn/proc_net_route_openvpn_def1_tap.out"),
+        ("eth0", "linux_vpn/proc_net_route_wireguard_def1.out"),
+        ("eth0", "third_party/meow_rs/proc_net_route_tun_def1"),
+        # VPNs that replace the default route
+        ("tun0", "linux_vpn/proc_net_route_openvpn_redirect_gateway.out"),
+        ("wg0", "linux_vpn/proc_net_route_wireguard_table_main.out"),
+        # VPNs that only add routes to their own networks
+        ("eth0", "linux_vpn/proc_net_route_openvpn_split.out"),
+        ("eth0", "linux_vpn/proc_net_route_wireguard_full.out"),
+        ("eth0", "linux_vpn/proc_net_route_wireguard_split.out"),
+        ("br0", "third_party/octoglow/proc_net_route_openvpn_server"),
+        # Unreachable, prohibit and blackhole defaults have no interface ("*")
+        (None, "linux_reject_routes/proc_net_route_unreachable_only.out"),
+        (None, "third_party/facter/proc_net_route_blackhole"),
+        ("eth0", "linux_reject_routes/proc_net_route_unreachable.out"),
+        ("eth0", "linux_reject_routes/proc_net_route_prohibit.out"),
+        ("eth0", "linux_reject_routes/proc_net_route_blackhole.out"),
     ],
 )
 def test_defaultifacelinuxroutefile_samples(benchmark, mocker, get_sample, iface, sample_file):
@@ -1383,6 +1404,15 @@ def test_defaultifacelinuxroutefile(mocker):
         return_value="Iface\tDestination\tGateway\nbogus\n\t\nens33\t00000000\t0210A8C0\n",
     )
     assert getmac.DefaultIfaceLinuxRouteFile().get() == "ens33"
+
+    # Default routes that are down, rejects, or have flags that aren't hexadecimal are
+    # skipped, and the next default route is used
+    header = "Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\n"
+    route = "{}\t00000000\t0210A8C0\t{}\t0\t0\t0\t00000000\n"
+    for flags in ("0002", "0203", "zz"):
+        data = header + route.format("eth1", flags) + route.format("eth0", "0003")
+        mocker.patch("getmac.utils.read_file", return_value=data)
+        assert getmac.DefaultIfaceLinuxRouteFile().get() == "eth0"
 
 
 @pytest.mark.parametrize(
