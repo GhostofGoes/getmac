@@ -1,0 +1,3 @@
+LINK     PROPERTY        PERM VALUE        EFFECTIVE    DEFAULT   POSSIBLE
+net0     mac-address     rw   52:54:0:12:34:56 52:54:0:12:34:56 52:54:0:12:34:56 -- 
+vnic0    mac-address     rw   2:8:20:2a:99:4f 2:8:20:2a:99:4f 2:8:20:2a:99:4f -- 

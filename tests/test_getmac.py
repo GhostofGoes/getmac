@@ -1028,7 +1028,9 @@ def _cached_method_names(method_type):
         ("NetBSD", "ip6", ["NdpNeighbors", "ArpFreebsd"]),
         ("NetBSD", "iface", ["IfconfigWithIfaceArg"]),
         ("NetBSD", "default_iface", ["DefaultIfaceRouteGetCommand"]),
-        ("SunOS", "ip4", ["ArpVariousArgs"]),
+        ("SunOS", "ip4", ["NetstatNetToMedia", "ArpVariousArgs"]),
+        ("SunOS", "iface", ["DladmIface", "IfconfigWithIfaceArg"]),
+        ("SunOS", "default_iface", ["DefaultIfaceRouteGetCommand"]),
         ("HP-UX", "iface", ["LanscanIface"]),
         # Lowercase names, other cases, and surrounding whitespace
         ("darwin", "iface", ["DarwinNetworksetupIface", "IfconfigEther"]),

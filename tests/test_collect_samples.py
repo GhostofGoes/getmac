@@ -330,12 +330,29 @@ def test_file_sample_filename(collect_samples):
         (("FreeBSD", "11.2-RELEASE", "FreeBSD 11.2-RELEASE"), {}, "freebsd_11.2"),
         (("OpenBSD", "6.4", "GENERIC#349"), {}, "openbsd_6.4"),
         (("SunOS", "5.10", "Generic_147148-26"), {}, "solaris_10"),
+        (
+            ("SunOS", "5.11", "11.4.90.212.0"),
+            {"ID": "solaris", "VERSION_ID": "11.4"},
+            "solaris_11.4",
+        ),
+        (
+            ("SunOS", "5.11", "omnios-r151058-516f7694c9"),
+            {"ID": "omnios", "VERSION_ID": "r151058"},
+            "omnios_r151058",
+        ),
+        (("SunOS", "5.11", "illumos-5400c85432"), {}, "openindiana_2026.04"),
         (("HP-UX", "B.11.31", "U"), {}, "hpux_11.31"),
         (("AIX", "2", "7"), {}, "aix_7.2"),
     ],
 )
-def test_default_dir_name(mocker, collect_samples, uname, os_release, expected):
+def test_default_dir_name(mocker, collect_samples, get_sample, uname, os_release, expected):
     mocker.patch.object(collect_samples, "is_android", return_value=False)
+    release_file = "openindiana_2026.04/cat_etc-release.out" if "illumos" in uname[2] else None
+    mocker.patch.object(
+        collect_samples,
+        "read_bytes",
+        return_value=get_sample(release_file).encode() if release_file else None,
+    )
     mocker.patch("platform.mac_ver", return_value=("10.12.6", ("", "", ""), "x86_64"))
     system, release, version = uname
     uname = platform.uname_result(system, "hostname", release, version, "x86_64")
