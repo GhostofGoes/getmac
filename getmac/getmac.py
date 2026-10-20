@@ -66,6 +66,7 @@ class Method:
         "wsl",
         "openbsd",
         "freebsd",
+        "netbsd",
         "sunos",
         "hp-ux",
         "other",
@@ -196,10 +197,10 @@ class ArpFile(Method):
 
 class ArpFreebsd(Method):
     """
-    Use the ``arp`` command to find the MAC address of a host on FreeBSD.
+    Use the ``arp`` command to find the MAC address of a host on FreeBSD and NetBSD.
     """
 
-    platforms = {"freebsd"}
+    platforms = {"freebsd", "netbsd"}
     method_type = "ip"
 
     def test(self) -> bool:
@@ -225,6 +226,43 @@ class ArpOpenbsd(Method):
 
     def get(self, arg: str) -> Optional[str]:
         return utils.search(re.escape(arg) + self._regex, utils.popen("arp", "-an"))
+
+
+class NdpNeighbors(Method):
+    """
+    Use the ``ndp -an`` command to find the MAC address of an IPv6 host
+    in the NDP neighbor cache on NetBSD.
+    """
+
+    platforms = {"netbsd"}
+    method_type = "ip6"
+
+    def test(self) -> bool:
+        return utils.check_command("ndp")
+
+    def get(self, arg: str) -> Optional[str]:
+        if not arg:
+            return None
+
+        # Link-local addresses have the interface appended, e.g. "fe80::2%wm0".
+        # Match it if it's part of the argument, or allow any interface if it isn't.
+        ip, has_scope, scope = arg.partition("%")
+        if scope.isdigit():
+            # ndp shows interface names, so "fe80::2%1" has to be "fe80::2%wm0"
+            try:
+                scope = socket.if_indextoname(int(scope))
+            except (OSError, OverflowError):
+                pass
+        regex = r"^" + re.escape(ip)
+        regex += r"%" + re.escape(scope) if has_scope else r"(?:%\S+)?"
+
+        # Columns: Neighbor, Linklayer Address, Netif, Expire, S, Flags
+        # Incomplete entries have "(incomplete)" instead of a MAC, so they don't match.
+        return utils.search(
+            regex + r"[ \t]+" + consts.MAC_RE_COLON + r"[ \t]",
+            utils.popen("ndp", "-an"),
+            flags=re.MULTILINE | re.IGNORECASE,
+        )
 
 
 class ArpVariousArgs(Method):
@@ -845,7 +883,7 @@ class IfconfigWithIfaceArg(Method):
     (e.g. ``ifconfig eth0``) to determine MAC address of an interface.
     """
 
-    platforms = {"linux", "wsl", "freebsd", "openbsd", "other"}
+    platforms = {"linux", "wsl", "freebsd", "openbsd", "netbsd", "other"}
     method_type = "iface"
 
     def test(self) -> bool:
@@ -1130,7 +1168,7 @@ class DefaultIfaceRouteGetCommand(Method):
     on BSD-based platforms, including Darwin (MacOS).
     """
 
-    platforms = {"darwin", "freebsd", "other"}
+    platforms = {"darwin", "freebsd", "netbsd", "other"}
     method_type = "default_iface"
 
     def test(self) -> bool:
@@ -1276,6 +1314,7 @@ METHODS: list[type[Method]] = [
     ArpExe,
     NetshNeighbors,
     DarwinNetworksetupIface,
+    NdpNeighbors,
     ArpFreebsd,
     ArpOpenbsd,
     IfconfigWithIfaceArg,

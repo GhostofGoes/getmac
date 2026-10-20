@@ -196,6 +196,9 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - FreeBSD
     - Commands: `ifconfig`, `arp`
     - Default interfaces: `netstat`
+- NetBSD
+    - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
+    - Default interfaces: `route`
 - Android
     - The same commands and files as Linux, where they're available. See the note on Android below.
 
@@ -217,6 +220,7 @@ All or almost all features should work on "supported" platforms. While other ver
 - Windows Subsystem for Linux (WSL)
 - FreeBSD (11+)
 - OpenBSD
+- NetBSD (9.3+)
 - Docker
 - BusyBox (not technically a platform, but several of the methods work on this platform)
 

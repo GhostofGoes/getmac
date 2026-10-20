@@ -146,7 +146,7 @@ def _methods_getmac_uses(platform_name, method_type):
     The Methods getmac uses for a type of lookup on a platform, in order. This runs
     initialize_method_cache() with the platform as OVERRIDE_PLATFORM and every Method's
     test passing, so it includes the "other" Methods that getmac falls back to when
-    there aren't any Methods for the platform (e.g. on NetBSD).
+    there aren't any Methods for the platform (e.g. for IPv6 hosts on HP-UX).
     """
     with ExitStack() as stack:
         for method in getmac.METHODS:
@@ -173,7 +173,7 @@ def test_collects_everything_getmac_uses_on_each_platform(mocker, collect_sample
     Fails if getmac can use a command or file on one of the script's platforms that
     the script doesn't collect for that platform. Unlike test_collects_everything_methods_use,
     this includes the "other" Methods that getmac falls back to on platforms that don't have
-    their own Methods for a type of lookup (e.g. NetBSD, or interfaces on Solaris).
+    their own Methods for a type of lookup (e.g. IPv6 hosts on HP-UX, or interfaces on Solaris).
     """
     recordings = {}
     missing = {}

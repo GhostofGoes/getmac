@@ -246,7 +246,7 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
 }
 
 # The groups to collect for each platform. Platform names are the same as the ones
-# used by getmac's Method.platforms, plus "netbsd". Unlike getmac, "wsl" is used for
+# used by getmac's Method.platforms. Unlike getmac, "wsl" is used for
 # both WSL1 and WSL2, since both can run Windows commands. The "other_*" groups are
 # for the types of lookups that getmac doesn't have Methods for on the platform, e.g.
 # IPv6 hosts and the default interface on HP-UX, where "arp" and "route" exist.
@@ -258,7 +258,7 @@ PLATFORMS: dict[str, tuple[str, ...]] = {
     "darwin": ("posix", "darwin"),
     "freebsd": ("posix", "bsd"),
     "openbsd": ("posix", "bsd", "openbsd"),
-    "netbsd": ("posix", "bsd", "netbsd", "other_ip", "other_iface", "other_default_iface"),
+    "netbsd": ("posix", "bsd", "netbsd"),
     "sunos": ("posix", "sunos", "other_iface", "other_default_iface"),
     "hp-ux": ("posix", "hpux", "other_ip", "other_default_iface"),
     # Unknown platform, try everything Unix-like (this has all of the "other_*" commands)
