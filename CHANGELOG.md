@@ -41,6 +41,7 @@
 * Fixed `ifconfig` parsing on Solaris and Debian GNU/kFreeBSD, which print MACs without leading zeros (e.g. `0:c:29:c1:70:2a`).
 * Fixed the `CtypesHost` method on Windows passing a string instead of bytes to `inet_addr()` when looking up a hostname.
 * Fixed the `FcntlIface` method on Linux not closing its socket after each lookup.
+* Finding the default interface on macOS and the BSDs no longer does DNS lookups, which could be slow or hang until `COMMAND_TIMEOUT` when DNS is unreachable. The commands are now `route -n get default` and, on FreeBSD, `netstat -rn`.
 * `get_mac_address()` with no arguments: if the default interface can't be found (e.g. there aren't any routes) or doesn't have a MAC (e.g. a VPN tunnel), the first interface with a MAC that isn't a loopback interface is used (Issue [#78](https://github.com/GhostofGoes/getmac/issues/78)).
     * It no longer guesses names like `eth0` or `en0`, or returns the loopback interface's `00:00:00:00:00:00`.
     * Also helps address issue [#91](https://github.com/GhostofGoes/getmac/issues/91).

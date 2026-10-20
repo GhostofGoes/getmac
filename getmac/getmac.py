@@ -1167,8 +1167,11 @@ class DefaultIfaceRouteCommand(Method):
 
 class DefaultIfaceRouteGetCommand(Method):
     """
-    Determine default interface using the ``route get default`` command
+    Determine default interface using the ``route -n get default`` command
     on BSD-based platforms, including Darwin (MacOS).
+
+    ``-n`` skips the reverse DNS lookup of the gateway, which can be slow or
+    hang until the command times out when DNS is unreachable.
     """
 
     platforms = {"darwin", "freebsd", "netbsd", "dragonfly", "other"}
@@ -1178,7 +1181,7 @@ class DefaultIfaceRouteGetCommand(Method):
         return utils.check_command("route")
 
     def get(self, arg: str = "") -> Optional[str]:
-        output = utils.popen("route", "get default")
+        output = utils.popen("route", "-n get default")
 
         if not output:
             return None
@@ -1238,7 +1241,8 @@ class DefaultIfaceFreeBsd(Method):
     """
     Determine the default interface on FreeBSD using the ``netstat`` command.
 
-    The full command is ``netstat -r``.
+    The full command is ``netstat -rn``. ``-n`` skips the DNS lookups of every
+    address in the routing table. This is the fallback if ``route`` fails.
     """
 
     platforms = {"freebsd"}
@@ -1248,7 +1252,7 @@ class DefaultIfaceFreeBsd(Method):
         return utils.check_command("netstat")
 
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
-        output = utils.popen("netstat", "-r")
+        output = utils.popen("netstat", "-rn")
         return utils.search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", output)
 
 
