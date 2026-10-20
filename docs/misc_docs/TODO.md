@@ -82,7 +82,7 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] Properly support WSL2
 - [ ] `nwmgr` for HP-UX
 - [ ] Properly implement and test HP-UX for `netstat` and `ifconfig`, add `hp-ux` to `platforms` for corresponding Methods
-- [ ] FreeBSD default interface: `route get default`
+- [x] FreeBSD default interface: `route -n get default`, falling back to `netstat -rn`
 - [ ] Support NetBSD
     - platform: `netbsd`
     - default interface: `wm0`

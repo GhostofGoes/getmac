@@ -358,6 +358,31 @@ def test_get_by_method_fallback_on_error(mocker, get_sample, error, falls_back):
     assert getmac.FALLBACK_CACHE["ip4"] == ([] if falls_back else [arp_file])
 
 
+@pytest.mark.parametrize("version", ["13.5", "15.0"])
+def test_get_by_method_default_iface_freebsd_no_default_route(mocker, get_sample, version):
+    """
+    FreeBSD with no default route: ``route -n get default`` prints "route has not been
+    found" to stderr and exits with code 255 on FreeBSD 13.5 and 15.0, so getmac falls back
+    to ``netstat -rn``, which doesn't list a default route either. (FreeBSD 14.3 exits with
+    code 0 and no output instead, which returns None without a fallback.)
+    """
+    route_get, netstat = getmac.DefaultIfaceRouteGetCommand(), getmac.DefaultIfaceFreeBsd()
+    getmac.METHOD_CACHE["default_iface"] = route_get
+    getmac.FALLBACK_CACHE["default_iface"] = [netstat]
+    no_route = get_sample(f"freebsd_{version}/netstat_-rn_no_default_route.out")
+
+    def popen(command, args):
+        if command == "route":
+            raise CalledProcessError(returncode=255, cmd=f"{command} {args}")
+        return no_route
+
+    mocker.patch("getmac.utils.popen", side_effect=popen)
+
+    assert getmac.get_by_method("default_iface") is None
+    assert route_get.unusable is True
+    assert getmac.METHOD_CACHE["default_iface"] is netstat
+
+
 def test_get_by_method_fallback_on_unusable(mocker, get_sample):
     """
     Methods can mark themselves unusable, e.g. ArpFile if /proc/net/arp can't
