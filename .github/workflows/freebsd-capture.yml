@@ -23,5 +23,5 @@ jobs:
           release: ${{ matrix.release }}
           usesh: true
           copyback: false
-          prepare: pkg install -y python3
+          prepare: pkg install -y python3 || true
           run: sh scripts/freebsd_capture.sh
