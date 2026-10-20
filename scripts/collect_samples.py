@@ -240,7 +240,7 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
     ),
     "other_default_iface": (  # Default interface
         cmd("route -n"),
-        cmd("route get default"),
+        cmd("route -n get default"),
         cmd("ip route list 0/0"),
     ),
 }
