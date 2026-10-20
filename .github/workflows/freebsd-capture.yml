@@ -1,0 +1,27 @@
+name: FreeBSD capture (temporary)
+on:
+  push:
+    branches:
+      - tmp/freebsd-samples
+permissions:
+  contents: read
+jobs:
+  capture:
+    name: FreeBSD ${{ matrix.release }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ["15.0", "14.3", "13.5"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: vmactions/freebsd-vm@c46abacb49f09938ca4e1702d15d836285d694cc # v1.5.9
+        with:
+          release: ${{ matrix.release }}
+          usesh: true
+          copyback: false
+          prepare: pkg install -y python3
+          run: sh scripts/freebsd_capture.sh
