@@ -1017,10 +1017,19 @@ def test_openbsd_remote(benchmark, mocker, get_sample):
     utils.check_command.assert_called_once_with("arp")
 
 
-def test_freebsd_get_default_iface(benchmark, mocker, get_sample):
-    content = get_sample("freebsd11/netstat_r.out")
+@pytest.mark.parametrize(
+    ("iface", "sample_file"),
+    [
+        ("em0", "freebsd11/netstat_r.out"),
+        ("ena0", "third_party/jackpal_gateway/freeBSD.txt"),
+        (None, "third_party/jackpal_gateway/freeBSDNoRoute.txt"),
+    ],
+)
+def test_freebsd_get_default_iface(benchmark, mocker, get_sample, iface, sample_file):
+    content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
-    assert "em0" == benchmark(getmac.DefaultIfaceFreeBsd().get)
+    assert iface == benchmark(getmac.DefaultIfaceFreeBsd().get)
+    utils.popen.assert_called_with("netstat", "-rn")
 
     mocker.patch("getmac.utils.check_command", return_value=False)
     assert getmac.DefaultIfaceFreeBsd().test() is False
@@ -1445,6 +1454,7 @@ def test_defaultifaceiproute(mocker):
         ("en0", "macos_26.6.2/route_get_default.out"),
         ("en0", "macos_26.6.2/route_-n_get_default.out"),
         ("em0", "freebsd11/route_get_default.out"),
+        ("vtnet0", "third_party/ohai/freebsd_route_-n_get_default"),
         # Solaris (uses the "other" platform methods)
         ("net0", "third_party/facter/route_n_get_default"),
     ],
@@ -1453,6 +1463,7 @@ def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, ifac
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
     assert iface == benchmark(getmac.DefaultIfaceRouteGetCommand().get)
+    utils.popen.assert_called_with("route", "-n get default")
 
     mocker.patch("getmac.utils.popen", return_value=None)
     assert not getmac.DefaultIfaceRouteGetCommand().get()
