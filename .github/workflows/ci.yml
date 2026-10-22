@@ -60,6 +60,10 @@ jobs:
           - "3.13"
           - "3.14"
           - "3.15"
+          # Free-threaded ("no GIL") builds of CPython. 3.13t isn't tested: it's experimental,
+          # and Hypothesis can't be built for it (PyO3 only supports free-threaded 3.14+).
+          - "3.14t"
+          - "3.15t"
           - "pypy3.10"
           - "pypy3.11"
         architecture:
@@ -101,8 +105,15 @@ jobs:
           cache: true
       - name: Install dependencies
         run: pdm sync -d -G test
+      # Free-threaded Python turns the GIL back on when it imports a C extension that
+      # doesn't declare free-threading support (e.g. a test dependency built from an sdist).
+      # PYTHON_GIL=0 keeps it off, so the tests really run without the GIL.
+      - name: Keep the GIL disabled on free-threaded Python
+        if: endsWith(matrix.python-version, 't')
+        shell: bash
+        run: echo "PYTHON_GIL=0" >> "$GITHUB_ENV"
       - name: Show platform and environment information
-        run: pdm run python -c "import os, platform, sys; print(sys.version); print(platform.python_implementation(), platform.machine()); print('sys.platform:', sys.platform, 'os.name:', os.name); print(platform.uname())"
+        run: pdm run python -c "import os, platform, sys; print(sys.version); print(platform.python_implementation(), platform.machine()); print('sys.platform:', sys.platform, 'os.name:', os.name); print('GIL enabled:', sys._is_gil_enabled() if hasattr(sys, '_is_gil_enabled') else True); print(platform.uname())"
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
         run: pdm run test
