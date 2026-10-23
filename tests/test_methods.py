@@ -95,6 +95,7 @@ def test_darwinnetworksetupiface_not_a_hardware_port(mocker, get_sample):
 
 FACTER_IFCONFIG = "third_party/facter/ifconfig/"
 GLPI_IFCONFIG = "third_party/glpi_agent/generic/ifconfig/"
+ANSIBLE = "third_party/ansible/"
 
 ifconfigether_samples = [
     ("2c:f0:ee:2f:c7:de", "en0", "OSX/ifconfig.out"),
@@ -321,6 +322,18 @@ ifconfig_samples = [
     # NetBSD uses "address:" instead of "ether"
     ("08:00:27:ce:da:53", "wm0", "netbsd8.2/ifconfig.out"),
     ("08:00:27:ce:da:53", "wm0", "netbsd8.2/ifconfig_wm0.out"),
+    *(
+        ("52:54:00:12:34:56", "wm0", f"{version}/{sample}")
+        for version in ("netbsd_9.3", "netbsd_10.1")
+        for sample in ("ifconfig.out", "ifconfig_-a.out", "ifconfig_-av.out", "ifconfig_wm0.out")
+    ),
+    *(
+        ("52:54:00:12:34:56", "wm0", f"netbsd_11.0/{sample}")
+        for sample in ("ifconfig.out", "ifconfig_-a.out", "ifconfig_wm0.out")
+    ),
+    # Ansible samples (NetBSD 7.1, and the newer format with "/24" and "flags")
+    ("52:54:00:63:55:af", "re0", ANSIBLE + "netbsd_7.1_ifconfig_-a"),
+    ("52:54:00:63:55:af", "re0", ANSIBLE + "netbsd_post_7.1_ifconfig_-a"),
     # Facter samples
     ("00:0e:0c:68:67:7c", "fxp0", FACTER_IFCONFIG + "6.0-STABLE_FreeBSD_ifconfig"),
     ("00:0e:0c:68:67:7c", "fxp0", FACTER_IFCONFIG + "freebsd_6_0"),
@@ -1033,6 +1046,18 @@ def test_freebsd_get_default_iface(benchmark, mocker, get_sample):
         ("52:54:00:12:35:02", "10.0.2.2", "freebsd11/arp_-a.out"),
         ("08:00:27:ab:b0:67", "10.0.2.15", "freebsd11/arp_-a.out"),
         ("52:54:00:12:35:02", "10.0.2.2", "freebsd11/arp_10-0-2-2.out"),
+        # NetBSD's "arp" prints the same format. NetBSD 10 adds the expiry and state.
+        ("52:54:00:12:35:02", "10.0.2.2", "netbsd8.2/arp_10-0-2-2.out"),
+        ("52:54:00:12:35:03", "10.0.2.3", "netbsd8.2/arp_a.out"),
+        *(
+            ("52:55:c0:a8:4c:02", "192.168.76.2", f"{version}/{sample}")
+            for version in ("netbsd_9.3", "netbsd_10.1")
+            for sample in ("arp_192-168-76-2.out", "arp_-a.out", "arp_-an.out")
+        ),
+        *(
+            ("52:55:c0:a8:7a:02", "192.168.122.2", f"netbsd_11.0/{sample}")
+            for sample in ("arp_192-168-122-2.out", "arp_-a.out", "arp_-an.out")
+        ),
     ],
 )
 def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -1445,6 +1470,12 @@ def test_defaultifaceiproute(mocker):
         ("en0", "macos_26.6.2/route_get_default.out"),
         ("en0", "macos_26.6.2/route_-n_get_default.out"),
         ("em0", "freebsd11/route_get_default.out"),
+        ("wm0", "netbsd_9.3/route_get_default.out"),
+        ("wm0", "netbsd_9.3/route_-n_get_default.out"),
+        ("wm0", "netbsd_10.1/route_get_default.out"),
+        ("wm0", "netbsd_10.1/route_-n_get_default.out"),
+        ("wm0", "netbsd_11.0/route_get_default.out"),
+        ("wm0", "netbsd_11.0/route_-n_get_default.out"),
         # Solaris (uses the "other" platform methods)
         ("net0", "third_party/facter/route_n_get_default"),
     ],
