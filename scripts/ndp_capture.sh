@@ -43,6 +43,7 @@ if [ -n "$py" ]; then
 fi
 
 for f in "$out"/*; do echo "===== $f"; cat "$f"; done
+for f in "$out"/*; do sha256sum "$f" 2>/dev/null || sha256 "$f" 2>/dev/null || shasum -a 256 "$f"; done
 echo "===== BEGIN TARBALL $name"
 (cd /tmp/ndp_samples && tar cf - "$name" | gzip -9 | openssl base64)
 echo "===== END TARBALL $name"

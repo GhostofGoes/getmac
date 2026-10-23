@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.getcwd())
+from getmac import utils  # noqa: E402
 from getmac.getmac import NdpNeighbors  # noqa: E402
 
 iface = sys.argv[1]
@@ -31,7 +32,7 @@ for line in out.splitlines()[1:]:
         if scope == iface:
             queries.append(f"{base}%{index}")
     for q in queries:
-        got = method.get(q)
+        got = utils.clean_mac(method.get(q)) if method.get(q) else None
         ok = got == want
         failures += not ok
         print(("OK  " if ok else "FAIL"), repr(q), "got", got, "want", want, "raw", lladdr)

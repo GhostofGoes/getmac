@@ -231,10 +231,10 @@ class ArpOpenbsd(Method):
 class NdpNeighbors(Method):
     """
     Use the ``ndp -an`` command to find the MAC address of an IPv6 host
-    in the NDP neighbor cache on NetBSD.
+    in the NDP neighbor cache on macOS, FreeBSD, NetBSD, OpenBSD and DragonFly BSD.
     """
 
-    platforms = {"netbsd"}
+    platforms = {"darwin", "freebsd", "netbsd", "openbsd", "other"}
     method_type = "ip6"
 
     def test(self) -> bool:
@@ -258,8 +258,9 @@ class NdpNeighbors(Method):
 
         # Columns: Neighbor, Linklayer Address, Netif, Expire, S, Flags
         # Incomplete entries have "(incomplete)" instead of a MAC, so they don't match.
+        # macOS and DragonFly BSD leave out leading zeros, e.g. "2:0:5e:a:b:c".
         return utils.search(
-            regex + r"[ \t]+" + consts.MAC_RE_COLON + r"[ \t]",
+            regex + r"[ \t]+" + consts.MAC_RE_SHORT + r"[ \t]",
             utils.popen("ndp", "-an"),
             flags=re.MULTILINE | re.IGNORECASE,
         )
