@@ -64,9 +64,6 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] IPv6: `route print -6`
 - [ ] Windows API
 
-## OSX (Darwin) IPv6
-- [ ] macOS doesn't have a working IPv6 method: `ArpVariousArgs` runs `arp`, which is IPv4-only. Add a method for `ndp -an` (samples in `tests/samples/macos_15.7.9/` and `macos_26.6.2/`).
-
 ## POSIX
 - [ ] `arping` (command): investigate for remote macs
 - [ ] `fcntl` (library): IPv6?
@@ -76,7 +73,6 @@ This is going to be a bit more complicated since the highest metric routes are g
 ## OSX (Darwin)
 - [ ] Determine best remote host detection methods, split off not-applicable commands.
 - [ ] Darwin hostnames? Does it have arp file? (Do less work)
-- [ ] Mac: `ndp -a` to get IPv6 network neighbors (NDP table)
 
 ## Misc platforms
 - [ ] Properly support WSL2
@@ -207,7 +203,14 @@ methods (list): Optional list of methods to use for MAC address lookup.
 - [x] [issue #45](https://github.com/GhostofGoes/getmac/issues/45): NetBSD support. Samples from NetBSD 9.3, 10.1 and 11.0 VMs (and 7.1 from Ansible's tests), and tested on 10 and 11 in CI (`.github/workflows/netbsd.yml`). Notes from the real output:
     - Interfaces: `ifconfig <iface>` prints the MAC on an `address:` line. `wm0` is only the name for Intel (and emulated e1000) NICs, e.g. virtio is `vioif0`.
     - IPv4 hosts: `arp <ip>` prints `? (10.0.2.2) at <mac> on wm0`, the same as FreeBSD (NetBSD 10 adds the expiry and state after it), so `ArpFreebsd` is used.
+    - IPv6 hosts: `arp` is IPv4-only, so `ndp -an` is used (new method `NdpNeighbors`).
     - Default interface: `route get default` works (it fails with "not in table" if there's no default route). `route -n` is a usage error, `route -nq show` and `netstat -r` print the routing table (not host MACs), and `netstat -r` has more columns than on FreeBSD, so `DefaultIfaceFreeBsd` doesn't work. `netstat -iae` and `ifconfig -v` are usage errors, and there's no `ip` command.
+- [x] IPv6 hosts on macOS, FreeBSD, NetBSD and OpenBSD: new method `NdpNeighbors` for `ndp -an`. Tested live on FreeBSD 14.5 and 15.1, NetBSD 10 and 11, OpenBSD 7.9 and 8.0, DragonFly BSD 6.4.2, and macOS 15 (arm64 and x86_64) and 26, after adding static entries with `ndp -s` (the CI VMs and runners have no IPv6 neighbors). Notes from the real output:
+    - macOS and DragonFly BSD leave out leading zeros in MACs (`2:0:5e:a:b:c`), like macOS's `arp`.
+    - Link-local addresses have the interface appended (`fe80::2%wm0`). A numeric scope (`fe80::2%1`) is changed to the interface name with `socket.if_indextoname()`.
+    - NetBSD doesn't list the interfaces' own addresses. FreeBSD, OpenBSD, DragonFly BSD and macOS do (as "permanent" entries).
+    - On macOS, a static entry for a global address showed as "expired", with an "(incomplete)" duplicate after it. The first one's MAC is used.
+    - Solaris and illumos weren't tested, so `sunos` isn't included. DragonFly BSD's `ndp -an` works too, but getmac doesn't have a `dragonfly` platform (it uses the "other" methods), so it isn't used there yet.
 
 ### Before releasing
 - [x] Remove `1.0.0-wip` from the GitHub Pages deploy condition in `ci.yml` when merging into `main`

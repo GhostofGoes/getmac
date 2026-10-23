@@ -1,0 +1,6 @@
+Neighbor                        Linklayer Address  Netif Expire    St Flgs Prbs
+fd00:6e64:7000::1               52:54:0:12:34:56  vtnet0 permanent R      
+fd00:6e64:7000::10              2:0:5e:a:b:c      vtnet0 permanent R      
+fe80::a0b:c0d%vtnet0            2:0:5e:10:20:30   vtnet0 permanent R      
+fe80::5054:ff:fe12:3456%vtnet0  52:54:0:12:34:56  vtnet0 permanent R      
+fe80::1%lo0                     (incomplete)         lo0 permanent R      

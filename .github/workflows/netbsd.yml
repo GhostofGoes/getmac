@@ -81,6 +81,19 @@ jobs:
             ping -n -c 1 "$gateway"
             gateway_mac=$(arp -n "$gateway" | awk '{print $4}')
             test "$($getmac -dd -4 "$gateway")" = "$gateway_mac"
+
+            # IPv6 hosts. The VMs don't have any IPv6 neighbors, so this adds static
+            # entries for a ULA address and a link-local address.
+            ifconfig "$iface" inet6 fd00:6e64:7000::1 prefixlen 64 alias
+            ndp -s fd00:6e64:7000::10 02:00:5e:0a:0b:0c
+            ndp -s "fe80::a0b:c0d%$iface" 02:00:5e:10:20:30
+            ndp -an
+            index=$(python -c "import socket; print(socket.if_nametoindex('$iface'))")
+            test "$($getmac -dd -N -6 fd00:6e64:7000::10)" = "02:00:5e:0a:0b:0c"
+            test "$($getmac -N -6 "fe80::a0b:c0d%$iface")" = "02:00:5e:10:20:30"
+            test "$($getmac -N -6 "fe80::a0b:c0d%$index")" = "02:00:5e:10:20:30"
+            test "$($getmac -N -6 fe80::a0b:c0d)" = "02:00:5e:10:20:30"
+            if $getmac -N -6 fd00:6e64:7000::11; then exit 1; fi
             echo "::endgroup::"
 
             echo "::group::Collect samples"

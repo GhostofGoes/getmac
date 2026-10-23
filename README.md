@@ -185,19 +185,19 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - HP-UX:
     - Commands: `lanscan`
 - Mac OSX (Darwin)
-    - Commands: `networksetup`, `arping`
+    - Commands: `networksetup`, `arping`, `ndp` (IPv6 hosts)
     - Many of the same commands as Linux
 - WSL
     - Windows commands are used for remote hosts
     - Unix commands are used for interfaces
 - OpenBSD
-    - Commands: `ifconfig`, `arp`
+    - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
     - Default interfaces: `route`
 - FreeBSD
-    - Commands: `ifconfig`, `arp`
+    - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
     - Default interfaces: `netstat`
 - NetBSD
-    - Commands: `ifconfig`, `arp`
+    - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
     - Default interfaces: `route`
 - Android
     - The same commands and files as Linux, where they're available. See the note on Android below.
