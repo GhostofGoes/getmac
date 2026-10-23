@@ -1,0 +1,87 @@
+# Temporary: captures real ndp output on BSD VMs and macOS. Not for merging.
+name: ndp capture (temporary)
+on:
+  push:
+    branches:
+      - ci/ndp-capture-temp
+permissions:
+  contents: read
+jobs:
+  freebsd:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ["15.1", "14.5"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: vmactions/freebsd-vm@c46abacb49f09938ca4e1702d15d836285d694cc # v1.5.9
+        with:
+          release: ${{ matrix.release }}
+          prepare: pkg install -y python3 || true
+          run: sh scripts/ndp_capture.sh freebsd_${{ matrix.release }}
+  openbsd:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ["8.0", "7.9"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: vmactions/openbsd-vm@f1ca8bc8ecc5b6ef7218e5b914836e067e1546d3 # v1.4.9
+        with:
+          release: ${{ matrix.release }}
+          prepare: pkg_add -I python%3 || pkg_add -I python || true
+          run: sh scripts/ndp_capture.sh openbsd_${{ matrix.release }}
+  dragonfly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: vmactions/dragonflybsd-vm@4ab776fa9f914fbea72f13715b451e77e7ef5c41 # v1.3.4
+        with:
+          release: "6.4.2"
+          prepare: pkg install -y python3 || true
+          run: sh scripts/ndp_capture.sh dragonfly_6.4.2
+  netbsd:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ["10.2", "11.0"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: vmactions/netbsd-vm@c8a0d7ddb84619a7a8cc4e652efa7950b3fd9f92 # v1.5.2
+        with:
+          release: ${{ matrix.release }}
+          prepare: /usr/sbin/pkg_add python313 || true
+          run: |
+            sh scripts/ndp_capture.sh netbsd_${{ matrix.release }}
+            export PATH="$PATH:/sbin:/usr/sbin:/usr/pkg/bin"
+            python3.13 scripts/collect_samples.py --output-root /tmp/collect > /dev/null 2>&1; echo "collect rc=$?"
+            echo "===== BEGIN TARBALL collect_netbsd_${{ matrix.release }}"
+            (cd /tmp/collect && tar cf - . | gzip -9 | openssl base64)
+            echo "===== END TARBALL collect_netbsd_${{ matrix.release }}"
+  macos:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26, macos-15-intel]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - run: sudo sh scripts/ndp_capture.sh "$(sw_vers -productName | tr -d ' ' | tr A-Z a-z)_$(sw_vers -productVersion)_$(uname -m)"
