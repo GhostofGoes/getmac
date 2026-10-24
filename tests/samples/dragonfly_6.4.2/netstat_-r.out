@@ -1,0 +1,21 @@
+Routing tables
+
+Internet:
+Destination        Gateway            Flags    Refs      Use  Netif Expire
+default            192.168.122.2      UGSc        3        0 vtnet0       
+localhost          localhost          UH          0        0    lo0       
+192.168.122        link#1             UC          2        0 vtnet0       
+192.168.122.2      52:55:c0:a8:7a:02  UHLW        4       59 vtnet0   1159
+192.168.122.3      52:55:c0:a8:7a:03  UHLW        1       20 vtnet0   1162
+192.168.122.77     02:00:5e:0a:0b:0c  UHLS        0        0 vtnet0       
+
+Internet6:
+Destination        Gateway            Flags      Netif Expire
+localhost          localhost          UH          lo0       
+fe80::%vtnet0      link#1             UC       vtnet0       
+fe80::5054:ff:fe12 52:54:00:12:34:56  UHL         lo0       
+fe80::%lo0         fe80::1%lo0        Uc          lo0       
+fe80::1%lo0        link#2             UHL         lo0       
+ff01::             localhost          U           lo0       
+ff02::%vtnet0      link#1             UC       vtnet0       
+ff02::%lo0         localhost          UC          lo0       

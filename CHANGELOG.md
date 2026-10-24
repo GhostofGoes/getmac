@@ -27,6 +27,7 @@
 * New setting, `settings.COMMAND_TIMEOUT`. Commands that getmac runs (such as `arp` or `ipconfig.exe`) are stopped if they take longer than this many seconds (15 by default), and the next method is tried. Before, a command that never finished made the lookup hang forever.
 * NetBSD support, tested on NetBSD 9.3, 10 and 11. (Issue [#45](https://github.com/GhostofGoes/getmac/issues/45))
 * IPv6 host lookups on macOS, FreeBSD, NetBSD and OpenBSD, using `ndp -an` (new method `NdpNeighbors`).
+* DragonFly BSD support, tested on DragonFly 6.4.0 and 6.4.2. Before, it fell back to the "other" methods, with a "No methods for platform 'dragonfly'" warning, and `get_default_interface()` tried `route -n` (a usage error) first.
 
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.

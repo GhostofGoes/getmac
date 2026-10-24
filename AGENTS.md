@@ -58,7 +58,7 @@ pdm run -l
 The core abstraction, in `getmac/getmac.py`, is `Method` — a class with `test()` (cheap feasibility check, e.g. "does this command exist") and `get(arg)` (does the actual lookup, may raise). Every platform-specific technique is a `Method` subclass, registered in the `METHODS` list near the bottom of the file.
 
 Each `Method` declares:
-- `platforms`: set of platform strings it supports, from `Method.VALID_PLATFORM_NAMES` (`android`, `darwin`, `linux`, `windows`, `wsl`, `openbsd`, `freebsd`, `netbsd`, `sunos`, `hp-ux`, `other`)
+- `platforms`: set of platform strings it supports, from `Method.VALID_PLATFORM_NAMES` (`android`, `darwin`, `linux`, `windows`, `wsl`, `openbsd`, `freebsd`, `netbsd`, `dragonfly`, `sunos`, `hp-ux`, `other`)
 - `method_type`: `ip` (valid for both `ip4`/`ip6`), `ip4`, `ip6`, `iface`, or `default_iface`
 - `network_request`: whether calling it sends traffic on the wire (e.g. `ArpingHost`)
 

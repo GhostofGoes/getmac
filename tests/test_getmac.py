@@ -1028,6 +1028,11 @@ def _cached_method_names(method_type):
         ("NetBSD", "ip6", ["NdpNeighbors", "ArpFreebsd"]),
         ("NetBSD", "iface", ["IfconfigWithIfaceArg"]),
         ("NetBSD", "default_iface", ["DefaultIfaceRouteGetCommand"]),
+        # DragonFly BSD uses the same methods as NetBSD
+        ("DragonFly", "ip4", ["ArpFreebsd"]),
+        ("DragonFly", "ip6", ["NdpNeighbors", "ArpFreebsd"]),
+        ("DragonFly", "iface", ["IfconfigWithIfaceArg"]),
+        ("DragonFly", "default_iface", ["DefaultIfaceRouteGetCommand"]),
         ("SunOS", "ip4", ["ArpVariousArgs"]),
         ("HP-UX", "iface", ["LanscanIface"]),
         # Lowercase names, other cases, and surrounding whitespace

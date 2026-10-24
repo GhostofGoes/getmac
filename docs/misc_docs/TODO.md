@@ -210,7 +210,13 @@ methods (list): Optional list of methods to use for MAC address lookup.
     - Link-local addresses have the interface appended (`fe80::2%wm0`). A numeric scope (`fe80::2%1`) is changed to the interface name with `socket.if_indextoname()`.
     - NetBSD doesn't list the interfaces' own addresses. FreeBSD, OpenBSD, DragonFly BSD and macOS do (as "permanent" entries).
     - On macOS, a static entry for a global address showed as "expired", with an "(incomplete)" duplicate after it. The first one's MAC is used.
-    - Solaris and illumos weren't tested, so `sunos` isn't included. DragonFly BSD's `ndp -an` works too, but getmac doesn't have a `dragonfly` platform (it uses the "other" methods), so it isn't used there yet.
+    - Solaris and illumos weren't tested, so `sunos` isn't included.
+- [x] DragonFly BSD support (platform `dragonfly`, from `platform.system()`). Samples from DragonFly 6.4.0 and 6.4.2 VMs, and tested on both in CI (`.github/workflows/dragonfly.yml`). It works like NetBSD:
+    - Interfaces: `ifconfig <iface>` prints the MAC on an `ether` line, like FreeBSD.
+    - IPv4 hosts: `arp <ip>` prints `? (192.168.122.2) at <mac> on vtnet0 [ethernet]`, so `ArpFreebsd` is used. Unlike `ndp`, it keeps the leading zeros. A missing host prints `-- no entry` with exit code 0. `arp -a <ip>` and `arp -an <ip>` are usage errors.
+    - IPv6 hosts: `ndp -an` (`NdpNeighbors`).
+    - Default interface: `route get default`. `route -n` is a usage error, and `netstat -r` has a `Refs` column that FreeBSD doesn't have, so `DefaultIfaceFreeBsd` would return the wrong field. `netstat -iae` is a usage error, and there's no `ip` command.
+    - 6.4.x is the only release series the `vmactions/dragonflybsd-vm` action has. As root, `os.access()` says files without an execute bit can be run.
 
 ### Before releasing
 - [x] Remove `1.0.0-wip` from the GitHub Pages deploy condition in `ci.yml` when merging into `main`

@@ -1,0 +1,8 @@
+Name    Mtu   Network       Address            Ipkts Ierrs    Opkts Oerrs  Coll
+vtnet0  1500  <Link#1>    52:54:00:12:34:56        0     0        0     0     0
+vtnet0  1500  fe80:1::505 fe80:1::5054:ff:f        0     -        2     -     -
+vtnet0  1500  192.168.122   192.168.122.10     96199     -     9259     -     -
+lo0     16384 <Link#2>                             0     0        0     0     0
+lo0     16384 your-net      localhost              0     -        0     -     -
+lo0     16384 localhost   ::1                      0     -        0     -     -
+lo0     16384 fe80:2::1   fe80:2::1                0     -        0     -     -
