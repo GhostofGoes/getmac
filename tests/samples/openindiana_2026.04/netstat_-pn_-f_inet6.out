@@ -1,0 +1,20 @@
+
+Net to Media Table: IPv6
+ If   Physical Address    Type      State      Destination/Mask
+----- -----------------  ------- ------------ ---------------------------
+vnic0 33:33:00:00:00:01  other   REACHABLE    ff02::1                    
+e1000g0 33:33:00:00:00:01  other   REACHABLE    ff02::1                    
+vnic0 33:33:ff:00:00:02  other   REACHABLE    ff02::1:ff00:2             
+e1000g0 33:33:ff:00:00:02  other   REACHABLE    ff02::1:ff00:2             
+vnic0 00:00:00:00:00:00  dynamic INCOMPLETE   fe80::2                    
+vnic0 33:33:00:00:00:02  other   REACHABLE    ff02::2                    
+e1000g0 33:33:00:00:00:02  other   REACHABLE    ff02::2                    
+vnic0 33:33:00:01:00:02  other   REACHABLE    ff02::1:2                  
+e1000g0 33:33:00:01:00:02  other   REACHABLE    ff02::1:2                  
+vnic0 33:33:00:00:00:16  other   REACHABLE    ff02::16                   
+e1000g0 33:33:00:00:00:16  other   REACHABLE    ff02::16                   
+vnic0 02:08:20:3e:1f:10  local   REACHABLE    fe80::8:20ff:fe3e:1f10     
+vnic0 33:33:ff:3e:1f:10  other   REACHABLE    ff02::1:ff3e:1f10          
+e1000g0 33:33:ff:12:34:56  other   REACHABLE    ff02::1:ff12:3456          
+e1000g0 52:54:00:12:34:56  local   REACHABLE    fe80::5054:ff:fe12:3456    
+

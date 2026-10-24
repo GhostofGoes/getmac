@@ -416,6 +416,55 @@ class NetshNeighbors(Method):
         return mac
 
 
+class NetstatNetToMedia(Method):
+    """
+    Use ``netstat -p`` to find the MAC address of a host in the "Net to Media Table"
+    (the ARP table for IPv4, and the NDP neighbor cache for IPv6) on Solaris and illumos.
+
+    Unlike ``arp``, this works for IPv6, and doesn't fail when the host isn't in the table.
+    It doesn't need root.
+
+    illumos Documentation: `netstat <https://illumos.org/man/8/netstat>`__
+    """
+
+    platforms = {"sunos"}
+    method_type = "ip"
+
+    def test(self) -> bool:
+        return utils.check_command("netstat")
+
+    def get(self, arg: str) -> Optional[str]:
+        family = "inet6" if ":" in arg else "inet"
+        command_output = utils.popen("netstat", f"-pn -f {family}")
+
+        try:
+            # Remove the zone of IPv6 link-local addresses (e.g. "fe80::1%net0"),
+            # since the table doesn't have it
+            target = ip_address(arg.partition("%")[0])
+        except ValueError:
+            return None
+
+        # The columns are different for IPv4 and IPv6, and the flags column for IPv4
+        # is empty for most entries, so the number of fields varies:
+        #   IPv4: Device, IP Address, Mask, Flags, Phys Addr
+        #     net0   192.168.122.2        255.255.255.255          52:55:c0:a8:7a:02
+        #   IPv6: If, Physical Address, Type, State, Destination/Mask
+        #     net0  52:54:00:12:34:56  local   REACHABLE    fe80::5054:ff:fe12:3456
+        # Unresolved IPv4 entries don't have a MAC, and incomplete
+        # IPv6 entries have "00:00:00:00:00:00", so they're skipped.
+        for line in command_output.splitlines():
+            fields = line.split()
+            if len(fields) < 2 or not (
+                _is_same_ip(fields[1], target) or _is_same_ip(fields[-1], target)
+            ):
+                continue
+            for field in (fields[-1], fields[1]):
+                if re.fullmatch(consts.MAC_RE_SHORT, field) and field != "00:00:00:00:00:00":
+                    return field
+
+        return None
+
+
 class ArpingHost(Method):
     """
     Use ``arping`` command to determine the MAC of a host
@@ -640,6 +689,64 @@ class LanscanIface(Method):
                 return ":".join(raw_mac[i : i + 2] for i in range(0, len(raw_mac), 2))
 
         return None
+
+
+class DladmIface(Method):
+    """
+    Use the ``dladm`` command to get the MAC address of a network interface on
+    Solaris 11 and illumos (e.g. OmniOS, OpenIndiana, SmartOS). Unlike ``ifconfig``,
+    which only shows the MAC to root, this works for any user.
+
+    The MACs of physical links (NICs) are from ``dladm show-phys -m``, and the MACs of
+    virtual NICs (VNICs, which zones usually have) are from ``dladm show-vnic``.
+
+    Solaris 10 doesn't have ``dladm show-phys``, so this is marked unusable there.
+
+    Documentation: `Oracle Solaris <https://docs.oracle.com/cd/E88353_01/html/E72487/dladm-8.html>`__,
+    `illumos <https://illumos.org/man/8/dladm>`__
+    """
+
+    platforms = {"sunos"}
+    method_type = "iface"
+
+    def test(self) -> bool:
+        return utils.check_command("dladm")
+
+    def get(self, arg: str) -> Optional[str]:
+        # The datalink of a logical interface (e.g. "net0:1") is the
+        # physical interface's datalink (e.g. "net0")
+        link = arg.partition(":")[0]
+        if not link:
+            return None
+
+        try:
+            # A NIC can have more than one MAC "slot", only the "primary" one is used
+            command_output = utils.popen("dladm", "show-phys -m -p -o link,slot,address")
+        except CalledProcessError as ex:
+            gvars.log.debug(f"DladmIface failed, marking unusable: {ex}")
+            self.unusable = True
+            return None
+
+        mac = _parse_dladm(link, command_output, "primary")
+        if mac:
+            return mac
+
+        return _parse_dladm(link, utils.popen("dladm", "show-vnic -p -o link,macaddress"))
+
+
+def _parse_dladm(link: str, command_output: str, slot: str = "") -> Optional[str]:
+    """
+    Get the MAC of a datalink from the parsable output of ``dladm`` (``-p -o link,...``),
+    e.g. ``net0:primary:52\\:54\\:0\\:12\\:34\\:56``. The fields are separated by colons,
+    and the colons in a MAC are escaped with a backslash.
+    """
+    for line in command_output.splitlines():
+        fields = [field.replace("\\:", ":") for field in re.split(r"(?<!\\):", line)]
+        if len(fields) < 2 or fields[0] != link or (slot and fields[1] != slot):
+            continue
+        if re.fullmatch(consts.MAC_RE_SHORT, fields[-1]):
+            return fields[-1]
+    return None
 
 
 class FcntlIface(Method):
@@ -884,7 +991,7 @@ class IfconfigWithIfaceArg(Method):
     (e.g. ``ifconfig eth0``) to determine MAC address of an interface.
     """
 
-    platforms = {"linux", "wsl", "freebsd", "openbsd", "netbsd", "other"}
+    platforms = {"linux", "wsl", "freebsd", "openbsd", "netbsd", "sunos", "other"}
     method_type = "iface"
 
     def test(self) -> bool:
@@ -1166,10 +1273,10 @@ class DefaultIfaceRouteCommand(Method):
 class DefaultIfaceRouteGetCommand(Method):
     """
     Determine default interface using the ``route get default`` command
-    on BSD-based platforms, including Darwin (MacOS).
+    on BSD-based platforms, including Darwin (MacOS), and on Solaris and illumos.
     """
 
-    platforms = {"darwin", "freebsd", "netbsd", "other"}
+    platforms = {"darwin", "freebsd", "netbsd", "sunos", "other"}
     method_type = "default_iface"
 
     def test(self) -> bool:
@@ -1299,6 +1406,14 @@ def _is_ip_address(text: str) -> bool:
     return True
 
 
+def _is_same_ip(text: str, target: Union[IPv4Address, IPv6Address]) -> bool:
+    """If ``text`` is the IP address ``target``, ignoring a prefix length (e.g. ``/128``)."""
+    try:
+        return ip_address(text.partition("/")[0]) == target
+    except ValueError:
+        return False
+
+
 # TODO: order methods by effectiveness/reliability
 #   Use a class attribute maybe? e.g. "score", then sort by score in cache
 METHODS: list[type[Method]] = [
@@ -1309,11 +1424,13 @@ METHODS: list[type[Method]] = [
     SysIfaceFile,
     FcntlIface,
     LanscanIface,
+    DladmIface,
     GetmacExe,
     IpconfigExe,
     WmicExe,
     ArpExe,
     NetshNeighbors,
+    NetstatNetToMedia,
     DarwinNetworksetupIface,
     NdpNeighbors,
     ArpFreebsd,

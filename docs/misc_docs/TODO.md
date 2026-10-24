@@ -79,13 +79,19 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] `nwmgr` for HP-UX
 - [ ] Properly implement and test HP-UX for `netstat` and `ifconfig`, add `hp-ux` to `platforms` for corresponding Methods
 - [ ] FreeBSD default interface: `route get default`
-- [ ] Support Solaris
-    - platform: `sunos`
-    - default interface; `e1000g0` (NOTE: likely because this is in Vagrant VM)
-    - `ifconfig` with no arguments DOES NOT work, need `ifconfig -a`
-    - `netstat` doesn't work with `-e`, but does work with no arguments, `-a` and `-i`. `-n` prevents hostnames from resolving, which is faster. `-i` gives the shortest output (and is fastest), but doesn't give us a MAC address. Providing the interface as an argument also doesn't work to get a MAC (`netstat -a -I e1000g0`).
-    - default interface via `route get default`?
-    - no `ip` command
+- [x] Support Solaris and illumos ([issue #41](https://github.com/GhostofGoes/getmac/issues/41)). Tested on Oracle Solaris 11.4, OmniOS r151058 and r151054, and OpenIndiana 2026.04, in VMs on GitHub Actions (`.github/workflows/sunos.yml`).
+    - platform: `sunos`, for both Oracle Solaris and illumos distros (`platform.system()` is `SunOS` on all of them).
+    - Interfaces: `dladm show-phys -m` and `dladm show-vnic` (`DladmIface`) work for any user. `ifconfig` only shows the MAC to root, on Solaris and illumos.
+    - Hosts: `netstat -pn -f inet` and `netstat -pn -f inet6` (`NetstatNetToMedia`) for IPv4 and IPv6, for any user. `arp <ip>` works, but `arp -a <ip>` and `arp -n <ip>` are usage errors.
+    - Default interface: `route -n get default` works for any user. `route -n` is a usage error (exit code 1), so before, `get_default_interface()` always failed.
+    - The old notes here were from Solaris 10 in a Vagrant VM. What was checked on the newer releases:
+        - `ifconfig` with no arguments is a usage error on Oracle Solaris 11.4, but works on illumos (it's the same as `ifconfig -a`).
+        - `netstat -e` is an illegal option, and `netstat -i` and `netstat -a -I <iface>` don't show MACs, on all of them.
+        - There's no `ip` command on any of them.
+        - Interface names: `net0` on Solaris 11 (generic names), and driver names like `e1000g0` on illumos and Solaris 10.
+        - `dladm show-linkprop -p mac-address` only exists on Oracle Solaris. illumos has `ndp -an`, but it prints the same table as `netstat -pn -f inet6`, not the BSD format.
+- [ ] Solaris 10: `dladm` doesn't have `show-phys`, so only root gets interface MACs (from `ifconfig`). The ARP table has an entry with the `L` (local) flag for each interface's own IPv4 address, which could work for other users. Low priority, since Solaris 10's extended support ends in January 2027 and there's no packaged Python 3.9+ for it (OpenCSW stops at 3.3).
+- [ ] SmartOS: untested (no VM image on GitHub Actions). Zones have VNICs, which `DladmIface` handles, and Python comes from pkgsrc.
 
 
 # Performance

@@ -207,10 +207,20 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
     "netbsd": (cmd("route -n show"),),
     # Solaris and illumos
     "sunos": (
-        cmd("netstat -pn"),  # ARP table ("Net to Media Table")
+        cmd("netstat -pn"),  # ARP table and NDP neighbor cache ("Net to Media Table")
+        cmd("netstat -pn -f inet"),
+        cmd("netstat -pn -f inet6"),
+        cmd("route get default"),
         cmd("route -n get default"),
+        cmd("dladm show-link"),
         cmd("dladm show-phys -m"),
-        cmd("dladm show-linkprop -p mac-address"),
+        cmd("dladm show-phys -m -p -o link,slot,address"),
+        cmd("dladm show-vnic"),
+        cmd("dladm show-vnic -p -o link,macaddress"),
+        cmd("dladm show-linkprop -p mac-address"),  # Oracle Solaris only
+        cmd("ipadm show-if"),
+        cmd("ndp -an"),  # illumos only
+        File("/etc/release"),
     ),
     "hpux": (
         cmd("lanscan"),
@@ -259,7 +269,7 @@ PLATFORMS: dict[str, tuple[str, ...]] = {
     "freebsd": ("posix", "bsd"),
     "openbsd": ("posix", "bsd", "openbsd"),
     "netbsd": ("posix", "bsd", "netbsd"),
-    "sunos": ("posix", "sunos", "other_iface", "other_default_iface"),
+    "sunos": ("posix", "sunos"),
     "hp-ux": ("posix", "hpux", "other_ip", "other_default_iface"),
     # Unknown platform, try everything Unix-like (this has all of the "other_*" commands)
     "other": ("posix", "linux", "busybox", "bsd"),
@@ -419,7 +429,14 @@ def default_dir_name(uname: platform.uname_result, os_release: dict[str, str]) -
         if is_wsl(uname):
             name = ("WSL2_" if is_wsl2(uname) else "WSL_") + name
     elif system == "SunOS":
-        name = "solaris_" + release.partition(".")[2]  # SunOS 5.10 is Solaris 10
+        # OpenIndiana doesn't have os-release, but /etc/release starts with e.g.
+        # "OpenIndiana Hipster 2026.04 (powered by illumos)"
+        data = read_bytes("/etc/release") or b""
+        match = re.search(r"OpenIndiana\s+\w+\s+(\d+\.\d+)", data.decode(errors="replace"))
+        if match:
+            name = "openindiana_" + match.group(1)
+        else:
+            name = "solaris_" + release.partition(".")[2]  # SunOS 5.10 is Solaris 10
     elif system == "HP-UX":
         name = "hpux_" + re.sub(r"^[A-Z]\.", "", release)  # "B.11.31" -> "11.31"
     elif system == "AIX":

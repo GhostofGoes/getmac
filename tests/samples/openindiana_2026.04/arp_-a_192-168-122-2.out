@@ -1,0 +1,5 @@
+Usage: arp hostname
+       arp -a [-n]
+       arp -d hostname
+       arp -s hostname ether_addr [temp] [pub] [trail] [permanent]
+       arp -f filename

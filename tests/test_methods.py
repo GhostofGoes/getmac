@@ -299,6 +299,21 @@ def test_ifconfigother_infiniband(mocker, get_sample, args):
 
 
 # TODO: several of these should be a different method without a interface arg
+# Oracle Solaris and illumos VMs (GitHub Actions, vmactions), with a VNIC named "vnic0".
+# Tuples of (sample directory, physical interface, physical MAC, VNIC MAC).
+SUNOS_VMS = [
+    ("solaris_11.4", "net0", "52:54:00:12:34:56", "02:08:20:2a:99:4f"),
+    ("omnios_r151058", "e1000g1", "52:54:00:12:34:56", "02:08:20:d1:19:f5"),
+    ("omnios_r151054", "e1000g1", "52:54:00:12:34:56", "02:08:20:95:b8:1c"),
+    ("openindiana_2026.04", "e1000g0", "52:54:00:12:34:56", "02:08:20:3e:1f:10"),
+]
+
+
+def _short_octets(mac):
+    """A MAC as Solaris prints it, without leading zeros, e.g. "2:8:20:2a:99:4f"."""
+    return ":".join(octet.lstrip("0") or "0" for octet in mac.split(":"))
+
+
 ifconfig_samples = [
     ("74:d4:35:e9:45:71", "eth0", "ifconfig.out"),
     ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ifconfig_ens33.out"),
@@ -416,6 +431,15 @@ def test_parse_ifconfig_samples(benchmark, get_sample, mac, iface, sample_file):
         ("e1000g0", FACTER_IFCONFIG + "solaris_ifconfig_all_with_multiple_interfaces"),
         ("bge0", FACTER_IFCONFIG + "sunos_ifconfig_all_with_multiple_interfaces"),
         ("e1000g0", GLPI_IFCONFIG + "oi-2021.10"),
+        *(
+            (iface, f"{vm}/non-root/{sample}")
+            for vm, phys, _, _ in SUNOS_VMS
+            for iface, sample in (
+                (phys, "ifconfig_-a.out"),
+                (phys, f"ifconfig_{phys}.out"),
+                ("vnic0", "ifconfig_vnic0.out"),
+            )
+        ),
         ("lo", FACTER_IFCONFIG + "linux_ifconfig_no_mac"),
         # OpenVZ venet and Atheros wifi0 have a 16 byte "HWaddr" with dashes, not a MAC
         ("venet0", FACTER_IFCONFIG + "linux_ifconfig_venet"),
@@ -476,6 +500,16 @@ def test_parse_ifconfig_no_mac_before_mac(get_sample, iface, sample_file):
         ("02:08:20:89:75:75", "2:8:20:89:75:75", "int0", FACTER_IFCONFIG + "open_solaris_b132"),
         ("00:15:17:7a:60:30", "0:15:17:7a:60:30", "e1000g0", GLPI_IFCONFIG + "solaris-10"),
         ("08:00:27:fc:ad:56", "8:0:27:fc:ad:56", "e1000g0", GLPI_IFCONFIG + "opensolaris"),
+        *(
+            (mac, raw_mac, iface, f"{vm}/{sample}")
+            for vm, phys, phys_mac, vnic_mac in SUNOS_VMS
+            for mac, raw_mac, iface, sample in (
+                (phys_mac, "52:54:0:12:34:56", phys, "ifconfig_-a.out"),
+                (phys_mac, "52:54:0:12:34:56", phys, f"ifconfig_{phys}.out"),
+                (vnic_mac, _short_octets(vnic_mac), "vnic0", "ifconfig_-a.out"),
+                (vnic_mac, _short_octets(vnic_mac), "vnic0", "ifconfig_vnic0.out"),
+            )
+        ),
         # Debian GNU/kFreeBSD
         (
             "00:11:0a:59:67:90",
@@ -895,6 +929,113 @@ def test_netsh_neighbors_samples(benchmark, mocker, get_sample, mac, ip, sample_
     mocker.patch("getmac.utils.check_command", return_value=False)
     assert getmac.NetshNeighbors().test() is False
     utils.check_command.assert_called_once_with("netsh.exe")
+
+
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"),
+    [
+        *(
+            entry
+            for vm, _, phys_mac, vnic_mac in SUNOS_VMS
+            for entry in (
+                # The gateway, from both "netstat -pn" and "netstat -pn -f inet"
+                ("52:55:c0:a8:7a:02", "192.168.122.2", f"{vm}/netstat_-pn.out"),
+                ("52:55:c0:a8:7a:02", "192.168.122.2", f"{vm}/netstat_-pn_-f_inet.out"),
+                # The host's own addresses (flags "SPLA"), on the NIC and the VNIC
+                (phys_mac, "192.168.122.10", f"{vm}/netstat_-pn_-f_inet.out"),
+                (vnic_mac, "192.168.122.20", f"{vm}/netstat_-pn_-f_inet.out"),
+                # Not in the table, or only part of another address
+                (None, "192.168.122.1", f"{vm}/netstat_-pn_-f_inet.out"),
+                (None, "92.168.122.2", f"{vm}/netstat_-pn_-f_inet.out"),
+                (None, "255.255.255.255", f"{vm}/netstat_-pn_-f_inet.out"),
+                # IPv6: the host's own link-local address, and a multicast address
+                (phys_mac, "fe80::5054:ff:fe12:3456", f"{vm}/netstat_-pn_-f_inet6.out"),
+                ("33:33:00:00:00:01", "ff02::1", f"{vm}/netstat_-pn_-f_inet6.out"),
+                ("33:33:00:00:00:16", "FF02::16", f"{vm}/netstat_-pn_-f_inet6.out"),
+                # The zone of a link-local address is ignored
+                (phys_mac, "fe80::5054:ff:fe12:3456%vnic0", f"{vm}/netstat_-pn_-f_inet6.out"),
+                # An incomplete entry has the MAC "00:00:00:00:00:00"
+                (None, "fe80::2", f"{vm}/netstat_-pn_-f_inet6.out"),
+                (None, "fe80::1", f"{vm}/netstat_-pn_-f_inet6.out"),
+            )
+        ),
+        # Unresolved entries (flags "U") don't have a MAC
+        (None, "192.168.122.99", "solaris_11.4/netstat_-pn_-f_inet.out"),
+        # The VNIC's link-local address, as a neighbor of the NIC
+        ("02:08:20:2a:99:4f", "fe80::8:20ff:fe2a:994f", "solaris_11.4/netstat_-pn_-f_inet6.out"),
+        # "ndp -an" on illumos prints the same table
+        ("02:08:20:3e:1f:10", "fe80::8:20ff:fe3e:1f10", "openindiana_2026.04/ndp_-an.out"),
+        # Not IP addresses
+        (None, "net0", "solaris_11.4/netstat_-pn_-f_inet.out"),
+        (None, "", "solaris_11.4/netstat_-pn_-f_inet.out"),
+    ],
+)
+def test_netstat_net_to_media_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
+    assert mac == benchmark(getmac.NetstatNetToMedia().get, arg=ip)
+    family = "inet6" if ":" in ip else "inet"
+    utils.popen.assert_called_with("netstat", f"-pn -f {family}")
+
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.NetstatNetToMedia().test() is False
+    utils.check_command.assert_called_once_with("netstat")
+
+
+def _dladm_samples(get_sample, vm):
+    """Fake "dladm" that returns the samples from a VM."""
+    samples = {
+        "show-phys -m -p -o link,slot,address": "dladm_show-phys_-m_-p_-o_link,slot,address.out",
+        "show-vnic -p -o link,macaddress": "dladm_show-vnic_-p_-o_link,macaddress.out",
+    }
+    return lambda _command, args: get_sample(f"{vm}/{samples[args]}")
+
+
+@pytest.mark.parametrize(("vm", "phys", "phys_mac", "vnic_mac"), SUNOS_VMS)
+def test_dladm_iface_samples(benchmark, mocker, get_sample, vm, phys, phys_mac, vnic_mac):
+    mocker.patch("getmac.utils.popen", side_effect=_dladm_samples(get_sample, vm))
+
+    # dladm prints MACs without leading zeros in each octet, like ifconfig
+    assert benchmark(getmac.DladmIface().get, arg=phys) == "52:54:0:12:34:56"
+    assert utils.clean_mac(getmac.DladmIface().get(phys)) == phys_mac
+    # Only the physical links are needed for a NIC
+    utils.popen.assert_called_with("dladm", "show-phys -m -p -o link,slot,address")
+
+    # A logical interface (a second address on the NIC) has the NIC's MAC
+    assert utils.clean_mac(getmac.DladmIface().get(phys + ":1")) == phys_mac
+
+    # A VNIC isn't a physical link, so its MAC comes from "dladm show-vnic"
+    assert utils.clean_mac(getmac.DladmIface().get("vnic0")) == vnic_mac
+    utils.popen.assert_called_with("dladm", "show-vnic -p -o link,macaddress")
+
+    # The loopback interface isn't a datalink, and other names don't exist
+    assert getmac.DladmIface().get("lo0") is None
+    assert getmac.DladmIface().get("vnic") is None
+    assert getmac.DladmIface().get(phys[:-1]) is None
+    assert getmac.DladmIface().get("primary") is None
+
+
+def test_dladm_iface_edge_cases(mocker):
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.DladmIface().test() is False
+    utils.check_command.assert_called_once_with("dladm")
+
+    mocker.patch("getmac.utils.popen", return_value="")
+    assert getmac.DladmIface().get("") is None
+    assert getmac.DladmIface().get(":1") is None
+    utils.popen.assert_not_called()
+    assert getmac.DladmIface().get("net0") is None
+
+    # A NIC with more than one MAC "slot" (e.g. ixgbe), only the primary MAC is in use
+    output = "net0:1:0\\:1b\\:21\\:ab\\:cd\\:ef\nnet0:primary:0\\:1b\\:21\\:ab\\:cd\\:ee\n"
+    mocker.patch("getmac.utils.popen", return_value=output)
+    assert getmac.DladmIface().get("net0") == "0:1b:21:ab:cd:ee"
+
+    # Solaris 10 doesn't have "dladm show-phys"
+    cpe = CalledProcessError(cmd="dladm", returncode=1)
+    mocker.patch("getmac.utils.popen", side_effect=cpe)
+    method = getmac.DladmIface()
+    assert method.get("e1000g0") is None
+    assert method.unusable is True
 
 
 @pytest.mark.parametrize(
@@ -1585,8 +1726,12 @@ def test_defaultifaceiproute(mocker):
         ("wm0", "netbsd_10.1/route_-n_get_default.out"),
         ("wm0", "netbsd_11.0/route_get_default.out"),
         ("wm0", "netbsd_11.0/route_-n_get_default.out"),
-        # Solaris (uses the "other" platform methods)
         ("net0", "third_party/facter/route_n_get_default"),
+        *(
+            (phys, f"{vm}/{sample}")
+            for vm, phys, _, _ in SUNOS_VMS
+            for sample in ("route_get_default.out", "route_-n_get_default.out")
+        ),
     ],
 )
 def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, iface, sample_file):
@@ -1637,6 +1782,12 @@ def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, ifac
         ("52:54:00:12:35:02", "52:54:00:12:35:02", "10.0.2.2", "netbsd8.2/arp_10-0-2-2.out"),
         ("52:54:00:12:35:03", "52:54:00:12:35:03", "10.0.2.3", "netbsd8.2/arp_a.out"),
         ("52:54:00:12:35:02", "52:54:0:12:35:2", "10.0.2.2", "solaris10/arp_10-0-2-2.out"),
+        (
+            "52:55:c0:a8:7a:02",
+            "52:55:c0:a8:7a:2",
+            "192.168.122.2",
+            "solaris_11.4/arp_192-168-122-2.out",
+        ),
         # GitHub's macOS runners. macOS 15 prints "0" instead of "00".
         *(
             (mac, raw_mac, ip, f"{version}/{sample}")

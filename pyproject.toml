@@ -27,6 +27,7 @@ classifiers = [
     "Operating System :: POSIX :: BSD :: OpenBSD",
     "Operating System :: POSIX :: Linux",
     "Operating System :: POSIX :: Other",
+    "Operating System :: POSIX :: SunOS/Solaris",
     "Operating System :: MacOS",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",

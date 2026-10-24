@@ -27,6 +27,11 @@
 * New setting, `settings.COMMAND_TIMEOUT`. Commands that getmac runs (such as `arp` or `ipconfig.exe`) are stopped if they take longer than this many seconds (15 by default), and the next method is tried. Before, a command that never finished made the lookup hang forever.
 * NetBSD support, tested on NetBSD 9.3, 10 and 11. (Issue [#45](https://github.com/GhostofGoes/getmac/issues/45))
 * IPv6 host lookups on macOS, FreeBSD, NetBSD and OpenBSD, using `ndp -an` (new method `NdpNeighbors`).
+* Solaris and illumos (OmniOS, OpenIndiana, SmartOS): interface MACs, IPv4 and IPv6 hosts, and the default interface now work for regular users, not just root (Issue [#41](https://github.com/GhostofGoes/getmac/issues/41)).
+    * New method, `DladmIface`, which gets interface MACs from `dladm show-phys -m` and `dladm show-vnic`. `ifconfig` only shows MACs to root.
+    * New method, `NetstatNetToMedia`, which looks up hosts in the ARP table and IPv6 neighbor cache with `netstat -pn`. Before, IPv6 lookups didn't work.
+    * `DefaultIfaceRouteGetCommand` (`route -n get default`) is used on Solaris and illumos. Before, `get_default_interface()` always failed, since `route -n` doesn't work there.
+    * Tested on Oracle Solaris 11.4, OmniOS r151058 and r151054, and OpenIndiana 2026.04, with a new CI workflow that runs getmac in VMs.
 
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
