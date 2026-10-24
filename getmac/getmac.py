@@ -67,6 +67,7 @@ class Method:
         "openbsd",
         "freebsd",
         "netbsd",
+        "dragonfly",
         "sunos",
         "hp-ux",
         "other",
@@ -197,10 +198,11 @@ class ArpFile(Method):
 
 class ArpFreebsd(Method):
     """
-    Use the ``arp`` command to find the MAC address of a host on FreeBSD and NetBSD.
+    Use the ``arp`` command to find the MAC address of a host on FreeBSD, NetBSD
+    and DragonFly BSD.
     """
 
-    platforms = {"freebsd", "netbsd"}
+    platforms = {"freebsd", "netbsd", "dragonfly"}
     method_type = "ip"
 
     def test(self) -> bool:
@@ -231,10 +233,10 @@ class ArpOpenbsd(Method):
 class NdpNeighbors(Method):
     """
     Use the ``ndp -an`` command to find the MAC address of an IPv6 host
-    in the NDP neighbor cache on macOS, FreeBSD, NetBSD and OpenBSD.
+    in the NDP neighbor cache on macOS, FreeBSD, NetBSD, OpenBSD and DragonFly BSD.
     """
 
-    platforms = {"darwin", "freebsd", "netbsd", "openbsd"}
+    platforms = {"darwin", "freebsd", "netbsd", "openbsd", "dragonfly"}
     method_type = "ip6"
 
     def test(self) -> bool:
@@ -884,7 +886,7 @@ class IfconfigWithIfaceArg(Method):
     (e.g. ``ifconfig eth0``) to determine MAC address of an interface.
     """
 
-    platforms = {"linux", "wsl", "freebsd", "openbsd", "netbsd", "other"}
+    platforms = {"linux", "wsl", "freebsd", "openbsd", "netbsd", "dragonfly", "other"}
     method_type = "iface"
 
     def test(self) -> bool:
@@ -1169,7 +1171,7 @@ class DefaultIfaceRouteGetCommand(Method):
     on BSD-based platforms, including Darwin (MacOS).
     """
 
-    platforms = {"darwin", "freebsd", "netbsd", "other"}
+    platforms = {"darwin", "freebsd", "netbsd", "dragonfly", "other"}
     method_type = "default_iface"
 
     def test(self) -> bool:

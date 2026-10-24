@@ -91,10 +91,11 @@ class Constants(VarsClass):
     OPENBSD: Final[bool] = _SYST == "OpenBSD"
     FREEBSD: Final[bool] = _SYST == "FreeBSD"
     NETBSD: Final[bool] = _SYST == "NetBSD"
+    DRAGONFLY: Final[bool] = _SYST == "DragonFly"
     SOLARIS: Final[bool] = _SYST == "SunOS"
     HPUX: Final[bool] = _SYST == "HP-UX"
 
-    BSD: Final[bool] = OPENBSD or FREEBSD or NETBSD
+    BSD: Final[bool] = OPENBSD or FREEBSD or NETBSD or DRAGONFLY
     """
     .. note::
        This doesn't include Darwin or Solaris as a "BSD".
@@ -167,6 +168,7 @@ class Constants(VarsClass):
     - openbsd
     - freebsd
     - netbsd
+    - dragonfly
     - sunos
     - hp-ux
     - Any other values that can be returned by :func:`platform.system`,
