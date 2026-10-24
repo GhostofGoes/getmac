@@ -1,0 +1,21 @@
+Name    Mtu   Network       Address            Ipkts Ierrs    Opkts Oerrs  Coll
+vtnet0  1500  <Link#1>    52:54:00:12:34:56        0     0        0     0     0
+                        01:00:5e:00:00:01
+                        33:33:00:00:00:01
+                        33:33:ff:12:34:56
+vtnet0  1500  fe80:1::505 fe80:1::5054:ff:f        0     -        2     -     -
+                        ff02:1::1          (refs: 1)
+                        ff02:1::1:ff12:3456(refs: 1)
+vtnet0  1500  192.168.122   192.168.122.10     96200     -     9260     -     -
+                        all-systems.mcast.net
+lo0     16384 <Link#2>                             0     0        0     0     0
+lo0     16384 your-net      localhost              0     -        0     -     -
+                        all-systems.mcast.net
+lo0     16384 localhost   ::1                      0     -        0     -     -
+                        ff01::1            (refs: 1)
+                        ff02:2::1          (refs: 1)
+                        ff02:2::1:ff00:1   (refs: 2)
+lo0     16384 fe80:2::1   fe80:2::1                0     -        0     -     -
+                        ff01::1            (refs: 1)
+                        ff02:2::1          (refs: 1)
+                        ff02:2::1:ff00:1   (refs: 2)

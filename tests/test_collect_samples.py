@@ -359,6 +359,7 @@ def test_default_dir_name_android(mocker, collect_samples, system):
         ("Linux", True, "android"),  # Python 3.12 and older on Android
         ("Android", True, "android"),  # Python 3.13+ on Android
         ("NetBSD", False, "netbsd"),
+        ("DragonFly", False, "dragonfly"),
         ("AIX", False, "other"),
     ],
 )
