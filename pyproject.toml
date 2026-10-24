@@ -25,6 +25,7 @@ classifiers = [
     "Operating System :: POSIX :: BSD :: FreeBSD",
     "Operating System :: POSIX :: BSD :: NetBSD",
     "Operating System :: POSIX :: BSD :: OpenBSD",
+    "Operating System :: POSIX :: HP-UX",
     "Operating System :: POSIX :: Linux",
     "Operating System :: POSIX :: Other",
     "Operating System :: MacOS",
