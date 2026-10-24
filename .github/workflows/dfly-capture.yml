@@ -1,0 +1,29 @@
+name: dragonfly capture (temporary)
+on:
+  push:
+    branches: [ci/dragonfly-capture-temp]
+permissions:
+  contents: read
+jobs:
+  dragonfly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ["6.4.0", "6.4.2"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: vmactions/dragonflybsd-vm@4ab776fa9f914fbea72f13715b451e77e7ef5c41 # v1.3.4
+        with:
+          release: ${{ matrix.release }}
+          prepare: |
+            pkg install -y python3 py311-pip py311-hypothesis || pkg search py311 | head -50
+          run: |
+            sh scripts/dfly_capture.sh dragonfly_${{ matrix.release }}
+            echo "::group::pytest"
+            pkg info | grep -i py3 || true
+            python3 -m venv --system-site-packages /tmp/venv && . /tmp/venv/bin/activate && python -m pip install --quiet pytest pytest-mock pytest-randomly pytest-benchmark && python -m pytest --benchmark-disable -p no:cacheprovider -q tests 2>&1 | tail -60
+            echo "::endgroup::"
