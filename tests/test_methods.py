@@ -16,8 +16,7 @@ from getmac.variables import consts
 # TODO: macos_10.12.6/netstat_-i.out
 # TODO: macos_10.12.6/netstat_-ia.out
 # TODO: these samples from GitHub's runners aren't read by any method yet:
-#   macos_15.7.9/ and macos_26.6.2/: ndp_-an.out (IPv6 neighbors, there's no working
-#     IPv6 method on macOS), netstat_-i.out, netstat_-ia.out,
+#   macos_15.7.9/ and macos_26.6.2/: netstat_-i.out, netstat_-ia.out,
 #     networksetup_-listallhardwareports.out, sw_vers.out
 #   windows_server_2025/, windows_server_2022/, windows_11_arm64/: arp_-a.out,
 #     getmac_-NH_-V.out (table format), netsh_int_ipv6_show_route.out,
@@ -1074,6 +1073,116 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
     mocker.patch("getmac.utils.check_command", return_value=False)
     assert getmac.ArpFreebsd().test() is False
     utils.check_command.assert_called_once_with("arp")
+
+
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"),
+    [
+        *(
+            entry
+            for version in ("netbsd_9.3", "netbsd_10.1")
+            for entry in (
+                ("52:56:00:00:00:02", "fe80::2", f"{version}/ndp_-an.out"),
+                ("52:56:00:00:00:02", "fe80::2%wm0", f"{version}/ndp_-an.out"),
+                ("52:56:00:00:00:02", "FE80::2", f"{version}/ndp_-an.out"),
+                # Wrong interface, or a different (shorter or longer) address
+                (None, "fe80::2%lo0", f"{version}/ndp_-an.out"),
+                (None, "fe80::", f"{version}/ndp_-an.out"),
+                (None, "fe80::20", f"{version}/ndp_-an.out"),
+                (None, "e80::2", f"{version}/ndp_-an.out"),
+            )
+        ),
+        # The rest are from VMs, after adding fd00:6e64:7000::1 to the interface and
+        # static entries for fd00:6e64:7000::10 and fe80::a0b:c0d with "ndp -s".
+        # NetBSD doesn't list the interface's own addresses, and FreeBSD and OpenBSD do.
+        ("02:00:5e:0a:0b:0c", "fd00:6e64:7000::10", "netbsd_11.0/ndp_-an.out"),
+        ("02:00:5e:10:20:30", "fe80::a0b:c0d%wm0", "netbsd_11.0/ndp_-an.out"),
+        (None, "fd00:6e64:7000::1", "netbsd_11.0/ndp_-an.out"),
+        *(
+            entry
+            for version, iface in (
+                ("freebsd_14.5", "vtnet0"),
+                ("freebsd_15.1", "vtnet0"),
+                ("openbsd_7.9", "vio0"),
+                ("openbsd_8.0", "vio0"),
+            )
+            for entry in (
+                ("02:00:5e:0a:0b:0c", "fd00:6e64:7000::10", f"{version}/ndp_-an.out"),
+                ("52:54:00:12:34:56", "fd00:6e64:7000::1", f"{version}/ndp_-an.out"),
+                ("02:00:5e:10:20:30", "fe80::a0b:c0d", f"{version}/ndp_-an.out"),
+                ("02:00:5e:10:20:30", f"fe80::a0b:c0d%{iface}", f"{version}/ndp_-an.out"),
+                ("52:54:00:12:34:56", "fe80::5054:ff:fe12:3456", f"{version}/ndp_-an.out"),
+                (None, "fe80::a0b:c0d%lo0", f"{version}/ndp_-an.out"),
+                (None, "fd00:6e64:7000::", f"{version}/ndp_-an.out"),
+                (None, "fd00:6e64:7000::100", f"{version}/ndp_-an.out"),
+            )
+        ),
+        # macOS and DragonFly BSD leave out leading zeros in MACs. These have the same
+        # static entries as FreeBSD (on macOS, the global one expired and has an
+        # incomplete duplicate after it).
+        ("2:0:5e:a:b:c", "fd00:6e64:7000::10", "dragonfly_6.4.2/ndp_-an.out"),
+        ("52:54:0:12:34:56", "fd00:6e64:7000::1", "dragonfly_6.4.2/ndp_-an.out"),
+        ("2:0:5e:10:20:30", "fe80::a0b:c0d%vtnet0", "dragonfly_6.4.2/ndp_-an.out"),
+        ("52:54:0:12:34:56", "fe80::5054:ff:fe12:3456", "dragonfly_6.4.2/ndp_-an.out"),
+        (None, "fe80::1%lo0", "dragonfly_6.4.2/ndp_-an.out"),
+        *(
+            entry
+            for sample in (
+                "macos_15.7.9/ndp_-an_static.out",
+                "macos_15.7.9_x86_64/ndp_-an_static.out",
+                "macos_26.6.2/ndp_-an_static.out",
+            )
+            for entry in (
+                ("2:0:5e:a:b:c", "fd00:6e64:7000::10", sample),
+                ("2:0:5e:10:20:30", "fe80::a0b:c0d", sample),
+                ("2:0:5e:10:20:30", "fe80::a0b:c0d%en0", sample),
+                (None, "fe80::a0b:c0d%en1", sample),
+                (None, "fe80::1", sample),
+                (None, "fe80::a200:a210:a220:a230%utun0", sample),
+            )
+        ),
+        ("12:34:56:78:9:ab", "fd00:6e64:7000::1", "macos_15.7.9/ndp_-an_static.out"),
+        (
+            "12:34:56:78:9a:bc",
+            "fe80::1a10:a110:a120:a130",
+            "macos_15.7.9_x86_64/ndp_-an_static.out",
+        ),
+        ("12:0:0:a:bc:de", "fe80::1a10:a110:a120:a13%en0", "macos_26.6.2/ndp_-an_static.out"),
+        # macOS, with only the interfaces' own addresses
+        ("12:34:56:15:a0:10", "fe80::a10:a110:a120:a130", "macos_15.7.9/ndp_-an.out"),
+        ("12:34:56:26:a0:10", "fe80::a1:a110:a120:a130%en0", "macos_26.6.2/ndp_-an.out"),
+        (None, "fe80::1", "macos_15.7.9/ndp_-an.out"),
+        (None, "fe80::a200:a210:a220:a230", "macos_15.7.9/ndp_-an.out"),
+    ],
+)
+def test_ndp_neighbors_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
+    assert mac == benchmark(getmac.NdpNeighbors().get, arg=ip)
+    utils.popen.assert_called_with("ndp", "-an")
+
+    assert not getmac.NdpNeighbors().get("")
+
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.NdpNeighbors().test() is False
+    utils.check_command.assert_called_once_with("ndp")
+
+
+@pytest.mark.parametrize("version", ["netbsd_9.3", "netbsd_10.1"])
+def test_ndp_neighbors_numeric_scope(mocker, get_sample, version):
+    """A numeric scope (interface index) matches the interface name ndp shows."""
+    mocker.patch("getmac.utils.popen", return_value=get_sample(f"{version}/ndp_-an.out"))
+    names = {1: "wm0", 2: "lo0"}
+
+    def if_indextoname(index):
+        if index not in names:
+            raise OSError("no interface with this index")
+        return names[index]
+
+    mocker.patch("getmac.getmac.socket.if_indextoname", side_effect=if_indextoname)
+    assert getmac.NdpNeighbors().get("fe80::2%1") == "52:56:00:00:00:02"
+    assert getmac.NdpNeighbors().get("fe80::2%2") is None
+    # Unknown indexes are matched as they are, which doesn't match anything
+    assert getmac.NdpNeighbors().get("fe80::2%3") is None
 
 
 @pytest.mark.parametrize(

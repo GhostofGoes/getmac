@@ -228,6 +228,44 @@ class ArpOpenbsd(Method):
         return utils.search(re.escape(arg) + self._regex, utils.popen("arp", "-an"))
 
 
+class NdpNeighbors(Method):
+    """
+    Use the ``ndp -an`` command to find the MAC address of an IPv6 host
+    in the NDP neighbor cache on macOS, FreeBSD, NetBSD and OpenBSD.
+    """
+
+    platforms = {"darwin", "freebsd", "netbsd", "openbsd"}
+    method_type = "ip6"
+
+    def test(self) -> bool:
+        return utils.check_command("ndp")
+
+    def get(self, arg: str) -> Optional[str]:
+        if not arg:
+            return None
+
+        # Link-local addresses have the interface appended, e.g. "fe80::2%wm0".
+        # Match it if it's part of the argument, or allow any interface if it isn't.
+        ip, has_scope, scope = arg.partition("%")
+        if scope.isdigit():
+            # ndp shows interface names, so "fe80::2%1" has to be "fe80::2%wm0"
+            try:
+                scope = socket.if_indextoname(int(scope))
+            except (OSError, OverflowError):
+                pass
+        regex = r"^" + re.escape(ip)
+        regex += r"%" + re.escape(scope) if has_scope else r"(?:%\S+)?"
+
+        # Columns: Neighbor, Linklayer Address, Netif, Expire, S, Flags
+        # Incomplete entries have "(incomplete)" instead of a MAC, so they don't match.
+        # macOS and DragonFly BSD leave out leading zeros, e.g. "2:0:5e:a:b:c".
+        return utils.search(
+            regex + r"[ \t]+" + consts.MAC_RE_SHORT + r"[ \t]",
+            utils.popen("ndp", "-an"),
+            flags=re.MULTILINE | re.IGNORECASE,
+        )
+
+
 class ArpVariousArgs(Method):
     """
     Use the ``arp`` command to find the MAC address of a host on various platforms.
@@ -1277,6 +1315,7 @@ METHODS: list[type[Method]] = [
     ArpExe,
     NetshNeighbors,
     DarwinNetworksetupIface,
+    NdpNeighbors,
     ArpFreebsd,
     ArpOpenbsd,
     IfconfigWithIfaceArg,
