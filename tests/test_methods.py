@@ -330,6 +330,12 @@ ifconfig_samples = [
         ("52:54:00:12:34:56", "wm0", f"netbsd_11.0/{sample}")
         for sample in ("ifconfig.out", "ifconfig_-a.out", "ifconfig_wm0.out")
     ),
+    # DragonFly BSD uses "ether", like FreeBSD. 6.4.0 has an emulated e1000 NIC, 6.4.2 virtio.
+    *(
+        ("52:54:00:12:34:56", iface, f"{version}/{sample}")
+        for version, iface in (("dragonfly_6.4.0", "em0"), ("dragonfly_6.4.2", "vtnet0"))
+        for sample in ("ifconfig.out", "ifconfig_-a.out", f"ifconfig_{iface}.out")
+    ),
     # Ansible samples (NetBSD 7.1, and the newer format with "/24" and "flags")
     ("52:54:00:63:55:af", "re0", ANSIBLE + "netbsd_7.1_ifconfig_-a"),
     ("52:54:00:63:55:af", "re0", ANSIBLE + "netbsd_post_7.1_ifconfig_-a"),
@@ -1057,6 +1063,18 @@ def test_freebsd_get_default_iface(benchmark, mocker, get_sample):
             ("52:55:c0:a8:7a:02", "192.168.122.2", f"netbsd_11.0/{sample}")
             for sample in ("arp_192-168-122-2.out", "arp_-a.out", "arp_-an.out")
         ),
+        # DragonFly BSD prints the same format, and marks static entries (made with
+        # "arp -s") as "permanent"
+        *(
+            entry
+            for version in ("dragonfly_6.4.0", "dragonfly_6.4.2")
+            for entry in (
+                ("52:55:c0:a8:7a:02", "192.168.122.2", f"{version}/arp_192-168-122-2.out"),
+                ("52:55:c0:a8:7a:02", "192.168.122.2", f"{version}/arp_-a.out"),
+                ("52:55:c0:a8:7a:03", "192.168.122.3", f"{version}/arp_-an.out"),
+                ("02:00:5e:0a:0b:0c", "192.168.122.77", f"{version}/arp_-an.out"),
+            )
+        ),
     ],
 )
 def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -1073,6 +1091,14 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
     mocker.patch("getmac.utils.check_command", return_value=False)
     assert getmac.ArpFreebsd().test() is False
     utils.check_command.assert_called_once_with("arp")
+
+
+@pytest.mark.parametrize("version", ["dragonfly_6.4.0", "dragonfly_6.4.2"])
+def test_arpfreebsd_no_entry(mocker, get_sample, version):
+    """DragonFly BSD prints "-- no entry" (exit code 0) for hosts that aren't in the table."""
+    content = get_sample(f"{version}/arp_-n_192-168-122-99.out")
+    mocker.patch("getmac.utils.popen", return_value=content)
+    assert getmac.ArpFreebsd().get("192.168.122.99") is None
 
 
 @pytest.mark.parametrize(
@@ -1125,6 +1151,10 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
         ("2:0:5e:10:20:30", "fe80::a0b:c0d%vtnet0", "dragonfly_6.4.2/ndp_-an.out"),
         ("52:54:0:12:34:56", "fe80::5054:ff:fe12:3456", "dragonfly_6.4.2/ndp_-an.out"),
         (None, "fe80::1%lo0", "dragonfly_6.4.2/ndp_-an.out"),
+        # DragonFly BSD 6.4.0, with only the interface's own address
+        ("52:54:0:12:34:56", "fe80::5054:ff:fe12:3456%em0", "dragonfly_6.4.0/ndp_-an.out"),
+        (None, "fe80::5054:ff:fe12:3456%vtnet0", "dragonfly_6.4.0/ndp_-an.out"),
+        (None, "fe80::1", "dragonfly_6.4.0/ndp_-an.out"),
         *(
             entry
             for sample in (
@@ -1585,6 +1615,11 @@ def test_defaultifaceiproute(mocker):
         ("wm0", "netbsd_10.1/route_-n_get_default.out"),
         ("wm0", "netbsd_11.0/route_get_default.out"),
         ("wm0", "netbsd_11.0/route_-n_get_default.out"),
+        *(
+            (iface, f"{version}/{sample}")
+            for version, iface in (("dragonfly_6.4.0", "em0"), ("dragonfly_6.4.2", "vtnet0"))
+            for sample in ("route_get_default.out", "route_-n_get_default.out")
+        ),
         # Solaris (uses the "other" platform methods)
         ("net0", "third_party/facter/route_n_get_default"),
     ],

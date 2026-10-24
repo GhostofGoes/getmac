@@ -194,7 +194,7 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
         cmd("arping -r -C 1 -c 1 {ip}", network=True),
         cmd("sw_vers"),
     ),
-    # FreeBSD, OpenBSD, and NetBSD
+    # FreeBSD, OpenBSD, NetBSD, and DragonFly BSD
     "bsd": (
         cmd("route get default"),
         cmd("route -n get default"),
@@ -259,6 +259,7 @@ PLATFORMS: dict[str, tuple[str, ...]] = {
     "freebsd": ("posix", "bsd"),
     "openbsd": ("posix", "bsd", "openbsd"),
     "netbsd": ("posix", "bsd", "netbsd"),
+    "dragonfly": ("posix", "bsd"),
     "sunos": ("posix", "sunos", "other_iface", "other_default_iface"),
     "hp-ux": ("posix", "hpux", "other_ip", "other_default_iface"),
     # Unknown platform, try everything Unix-like (this has all of the "other_*" commands)
@@ -363,6 +364,7 @@ def detect_platform() -> str:
         "FreeBSD": "freebsd",
         "OpenBSD": "openbsd",
         "NetBSD": "netbsd",
+        "DragonFly": "dragonfly",
         "SunOS": "sunos",
         "HP-UX": "hp-ux",
     }

@@ -199,6 +199,9 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - NetBSD
     - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
     - Default interfaces: `route`
+- DragonFly BSD
+    - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
+    - Default interfaces: `route`
 - Android
     - The same commands and files as Linux, where they're available. See the note on Android below.
 
@@ -221,6 +224,7 @@ All or almost all features should work on "supported" platforms. While other ver
 - FreeBSD (11+)
 - OpenBSD
 - NetBSD (9.3+)
+- DragonFly BSD (6.4+)
 - Docker
 - BusyBox (not technically a platform, but several of the methods work on this platform)
 
