@@ -66,6 +66,7 @@ class Method:
         "wsl",
         "openbsd",
         "freebsd",
+        "netbsd",
         "sunos",
         "hp-ux",
         "other",
@@ -196,10 +197,10 @@ class ArpFile(Method):
 
 class ArpFreebsd(Method):
     """
-    Use the ``arp`` command to find the MAC address of a host on FreeBSD.
+    Use the ``arp`` command to find the MAC address of a host on FreeBSD and NetBSD.
     """
 
-    platforms = {"freebsd"}
+    platforms = {"freebsd", "netbsd"}
     method_type = "ip"
 
     def test(self) -> bool:
@@ -845,7 +846,7 @@ class IfconfigWithIfaceArg(Method):
     (e.g. ``ifconfig eth0``) to determine MAC address of an interface.
     """
 
-    platforms = {"linux", "wsl", "freebsd", "openbsd", "other"}
+    platforms = {"linux", "wsl", "freebsd", "openbsd", "netbsd", "other"}
     method_type = "iface"
 
     def test(self) -> bool:
@@ -1130,7 +1131,7 @@ class DefaultIfaceRouteGetCommand(Method):
     on BSD-based platforms, including Darwin (MacOS).
     """
 
-    platforms = {"darwin", "freebsd", "other"}
+    platforms = {"darwin", "freebsd", "netbsd", "other"}
     method_type = "default_iface"
 
     def test(self) -> bool:

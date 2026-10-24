@@ -83,11 +83,6 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] `nwmgr` for HP-UX
 - [ ] Properly implement and test HP-UX for `netstat` and `ifconfig`, add `hp-ux` to `platforms` for corresponding Methods
 - [ ] FreeBSD default interface: `route get default`
-- [ ] Support NetBSD
-    - platform: `netbsd`
-    - default interface: `wm0`
-    - ip: "route -nq show", "netstat -r", arp -a
-    - default interface via `route get default`?
 - [ ] Support Solaris
     - platform: `sunos`
     - default interface; `e1000g0` (NOTE: likely because this is in Vagrant VM)
@@ -209,6 +204,10 @@ methods (list): Optional list of methods to use for MAC address lookup.
 - [x] `get_mac_address(network_request=False)` (and `-N`) now passes `network_request` on to `get_by_method()`, which skips methods that send packets (`ArpingHost`, `CtypesHost`) even if they're cached.
 - [x] `FORCE_METHOD` and the IPv4 network request: the case-insensitive comparison with `"CtypesHost"`/`"ArpingHost"` now matches, so no UDP packet is sent when forcing them.
 - [x] When `ArpFile` is a fallback and fails during the IPv4 ARP table check, it's removed from the fallbacks, instead of replacing the working primary method.
+- [x] [issue #45](https://github.com/GhostofGoes/getmac/issues/45): NetBSD support. Samples from NetBSD 9.3, 10.1 and 11.0 VMs (and 7.1 from Ansible's tests), and tested on 10 and 11 in CI (`.github/workflows/netbsd.yml`). Notes from the real output:
+    - Interfaces: `ifconfig <iface>` prints the MAC on an `address:` line. `wm0` is only the name for Intel (and emulated e1000) NICs, e.g. virtio is `vioif0`.
+    - IPv4 hosts: `arp <ip>` prints `? (10.0.2.2) at <mac> on wm0`, the same as FreeBSD (NetBSD 10 adds the expiry and state after it), so `ArpFreebsd` is used.
+    - Default interface: `route get default` works (it fails with "not in table" if there's no default route). `route -n` is a usage error, `route -nq show` and `netstat -r` print the routing table (not host MACs), and `netstat -r` has more columns than on FreeBSD, so `DefaultIfaceFreeBsd` doesn't work. `netstat -iae` and `ifconfig -v` are usage errors, and there's no `ip` command.
 
 ### Before releasing
 - [x] Remove `1.0.0-wip` from the GitHub Pages deploy condition in `ci.yml` when merging into `main`

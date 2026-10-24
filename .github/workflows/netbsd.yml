@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
+name: NetBSD
+# Runs the tests and real lookups on NetBSD VMs, and collects command output samples
+# (scripts/collect_samples.py). GitHub doesn't have NetBSD runners, so this runs a
+# QEMU VM on a Linux runner, which takes a few minutes to boot.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "getmac/**"
+      - "tests/**"
+      - "scripts/collect_samples.py"
+      - "pyproject.toml"
+      - ".github/workflows/netbsd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-netbsd:
+    name: Test on NetBSD ${{ matrix.release }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # The two supported major releases: https://www.netbsd.org/releases/
+        # A major version uses its newest point release, e.g. "10" is 10.2.
+        release: ["10", "11"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Run tests and lookups on NetBSD
+        uses: vmactions/netbsd-vm@c8a0d7ddb84619a7a8cc4e652efa7950b3fd9f92 # v1.5.2
+        with:
+          release: ${{ matrix.release }}
+          # Python 3.13 is the default Python in pkgsrc. pkgsrc doesn't add
+          # a "python3" command, so it's run as "python3.13".
+          # The image doesn't have pkgin, the action sets PKG_PATH for pkg_add.
+          prepare: |
+            # Hypothesis has no NetBSD wheels and needs Rust to build, so it's from pkgsrc
+            /usr/sbin/pkg_add python313 py313-pip py313-hypothesis
+          run: |
+            set -e
+            export PATH="$PATH:/sbin:/usr/sbin:/usr/pkg/bin"
+            uname -a
+            # pkgsrc's Python doesn't have ensurepip, so the venv uses py313-pip
+            python3.13 -m venv --without-pip --system-site-packages /tmp/venv
+            . /tmp/venv/bin/activate
+            python -m pip install --quiet pytest pytest-mock pytest-randomly pytest-benchmark
+
+            echo "::group::Unit tests"
+            python -m pytest --benchmark-disable -p no:cacheprovider tests
+            echo "::endgroup::"
+
+            echo "::group::Lookups compared to the system's commands"
+            # "-W error::RuntimeWarning" fails if getmac falls back to the "other" methods
+            getmac="python -W error::RuntimeWarning -m getmac"
+            route=$(route -n get default)
+            iface=$(echo "$route" | awk '/interface:/ {print $2}')
+            gateway=$(echo "$route" | awk '/gateway:/ {print $2}')
+            iface_mac=$(ifconfig "$iface" | awk '/address:/ {print $2}')
+            echo "Default interface: $iface ($iface_mac), gateway: $gateway"
+            test -n "$iface" && test -n "$gateway" && test -n "$iface_mac"
+
+            test "$(python -W error::RuntimeWarning -c 'import getmac; print(getmac.get_default_interface())')" = "$iface"
+            test "$($getmac -dd)" = "$iface_mac"
+            test "$($getmac -i "$iface")" = "$iface_mac"
+            if $getmac -i nonexistent0; then exit 1; fi
+
+            ping -n -c 1 "$gateway"
+            gateway_mac=$(arp -n "$gateway" | awk '{print $4}')
+            test "$($getmac -dd -4 "$gateway")" = "$gateway_mac"
+            echo "::endgroup::"
+
+            echo "::group::Collect samples"
+            python scripts/collect_samples.py --output-root samples
+            echo "::endgroup::"
+      - name: Upload samples
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: netbsd-${{ matrix.release }}-samples
+          path: samples/
+          if-no-files-found: warn

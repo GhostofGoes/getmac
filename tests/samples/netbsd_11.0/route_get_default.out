@@ -1,0 +1,9 @@
+   route to: default
+destination: default
+       mask: default
+    gateway: 192.168.122.2
+ local addr: 192.168.122.10
+  interface: wm0
+      flags: 0x43<UP,GATEWAY,DONE>
+ recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
+       0         0         0         0         0         0         0         0 

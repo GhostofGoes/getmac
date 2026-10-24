@@ -1004,6 +1004,11 @@ def _cached_method_names(method_type):
         ("Darwin", "iface", ["DarwinNetworksetupIface", "IfconfigEther"]),
         ("FreeBSD", "default_iface", ["DefaultIfaceRouteGetCommand", "DefaultIfaceFreeBsd"]),
         ("OpenBSD", "ip6", ["ArpOpenbsd"]),
+        # NetBSD has its own methods for every type of lookup (GitHub issue #45)
+        ("NetBSD", "ip4", ["ArpFreebsd"]),
+        ("NetBSD", "ip6", ["ArpFreebsd"]),
+        ("NetBSD", "iface", ["IfconfigWithIfaceArg"]),
+        ("NetBSD", "default_iface", ["DefaultIfaceRouteGetCommand"]),
         ("SunOS", "ip4", ["ArpVariousArgs"]),
         ("HP-UX", "iface", ["LanscanIface"]),
         # Lowercase names, other cases, and surrounding whitespace

@@ -25,6 +25,7 @@
 * New setting, `settings.ARP_TIMEOUT` (`--arp-timeout` on the command line). After sending the UDP packet to populate the ARP/NDP table, getmac keeps checking it for the host for up to this many seconds, for hosts that are slow to reply. It's off (`0`) by default. (Issue [#101](https://github.com/GhostofGoes/getmac/issues/101))
 * Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [#90](https://github.com/GhostofGoes/getmac/issues/90))
 * New setting, `settings.COMMAND_TIMEOUT`. Commands that getmac runs (such as `arp` or `ipconfig.exe`) are stopped if they take longer than this many seconds (15 by default), and the next method is tried. Before, a command that never finished made the lookup hang forever.
+* NetBSD support, tested on NetBSD 9.3, 10 and 11. (Issue [#45](https://github.com/GhostofGoes/getmac/issues/45))
 
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
