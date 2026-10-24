@@ -1,0 +1,107 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
+name: DragonFly BSD
+# Runs the tests and real lookups on DragonFly BSD VMs, and collects command output samples
+# (scripts/collect_samples.py). GitHub doesn't have DragonFly BSD runners, so this runs a
+# QEMU VM on a Linux runner, which takes a few minutes to boot.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "getmac/**"
+      - "tests/**"
+      - "scripts/collect_samples.py"
+      - "pyproject.toml"
+      - ".github/workflows/dragonfly.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-dragonfly:
+    name: Test on DragonFly BSD ${{ matrix.release }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest and newest releases the action has. 6.4.0 has an emulated
+        # e1000 NIC (em0), and 6.4.2 has a virtio NIC (vtnet0).
+        release: ["6.4.0", "6.4.2"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Run tests and lookups on DragonFly BSD
+        uses: vmactions/dragonflybsd-vm@4ab776fa9f914fbea72f13715b451e77e7ef5c41 # v1.3.4
+        with:
+          release: ${{ matrix.release }}
+          # "python3" is the default Python in DPorts (3.11).
+          # Hypothesis has no DragonFly BSD wheels and needs Rust to build, so it's from DPorts.
+          prepare: |
+            pkg install -y python3 py311-pip py311-hypothesis
+          run: |
+            set -e
+            export PATH="$PATH:/sbin:/usr/sbin:/usr/local/bin"
+            uname -a
+            python3 -m venv --system-site-packages /tmp/venv
+            . /tmp/venv/bin/activate
+            python -m pip install --quiet pytest pytest-mock pytest-randomly pytest-benchmark
+
+            echo "::group::Unit tests"
+            python -m pytest --benchmark-disable -p no:cacheprovider tests
+            echo "::endgroup::"
+
+            echo "::group::Lookups compared to the system's commands"
+            # "-W error::RuntimeWarning" fails if getmac falls back to the "other" methods
+            getmac="python -W error::RuntimeWarning -m getmac"
+            route=$(route -n get default)
+            iface=$(echo "$route" | awk '/interface:/ {print $2}')
+            gateway=$(echo "$route" | awk '/gateway:/ {print $2}')
+            iface_mac=$(ifconfig "$iface" | awk '/ether/ {print $2}')
+            echo "Default interface: $iface ($iface_mac), gateway: $gateway"
+            test -n "$iface" && test -n "$gateway" && test -n "$iface_mac"
+
+            test "$(python -W error::RuntimeWarning -c 'import getmac; print(getmac.get_default_interface())')" = "$iface"
+            test "$($getmac -dd)" = "$iface_mac"
+            test "$($getmac -i "$iface")" = "$iface_mac"
+            if $getmac -i nonexistent0; then exit 1; fi
+
+            ping -n -c 1 "$gateway"
+            gateway_mac=$(arp -n "$gateway" | awk '{print $4}')
+            test "$($getmac -dd -4 "$gateway")" = "$gateway_mac"
+            # Hosts that aren't in the ARP table ("arp" prints "-- no entry")
+            if $getmac -N -4 192.0.2.1; then exit 1; fi
+
+            # IPv6 hosts. The VMs don't have any IPv6 neighbors, so this adds static
+            # entries for a ULA address and a link-local address.
+            ifconfig "$iface" inet6 fd00:6e64:7000::1 prefixlen 64 alias
+            ndp -s fd00:6e64:7000::10 02:00:5e:0a:0b:0c
+            ndp -s "fe80::a0b:c0d%$iface" 02:00:5e:10:20:30
+            ndp -an
+            index=$(python -c "import socket; print(socket.if_nametoindex('$iface'))")
+            test "$($getmac -dd -N -6 fd00:6e64:7000::10)" = "02:00:5e:0a:0b:0c"
+            test "$($getmac -N -6 "fe80::a0b:c0d%$iface")" = "02:00:5e:10:20:30"
+            test "$($getmac -N -6 "fe80::a0b:c0d%$index")" = "02:00:5e:10:20:30"
+            test "$($getmac -N -6 fe80::a0b:c0d)" = "02:00:5e:10:20:30"
+            if $getmac -N -6 fd00:6e64:7000::11; then exit 1; fi
+            echo "::endgroup::"
+
+            echo "::group::Collect samples"
+            python scripts/collect_samples.py --output-root samples
+            echo "::endgroup::"
+      - name: Upload samples
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dragonfly-${{ matrix.release }}-samples
+          path: samples/
+          if-no-files-found: warn
