@@ -220,6 +220,11 @@ jobs:
           python-version: "3.13"
       - name: Build the sdist and wheel
         run: pdm build
+      - name: Install twine
+        run: pdm sync -d -G build --no-self
+      # Fails on anything PyPI would reject, and on warnings, e.g. a README that doesn't render
+      - name: Check the package metadata with twine
+        run: pdm run check_package
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: python-package-distributions

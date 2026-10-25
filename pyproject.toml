@@ -115,6 +115,10 @@ lint = [
     "vulture",
     "mypy>=1.3.0",
 ]
+# twine 6.1.0 is the first version that understands License-Expression (PEP 639) metadata
+build = [
+    "twine>=6.1.0",
+]
 docs = [
     "furo; python_version >= \"3.12\"",
     "sphinx>7.0.0; python_version >= \"3.12\"",
@@ -211,6 +215,10 @@ pytest
 help = "Run the fuzz tests with many more generated inputs (takes several minutes)"
 cmd = "pytest tests/test_fuzz.py --benchmark-disable -n auto"
 env = { HYPOTHESIS_PROFILE = "fuzz" }
+
+[tool.pdm.scripts.check_package]
+help = "Check that the built sdist and wheel in dist/ meet PyPI's requirements, using twine"
+cmd = "twine check --strict dist/*"
 
 [tool.pdm.scripts.html]
 help = "Build HTML documentation using Sphinx"
