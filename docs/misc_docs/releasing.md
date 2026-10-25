@@ -39,6 +39,10 @@ Only for backported releases or the old package name (`get-mac`). This needs [tw
 ```bash
 pdm build
 ```
+1. Check the sdist and wheel for problems PyPI would reject, such as a README that doesn't render
+```bash
+pdm run check_package
+```
 1. Upload the sdist and wheel to PyPI. Use twine, not `pdm publish`: PDM doesn't upload the `License-Expression` metadata, so PyPI would show no license for the release.
 ```bash
 twine upload dist/*
