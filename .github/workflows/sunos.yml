@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
+name: Solaris and illumos
+# Runs getmac on Oracle Solaris and illumos VMs, as root and as a regular user, and checks
+# that it finds the MACs that the system's own commands report (scripts/sunos_smoke_test.sh).
+# The unit tests mock the commands with saved output, this checks the real ones.
+# GitHub doesn't have Solaris or illumos runners, so this runs a QEMU VM on a Linux runner.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "getmac/**"
+      - "scripts/sunos_smoke_test.sh"
+      - "pyproject.toml"
+      - ".github/workflows/sunos.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-sunos:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Oracle Solaris 11.4
+            os: solaris
+            release: "11.4"
+          - name: OmniOS r151058
+            os: omnios
+            release: r151058
+          - name: OmniOS r151054 (LTS)
+            os: omnios
+            release: r151054
+          - name: OpenIndiana 2026.04
+            os: openindiana
+            release: "202604"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      # vmactions has a separate action for each OS, and "uses" can't be a matrix value
+      - name: Test on Oracle Solaris
+        if: matrix.os == 'solaris'
+        uses: vmactions/solaris-vm@1c166978f5a2c1f87f1c9d4d8dd85ae3d1eff6f7 # v1.4.2
+        with:
+          release: ${{ matrix.release }}
+          usesh: true
+          copyback: false
+          run: sh scripts/sunos_smoke_test.sh
+      - name: Test on OmniOS
+        if: matrix.os == 'omnios'
+        uses: vmactions/omnios-vm@9576f0b6d15e7696548409baa533bc0a339caf42 # v1.3.7
+        with:
+          release: ${{ matrix.release }}
+          usesh: true
+          copyback: false
+          run: sh scripts/sunos_smoke_test.sh
+      - name: Test on OpenIndiana
+        if: matrix.os == 'openindiana'
+        uses: vmactions/openindiana-vm@74a06af3be38c265a2d99d1af520d66a057ff222 # v1.1.9
+        with:
+          release: ${{ matrix.release }}
+          usesh: true
+          copyback: false
+          run: sh scripts/sunos_smoke_test.sh
