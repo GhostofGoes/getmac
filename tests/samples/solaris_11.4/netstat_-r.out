@@ -1,0 +1,16 @@
+
+Routing Table: IPv4
+  Destination           Gateway           Flags  Ref     Use     Interface 
+-------------------- -------------------- ----- ----- ---------- --------- 
+default              192.168.122.2        UG        3         55 net0      
+solaris              solaris              UH        2        326 lo0       
+192.168.122.0        192.168.122.30       U         4        241 net0      
+192.168.122.0        192.168.122.20       U         3          2 vnic0     
+192.168.122.0        192.168.122.10       U         2        484 net0      
+
+Routing Table: IPv6
+  Destination/Mask            Gateway                   Flags Ref   Use    If   
+--------------------------- --------------------------- ----- --- ------- ----- 
+solaris                     solaris                     UH      2       0 lo0   
+fe80::/10                   fe80::8:20ff:fe2a:994f      U       4       4 vnic0 
+fe80::/10                   fe80::5054:ff:fe12:3456     U       4       3 net0  

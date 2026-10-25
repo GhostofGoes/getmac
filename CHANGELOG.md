@@ -28,6 +28,12 @@
 * NetBSD support, tested on NetBSD 9.3, 10 and 11. (Issue [#45](https://github.com/GhostofGoes/getmac/issues/45))
 * IPv6 host lookups on macOS, FreeBSD, NetBSD and OpenBSD, using `ndp -an` (new method `NdpNeighbors`).
 * DragonFly BSD support, tested on DragonFly 6.4.0 and 6.4.2.
+* Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) (Issue [#41](https://github.com/GhostofGoes/getmac/issues/41))
+    * Most methods now work for regular users, not just root.
+        * New method, `DladmIface`, which gets interface MACs using `dladm`.
+        * New method, `NetstatNetToMedia`, which looks up hosts in the ARP table and IPv6 neighbor cache with `netstat -pn`.
+        * `DefaultIfaceRouteGetCommand` (`route -n get default`) is used on Solaris and illumos. Before, `get_default_interface()` always failed, since `route -n` doesn't work there.
+        * Tested on Oracle Solaris 11.4, OmniOS r151058 and r151054, and OpenIndiana 2026.04, with a new CI workflow that runs getmac in VMs.
 
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.

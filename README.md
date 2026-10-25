@@ -202,6 +202,9 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - DragonFly BSD
     - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
     - Default interfaces: `route`
+- Solaris and illumos
+    - Commands: `dladm`, `netstat`, `ifconfig`, `arp`
+    - Default interfaces: `route`
 - Android
     - The same commands and files as Linux, where they're available. See the note on Android below.
 
@@ -225,6 +228,8 @@ All or almost all features should work on "supported" platforms. While other ver
 - OpenBSD
 - NetBSD (9.3+)
 - DragonFly BSD (6.4+)
+- Oracle Solaris 11.4
+- illumos distros: OmniOS (r151054+), OpenIndiana (2026.04+). Others like SmartOS should work, but are untested.
 - Docker
 - BusyBox (not technically a platform, but several of the methods work on this platform)
 

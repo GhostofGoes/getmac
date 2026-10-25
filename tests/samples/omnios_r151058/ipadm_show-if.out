@@ -1,0 +1,5 @@
+IFNAME     CLASS     STATE    CURRENT      PERSISTENT
+lo0        VIRTUAL   ok       -m-v------46 ---
+e1000g1    IP        ok       bm--------46 -46
+vnic0      IP        ok       bm--------46 -46
+e1000g0    IP        disabled ------------ -46

@@ -1,0 +1,9 @@
+aggr0:aggr:simnet0 simnet1
+net0:phys:
+simnet0:simnet:
+simnet1:simnet:
+stub0:etherstub:
+vlan5:vlan:net0
+vnic1:vnic:net0
+vnic2:vnic:net0
+vnic9:vnic:stub0

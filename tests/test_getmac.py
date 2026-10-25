@@ -1058,7 +1058,10 @@ def _cached_method_names(method_type):
         ("DragonFly", "ip6", ["NdpNeighbors", "ArpFreebsd"]),
         ("DragonFly", "iface", ["IfconfigWithIfaceArg"]),
         ("DragonFly", "default_iface", ["DefaultIfaceRouteGetCommand"]),
-        ("SunOS", "ip4", ["ArpVariousArgs"]),
+        ("SunOS", "ip4", ["NetstatNetToMedia", "ArpVariousArgs"]),
+        ("SunOS", "ip6", ["NetstatNetToMedia", "ArpVariousArgs"]),
+        ("SunOS", "iface", ["DladmIface", "IfconfigWithIfaceArg"]),
+        ("SunOS", "default_iface", ["DefaultIfaceRouteGetCommand"]),
         ("HP-UX", "iface", ["LanscanIface"]),
         # Lowercase names, other cases, and surrounding whitespace
         ("darwin", "iface", ["DarwinNetworksetupIface", "IfconfigEther"]),
