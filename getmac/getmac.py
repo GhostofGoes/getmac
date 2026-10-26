@@ -49,7 +49,7 @@ from . import utils
 from .variables import consts, gvars, settings
 
 #: Current version of getmac package
-__version__ = "1.0.0b0"
+__version__ = "1.0.0b1"
 
 
 class Method:
