@@ -1,0 +1,6 @@
+IFNAME     CLASS    STATE    ACTIVE OVER
+lo0        loopback ok       yes    --
+net0       ip       ok       yes    --
+vnic1      ip       ok       yes    --
+vnic2      ip       ok       yes    --
+ipmp0      ipmp     ok       yes    vnic1 vnic2

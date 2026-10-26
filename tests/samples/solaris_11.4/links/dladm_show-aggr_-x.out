@@ -1,0 +1,4 @@
+LINK       PORT           SPEED DUPLEX   STATE     ADDRESS            PORTSTATE
+aggr0      --             0Mb  unknown   down      7a:b9:70:a2:6e:dd  --
+           simnet0        0Mb  unknown   ?         7a:b9:70:a2:6e:dd  standby
+           simnet1        0Mb  unknown   ?         56:e:1d:2a:cc:96   standby

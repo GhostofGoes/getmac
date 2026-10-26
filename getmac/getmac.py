@@ -418,6 +418,68 @@ class NetshNeighbors(Method):
         return mac
 
 
+class NetstatNetToMedia(Method):
+    """
+    Use ``netstat -p`` to find the MAC address of a host in the "Net to Media Table"
+    (the ARP table for IPv4, and the NDP neighbor cache for IPv6) on Solaris and illumos.
+
+    Unlike ``arp``, this works for IPv6, and doesn't fail when the host isn't in the table.
+    It doesn't need root.
+
+    illumos Documentation: `netstat <https://illumos.org/man/8/netstat>`__
+    """
+
+    platforms = {"sunos"}
+    method_type = "ip"
+
+    def test(self) -> bool:
+        return utils.check_command("netstat")
+
+    def get(self, arg: str) -> Optional[str]:
+        family = "inet6" if ":" in arg else "inet"
+        command_output = utils.popen("netstat", f"-pn -f {family}")
+
+        # Link-local IPv6 addresses can have the interface appended (e.g. "fe80::1%net0").
+        # The same address can be on more than one link (e.g. a router on each one),
+        # so if it's there, only that interface's entries match.
+        ip, _, zone = arg.partition("%")
+        try:
+            target = ip_address(ip)
+        except ValueError:
+            return None
+        if zone.isdigit():
+            # The table has interface names, so "fe80::1%2" has to be "fe80::1%net0"
+            try:
+                zone = socket.if_indextoname(int(zone))
+            except (OSError, OverflowError):
+                pass
+
+        # The columns are different for IPv4 and IPv6, and the flags column for IPv4
+        # is empty for most entries, so the number of fields varies:
+        #   IPv4: Device, IP Address, Mask, Flags, Phys Addr
+        #     net0   192.168.122.2        255.255.255.255          52:55:c0:a8:7a:02
+        #   IPv6: If, Physical Address, Type, State, Destination/Mask
+        #     net0  52:54:00:12:34:56  local   REACHABLE    fe80::5054:ff:fe12:3456
+        # Unresolved IPv4 entries don't have a MAC, and incomplete
+        # IPv6 entries have "00:00:00:00:00:00", so they're skipped.
+        for line in command_output.splitlines():
+            fields = line.split()
+            if len(fields) < 2 or not (
+                _is_same_ip(fields[1], target) or _is_same_ip(fields[-1], target)
+            ):
+                continue
+            if zone and fields[0] != zone:
+                continue
+            for field in (fields[-1], fields[1]):
+                if (
+                    re.fullmatch(consts.MAC_RE_SHORT, field)
+                    and utils.clean_mac(field) != "00:00:00:00:00:00"
+                ):
+                    return field
+
+        return None
+
+
 class ArpingHost(Method):
     """
     Use ``arping`` command to determine the MAC of a host
@@ -642,6 +704,100 @@ class LanscanIface(Method):
                 return ":".join(raw_mac[i : i + 2] for i in range(0, len(raw_mac), 2))
 
         return None
+
+
+class DladmIface(Method):
+    """
+    Use the ``dladm`` command to get the MAC address of a network interface on
+    Solaris 11 and illumos (e.g. OmniOS, OpenIndiana, SmartOS). Unlike ``ifconfig``,
+    which only shows the MAC to root, this works for any user.
+
+    The type of datalink is from ``dladm show-link``, and the MAC is from
+    ``dladm show-phys -m`` for physical links (NICs), ``dladm show-vnic`` for
+    virtual NICs (VNICs, which zones usually have), and ``dladm show-aggr -x`` for
+    link aggregations. A VLAN has the MAC of the link it's on.
+
+    Other types of datalinks (e.g. etherstubs and IP tunnels) don't have a MAC, and
+    neither do IPMP groups (e.g. ``ipmp0``), which aren't datalinks, so they're
+    :obj:`None`. ``ifconfig`` doesn't show a MAC for any of them either.
+
+    Solaris 10's ``dladm`` doesn't have ``-o``, so this is marked unusable there.
+
+    Documentation: `Oracle Solaris <https://docs.oracle.com/cd/E88353_01/html/E72487/dladm-8.html>`__,
+    `illumos <https://illumos.org/man/8/dladm>`__
+    """
+
+    platforms = {"sunos"}
+    method_type = "iface"
+
+    def test(self) -> bool:
+        return utils.check_command("dladm")
+
+    def get(self, arg: str) -> Optional[str]:
+        # The datalink of a logical interface (e.g. "net0:1") is the
+        # physical interface's datalink (e.g. "net0")
+        link = arg.partition(":")[0]
+        if not link:
+            return None
+
+        try:
+            links = utils.popen("dladm", "show-link -p -o link,class,over")
+        except CalledProcessError as ex:
+            gvars.log.debug(f"DladmIface failed, marking unusable: {ex}")
+            self.unusable = True
+            return None
+
+        try:
+            return self._get_link_mac(link, links)
+        except CalledProcessError as ex:
+            gvars.log.debug(f"DladmIface failed to get the MAC of '{link}': {ex}")
+            return None
+
+    @staticmethod
+    def _get_link_mac(link: str, links: str) -> Optional[str]:
+        # E.g. "net0:phys:", "vnic0:vnic:net0", "vlan5:vlan:net0",
+        # and "aggr0:aggr:net0,net1" ("net0 net1" on Oracle Solaris)
+        for line in links.splitlines():
+            name, _, rest = line.partition(":")
+            if name == link:
+                link_class, _, over = rest.partition(":")
+                break
+        else:
+            # E.g. "lo0" and IPMP groups aren't datalinks
+            return None
+
+        if link_class == "phys":
+            # A NIC can have more than one MAC "slot", only the "primary" one is used
+            output = utils.popen("dladm", "show-phys -m -p -o link,slot,address")
+            return _parse_dladm(link, output, "primary")
+        if link_class == "vnic":
+            output = utils.popen("dladm", "show-vnic -p -o link,macaddress")
+            return _parse_dladm(link, output)
+        if link_class == "aggr":
+            # The aggregation's own MAC is on the line without a port, the
+            # other lines are the MACs of the links in it
+            output = utils.popen("dladm", "show-aggr -x -p -o link,port,address")
+            return _parse_dladm(link, output, "")
+        if link_class == "vlan" and over and over != link:
+            # A VLAN is on a NIC or an aggregation
+            return DladmIface._get_link_mac(over, links)
+        return None
+
+
+def _parse_dladm(link: str, command_output: str, slot: Optional[str] = None) -> Optional[str]:
+    """
+    Get the MAC of a datalink from the parsable output of ``dladm`` (``-p -o link,...``),
+    e.g. ``net0:primary:52\\:54\\:0\\:12\\:34\\:56``. The fields are separated by colons,
+    and the colons in a MAC are escaped with a backslash. If ``slot`` isn't :obj:`None`,
+    the second field has to be the same.
+    """
+    for line in command_output.splitlines():
+        fields = [field.replace("\\:", ":") for field in re.split(r"(?<!\\):", line)]
+        if len(fields) < 2 or fields[0] != link or (slot is not None and fields[1] != slot):
+            continue
+        if re.fullmatch(consts.MAC_RE_SHORT, fields[-1]):
+            return fields[-1]
+    return None
 
 
 class FcntlIface(Method):
@@ -886,7 +1042,7 @@ class IfconfigWithIfaceArg(Method):
     (e.g. ``ifconfig eth0``) to determine MAC address of an interface.
     """
 
-    platforms = {"linux", "wsl", "freebsd", "openbsd", "netbsd", "dragonfly", "other"}
+    platforms = {"linux", "wsl", "freebsd", "openbsd", "netbsd", "dragonfly", "sunos", "other"}
     method_type = "iface"
 
     def test(self) -> bool:
@@ -1168,13 +1324,13 @@ class DefaultIfaceRouteCommand(Method):
 class DefaultIfaceRouteGetCommand(Method):
     """
     Determine default interface using the ``route -n get default`` command
-    on BSD-based platforms, including Darwin (MacOS).
+    on BSD-based platforms, including Darwin (MacOS), and on Solaris and illumos.
 
     ``-n`` skips the reverse DNS lookup of the gateway, which can be slow or
     hang until the command times out when DNS is unreachable.
     """
 
-    platforms = {"darwin", "freebsd", "netbsd", "dragonfly", "other"}
+    platforms = {"darwin", "freebsd", "netbsd", "dragonfly", "sunos", "other"}
     method_type = "default_iface"
 
     def test(self) -> bool:
@@ -1305,6 +1461,14 @@ def _is_ip_address(text: str) -> bool:
     return True
 
 
+def _is_same_ip(text: str, target: Union[IPv4Address, IPv6Address]) -> bool:
+    """If ``text`` is the IP address ``target``, ignoring a prefix length (e.g. ``/128``)."""
+    try:
+        return ip_address(text.partition("/")[0]) == target
+    except ValueError:
+        return False
+
+
 # TODO: order methods by effectiveness/reliability
 #   Use a class attribute maybe? e.g. "score", then sort by score in cache
 METHODS: list[type[Method]] = [
@@ -1315,11 +1479,13 @@ METHODS: list[type[Method]] = [
     SysIfaceFile,
     FcntlIface,
     LanscanIface,
+    DladmIface,
     GetmacExe,
     IpconfigExe,
     WmicExe,
     ArpExe,
     NetshNeighbors,
+    NetstatNetToMedia,
     DarwinNetworksetupIface,
     NdpNeighbors,
     ArpFreebsd,
