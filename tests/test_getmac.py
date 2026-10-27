@@ -1,5 +1,7 @@
+import errno
 import importlib
 import inspect
+import platform
 import socket
 from ipaddress import (
     IPv4Address,
@@ -682,6 +684,106 @@ def test_get_mac_address_ip_arpfile_fallback_unusable(mocker, mock_socket):
     mock_socket.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "arping_error",
+    [
+        # iputils arping without permission: "arping: socket: Operation not permitted"
+        CalledProcessError(cmd="arping -f -c 1 192.0.2.10", returncode=2, output=b""),
+        # No reply. Habets arping without root exits with 1 too, so they can't be told apart
+        CalledProcessError(cmd="arping -f -c 1 192.0.2.10", returncode=1, output=b""),
+    ],
+)
+def test_get_mac_address_ip_arp_request_not_found(mocker, mock_socket, arping_error):
+    """
+    If the ARP request doesn't find the host (e.g. arping doesn't have permission to send
+    it), the UDP packet is sent, and the ARP table is checked without arping.
+    """
+    arping, arp_file, ip_neighbor = getmac.ArpingHost(), getmac.ArpFile(), getmac.IpNeighborShow()
+    getmac.METHOD_CACHE["ip4"] = arp_file
+    getmac.FALLBACK_CACHE["ip4"] = [arping, ip_neighbor]
+    mocker.patch("getmac.utils.popen", side_effect=arping_error)
+    # The host isn't in the ARP table until the UDP packet is sent
+    arp_table = "IP address  HW type  Flags  HW address  Mask  Device\n"
+    found = arp_table + f"192.0.2.10  0x1  0x2  {MAC}  *  eth0\n"
+    mocker.patch("getmac.utils.read_file", side_effect=[arp_table, found])
+
+    assert getmac.get_mac_address(ip="192.0.2.10") == MAC
+
+    utils.popen.assert_called_once_with("arping", "-f -c 1 192.0.2.10")
+    mock_socket.return_value.sendto.assert_called_once_with(b"", ("192.0.2.10", settings.PORT))
+    # arping is still used for the next lookup, it may just not have found this host
+    assert getmac.METHOD_CACHE["ip4"] is arping
+    assert getmac.FALLBACK_CACHE["ip4"] == [arp_file, ip_neighbor]
+
+
+@pytest.mark.usefixtures("mock_socket")
+def test_get_mac_address_ip_arp_request_not_found_wait(mocker):
+    """
+    After the ARP request fails, the ARP table is checked for a short time even if
+    ARP_TIMEOUT is 0, since the host's entry is added only once it replies.
+    """
+    getmac.METHOD_CACHE["ip4"] = getmac.ArpingHost()
+    getmac.FALLBACK_CACHE["ip4"] = [getmac.ArpFile()]
+    mocker.patch("getmac.utils.popen", side_effect=CalledProcessError(2, "arping"))
+    mocker.patch("getmac.getmac.time.sleep")
+    arp_table = "IP address  HW type  Flags  HW address  Mask  Device\n"
+    found = arp_table + f"192.0.2.10  0x1  0x2  {MAC}  *  eth0\n"
+    mocker.patch("getmac.utils.read_file", side_effect=[arp_table, arp_table, arp_table, found])
+
+    assert settings.ARP_TIMEOUT == 0
+    assert getmac.get_mac_address(ip="192.0.2.10") == MAC
+    assert utils.read_file.call_count == 4
+
+
+def test_get_mac_address_ip6_socket_error(mocker, mock_socket):
+    """Creating the socket fails if IPv6 is disabled in the kernel. That isn't raised."""
+    mock_socket.side_effect = OSError(97, "Address family not supported by protocol")
+    mocker.patch("getmac.getmac.get_by_method", return_value=None)
+
+    assert getmac.get_mac_address(ip6="fe80::1") is None
+    getmac.get_by_method.assert_called_once_with("ip6", "fe80::1", True)
+
+
+def test_get_mac_address_network_request_false_first(mocker, mock_socket):
+    """
+    A first lookup with network_request=False doesn't leave the methods that send
+    network requests out of the cache for later lookups that allow them.
+    """
+    mocker.patch.object(getmac, "METHODS", [getmac.ArpFile, getmac.ArpingHost])
+    mocker.patch.object(consts, "PLATFORM", "linux")
+    mocker.patch("getmac.utils.check_path", return_value=True)
+    mocker.patch("getmac.utils.check_command", return_value=True)
+    mocker.patch("getmac.utils.read_file", return_value="")
+    arping_get = mocker.patch.object(getmac.ArpingHost, "get", return_value=MAC)
+
+    assert getmac.get_mac_address(ip="192.0.2.10", network_request=False) is None
+    arping_get.assert_not_called()
+    assert getmac.get_mac_address(ip="192.0.2.10") == MAC
+    arping_get.assert_called_once_with("192.0.2.10")
+    mock_socket.assert_not_called()
+
+
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Can't reliably mock fcntl on non-Linux platforms",
+)
+def test_get_mac_address_bad_interface_keeps_fcntl(mocker):
+    """An interface that doesn't exist doesn't remove FcntlIface from the caches."""
+    fcntl_iface, ifconfig = getmac.FcntlIface(), getmac.IfconfigWithIfaceArg()
+    getmac.METHOD_CACHE["iface"] = fcntl_iface
+    getmac.FALLBACK_CACHE["iface"] = [ifconfig]
+    mocker.patch("fcntl.ioctl", side_effect=OSError(errno.ENODEV, "No such device"))
+    mocker.patch("socket.socket")
+    popen = mocker.patch("getmac.utils.popen")
+
+    assert getmac.get_mac_address(interface="nope0") is None
+
+    popen.assert_not_called()
+    assert fcntl_iface.unusable is False
+    assert getmac.METHOD_CACHE["iface"] is fcntl_iface
+    assert getmac.FALLBACK_CACHE["iface"] == [ifconfig]
+
+
 @pytest.mark.parametrize("force_method", ["arpinghost", "ArpingHost"])
 def test_get_mac_address_ip_force_arp_request_method(mocker, mock_socket, force_method):
     """Forcing a method that sends an ARP request means a UDP packet isn't needed."""
@@ -752,6 +854,8 @@ def test_get_mac_address_ip6_arp_timeout_not_found(mocker, mock_socket, fake_clo
 def test_get_mac_address_ip_arp_timeout_no_wait(
     mocker, mock_socket, fake_clock, arp_timeout, network_request, send_error
 ):
+    # No method that sends an ARP request, so there's only one lookup
+    getmac.METHOD_CACHE["ip4"] = getmac.ArpFile()
     mocker.patch("getmac.getmac.get_by_method", return_value=None)
     mocker.patch.object(settings, "ARP_TIMEOUT", arp_timeout)
     mock_socket.return_value.sendto.side_effect = send_error

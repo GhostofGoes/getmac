@@ -106,7 +106,7 @@ The first time a lookup is performed for a particular type (e.g. ``ip4``), the c
 
 1. Selects methods in :data:`~getmac.getmac.METHODS` with a matching ``method_type``.
 2. Selects methods whose ``platforms`` set includes the current platform, or ``"other"`` if nothing matches (see the section above).
-3. If ``network_request=False``, it excludes methods that have ``network_request=True``.
+3. If ``network_request=False``, it excludes methods that have ``network_request=True``. Lookups always build the cache with ``network_request=True``, so these methods are in it even if the first lookup doesn't allow them.
 4. Creates instances of the selected methods and calls their ``test()``. The first method that passes (returns :obj:`True`) becomes the *primary* method, stored in :data:`METHOD_CACHE[type] <getmac.getmac.METHOD_CACHE>`. The others that pass become *fallbacks*, stored in order in :data:`FALLBACK_CACHE[type] <getmac.getmac.FALLBACK_CACHE>`. Methods whose ``test()`` returns :obj:`False` or raises an exception are left out.
 
 :func:`~getmac.getmac.initialize_method_cache` will raise :class:`RuntimeError` if:
@@ -129,7 +129,7 @@ Each lookup calls ``get()`` on the primary method from the cache and:
 - If ``get()`` returns :obj:`None`, the result is :obj:`None`. The fallbacks are **not** tried. :obj:`None` means "not found", for example "there's no such interface", *not* "this method doesn't work".
 - If ``get()`` raises an exception, or sets ``self.unusable = True`` and returns :obj:`None`, the method is removed from the cache. The first fallback becomes the primary method, and the lookup is retried with it using the same argument. The exception is logged as a warning, not raised.
 - A :class:`~subprocess.CalledProcessError` with exit code 1 is treated like returning :obj:`None`, because many commands exit with 1 when the interface or host doesn't exist. Any other exit code counts as a failure and leads to a fallback.
-- With ``network_request=False``, methods that send network requests (their ``network_request`` attribute is :obj:`True`) are skipped, both for the lookup and as fallbacks. They stay in the cache, since the cache may have been built by a lookup that allowed them.
+- With ``network_request=False``, methods that send network requests (their ``network_request`` attribute is :obj:`True`) are skipped, both for the lookup and as fallbacks. They stay in the cache for later lookups that allow them.
 
 .. _module-api-ipv4-network:
 
@@ -142,7 +142,7 @@ When :func:`~getmac.getmac.get_mac_address` looks up an IPv4 address (``ip=`` or
 2. Otherwise, if :class:`~getmac.getmac.CtypesHost` or :class:`~getmac.getmac.ArpingHost` is in the ``ip4`` cache, it's made the primary method, since it sends an ARP request itself.
 3. If neither applies, an empty UDP packet is sent to the host on the port specified by :attr:`settings.PORT <getmac.variables.Settings.PORT>` to force the system to populate the ARP table.
 
-Then the host is looked up with the ``ip4`` cache. If the UDP packet was sent and the host isn't found, it's looked up again until it's found or :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` seconds have passed (by default, it isn't looked up again). IPv6 lookups send the UDP packet and use ``ARP_TIMEOUT`` the same way, but there's no ``ArpFile`` or ARP request step.
+Then the host is looked up with the ``ip4`` cache. If the UDP packet was sent and the host isn't found, it's looked up again until it's found or :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` seconds have passed (by default, it isn't looked up again). If the ARP request from step 2 doesn't find the host, which is also what happens when it can't be sent (e.g. ``arping`` doesn't have permission to), the UDP packet is sent, and the host is looked up again without the methods that send network requests, the same way, but for at least 0.25 seconds even if ``ARP_TIMEOUT`` is lower. This isn't done if :attr:`settings.FORCE_METHOD <getmac.variables.Settings.FORCE_METHOD>` is set. IPv6 lookups send the UDP packet and use ``ARP_TIMEOUT`` the same way, but there's no ``ArpFile`` or ARP request step.
 
 
 Seeing which methods are used
@@ -251,8 +251,8 @@ Example output on Linux:
 A few more things to know:
 
 - An empty argument returns :obj:`None` and logs an error, except for ``default_iface`` type methods, which take no argument.
-- It raises :class:`RuntimeError` when no method can be used, as described in :ref:`module-api-choosing`.
-- Its ``network_request`` argument has the same effect as in :func:`~getmac.getmac.initialize_method_cache`, and **only applies if that type's cache hasn't been built yet**.
+- It raises :class:`RuntimeError` when no method can be used, as described in :ref:`module-api-choosing`. If methods pass their ``test()`` but none of them can be used with ``network_request=False`` (only methods that send network requests passed), it logs an error and returns :obj:`None` instead.
+- Its ``network_request`` argument only decides if methods that send network requests are used for this lookup. The cache is always built with them, as described in :ref:`module-api-choosing`.
 
 get_default_interface()
 -----------------------
