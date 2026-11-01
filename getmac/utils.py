@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 """
 Utility and helper functions. These are basic in functionality
 and should be relatively standalone. They are intended for

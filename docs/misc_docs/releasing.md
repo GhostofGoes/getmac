@@ -12,9 +12,9 @@ Manual publishing is no longer done, all releases should go through GitHub Actio
 1. Increment version number in `getmac/getmac.py` (in `__version__`)
 1. Update the CHANGELOG header for the release (e.g. `## 1.0.0 (TBD)`), replacing `TBD` with the release date in `MM/DD/YYYY` format
 1. Ensure [CI](https://github.com/GhostofGoes/getmac/actions) is passing on all checks and on all platforms
-1. Tag the release commit with the version (no `v` prefix) and push the tag. If it's a pre-release, tag it as such, e.g. `1.0.0a1`, `1.0.0b1`, `1.0.0rc1`.
+1. Tag the release commit with the version (no `v` prefix), sign the tag with your GPG key, and push the tag. If it's a pre-release, tag it as such, e.g. `1.0.0a1`, `1.0.0b1`, `1.0.0rc1`. Signed tags let anyone check that a release tag was made by the maintainer (`git verify-tag 1.0.0`):
 ```bash
-git tag 1.0.0
+git tag -s 1.0.0 -m "getmac 1.0.0"
 git push origin 1.0.0
 ```
 1. CI runs the checks, builds the sdist (`.tar.gz`) and wheel (`.whl`), creates build provenance attestations for them, and publishes them to PyPI (the `publish-pypi` job in `ci.yml`). The Docker workflow publishes the container image for the tag at the same time.
@@ -29,6 +29,8 @@ gh attestation verify dist/getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getm
     b) The sdist and wheel
     c) The manpage (`getmac.1`)
     d) The signed build provenance (`getmac-1.0.0.intoto.jsonl`)
+
+1. Never move or delete a release tag. A bad release is fixed by the next patch version, and yanked on PyPI if it must not be installed.
 
 ## Publishing manually
 

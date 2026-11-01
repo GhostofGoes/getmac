@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 import ctypes
 import errno
 import platform
@@ -1064,6 +1067,9 @@ def test_dladm_iface_samples(benchmark, mocker, get_sample, vm, phys, vnic_mac, 
     # A link that isn't in the output, e.g. if it's removed after "dladm show-link"
     phys_output = get_sample(f"{vm}/dladm_show-phys_-m_-p_-o_link,slot,address.out")
     assert getmac._parse_dladm("vnic1", phys_output, "primary") is None
+
+    # A matching line whose last field isn't a MAC, e.g. a link without an address yet
+    assert getmac._parse_dladm("net0", "net0:primary:\n", "primary") is None
 
 
 def test_dladm_iface_edge_cases(mocker):

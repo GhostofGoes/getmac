@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
 # Smoke test for Oracle Solaris and illumos, run in VMs by .github/workflows/sunos.yml.
 #
 # Runs getmac from this checkout as root and as a regular user, and checks that
