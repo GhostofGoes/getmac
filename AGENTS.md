@@ -93,7 +93,11 @@ When fixing a parsing bug for a specific platform/command version, add the raw c
 ## Contributions
 
 - Do not commit or push to the `main` branch, unless explicitly instructed to.
+- `GOVERNANCE.md` says who decides and how code review works, and `ROADMAP.md` says what's planned and what isn't. Check a change against the roadmap before making it.
+- OpenSSF Best Practices compliance (silver, then gold) is a project goal. Check each change against the [criteria](https://www.bestpractices.dev/en/criteria/1) and keep `docs/assurance.md` true: a change that moves a trust boundary (a new command, file, network packet, or dependency) updates `SECURITY.md` and `docs/assurance.md` in the same PR.
+- Every source file (`.py`, `.sh`, `.yml`, `.toml`, Dockerfile, Vagrantfile) starts with the two SPDX comment lines (`SPDX-FileCopyrightText` and `SPDX-License-Identifier: MIT`). `tests/test_spdx.py` checks this.
 - Commits must follow conventional commits format
+- Commits must carry a DCO sign-off (`git commit -s`) from the human contributor
 - Branch names must follow conventional commits format
 - PR titles should follow conventional commits format
 - AI-authored commits must include Co-Authorship

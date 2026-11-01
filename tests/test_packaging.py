@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
 """
 Tests for packaging artifacts: sdist and wheel.
 This test was mostly generated using AI assistance.
