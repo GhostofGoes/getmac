@@ -194,7 +194,7 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
         cmd("arping -r -C 1 -c 1 {ip}", network=True),
         cmd("sw_vers"),
     ),
-    # FreeBSD, OpenBSD, and NetBSD
+    # FreeBSD, OpenBSD, NetBSD, and DragonFly BSD
     "bsd": (
         cmd("route get default"),
         cmd("route -n get default"),
@@ -207,10 +207,23 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
     "netbsd": (cmd("route -n show"),),
     # Solaris and illumos
     "sunos": (
-        cmd("netstat -pn"),  # ARP table ("Net to Media Table")
+        cmd("netstat -pn"),  # ARP table and NDP neighbor cache ("Net to Media Table")
+        cmd("netstat -pn -f inet"),
+        cmd("netstat -pn -f inet6"),
+        cmd("route get default"),
         cmd("route -n get default"),
+        cmd("dladm show-link"),
+        cmd("dladm show-link -p -o link,class,over"),
         cmd("dladm show-phys -m"),
-        cmd("dladm show-linkprop -p mac-address"),
+        cmd("dladm show-phys -m -p -o link,slot,address"),
+        cmd("dladm show-vnic"),
+        cmd("dladm show-vnic -p -o link,macaddress"),
+        cmd("dladm show-aggr -x"),
+        cmd("dladm show-aggr -x -p -o link,port,address"),
+        cmd("dladm show-linkprop -p mac-address"),  # Oracle Solaris only
+        cmd("ipadm show-if"),
+        cmd("ndp -an"),  # illumos only
+        File("/etc/release"),
     ),
     "hpux": (
         cmd("lanscan"),
@@ -240,13 +253,13 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
     ),
     "other_default_iface": (  # Default interface
         cmd("route -n"),
-        cmd("route get default"),
+        cmd("route -n get default"),
         cmd("ip route list 0/0"),
     ),
 }
 
 # The groups to collect for each platform. Platform names are the same as the ones
-# used by getmac's Method.platforms, plus "netbsd". Unlike getmac, "wsl" is used for
+# used by getmac's Method.platforms. Unlike getmac, "wsl" is used for
 # both WSL1 and WSL2, since both can run Windows commands. The "other_*" groups are
 # for the types of lookups that getmac doesn't have Methods for on the platform, e.g.
 # IPv6 hosts and the default interface on HP-UX, where "arp" and "route" exist.
@@ -258,8 +271,9 @@ PLATFORMS: dict[str, tuple[str, ...]] = {
     "darwin": ("posix", "darwin"),
     "freebsd": ("posix", "bsd"),
     "openbsd": ("posix", "bsd", "openbsd"),
-    "netbsd": ("posix", "bsd", "netbsd", "other_ip", "other_iface", "other_default_iface"),
-    "sunos": ("posix", "sunos", "other_iface", "other_default_iface"),
+    "netbsd": ("posix", "bsd", "netbsd"),
+    "dragonfly": ("posix", "bsd"),
+    "sunos": ("posix", "sunos"),
     "hp-ux": ("posix", "hpux", "other_ip", "other_default_iface"),
     # Unknown platform, try everything Unix-like (this has all of the "other_*" commands)
     "other": ("posix", "linux", "busybox", "bsd"),
@@ -363,6 +377,7 @@ def detect_platform() -> str:
         "FreeBSD": "freebsd",
         "OpenBSD": "openbsd",
         "NetBSD": "netbsd",
+        "DragonFly": "dragonfly",
         "SunOS": "sunos",
         "HP-UX": "hp-ux",
     }
@@ -419,7 +434,14 @@ def default_dir_name(uname: platform.uname_result, os_release: dict[str, str]) -
         if is_wsl(uname):
             name = ("WSL2_" if is_wsl2(uname) else "WSL_") + name
     elif system == "SunOS":
-        name = "solaris_" + release.partition(".")[2]  # SunOS 5.10 is Solaris 10
+        # OpenIndiana doesn't have os-release, but /etc/release starts with e.g.
+        # "OpenIndiana Hipster 2026.04 (powered by illumos)"
+        data = read_bytes("/etc/release") or b""
+        match = re.search(r"OpenIndiana\s+\w+\s+(\d+\.\d+)", data.decode(errors="replace"))
+        if match:
+            name = "openindiana_" + match.group(1)
+        else:
+            name = "solaris_" + release.partition(".")[2]  # SunOS 5.10 is Solaris 10
     elif system == "HP-UX":
         name = "hpux_" + re.sub(r"^[A-Z]\.", "", release)  # "B.11.31" -> "11.31"
     elif system == "AIX":

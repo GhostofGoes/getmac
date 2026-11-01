@@ -1,0 +1,12 @@
+wm0: flags=0x8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+	capabilities=2bf80<TSO4,IP4CSUM_Rx,IP4CSUM_Tx,TCP4CSUM_Rx>
+	capabilities=2bf80<TCP4CSUM_Tx,UDP4CSUM_Rx,UDP4CSUM_Tx,TCP6CSUM_Tx>
+	capabilities=2bf80<UDP6CSUM_Tx>
+	enabled=0
+	ec_capabilities=7<VLAN_MTU,VLAN_HWTAGGING,JUMBO_MTU>
+	ec_enabled=2<VLAN_HWTAGGING>
+	address: 52:54:00:12:34:56
+	media: Ethernet autoselect (1000baseT full-duplex)
+	status: active
+	inet 192.168.76.9/24 broadcast 192.168.76.255 flags 0x0
+	inet6 fe80::5054:ff:fe12:3456%wm0/64 flags 0x0 scopeid 0x1

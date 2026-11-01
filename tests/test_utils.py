@@ -1,3 +1,4 @@
+import os
 import sys
 from subprocess import TimeoutExpired
 
@@ -125,8 +126,9 @@ def test_popen_path(mocker, tmp_path):
     (has_cmd / "testcmd").chmod(0o755)
 
     path = [str(tmp_path / "missing"), str(is_dir), str(not_executable), str(has_cmd)]
-    if sys.platform == "win32":
-        # Windows doesn't have an executable permission, so any file would be used
+    if sys.platform == "win32" or os.access(not_executable / "testcmd", os.X_OK):
+        # Windows doesn't have an executable permission, so any file would be used.
+        # For root, os.access() says any file can be run on some platforms (DragonFly BSD).
         path.remove(str(not_executable))
     mocker.patch.object(gvars, "PATH", path)
     m = mocker.patch("getmac.utils.call_proc", return_value="SUCCESS")

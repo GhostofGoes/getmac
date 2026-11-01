@@ -1,0 +1,2 @@
+GROUP       GROUPNAME   STATE     FDT       INTERFACES
+ipmp0       ipmp0       ok        --        vnic2 vnic1

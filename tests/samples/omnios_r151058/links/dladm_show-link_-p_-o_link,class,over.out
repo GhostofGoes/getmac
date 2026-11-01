@@ -1,0 +1,9 @@
+e1000g1:phys:
+simnet0:simnet:
+simnet1:simnet:
+aggr0:aggr:simnet0,simnet1
+vlan5:vlan:e1000g1
+stub0:etherstub:
+vnic9:vnic:stub0
+vnic1:vnic:e1000g1
+vnic2:vnic:e1000g1

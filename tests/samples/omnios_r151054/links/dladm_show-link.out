@@ -1,0 +1,10 @@
+LINK        CLASS     MTU    STATE    BRIDGE     OVER
+e1000g1     phys      1500   up       --         --
+simnet0     simnet    9000   up       --         --
+simnet1     simnet    9000   up       --         --
+aggr0       aggr      9000   unknown  --         simnet0,simnet1
+vlan5       vlan      1500   up       --         e1000g1
+stub0       etherstub 9000   up       --         --
+vnic9       vnic      9000   up       --         stub0
+vnic1       vnic      1500   up       --         e1000g1
+vnic2       vnic      1500   up       --         e1000g1

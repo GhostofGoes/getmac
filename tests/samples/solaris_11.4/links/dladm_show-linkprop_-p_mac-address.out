@@ -1,0 +1,9 @@
+LINK     PROPERTY        PERM VALUE        EFFECTIVE    DEFAULT   POSSIBLE
+aggr0    mac-address     rw   7a:b9:70:a2:6e:dd 7a:b9:70:a2:6e:dd 7a:b9:70:a2:6e:dd -- 
+net0     mac-address     rw   52:54:0:12:34:56 52:54:0:12:34:56 52:54:0:12:34:56 -- 
+simnet0  mac-address     rw   7a:b9:70:a2:6e:dd 7a:b9:70:a2:6e:dd 7a:b9:70:a2:6e:dd -- 
+simnet1  mac-address     rw   7a:b9:70:a2:6e:dd 7a:b9:70:a2:6e:dd 56:e:1d:2a:cc:96 -- 
+vlan5    mac-address     r-   52:54:0:12:34:56 52:54:0:12:34:56 52:54:0:12:34:56 -- 
+vnic1    mac-address     rw   2:8:20:fc:a9:af 2:8:20:fc:a9:af 2:8:20:fc:a9:af -- 
+vnic2    mac-address     rw   2:8:20:8d:11:b2 2:8:20:8d:11:b2 2:8:20:8d:11:b2 -- 
+vnic9    mac-address     rw   2:8:20:3f:5e:4 2:8:20:3f:5e:4 2:8:20:3f:5e:4 -- 

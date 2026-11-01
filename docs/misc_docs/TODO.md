@@ -64,9 +64,6 @@ This is going to be a bit more complicated since the highest metric routes are g
 - [ ] IPv6: `route print -6`
 - [ ] Windows API
 
-## OSX (Darwin) IPv6
-- [ ] macOS doesn't have a working IPv6 method: `ArpVariousArgs` runs `arp`, which is IPv4-only. Add a method for `ndp -an` (samples in `tests/samples/macos_15.7.9/` and `macos_26.6.2/`).
-
 ## POSIX
 - [ ] `arping` (command): investigate for remote macs
 - [ ] `fcntl` (library): IPv6?
@@ -76,25 +73,25 @@ This is going to be a bit more complicated since the highest metric routes are g
 ## OSX (Darwin)
 - [ ] Determine best remote host detection methods, split off not-applicable commands.
 - [ ] Darwin hostnames? Does it have arp file? (Do less work)
-- [ ] Mac: `ndp -a` to get IPv6 network neighbors (NDP table)
 
 ## Misc platforms
 - [ ] Properly support WSL2
 - [ ] `nwmgr` for HP-UX
 - [ ] Properly implement and test HP-UX for `netstat` and `ifconfig`, add `hp-ux` to `platforms` for corresponding Methods
-- [ ] FreeBSD default interface: `route get default`
-- [ ] Support NetBSD
-    - platform: `netbsd`
-    - default interface: `wm0`
-    - ip: "route -nq show", "netstat -r", arp -a
-    - default interface via `route get default`?
-- [ ] Support Solaris
-    - platform: `sunos`
-    - default interface; `e1000g0` (NOTE: likely because this is in Vagrant VM)
-    - `ifconfig` with no arguments DOES NOT work, need `ifconfig -a`
-    - `netstat` doesn't work with `-e`, but does work with no arguments, `-a` and `-i`. `-n` prevents hostnames from resolving, which is faster. `-i` gives the shortest output (and is fastest), but doesn't give us a MAC address. Providing the interface as an argument also doesn't work to get a MAC (`netstat -a -I e1000g0`).
-    - default interface via `route get default`?
-    - no `ip` command
+- [x] FreeBSD default interface: `route -n get default`, falling back to `netstat -rn`
+- [x] Support Solaris and illumos ([issue #41](https://github.com/GhostofGoes/getmac/issues/41)). Tested on Oracle Solaris 11.4, OmniOS r151058 and r151054, and OpenIndiana 2026.04, in VMs on GitHub Actions (`.github/workflows/sunos.yml`).
+    - platform: `sunos`, for both Oracle Solaris and illumos distros (`platform.system()` is `SunOS` on all of them).
+    - Interfaces: `DladmIface` works for any user. It finds the type of datalink with `dladm show-link`, then gets the MAC from `dladm show-phys -m` (NICs), `dladm show-vnic` (VNICs), or `dladm show-aggr -x` (link aggregations). A VLAN has the MAC of the link it's on. `ifconfig` only shows the MAC to root, and doesn't show one for IPMP groups, aggregations, or VLANs without an IP interface.
+    - Hosts: `netstat -pn -f inet` and `netstat -pn -f inet6` (`NetstatNetToMedia`) for IPv4 and IPv6, for any user. `arp <ip>` works, but `arp -a <ip>` and `arp -n <ip>` are usage errors.
+    - Default interface: `route -n get default` works for any user. `route -n` is a usage error (exit code 1), so before, `get_default_interface()` always failed.
+    - The old notes here were from Solaris 10 in a Vagrant VM. What was checked on the newer releases:
+        - `ifconfig` with no arguments is a usage error on Oracle Solaris 11.4, but works on illumos (it's the same as `ifconfig -a`).
+        - `netstat -e` is an illegal option, and `netstat -i` and `netstat -a -I <iface>` don't show MACs, on all of them.
+        - There's no `ip` command on any of them.
+        - Interface names: `net0` on Solaris 11 (generic names), and driver names like `e1000g0` on illumos and Solaris 10.
+        - `dladm show-linkprop -p mac-address` only exists on Oracle Solaris. illumos has `ndp -an`, but it prints the same table as `netstat -pn -f inet6`, not the BSD format.
+- [ ] Solaris 10: `dladm` doesn't have `show-phys` or `-o`, so only root gets interface MACs (from `ifconfig`). The ARP table has an entry with the `L` (local) flag for each interface's own IPv4 address, which could work for other users. Low priority, since Solaris 10's extended support ends in January 2027 and there's no packaged Python 3.9+ for it (OpenCSW stops at 3.3).
+- [ ] SmartOS: untested (no VM image on GitHub Actions). Zones have VNICs, which `DladmIface` handles, and Python comes from pkgsrc.
 
 
 # Performance
@@ -209,6 +206,23 @@ methods (list): Optional list of methods to use for MAC address lookup.
 - [x] `get_mac_address(network_request=False)` (and `-N`) now passes `network_request` on to `get_by_method()`, which skips methods that send packets (`ArpingHost`, `CtypesHost`) even if they're cached.
 - [x] `FORCE_METHOD` and the IPv4 network request: the case-insensitive comparison with `"CtypesHost"`/`"ArpingHost"` now matches, so no UDP packet is sent when forcing them.
 - [x] When `ArpFile` is a fallback and fails during the IPv4 ARP table check, it's removed from the fallbacks, instead of replacing the working primary method.
+- [x] [issue #45](https://github.com/GhostofGoes/getmac/issues/45): NetBSD support. Samples from NetBSD 9.3, 10.1 and 11.0 VMs (and 7.1 from Ansible's tests), and tested on 10 and 11 in CI (`.github/workflows/netbsd.yml`). Notes from the real output:
+    - Interfaces: `ifconfig <iface>` prints the MAC on an `address:` line. `wm0` is only the name for Intel (and emulated e1000) NICs, e.g. virtio is `vioif0`.
+    - IPv4 hosts: `arp <ip>` prints `? (10.0.2.2) at <mac> on wm0`, the same as FreeBSD (NetBSD 10 adds the expiry and state after it), so `ArpFreebsd` is used.
+    - IPv6 hosts: `arp` is IPv4-only, so `ndp -an` is used (new method `NdpNeighbors`).
+    - Default interface: `route get default` works (it fails with "not in table" if there's no default route). `route -n` is a usage error, `route -nq show` and `netstat -r` print the routing table (not host MACs), and `netstat -r` has more columns than on FreeBSD, so `DefaultIfaceFreeBsd` doesn't work. `netstat -iae` and `ifconfig -v` are usage errors, and there's no `ip` command.
+- [x] IPv6 hosts on macOS, FreeBSD, NetBSD and OpenBSD: new method `NdpNeighbors` for `ndp -an`. Tested live on FreeBSD 14.5 and 15.1, NetBSD 10 and 11, OpenBSD 7.9 and 8.0, DragonFly BSD 6.4.2, and macOS 15 (arm64 and x86_64) and 26, after adding static entries with `ndp -s` (the CI VMs and runners have no IPv6 neighbors). Notes from the real output:
+    - macOS and DragonFly BSD leave out leading zeros in MACs (`2:0:5e:a:b:c`), like macOS's `arp`.
+    - Link-local addresses have the interface appended (`fe80::2%wm0`). A numeric scope (`fe80::2%1`) is changed to the interface name with `socket.if_indextoname()`.
+    - NetBSD doesn't list the interfaces' own addresses. FreeBSD, OpenBSD, DragonFly BSD and macOS do (as "permanent" entries).
+    - On macOS, a static entry for a global address showed as "expired", with an "(incomplete)" duplicate after it. The first one's MAC is used.
+    - Solaris and illumos weren't tested, so `sunos` isn't included.
+- [x] DragonFly BSD support (platform `dragonfly`, from `platform.system()`). Samples from DragonFly 6.4.0 and 6.4.2 VMs, and tested on both in CI (`.github/workflows/dragonfly.yml`). It works like NetBSD:
+    - Interfaces: `ifconfig <iface>` prints the MAC on an `ether` line, like FreeBSD.
+    - IPv4 hosts: `arp <ip>` prints `? (192.168.122.2) at <mac> on vtnet0 [ethernet]`, so `ArpFreebsd` is used. Unlike `ndp`, it keeps the leading zeros. A missing host prints `-- no entry` with exit code 0. `arp -a <ip>` and `arp -an <ip>` are usage errors.
+    - IPv6 hosts: `ndp -an` (`NdpNeighbors`).
+    - Default interface: `route get default`. `route -n` is a usage error, and `netstat -r` has a `Refs` column that FreeBSD doesn't have, so `DefaultIfaceFreeBsd` would return the wrong field. `netstat -iae` is a usage error, and there's no `ip` command.
+    - 6.4.x is the only release series the `vmactions/dragonflybsd-vm` action has. As root, `os.access()` says files without an execute bit can be run.
 
 ### Before releasing
 - [x] Remove `1.0.0-wip` from the GitHub Pages deploy condition in `ci.yml` when merging into `main`

@@ -1,0 +1,2 @@
+LINK                VID  SVID PVLAN-TYPE  FLAGS  OVER
+vlan5               5    --   --          -----  net0

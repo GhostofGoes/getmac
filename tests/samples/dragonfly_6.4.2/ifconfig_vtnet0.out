@@ -1,0 +1,7 @@
+vtnet0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> metric 0 mtu 1500
+	options=28<VLAN_MTU,JUMBO_MTU>
+	ether 52:54:00:12:34:56
+	inet6 fe80::5054:ff:fe12:3456%vtnet0 prefixlen 64 scopeid 0x1
+	inet 192.168.122.10 netmask 0xffffff00 broadcast 192.168.122.255
+	media: Ethernet 1000baseT <full-duplex>
+	status: active

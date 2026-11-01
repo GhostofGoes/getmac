@@ -1,0 +1,2 @@
+LINK            OVER           SPEED  MACADDRESS        MACADDRTYPE IDS
+vnic0           net0           1000   2:8:20:2a:99:4f   random      VID:0

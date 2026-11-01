@@ -1,0 +1,9 @@
+Name  Mtu  Net/Dest      Address        Ipkts  Ierrs Opkts  Oerrs Collis Queue 
+lo0   8232 127.0.0.0     127.0.0.1      225    0     225    0     0      0     
+net0  1500 192.168.122.0 192.168.122.10 1862   0     824    0     0      0     
+vnic0 1500 192.168.122.0 192.168.122.20 14     0     26     0     0      0     
+
+Name  Mtu  Net/Dest                    Address                     Ipkts  Ierrs Opkts  Oerrs Collis
+lo0   8252 ::1                         ::1                         225    0     225    0     0     
+net0  1500 fe80::5054:ff:fe12:3456/10  fe80::5054:ff:fe12:3456     1862   0     824    0     0     
+vnic0 1500 fe80::8:20ff:fe2a:994f/10   fe80::8:20ff:fe2a:994f      14     0     26     0     0     

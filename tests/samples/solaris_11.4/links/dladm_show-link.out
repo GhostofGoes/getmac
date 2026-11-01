@@ -1,0 +1,10 @@
+LINK                CLASS     MTU    STATE    OVER
+aggr0               aggr      1500   down     simnet0 simnet1
+net0                phys      1500   up       --
+simnet0             simnet    1500   down     --
+simnet1             simnet    1500   down     --
+stub0               etherstub 9000   unknown  --
+vlan5               vlan      1500   up       net0
+vnic1               vnic      1500   up       net0
+vnic2               vnic      1500   up       net0
+vnic9               vnic      9000   unknown  stub0

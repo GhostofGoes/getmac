@@ -290,6 +290,22 @@ def test_get_by_method(mocker, get_sample):
     assert getmac.get_by_method("default_iface") == "em0"
 
 
+def test_get_mac_address_ip6_ndp_short_mac(mocker, mock_socket, get_sample):
+    """macOS's "ndp -an" leaves out leading zeros, and get_mac_address() adds them back."""
+    mocker.patch(
+        "getmac.getmac.METHOD_CACHE", {**getmac.METHOD_CACHE, "ip6": getmac.NdpNeighbors()}
+    )
+    mocker.patch("getmac.getmac.FALLBACK_CACHE", {**getmac.FALLBACK_CACHE, "ip6": []})
+    content = get_sample("macos_26.6.2/ndp_-an_static.out")
+    mocker.patch("getmac.utils.popen", return_value=content)
+
+    mac = getmac.get_mac_address(ip6="fd00:6e64:7000::10", network_request=False)
+    assert mac == "02:00:5e:0a:0b:0c"
+    mac = getmac.get_mac_address(ip6="fe80::a0b:c0d%en0", network_request=False)
+    assert mac == "02:00:5e:10:20:30"
+    mock_socket.assert_not_called()
+
+
 def test_get_by_method_errors(mocker):
     assert getmac.get_by_method("iface", arg="") is None
 
@@ -358,6 +374,31 @@ def test_get_by_method_fallback_on_error(mocker, get_sample, error, falls_back):
     assert ip_neighbor.unusable is falls_back
     assert getmac.METHOD_CACHE["ip4"] is (arp_file if falls_back else ip_neighbor)
     assert getmac.FALLBACK_CACHE["ip4"] == ([] if falls_back else [arp_file])
+
+
+@pytest.mark.parametrize("version", ["13.5", "15.0"])
+def test_get_by_method_default_iface_freebsd_no_default_route(mocker, get_sample, version):
+    """
+    FreeBSD with no default route: ``route -n get default`` prints "route has not been
+    found" to stderr and exits with code 255 on FreeBSD 13.5 and 15.0, so getmac falls back
+    to ``netstat -rn``, which doesn't list a default route either. (FreeBSD 14.3 exits with
+    code 0 and no output instead, which returns None without a fallback.)
+    """
+    route_get, netstat = getmac.DefaultIfaceRouteGetCommand(), getmac.DefaultIfaceFreeBsd()
+    getmac.METHOD_CACHE["default_iface"] = route_get
+    getmac.FALLBACK_CACHE["default_iface"] = [netstat]
+    no_route = get_sample(f"freebsd_{version}/netstat_-rn_no_default_route.out")
+
+    def popen(command, args):
+        if command == "route":
+            raise CalledProcessError(returncode=255, cmd=f"{command} {args}")
+        return no_route
+
+    mocker.patch("getmac.utils.popen", side_effect=popen)
+
+    assert getmac.get_by_method("default_iface") is None
+    assert route_get.unusable is True
+    assert getmac.METHOD_CACHE["default_iface"] is netstat
 
 
 def test_get_by_method_fallback_on_unusable(mocker, get_sample):
@@ -1107,8 +1148,24 @@ def _cached_method_names(method_type):
         ("Windows", "default_iface", ["DefaultIfaceNetsh"]),
         ("Darwin", "iface", ["DarwinNetworksetupIface", "IfconfigEther"]),
         ("FreeBSD", "default_iface", ["DefaultIfaceRouteGetCommand", "DefaultIfaceFreeBsd"]),
-        ("OpenBSD", "ip6", ["ArpOpenbsd"]),
-        ("SunOS", "ip4", ["ArpVariousArgs"]),
+        ("OpenBSD", "ip6", ["NdpNeighbors", "ArpOpenbsd"]),
+        # "ndp -an" is used for IPv6 hosts on the BSDs and macOS, before "arp" (IPv4-only)
+        ("Darwin", "ip6", ["NdpNeighbors", "ArpVariousArgs"]),
+        ("FreeBSD", "ip6", ["NdpNeighbors", "ArpFreebsd", "ArpVariousArgs"]),
+        # NetBSD has its own methods for every type of lookup (GitHub issue #45)
+        ("NetBSD", "ip4", ["ArpFreebsd"]),
+        ("NetBSD", "ip6", ["NdpNeighbors", "ArpFreebsd"]),
+        ("NetBSD", "iface", ["IfconfigWithIfaceArg"]),
+        ("NetBSD", "default_iface", ["DefaultIfaceRouteGetCommand"]),
+        # DragonFly BSD uses the same methods as NetBSD
+        ("DragonFly", "ip4", ["ArpFreebsd"]),
+        ("DragonFly", "ip6", ["NdpNeighbors", "ArpFreebsd"]),
+        ("DragonFly", "iface", ["IfconfigWithIfaceArg"]),
+        ("DragonFly", "default_iface", ["DefaultIfaceRouteGetCommand"]),
+        ("SunOS", "ip4", ["NetstatNetToMedia", "ArpVariousArgs"]),
+        ("SunOS", "ip6", ["NetstatNetToMedia", "ArpVariousArgs"]),
+        ("SunOS", "iface", ["DladmIface", "IfconfigWithIfaceArg"]),
+        ("SunOS", "default_iface", ["DefaultIfaceRouteGetCommand"]),
         ("HP-UX", "iface", ["LanscanIface"]),
         # Lowercase names, other cases, and surrounding whitespace
         ("darwin", "iface", ["DarwinNetworksetupIface", "IfconfigEther"]),

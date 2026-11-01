@@ -1,0 +1,2 @@
+LINK            VID      OVER         FLAGS
+vlan5           5        e1000g1      -----

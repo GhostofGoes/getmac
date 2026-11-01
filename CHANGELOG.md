@@ -25,6 +25,15 @@
 * New setting, `settings.ARP_TIMEOUT` (`--arp-timeout` on the command line). After sending the UDP packet to populate the ARP/NDP table, getmac keeps checking it for the host for up to this many seconds, for hosts that are slow to reply. It's off (`0`) by default. (Issue [#101](https://github.com/GhostofGoes/getmac/issues/101))
 * Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [#90](https://github.com/GhostofGoes/getmac/issues/90))
 * New setting, `settings.COMMAND_TIMEOUT`. Commands that getmac runs (such as `arp` or `ipconfig.exe`) are stopped if they take longer than this many seconds (15 by default), and the next method is tried. Before, a command that never finished made the lookup hang forever.
+* NetBSD support, tested on NetBSD 9.3, 10 and 11. (Issue [#45](https://github.com/GhostofGoes/getmac/issues/45))
+* IPv6 host lookups on macOS, FreeBSD, NetBSD and OpenBSD, using `ndp -an` (new method `NdpNeighbors`).
+* DragonFly BSD support, tested on DragonFly 6.4.0 and 6.4.2.
+* Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) (Issue [#41](https://github.com/GhostofGoes/getmac/issues/41))
+    * Most methods now work for regular users, not just root.
+        * New method, `DladmIface`, which gets interface MACs using `dladm`.
+        * New method, `NetstatNetToMedia`, which looks up hosts in the ARP table and IPv6 neighbor cache with `netstat -pn`.
+        * `DefaultIfaceRouteGetCommand` (`route -n get default`) is used on Solaris and illumos. Before, `get_default_interface()` always failed, since `route -n` doesn't work there.
+        * Tested on Oracle Solaris 11.4, OmniOS r151058 and r151054, and OpenIndiana 2026.04, with a new CI workflow that runs getmac in VMs.
 
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
@@ -38,6 +47,7 @@
 * Fixed `ifconfig` parsing on Solaris and Debian GNU/kFreeBSD, which print MACs without leading zeros (e.g. `0:c:29:c1:70:2a`).
 * Fixed the `CtypesHost` method on Windows passing a string instead of bytes to `inet_addr()` when looking up a hostname.
 * Fixed the `FcntlIface` method on Linux not closing its socket after each lookup.
+* Finding the default interface on macOS and the BSDs no longer does DNS lookups, which could be slow or hang until `COMMAND_TIMEOUT` when DNS is unreachable. The commands are now `route -n get default` and, on FreeBSD, `netstat -rn`.
 * `get_mac_address()` with no arguments: if the default interface can't be found (e.g. there aren't any routes) or doesn't have a MAC (e.g. a VPN tunnel), the first interface with a MAC that isn't a loopback interface is used (Issue [#78](https://github.com/GhostofGoes/getmac/issues/78)).
     * It no longer guesses names like `eth0` or `en0`, or returns the loopback interface's `00:00:00:00:00:00`.
     * Also helps address issue [#91](https://github.com/GhostofGoes/getmac/issues/91).
@@ -99,6 +109,7 @@
 * Added a weekly dependency report workflow for outdated dependencies
 * CodeQL runs on all pull requests
 * Added fuzz tests using [Hypothesis](https://hypothesis.readthedocs.io). They run with the regular tests with a small number of inputs (50) and with more inputs (5000) weekly in a "Fuzz" workflow or manually with `pdm run fuzz`.
+* Tests cover 100% of branches as well as lines, including the branches taken when debug logging is off.
 
 ## 0.9.6 (10/03/2026)
 

@@ -1,0 +1,29 @@
+Net to Media Table: IPv4
+Device   IP Address               Mask      Flags      Phys Addr
+------ -------------------- --------------- -------- ---------------
+vnic0  192.168.122.20       255.255.255.255 SPLA     02:08:20:3e:1f:10
+e1000g0 192.168.122.2        255.255.255.255          52:55:c0:a8:7a:02
+e1000g0 192.168.122.3        255.255.255.255          52:55:c0:a8:7a:03
+e1000g0 192.168.122.10       255.255.255.255 SPLA     52:54:00:12:34:56
+e1000g0 224.0.0.2            255.255.255.255 S        01:00:5e:00:00:02
+e1000g0 224.0.0.22           255.255.255.255 S        01:00:5e:00:00:16
+
+Net to Media Table: IPv6
+ If   Physical Address    Type      State      Destination/Mask
+----- -----------------  ------- ------------ ---------------------------
+vnic0 33:33:00:00:00:01  other   REACHABLE    ff02::1                    
+e1000g0 33:33:00:00:00:01  other   REACHABLE    ff02::1                    
+vnic0 33:33:ff:00:00:02  other   REACHABLE    ff02::1:ff00:2             
+e1000g0 33:33:ff:00:00:02  other   REACHABLE    ff02::1:ff00:2             
+vnic0 00:00:00:00:00:00  dynamic INCOMPLETE   fe80::2                    
+vnic0 33:33:00:00:00:02  other   REACHABLE    ff02::2                    
+e1000g0 33:33:00:00:00:02  other   REACHABLE    ff02::2                    
+vnic0 33:33:00:01:00:02  other   REACHABLE    ff02::1:2                  
+e1000g0 33:33:00:01:00:02  other   REACHABLE    ff02::1:2                  
+vnic0 33:33:00:00:00:16  other   REACHABLE    ff02::16                   
+e1000g0 33:33:00:00:00:16  other   REACHABLE    ff02::16                   
+vnic0 02:08:20:3e:1f:10  local   REACHABLE    fe80::8:20ff:fe3e:1f10     
+vnic0 33:33:ff:3e:1f:10  other   REACHABLE    ff02::1:ff3e:1f10          
+e1000g0 33:33:ff:12:34:56  other   REACHABLE    ff02::1:ff12:3456          
+e1000g0 52:54:00:12:34:56  local   REACHABLE    fe80::5054:ff:fe12:3456    
+
