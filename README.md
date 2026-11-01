@@ -146,7 +146,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - `ip`: IPv4 address of a remote host
 - `ip6`: IPv6 address of a remote host
 - `hostname`: Hostname of a remote host
-- `network_request`: If an network request should be made to update and populate the ARP/NDP table of remote hosts used to lookup MACs in most circumstances. Disable this if you want to just use what's already in the table, or if you have requirements to prevent network traffic. The network request is a empty UDP packet sent to a high port, `55555` by default. This can be changed by setting `getmac.variables.Settings.PORT` to the desired integer value. Additionally, on Windows, this will send a UDP packet to `1.1.1.1:53` to attempt to determine the default interface (Note: the IP is [CloudFlare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/)).
+- `network_request`: If an network request should be made to update and populate the ARP/NDP table of remote hosts used to lookup MACs in most circumstances. Disable this if you want to just use what's already in the table, or if you have requirements to prevent network traffic. The network request is an ARP request (`arping` on Linux and macOS, `SendARP` on Windows) if one can be used, and otherwise, or if it doesn't find the host, an empty UDP packet sent to a high port, `55555` by default. This can be changed by setting `getmac.variables.Settings.PORT` to the desired integer value. Additionally, on Windows, this will send a UDP packet to `1.1.1.1:53` to attempt to determine the default interface (Note: the IP is [CloudFlare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/)).
 
 ## Configuration
 - `logging.getLogger("getmac")`: Runtime messages and errors are recorded to the `getmac` logger using Python's [logging](https://docs.python.org/3/library/logging.html) module. They can be configured by using [logging.basicConfig()](https://docs.python.org/3/library/logging.html#logging.basicConfig) or adding handlers to the `"getmac"` logger.
@@ -321,6 +321,7 @@ Many of the methods used to acquire an address and the core logic framework are 
 - [String joining](https://stackoverflow.com/a/3258612/2214380)
 - [Facter](https://github.com/puppetlabs/facter) - Command output examples from Facter are leveraged for better test coverage
 - [GLPI Agent](https://github.com/glpi-project/glpi-agent) - Command output examples from GLPI Agent are leveraged for better test coverage
+- [octoglow](https://github.com/slomkowski/octoglow) and [meow-rs](https://github.com/meow-rs/meow-rs) - `/proc/net/route` examples with VPN tunnels are used in tests
 
 ## License
-The code is licensed MIT. The test data contains Apache 2.0 and GPLv2 licensed files, in the `tests/samples/third_party/` directory. These files are not included in the packages published to PyPI.
+The code is licensed MIT. The test data contains Apache 2.0, GPLv2 and MIT licensed files, in the `tests/samples/third_party/` directory. These files are not included in the packages published to PyPI.
