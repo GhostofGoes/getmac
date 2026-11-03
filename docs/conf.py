@@ -89,6 +89,7 @@ pygments_dark_style = "a11y-high-contrast-dark"
 
 html_static_path = ["_static"]
 html_css_files = ["a11y.css"]
+html_js_files = [("a11y.js", {"defer": "defer"})]
 
 
 # -- Options for manual page output ------------------------------------------
