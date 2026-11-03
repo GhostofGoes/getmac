@@ -30,7 +30,11 @@ Basic Usage
    getmac -6 fe80::1
    getmac -n home.router
 
-Only one of ``--interface``, ``--ip``, ``--ip6``, and ``--hostname`` can be used at a time.
+   # Print the name of the default network interface (e.g. "eth0"), instead of a MAC
+   getmac --default-interface
+   getmac -D
+
+Only one of ``--interface``, ``--ip``, ``--ip6``, ``--hostname``, ``--default-interface``, and ``--list-methods`` can be used at a time.
 
 
 .. _python-invoke:
@@ -160,6 +164,35 @@ Controlling method selection
 
 getmac has a selection of methods used to acquire information across platforms. The methods it uses are determined by the platform and if required commands/libraries are present. This system isn't perfect, and in some cases it can be beneficial to have control over method selection, such as in the case of debugging.
 
+``--list-methods`` shows the methods for each type of lookup on this platform, in the order getmac tries them, and whether each one works here. It tests each method the same way a lookup does (e.g. it checks that a command exists), but it doesn't look anything up.
+
+.. code-block:: shell
+
+   getmac --list-methods
+
+Example output on Linux:
+
+.. code-block:: text
+
+   Platform: linux
+
+   ip4:
+     ArpFile                      primary
+     ArpingHost                   doesn't work here
+     IpNeighborShow               fallback
+     ArpVariousArgs               doesn't work here
+
+   ...
+
+getmac uses the ``primary`` method for a lookup. If that method fails, getmac tries the ``fallback`` methods in order (see :ref:`module-api-fallback`). The other options change the list too, such as ``--override-platform``, ``--exclude-method``, and ``--no-net`` (which skips methods that send packets).
+
+To stop getmac from using a method, for example one that gives a wrong result on your system, use ``--exclude-method``. getmac uses the next method that works instead. To exclude more than one method, give the argument more than once.
+
+.. code-block:: shell
+
+   getmac -i eth0 --exclude-method SysIfaceFile
+   getmac --ip 192.168.0.1 --exclude-method arpfile --exclude-method ipneighborshow
+
 The platform detected by getmac can be overridden via ``--override-platform``. This is useful when debugging issues or if you know a method for a different platform works on the current platform. Any value returned by ``platform.system()`` is valid.
 
 .. code-block:: shell
@@ -171,7 +204,7 @@ The platform detected by getmac can be overridden via ``--override-platform``. T
    getmac --ip 192.168.0.1 --override-platform windows
 
 
-A specific method can also be used with ``--force-method``, regardless of the consequences or if it even works. The method names are listed in the :doc:`api` (case doesn't matter).
+A specific method can also be used with ``--force-method``, regardless of the consequences or if it even works. The method names are listed in the :doc:`api` (case doesn't matter), and ``--list-methods`` shows the ones for your platform.
 
 .. code-block:: shell
 

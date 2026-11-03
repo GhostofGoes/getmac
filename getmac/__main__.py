@@ -5,7 +5,7 @@ import logging
 import sys
 
 from . import getmac
-from .variables import gvars, settings
+from .variables import consts, gvars, settings
 
 
 def _seconds(value: str) -> float:
@@ -53,6 +53,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help="Hostname of a remote host",
+    )
+    group.add_argument(
+        "-D",
+        "--default-interface",
+        action="store_true",
+        help="Print the name of the default network interface, instead of a MAC",
+    )
+    group.add_argument(
+        "--list-methods",
+        action="store_true",
+        help="List the methods for each type of lookup on this platform, in the order "
+        "getmac tries them, and whether each one works here. Then exit.",
     )
 
     parser.add_argument(
@@ -120,8 +132,74 @@ def build_parser() -> argparse.ArgumentParser:
         "This will be used regardless of its method type or platform "
         "compatibility, and Method.test() will NOT be checked!",
     )
+    tshooting.add_argument(
+        "--exclude-method",
+        action="append",
+        default=None,
+        metavar="METHOD",
+        help="Don't use this method, e.g. 'ArpFile'. getmac uses the next method "
+        "that works instead. Give it more than once to exclude more methods.",
+    )
 
     return parser
+
+
+def _exclude_methods(parser: argparse.ArgumentParser, names: list[str]) -> None:
+    # Check every name before removing any, so a typo doesn't leave METHODS half-changed
+    excluded = []
+    for name in names:
+        method = getmac.get_method_by_name(name.strip())
+        if method is None:
+            parser.error(f"argument --exclude-method: unknown method '{name}'")
+        excluded.append(method)
+
+    for method in excluded:
+        if method in getmac.METHODS:  # The same method can be named twice
+            getmac.METHODS.remove(method)
+            gvars.log.debug(f"Excluding method '{method.__name__}'")
+
+
+def _list_methods(network_request: bool) -> None:
+    """
+    Print the methods that would be considered for each type of lookup, the way
+    :func:`~getmac.getmac.initialize_method_cache` picks them, and their test results.
+    """
+    platform = settings.OVERRIDE_PLATFORM.strip().lower() or consts.PLATFORM
+    print(f"Platform: {platform}")  # noqa: T201
+
+    for method_type in getmac.METHOD_CACHE:
+        type_methods = [
+            m
+            for m in getmac.METHODS
+            if m.method_type == method_type
+            or (m.method_type == "ip" and method_type in ("ip4", "ip6"))
+        ]
+        candidates = [m for m in type_methods if platform in m.platforms] or [
+            m for m in type_methods if "other" in m.platforms
+        ]
+
+        print(f"\n{method_type}:")  # noqa: T201
+        if not candidates:
+            print("  (none)")  # noqa: T201
+            continue
+
+        chosen = False
+        for method_class in candidates:
+            if method_class.network_request and not network_request:
+                status = "skipped (sends packets, and --no-net is set)"
+            else:
+                try:
+                    works = method_class().test()
+                except Exception:
+                    works = False
+                if not works:
+                    status = "doesn't work here"
+                elif chosen:
+                    status = "fallback"
+                else:
+                    status = "primary"
+                    chosen = True
+            print(f"  {method_class.__name__:<28} {status}")  # noqa: T201
 
 
 def main() -> None:
@@ -154,6 +232,20 @@ def main() -> None:
 
     if args.force_method:
         settings.FORCE_METHOD = args.force_method.strip().lower()
+
+    if args.exclude_method:
+        _exclude_methods(parser, args.exclude_method)
+
+    if args.list_methods:
+        _list_methods(network_request=not args.NO_NET)
+        sys.exit(0)
+
+    if args.default_interface:
+        iface = getmac.get_default_interface()
+        if iface:
+            print(iface)  # noqa: T201
+            sys.exit(0)
+        sys.exit(1)
 
     mac = getmac.get_mac_address(
         interface=args.interface,

@@ -48,7 +48,7 @@ This is one of the :ref:`known issues <platforms-known-issues>`.
 None for an interface name
 ==========================
 
-- Check the name against the real ones. ``ip link`` (Linux), ``ifconfig -a`` or ``ifconfig -l`` (macOS and the BSDs), ``networksetup -listallhardwareports`` (macOS), and ``dladm show-link`` (Solaris and illumos) list them. In Python, :func:`~getmac.get_default_interface` gives the name of the default one.
+- Check the name against the real ones. ``ip link`` (Linux), ``ifconfig -a`` or ``ifconfig -l`` (macOS and the BSDs), ``networksetup -listallhardwareports`` (macOS), and ``dladm show-link`` (Solaris and illumos) list them. In Python, :func:`~getmac.get_default_interface` gives the name of the default one. On the command line, ``getmac --default-interface`` gives it.
 - Modern Linux doesn't name interfaces ``eth0`` anymore. Expect names like ``enp3s0``, ``ens33``, or ``wlp2s0``. On macOS, Wi-Fi is usually ``en0``.
 - Names are case-sensitive on Unix.
 - Tunnels (``utun0``, ``tun0``) and some virtual interfaces don't have a MAC, so :obj:`None` is expected. This is also why the default interface sometimes gives you a different interface's MAC (see :doc:`usage`).

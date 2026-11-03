@@ -200,6 +200,15 @@ getmac --ip 192.168.0.1 --override-platform windows
 
 # Force a specific method to be used, regardless of the consequences or if it even works
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
+
+# Print the name of the default interface (e.g. "eth0"), instead of its MAC
+getmac --default-interface
+
+# List the methods for this platform, in the order getmac tries them, and which ones work here
+getmac --list-methods
+
+# Don't use a method (e.g. one that gives a wrong result). getmac uses the next one that works instead.
+getmac -i eth0 --exclude-method SysIfaceFile
 ```
 
 The MAC is printed to stdout and the exit code is `0`. If nothing was found, nothing is printed and the exit code is `1`. Bad arguments (e.g. using two lookup options at once) exit with `2`. Log messages (`-v`) go to stderr.

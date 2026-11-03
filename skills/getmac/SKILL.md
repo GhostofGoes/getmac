@@ -26,6 +26,7 @@ python -m getmac -i eth0            # local interface
 python -m getmac -4 192.168.1.1     # remote IPv4 host
 python -m getmac -6 fe80::1         # remote IPv6 host
 python -m getmac -n router.lan      # hostname (resolved to IPv4 via DNS, then looked up)
+python -m getmac -D                 # NAME of the default interface (e.g. eth0), not a MAC
 ```
 
 **Output contract:** on success, stdout contains only the MAC (lowercase,
@@ -50,7 +51,9 @@ Other flags:
 | `-v` / `-d` / `-dd` | Log progress / debug detail to **stderr**. stdout still carries only the MAC. |
 | `--override-port PORT` | UDP port used to provoke an ARP entry (default `55555`). |
 | `--arp-timeout SECONDS` | After the UDP packet, keep re-checking the ARP table for the host for up to this long (default `0`, check once). Helps with hosts that are slow to reply; misses take this much longer. |
-| `--command-timeout SECONDS` | Stop a command getmac runs (e.g. `arp`, `ipconfig.exe`) after this long and try the next method (default `15`; `0` waits forever). |
+| `--command-timeout SECONDS` | Stop a command getmac runs (e.g. `arp`, `ipconfig.exe`) after this long and try the next method (default `15`). `0` waits for as long as the command takes. |
+| `--list-methods` | Print the methods for each lookup type on this platform, in the order getmac tries them. Each one is `primary`, a `fallback`, or `doesn't work here`. Run this first when a lookup fails unexpectedly. |
+| `--exclude-method METHOD` | Don't use this method (case-insensitive). getmac uses the next method that works instead. Repeatable. An unknown name exits with code `2`. |
 | `--override-platform`, `--force-method` | Debugging aids only. `--override-platform` replaces the detected platform (methods are still tested). `--force-method` skips the method's test, and has no fallback. Neither will make an unsupported lookup work. |
 
 ## Python API
