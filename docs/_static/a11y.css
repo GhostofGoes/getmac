@@ -1,0 +1,23 @@
+/*
+ * Accessibility overrides for the Furo theme (WCAG 2.2).
+ *
+ * Colours live in docs/conf.py (html_theme_options) where Furo has a variable
+ * for them. This file covers what Furo has no option for. Each rule names the
+ * WCAG success criterion it serves. Keep it small, and re-check it when
+ * upgrading Furo, sphinx-copybutton or sphinx-inline-tabs.
+ */
+
+/* ---- Contrast: 1.4.3 Contrast (AA), 1.4.6 Contrast (Enhanced, AAA) ---- */
+
+/* Use the code background from conf.py (pygments.css hard-codes the style's own,
+   almost-white one), and give code blocks an edge so they still stand out */
+.highlight {
+  background: var(--color-code-background);
+  border: 1px solid var(--color-background-border);
+}
+
+/* The search placeholder uses the browser default grey (3.71:1 in dark mode) */
+.sidebar-search::placeholder {
+  color: var(--color-foreground-secondary);
+  opacity: 1;
+}
