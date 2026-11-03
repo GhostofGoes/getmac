@@ -30,6 +30,7 @@
 * NetBSD support, tested on NetBSD 9.3, 10 and 11. (Issue [#45](https://github.com/GhostofGoes/getmac/issues/45))
 * IPv6 host lookups on macOS, FreeBSD, NetBSD and OpenBSD, using `ndp -an` (new method `NdpNeighbors`).
 * DragonFly BSD support, tested on DragonFly 6.4.0 and 6.4.2.
+* New command line argument, `--default-interface` (`-D`). It prints the name of the default interface, like `get_default_interface()`.
 * Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) (Issue [#41](https://github.com/GhostofGoes/getmac/issues/41))
     * Most methods now work for regular users, not just root.
         * New method, `DladmIface`, which gets interface MACs using `dladm`.

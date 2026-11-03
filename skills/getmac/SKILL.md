@@ -26,6 +26,7 @@ python -m getmac -i eth0            # local interface
 python -m getmac -4 192.168.1.1     # remote IPv4 host
 python -m getmac -6 fe80::1         # remote IPv6 host
 python -m getmac -n router.lan      # hostname (resolved to IPv4 via DNS, then looked up)
+python -m getmac -D                 # NAME of the default interface (e.g. eth0), not a MAC
 ```
 
 **Output contract:** on success, stdout contains only the MAC (lowercase,

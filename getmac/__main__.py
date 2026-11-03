@@ -54,6 +54,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Hostname of a remote host",
     )
+    group.add_argument(
+        "-D",
+        "--default-interface",
+        action="store_true",
+        help="Print the name of the default network interface, instead of a MAC",
+    )
 
     parser.add_argument(
         "-N",
@@ -154,6 +160,13 @@ def main() -> None:
 
     if args.force_method:
         settings.FORCE_METHOD = args.force_method.strip().lower()
+
+    if args.default_interface:
+        iface = getmac.get_default_interface()
+        if iface:
+            print(iface)  # noqa: T201
+            sys.exit(0)
+        sys.exit(1)
 
     mac = getmac.get_mac_address(
         interface=args.interface,
