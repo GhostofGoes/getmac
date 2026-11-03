@@ -10,6 +10,9 @@ If you're adding a method, this is the first step of :doc:`adding_methods`.
 Using collect_samples.py
 ========================
 
+Running the script
+------------------
+
 ``scripts/collect_samples.py`` runs the commands (and reads the files) that getmac uses on the current platform, and saves the output of each one to its own file in ``tests/samples/<platform>_<version>/`` (e.g. ``tests/samples/ubuntu_24.04/``). It only needs Python 3.9 or newer and doesn't import getmac, so you can copy the single file to any machine and run it there. Outside a getmac checkout it saves to ``./samples/<platform>_<version>/`` instead, or to the directory given with ``--output-root``.
 
 .. code-block:: shell
@@ -17,7 +20,10 @@ Using collect_samples.py
    python scripts/collect_samples.py --dry-run  # list what would be collected
    python scripts/collect_samples.py  # run the collection
 
-Commands that aren't installed are skipped. Exit codes and error messages for everything it ran are logged to ``collect_samples.log`` in the same directory. A few commands, such as ``arping``, only work as root (or Administrator on Windows), so run it again with ``sudo`` if you want those too. By default, it looks up every interface it finds, and the default gateway as the remote host. The options change that:
+Commands that aren't installed are skipped. Exit codes and error messages for everything it ran are logged to ``collect_samples.log`` in the same directory. A few commands, such as ``arping``, only work as root (or Administrator on Windows), so run it again with ``sudo`` if you want those too. By default, it looks up every interface it finds, and the default gateway as the remote host. The options below change that.
+
+Options
+-------
 
 ``--dry-run``
    List what would be collected, without saving anything. A few read-only commands (e.g. ``ip route list 0/0``) may still be run to find the interfaces and the gateway.
@@ -39,6 +45,9 @@ Commands that aren't installed are skipped. Exit codes and error messages for ev
    The directory to create the samples directory in.
 
 ``python scripts/collect_samples.py --help`` has the exact list.
+
+Adding a new command to the script
+----------------------------------
 
 The script only knows about commands getmac already uses. If you're adding a method for a *new* command, add it to the script too, or the new command's output won't be collected for anyone else. The commands are in ``GROUPS`` in ``scripts/collect_samples.py``, grouped by platform. Add one entry per command (``check_command`` call) to the group for the platform it's for, using the ``{iface}`` and ``{ip}`` placeholders for the interface and host, or ``File("/path/{iface}")`` for a file:
 

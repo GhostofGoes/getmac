@@ -82,6 +82,11 @@ Remote hosts: IP addresses and hostnames
    # Hostname example
    get_mac_address(hostname="home.router")
 
+.. _usage-finding-hosts:
+
+How getmac finds a remote host
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 A hostname is resolved to an IPv4 address with DNS, then looked up like ``ip``. ``hostname="localhost"`` (``-n localhost`` on the command line) and ``ip="127.0.0.1"`` (``-4 127.0.0.1``) return ``"00:00:00:00:00:00"``, the MAC of the loopback interface, without looking anything up. Other spellings, such as ``::1``, ``127.0.0.2``, ``LOCALHOST``, or the host's own name, aren't short-circuited, and return :obj:`None`.
 
 Finding the MAC of a remote host means finding it in the system's ARP table (IPv4) or NDP table (IPv6). The host is only in the table if the system has talked to it recently, so by default (``network_request=True``) getmac tries to get it in there first:
@@ -92,6 +97,11 @@ Finding the MAC of a remote host means finding it in the system's ARP table (IPv
 
 Reading the tables doesn't need special privileges, but ``arping`` usually does (root, or ``CAP_NET_RAW``). If it's installed and getmac can't use it, the lookup returns :obj:`None`. See :ref:`troubleshooting-privileges`.
 
+If a remote host gives you :obj:`None` and you think it shouldn't, see :ref:`troubleshooting-remote-none`.
+
+Turning off network requests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Set ``network_request=False`` to only use what's already in the table, for example if you have requirements to prevent network traffic:
 
 .. code-block:: python
@@ -99,6 +109,11 @@ Set ``network_request=False`` to only use what's already in the table, for examp
    from getmac import get_mac_address
 
    get_mac_address(ip="10.0.0.1", network_request=False)
+
+What ``network_request`` does depends on the argument. With ``interface``, nothing, so it's safe to set in a script. With ``ip``, ``ip6``, and ``hostname``, it allows the ARP request or UDP packet described in :ref:`usage-finding-hosts`. With no arguments, it only matters on Windows, where it allows connecting the UDP socket to find the default interface's IP. :ref:`module-api-ipv4-network` has the exact sequence of what getmac does.
+
+Waiting for slow hosts
+~~~~~~~~~~~~~~~~~~~~~~
 
 The host's entry is only added to the table once it replies, which can take longer than getmac takes to check the table. To keep checking for it for up to a number of seconds, set :attr:`~getmac.variables.Settings.ARP_TIMEOUT` (``--arp-timeout`` on the command line). Lookups of hosts that don't reply take this much longer. This doesn't apply when getmac sends an ARP request itself, since it waits for the reply.
 
@@ -109,11 +124,12 @@ The host's entry is only added to the table once it replies, which can take long
    settings.ARP_TIMEOUT = 1.0  # Default is 0, check once
    get_mac_address(ip="10.0.0.1")
 
-What ``network_request`` does depends on the argument. With ``interface``, nothing, so it's safe to set in a script. With ``ip``, ``ip6``, and ``hostname``, it allows the ARP request or UDP packet above. With no arguments, it only matters on Windows, where it allows connecting the UDP socket to find the default interface's IP. :ref:`module-api-ipv4-network` has the exact sequence of what getmac does.
+.. _usage-ipv6-zones:
+
+IPv6 link-local addresses and zone IDs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 IPv6 link-local addresses (``fe80::/10``) only mean something together with an interface, so they can carry a zone: the interface's name (``ip6="fe80::1%en0"``) or its index (``ip6="fe80::1%2"``). On macOS and the BSDs (:class:`~getmac.getmac.NdpNeighbors`) and Solaris and illumos (:class:`~getmac.getmac.NetstatNetToMedia`), getmac uses the zone to pick the right entry when the same address is on more than one link. On Linux and Windows, pass the address without a zone, since ``ip neighbor show`` and ``netsh`` don't understand it today.
-
-If a remote host gives you :obj:`None` and you think it shouldn't, see :ref:`troubleshooting-remote-none`.
 
 
 Using ipaddress objects
