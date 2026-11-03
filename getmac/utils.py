@@ -139,8 +139,8 @@ def search(regex: str, text: str, group_index: int = 0, flags: int = 0) -> Optio
     Args:
         regex: regular expression
         text: data to search
-        group_index: index of value in the ``groupdict`` to return,
-            if there are multiple groups in the regex
+        group_index: index into ``match.groups()`` of the value to return
+            (``0`` is the first capture group)
         flags: flags to :mod:`re` functions, e.g. :const:`re.IGNORECASE`
 
     Returns:
@@ -255,8 +255,9 @@ def fetch_ip_using_dns() -> str:
     """
     Determine the IP address of the default network interface.
 
-    Sends a UDP packet to Cloudflare's DNS (``1.1.1.1``), which should go through
-    the default interface. This populates the source address of the socket,
+    Connects a UDP socket to Cloudflare's DNS (``1.1.1.1:53``), which should go
+    through the default interface. Nothing is sent, since connecting a UDP socket
+    only picks the route. That populates the source address of the socket,
     which we then inspect and return.
 
     Returns:

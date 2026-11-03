@@ -6,7 +6,7 @@ It provides a platform-independent interface to get the MAC addresses of:
 - System network interfaces (by interface name)
 - Remote hosts on the local network (by IPv4/IPv6 address or hostname)
 
-The key function is :func:`~getmac.getmac.get_mac_address`.
+The key function is :func:`~getmac.get_mac_address`.
 
 .. code-block:: python
    :caption: Examples
@@ -16,8 +16,8 @@ The key function is :func:`~getmac.getmac.get_mac_address`.
    eth_mac = get_mac_address(interface="eth0")
    win_mac = get_mac_address(interface="Ethernet 3")
    ip_mac = get_mac_address(ip="192.168.0.1")
-   ip6_mac = get_mac_address(ip6="::1")
-   host_mac = get_mac_address(hostname="localhost")
+   ip6_mac = get_mac_address(ip6="fe80::1")
+   host_mac = get_mac_address(hostname="home.router")
    updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
 """
@@ -128,8 +128,11 @@ class Method:
                 this is not used and defaults to an empty string.
 
         Returns:
-            Lowercase colon-separated MAC address, or :obj:`None` if one could
-            not be found.
+            The raw value the technique found, or :obj:`None` if nothing was found.
+            It isn't cleaned up, so it may not be a lowercase colon-separated MAC
+            (:func:`~getmac.get_mac_address` runs it through
+            :func:`~getmac.utils.clean_mac`). For ``default_iface`` methods,
+            it's the name of an interface instead of a MAC.
         """
         return None  # pragma: no cover
 
@@ -145,6 +148,10 @@ class ArpFile(Method):
     Only complete entries are used. Incomplete, failed and proxy ARP entries are
     ignored, since the kernel keeps the last known (possibly stale) MAC for failed
     entries, and proxy ARP entries don't have a real MAC.
+
+    The file is ``/proc/net/arp`` unless the ``ARP_PATH`` environment variable
+    is set, which is useful in containers. It's read once, when getmac is imported,
+    so set it in the process environment or before ``import getmac``.
     """
 
     platforms = {"linux"}
@@ -234,6 +241,9 @@ class NdpNeighbors(Method):
     """
     Use the ``ndp -an`` command to find the MAC address of an IPv6 host
     in the NDP neighbor cache on macOS, FreeBSD, NetBSD, OpenBSD and DragonFly BSD.
+
+    A link-local address can include a zone, as the interface name (``fe80::1%en0``)
+    or index (``fe80::1%2``).
     """
 
     platforms = {"darwin", "freebsd", "netbsd", "openbsd", "dragonfly"}
@@ -425,6 +435,9 @@ class NetstatNetToMedia(Method):
 
     Unlike ``arp``, this works for IPv6, and doesn't fail when the host isn't in the table.
     It doesn't need root.
+
+    A link-local IPv6 address can include a zone, as the interface name (``fe80::1%net0``)
+    or index (``fe80::1%2``).
 
     illumos Documentation: `netstat <https://illumos.org/man/8/netstat>`__
     """
@@ -1505,6 +1518,15 @@ METHODS: list[type[Method]] = [
     DefaultIfaceFreeBsd,
     DefaultIfaceNetsh,
 ]
+"""
+All of the methods getmac knows about. The order matters: for each lookup type,
+the first method that passes its test is the primary method, and the rest are
+fallbacks, in this order. The goal is to put them in order of:
+
+- Platform and version
+- Performance (a file read before a command)
+- Reliability (how well I know the command works)
+"""
 
 # TODO: move to gvars class? gotta love import loops with type annotations.
 #   Use deferred annotations/string annotations.
@@ -1527,15 +1549,24 @@ FALLBACK_CACHE: dict[str, list[Method]] = {
     "default_iface": [],
 }
 """
-Order of methods is determined by:
-
-- Platform + version
-- Performance (file read > command)
-- Reliability (how well I know/understand the command to work)
+The methods that passed their test but weren't chosen as the primary method,
+in the order they appear in :data:`~getmac.getmac.METHODS`
 """
 
 
 def get_method_by_name(method_name: str) -> Optional[type[Method]]:
+    """
+    Get a :class:`~getmac.getmac.Method` class from :data:`~getmac.getmac.METHODS` by name.
+
+    The name is matched ignoring case. This is how
+    :attr:`~getmac.variables.Settings.FORCE_METHOD` finds its method.
+
+    Args:
+        method_name: name of the method class, e.g. ``"IpNeighborShow"``
+
+    Returns:
+        The method *class* (not an instance), or :obj:`None` if there isn't one with that name
+    """
     for method in METHODS:
         if method.__name__.lower() == method_name.lower():
             return method
@@ -1545,7 +1576,7 @@ def get_method_by_name(method_name: str) -> Optional[type[Method]]:
 
 def get_instance_from_cache(method_type: str, method_name: str) -> Optional[Method]:
     """
-    Get the class for a named :class:`~getmac.getmac.Method` from the caches.
+    Get the cached instance of a named :class:`~getmac.getmac.Method`.
 
     :data:`~getmac.getmac.METHOD_CACHE` is checked first, and if that fails,
     then any entries in :data:`~getmac.getmac.FALLBACK_CACHE` are checked.
@@ -1554,7 +1585,8 @@ def get_instance_from_cache(method_type: str, method_name: str) -> Optional[Meth
     Args:
         method_type: what cache should be checked.
             Allowed values are:  ``ip4`` | ``ip6`` | ``iface`` | ``default_iface``
-        method_name: name of the method to look for
+        method_name: name of the method class to look for. It has to match exactly,
+            including case (see :func:`get_method_by_name` for a lookup that doesn't care)
 
     Returns:
         The cached method, or :obj:`None` if the method was not found
@@ -1836,7 +1868,13 @@ def get_by_method(method_type: str, arg: str = "", network_request: bool = True)
             (those methods that have the attribute ``network_request`` set to :obj:`True`)
 
     Returns:
-        The MAC address string, or :obj:`None` if the operation failed
+        The raw value the method found (a MAC that hasn't been cleaned up, or for
+        ``default_iface``, the name of an interface), or :obj:`None` if nothing
+        was found
+
+    Raises:
+        RuntimeError: if no method can be used for the given method type, e.g. none of them
+            match the platform, or they all failed their test.
     """
     if not arg and method_type != "default_iface":
         gvars.log.error(f"Empty arg for method '{method_type}' (raw value: {arg!r})")
@@ -1975,7 +2013,9 @@ def get_mac_address(
     The MAC is usually a unicast IEEE 802 MAC-48 address.
 
     .. note::
-       ``"localhost"`` or ``"127.0.0.1"`` will always return ``"00:00:00:00:00:00"``
+       ``hostname="localhost"`` and ``ip="127.0.0.1"`` always return ``"00:00:00:00:00:00"``.
+       Other spellings, such as ``::1``, ``127.0.0.2``, ``LOCALHOST``, or the host's own
+       name, aren't short-circuited like this, and return :obj:`None`.
 
     .. note::
        It is assumed that the host is using Ethernet or Wi-Fi. While other protocols
@@ -1983,7 +2023,9 @@ def get_mac_address(
        relied upon. If this functionality is needed, please open an issue or PR.
 
     .. note::
-       Exceptions raised by *methods* are handled silently and returned as :obj:`None`.
+       Exceptions raised by *methods* are caught and logged, and the next method is
+       tried. The exception is a method forced with
+       :attr:`~getmac.variables.Settings.FORCE_METHOD`, whose exceptions are not caught.
 
     Args:
         interface: Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
@@ -1992,26 +2034,40 @@ def get_mac_address(
             :class:`~ipaddress.IPv4Interface`). This will also accept
             :class:`~ipaddress.IPv6Address` and :class:`~ipaddress.IPv6Interface`,
             and treat them as if ``ip6`` argument was set instead.
-        ip6: Canonical shortened IPv6 address of a remote host (e.g ``ff02::1:ffe7:7f19``),
+        ip6: Canonical shortened IPv6 address of a remote host (e.g ``fe80::1``),
             or a :mod:`ipaddress` object (:class:`~ipaddress.IPv6Address`
-            or :class:`~ipaddress.IPv6Interface`).
+            or :class:`~ipaddress.IPv6Interface`). A link-local address can have a zone
+            (``fe80::1%en0``, or ``fe80::1%2`` with the interface's index), which
+            macOS, the BSDs, Solaris, and illumos use. On Linux and Windows, pass the
+            address without one.
         hostname: DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
         network_request: If network requests should be made when attempting to find the
-            MAC of a remote host. If the ``arping`` command is available, this will be used.
-            If not, a UDP packet will be sent to the remote host to populate
-            the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
-            be configured using the setting :attr:`getmac.variables.Settings.PORT`
-            (by default, it's port 55555). To wait for the host to reply to it, set
-            :attr:`getmac.variables.Settings.ARP_TIMEOUT`. If this is :obj:`False`,
-            methods that send network requests (such as ``arping``) aren't used.
+            MAC of a remote host. It does nothing for ``interface``. For ``ip``, ``ip6``
+            and ``hostname``, getmac tries to get the host into the ARP/NDP table first:
+            it sends an ARP request (IPv4 only, with ``SendARP`` on Windows or ``arping``
+            if it's installed), or else an empty UDP packet to the host. The port for the
+            packet is :attr:`getmac.variables.Settings.PORT` (by default, 55555). To wait
+            for the host to reply to it, set :attr:`getmac.variables.Settings.ARP_TIMEOUT`.
+            With no arguments on Windows, it also connects a UDP socket to ``1.1.1.1:53``
+            (nothing is sent) to find the default interface's IP. If this is :obj:`False`,
+            methods that send network requests (such as ``arping``) aren't used. See
+            :ref:`the exact sequence <module-api-ipv4-network>`.
 
     Returns:
-        Lowercase colon-separated MAC address. If no MAC was found, or an exception
-        occurred, :obj:`None` is returned.
+        Lowercase colon-separated MAC address. If no MAC was found, or a method raised
+        an exception, :obj:`None` is returned. The exception is a method forced with
+        :attr:`~getmac.variables.Settings.FORCE_METHOD`, whose exceptions are raised.
 
     Raises:
         RuntimeError: If no valid methods are found for the type of MAC requested,
             or another critical error occurs (potentially due to a bug in getmac).
+        ValueError: If ``ip`` or ``ip6`` is an :mod:`ipaddress` network (getmac needs
+            a host, not a network), or if an argument is an unsupported type.
+
+    Warns:
+        RuntimeWarning: If there are no methods for the platform and getmac falls
+            back to the generic ``other`` methods. This is an exception if warnings
+            are errors (e.g. ``python -W error::RuntimeWarning``).
     """
 
     # If debugging, start the timer
@@ -2212,12 +2268,15 @@ def get_default_interface() -> Optional[str]:
     Get the name of the default network interface on the system.
 
     This is essentially a convenience wrapper around
-    :func:`get_by_method` with the ``default_iface`` method type.
+    :func:`~getmac.getmac.get_by_method` with the ``default_iface`` method type.
     The code is literally
     ``return getmac.getmac.get_by_method("default_iface")``.
 
     Returns:
         The name of the default network interface, or :obj:`None`
-        if it could not be found or an exception occurred.
+        if it could not be found or every candidate method failed.
+
+    Raises:
+        RuntimeError: if no method can be used to find the default interface.
     """
     return get_by_method("default_iface")

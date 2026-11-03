@@ -9,6 +9,8 @@
 
 ### Added
 * Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
+    * New pages: upgrading from 0.9.x, platforms (which methods and commands are used on each one), Docker, troubleshooting, customizing methods at runtime, collecting samples, architecture, and a glossary.
+    * Shorter sentences and paragraphs throughout the docs and README, and fixed a few things that didn't match the code (e.g. the `--no-net`/`--no-network-requests` argument, and which exceptions `get_mac_address()` raises).
 * Support Python 3.10 - 3.15
 * New function, `getmac.get_default_interface()`, which returns the name of the system's default interface.
 * Support for [ipaddress](https://docs.python.org/3/library/ipaddress.html) objects from the Python standard library: `IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`
