@@ -70,7 +70,7 @@ Reference
    :doc:`api` is the full API reference, generated from the code. :doc:`module_api` explains how getmac picks a method, and :doc:`custom_methods` covers adding, removing, or forcing methods at runtime.
 
 Contributing
-   :doc:`contributing` is the contribution guide, including how to set up a development environment. :doc:`adding_methods` walks through adding support for a new command or platform, and :doc:`architecture` explains how the code is organized.
+   :doc:`contributing` is the contribution guide, including how to set up a development environment. :doc:`samples` explains how to collect the command output the tests use, :doc:`adding_methods` walks through adding support for a new command or platform, and :doc:`architecture` explains how the code is organized.
 
 .. toctree::
    :hidden:
@@ -107,6 +107,7 @@ Contributing
    :caption: Contributing
 
    contributing
+   samples
    adding_methods
    architecture
 

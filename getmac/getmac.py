@@ -241,6 +241,9 @@ class NdpNeighbors(Method):
     """
     Use the ``ndp -an`` command to find the MAC address of an IPv6 host
     in the NDP neighbor cache on macOS, FreeBSD, NetBSD, OpenBSD and DragonFly BSD.
+
+    A link-local address can include a zone, as the interface name (``fe80::1%en0``)
+    or index (``fe80::1%2``).
     """
 
     platforms = {"darwin", "freebsd", "netbsd", "openbsd", "dragonfly"}
@@ -432,6 +435,9 @@ class NetstatNetToMedia(Method):
 
     Unlike ``arp``, this works for IPv6, and doesn't fail when the host isn't in the table.
     It doesn't need root.
+
+    A link-local IPv6 address can include a zone, as the interface name (``fe80::1%net0``)
+    or index (``fe80::1%2``).
 
     illumos Documentation: `netstat <https://illumos.org/man/8/netstat>`__
     """
@@ -2030,7 +2036,10 @@ def get_mac_address(
             and treat them as if ``ip6`` argument was set instead.
         ip6: Canonical shortened IPv6 address of a remote host (e.g ``fe80::1``),
             or a :mod:`ipaddress` object (:class:`~ipaddress.IPv6Address`
-            or :class:`~ipaddress.IPv6Interface`).
+            or :class:`~ipaddress.IPv6Interface`). A link-local address can have a zone
+            (``fe80::1%en0``, or ``fe80::1%2`` with the interface's index), which
+            macOS, the BSDs, Solaris, and illumos use. On Linux and Windows, pass the
+            address without one.
         hostname: DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
         network_request: If network requests should be made when attempting to find the
             MAC of a remote host. It does nothing for ``interface``. For ``ip``, ``ip6``

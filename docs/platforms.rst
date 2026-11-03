@@ -30,10 +30,11 @@ All or almost all features should work on "supported" platforms. While other ver
 - DragonFly BSD (6.4+)
 - Oracle Solaris 11.4
 - illumos distros: OmniOS (r151054+), OpenIndiana (2026.04+). Others like SmartOS should work, but are untested.
+- HP-UX (untested): interface lookups only, via ``lanscan``. I don't have a way to test it.
 - Docker. See :doc:`docker`.
 - BusyBox (not technically a platform, but several of the methods work on this platform)
 
-Linux, Windows, and macOS are tested in CI on every code change, and so are NetBSD, DragonFly BSD, Solaris, and illumos (in VMs). FreeBSD and OpenBSD are tested by hand, so help testing them is always welcome. HP-UX has an interface method (``lanscan``), but I don't have a way to test it.
+Linux, Windows, and macOS are tested in CI on every code change, and so are NetBSD, DragonFly BSD, Solaris, and illumos (in VMs). FreeBSD and OpenBSD are tested by hand, so help testing them is always welcome.
 
 .. _platforms-methods:
 
@@ -189,9 +190,10 @@ Known issues
 ============
 
 - Linux, WSL: Getting the MAC of a local interface IP does not currently work (``getmac --ip 10.0.0.4`` will fail if ``10.0.0.4`` is the IP address of a local interface). This issue may be present on other POSIX systems as well. Use the interface name instead.
-- WSL1: remote IPv6 hosts aren't supported yet.
+- WSL1: remote IPv6 hosts aren't supported yet. ``arp.exe`` is used for IPv4 hosts, and ``netsh.exe`` isn't used on WSL1 yet.
 - Windows: ``ipconfig.exe`` (a fallback for when ``getmac.exe`` doesn't work) only finds interfaces by name in English output, since the adapter headers are translated. Adapter descriptions are found if the label is "Description" (English), and MACs are found in any language.
 - Windows: ``wmic.exe`` is deprecated as of Windows 10 21H1 and is being removed from Windows 11, so :class:`~getmac.getmac.WmicExe` may not work there. It's the last fallback for interfaces, so this only matters if ``getmac.exe`` and ``ipconfig.exe`` both fail.
 - Android: see above.
 - Hostnames for IPv6 devices are not yet supported.
+- IPv6 link-local addresses can carry a zone (``fe80::1%en0`` or ``fe80::1%2``), but only macOS and the BSDs (:class:`~getmac.getmac.NdpNeighbors`) and Solaris and illumos (:class:`~getmac.getmac.NetstatNetToMedia`) use it. On Linux and Windows, pass the address without a zone.
 - IPv6 support is good but lags behind IPv4 in some places and isn't as well-tested across the supported platform set.

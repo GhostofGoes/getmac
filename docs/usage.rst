@@ -9,48 +9,19 @@ If a MAC address was found, :func:`~getmac.get_mac_address` returns it as a lowe
 Examples
 ========
 
-Basic example:
+Here's the basic idea. With no arguments, you get the MAC of the default network interface. Pass the name of an interface to get its MAC, or the address of a host on your network to get that host's:
 
 .. code-block:: pycon
 
    >>> from getmac import get_mac_address
-   >>> get_mac_address(ip='192.168.0.1')
+   >>> get_mac_address()
    '00:11:22:33:44:55'
+   >>> get_mac_address(interface="eth0")
+   '00:11:22:33:44:55'
+   >>> get_mac_address(ip="192.168.0.1")
+   '66:77:88:99:aa:bb'
 
-
-Interface names
----------------
-
-.. code-block:: python
-
-   from getmac import get_mac_address
-
-   # Linux example
-   get_mac_address(interface="eth0")
-
-   # Windows example
-   get_mac_address(interface="Ethernet 3")
-
-On Windows, the name must match the whole connection name (``Ethernet 3``) or adapter description (``Intel(R) Ethernet Connection I217-V``). Case doesn't matter.
-
-
-IP addresses and hostnames
---------------------------
-
-.. code-block:: python
-
-   from getmac import get_mac_address
-
-   # IPv4 example
-   get_mac_address(ip="192.168.0.1")
-
-   # IPv6 example
-   get_mac_address(ip6="fe80::1")
-
-   # Hostname example
-   get_mac_address(hostname="home.router")
-
-Only one of ``interface``, ``ip``, ``ip6``, and ``hostname`` can be used at a time. A hostname is resolved to an IPv4 address with DNS, then looked up like ``ip``. ``hostname="localhost"`` (``-n localhost`` on the command line) and ``ip="127.0.0.1"`` (``-4 127.0.0.1``) return ``"00:00:00:00:00:00"``, the MAC of the loopback interface, without looking anything up. Other spellings, such as ``::1``, ``127.0.0.2``, ``LOCALHOST``, or the host's own name, aren't short-circuited, and return :obj:`None`.
+Only one of ``interface``, ``ip``, ``ip6``, and ``hostname`` can be used at a time.
 
 
 Default interface
@@ -75,14 +46,51 @@ To get the *name* of the default interface, use :func:`~getmac.get_default_inter
    print(get_default_interface())  # e.g. "eth0", or "Ethernet 2" on Windows
 
 
-Remote hosts and network requests
----------------------------------
+Interface names
+---------------
+
+.. code-block:: python
+
+   from getmac import get_mac_address
+
+   # Linux example
+   get_mac_address(interface="eth0")
+
+   # Windows example
+   get_mac_address(interface="Ethernet 3")
+
+On Windows, the name must match the whole connection name (``Ethernet 3``) or adapter description (``Intel(R) Ethernet Connection I217-V``). Case doesn't matter. On Unix, names are case-sensitive, and an interface that doesn't exist (or doesn't have a MAC, like a tunnel) gives you :obj:`None`.
+
+
+.. _usage-remote-hosts:
+
+Remote hosts: IP addresses and hostnames
+----------------------------------------
+
+"Remote hosts" are hosts in *your local layer 2 network*, also known as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN, since MACs don't cross routers. If you know any methods otherwise, please `open an issue on GitHub <https://github.com/GhostofGoes/getmac/issues>`_ or shoot me an email, I'd love to be wrong about this.
+
+.. code-block:: python
+
+   from getmac import get_mac_address
+
+   # IPv4 example
+   get_mac_address(ip="192.168.0.1")
+
+   # IPv6 example
+   get_mac_address(ip6="fe80::1")
+
+   # Hostname example
+   get_mac_address(hostname="home.router")
+
+A hostname is resolved to an IPv4 address with DNS, then looked up like ``ip``. ``hostname="localhost"`` (``-n localhost`` on the command line) and ``ip="127.0.0.1"`` (``-4 127.0.0.1``) return ``"00:00:00:00:00:00"``, the MAC of the loopback interface, without looking anything up. Other spellings, such as ``::1``, ``127.0.0.2``, ``LOCALHOST``, or the host's own name, aren't short-circuited, and return :obj:`None`.
 
 Finding the MAC of a remote host means finding it in the system's ARP table (IPv4) or NDP table (IPv6). The host is only in the table if the system has talked to it recently, so by default (``network_request=True``) getmac tries to get it in there first:
 
 1. On Linux, getmac reads the ARP table file first. If it has a complete entry for the host, nothing is sent on the network.
 2. If it doesn't, then on Windows, or on Linux and macOS with ``arping`` installed, getmac sends an ARP request to the host and waits for the reply (IPv4 only).
 3. If neither applies, getmac sends an empty UDP packet to the host on port ``55555`` (:attr:`~getmac.variables.Settings.PORT`). To send the packet, the system has to resolve the host's MAC with ARP (or NDP), which adds it to the table. IPv6 hosts always use this step.
+
+Reading the tables doesn't need special privileges, but ``arping`` usually does (root, or ``CAP_NET_RAW``). If it's installed and getmac can't use it, the lookup returns :obj:`None`. See :ref:`troubleshooting-privileges`.
 
 Set ``network_request=False`` to only use what's already in the table, for example if you have requirements to prevent network traffic:
 
@@ -102,6 +110,10 @@ The host's entry is only added to the table once it replies, which can take long
    get_mac_address(ip="10.0.0.1")
 
 What ``network_request`` does depends on the argument. With ``interface``, nothing, so it's safe to set in a script. With ``ip``, ``ip6``, and ``hostname``, it allows the ARP request or UDP packet above. With no arguments, it only matters on Windows, where it allows connecting the UDP socket to find the default interface's IP. :ref:`module-api-ipv4-network` has the exact sequence of what getmac does.
+
+IPv6 link-local addresses (``fe80::/10``) only mean something together with an interface, so they can carry a zone: the interface's name (``ip6="fe80::1%en0"``) or its index (``ip6="fe80::1%2"``). On macOS and the BSDs (:class:`~getmac.getmac.NdpNeighbors`) and Solaris and illumos (:class:`~getmac.getmac.NetstatNetToMedia`), getmac uses the zone to pick the right entry when the same address is on more than one link. On Linux and Windows, pass the address without a zone, since ``ip neighbor show`` and ``netsh`` don't understand it today.
+
+If a remote host gives you :obj:`None` and you think it shouldn't, see :ref:`troubleshooting-remote-none`.
 
 
 Using ipaddress objects
@@ -221,10 +233,7 @@ Limitations
 ===========
 
 - The physical transport is assumed to be Ethernet or Wi-Fi. Others, such as Bluetooth or cellular, may work, but they're untested. I'm definitely open to pull requests or issues related to this, including error reports.
-- "Remote hosts" refer to hosts in *your local layer 2 network*, also known as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please `open an issue on GitHub <https://github.com/GhostofGoes/getmac/issues>`_ or shoot me an email, I'd love to be wrong about this.
-- Hostnames for IPv6 devices are not yet supported.
+- Remote hosts have to be on your local network (see :ref:`above <usage-remote-hosts>`).
 - The accuracy and reliability of the MAC address retrieval may vary depending on the network configuration, the target host's settings, and other factors.
-- Depending on the platform, there could be a performance detriment, due to heavy usage of regular expressions.
-- Platform test coverage is imperfect. If you're having issues, then you might be using a platform I haven't been able to test. Keep calm, open a GitHub issue, and I'd be more than happy to help.
 
-Platform-specific limitations, such as Android's restrictions and local IPs on Linux, are listed in :ref:`platforms-known-issues`.
+The rest, such as Android's restrictions, local IPs on Linux, and hostnames for IPv6 devices, are listed per platform in :ref:`platforms-known-issues`.

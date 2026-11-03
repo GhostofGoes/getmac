@@ -27,6 +27,12 @@ The terms used throughout these docs.
    NDP table
       The IPv6 equivalent of the ARP table, filled in by the Neighbor Discovery Protocol (NDP). Also called the neighbor table or neighbor cache.
 
+   Link-local address
+      An IPv6 address that only works on one network link, from ``fe80::/10`` (e.g. ``fe80::1``). The same link-local address can exist on more than one link, so it's usually written with a zone ID.
+
+   Zone ID (scope ID)
+      The part after the ``%`` in an address like ``fe80::1%en0`` or ``fe80::1%2``, which says which interface (by name or by index) a link-local address belongs to. See :ref:`usage-remote-hosts`.
+
    Network request
       Traffic that getmac sends to get a host into the ARP or NDP table before looking it up: an ARP request, or a UDP packet to a high port. It can be disabled with ``network_request=False`` or ``--no-net``.
 

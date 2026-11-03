@@ -3,6 +3,11 @@
 
 ## Before releasing
 - [ ] After the first Docker image is published, make the GHCR package public
+- [ ] When merging the docs rewrite (PR #111) with PR #110 (`docs-openssf-silver-gold-readiness`):
+    - `docs/architecture.rst` is now a superset of #110's `docs/architecture.md`, so drop #110's `docs/architecture.md`.
+    - Change the link in #110's `assurance.md` (line 3) from `architecture.md` to `architecture.rst`.
+    - Regroup #110's `index.rst` entries into the grouped sidebar. Project order: changelog, roadmap, governance, security, assurance, code_of_conduct.
+    - #110's `architecture.md` and `assurance.md` say methods that need root are "skipped when they fail". That's inaccurate: `arping` is tried when it's installed, and if it fails getmac returns `None` without falling back (see the troubleshooting page).
 
 
 # Etc

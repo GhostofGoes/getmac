@@ -208,9 +208,11 @@ The [platforms page](https://ghostofgoes.github.io/getmac/platforms.html) lists 
 - macOS (Darwin)
     - Commands: `networksetup`, `arping`, `ndp` (IPv6 hosts)
     - Many of the same commands as Linux
-- WSL
-    - Windows commands are used for remote hosts
-    - Unix commands are used for interfaces
+- WSL1
+    - Unix commands and files are used for interfaces
+    - Windows `arp.exe` is used for IPv4 hosts
+- WSL2
+    - The same as Linux
 - OpenBSD
     - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
     - Default interfaces: `route`
@@ -251,6 +253,7 @@ All or almost all features should work on "supported" platforms. While other ver
 - DragonFly BSD (6.4+)
 - Oracle Solaris 11.4
 - illumos distros: OmniOS (r151054+), OpenIndiana (2026.04+). Others like SmartOS should work, but are untested.
+- HP-UX (untested): interface lookups only, via `lanscan`
 - Docker
 - BusyBox (not technically a platform, but several of the methods work on this platform)
 
@@ -290,16 +293,14 @@ docker run --rm -v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp ghcr.io/gh
 
 To build the image yourself, see the [Docker section of the contribution guide](https://ghostofgoes.github.io/getmac/contributing.html#docker).
 
-## Caveats
-- Depending on the platform, there could be a performance detriment, due to heavy usage of regular expressions.
-- Platform test coverage is imperfect. If you're having issues, then you might be using a platform I haven't been able to test. Keep calm, open a GitHub issue, and I'd be more than happy to help.
-
 ## Known Issues
 - Linux, WSL: Getting the mac of a local interface IP does not currently work (`getmac --ip 10.0.0.4` will fail if `10.0.0.4` is the IP address of a local interface). This issue may be present on other POSIX systems as well.
 - Hostnames for IPv6 devices are not yet supported.
-- WSL: remote IPv6 hosts aren't supported yet. Windows' `arp.exe` is used for IPv4 hosts, and there's no equivalent for IPv6 yet.
+- WSL1: remote IPv6 hosts aren't supported yet. Windows' `arp.exe` is used for IPv4 hosts, and `netsh.exe` isn't used on WSL1 yet.
+- IPv6 link-local addresses can carry a zone (`fe80::1%en0` or `fe80::1%2`), but only macOS and the BSDs and Solaris and illumos use it. On Linux and Windows, pass the address without a zone.
 - Windows: `ipconfig.exe` (a fallback for when `getmac.exe` doesn't work) only finds interfaces by name in English output, since the adapter headers are translated.
 - IPv6 support is good but lags behind IPv4 in some places and isn't as well-tested across the supported platform set.
+- Platform test coverage is imperfect. If you're having issues, then you might be using a platform I haven't been able to test. Keep calm, open a GitHub issue, and I'd be more than happy to help.
 
 ## Background and history
 The Python standard library has a robust set of networking functionality, such as `urllib`, `ipaddress`, `ftplib`, `telnetlib`, `ssl`, and more. Imagine my surprise, then, when I discovered there was not a way to get a seemingly simple piece of information: a MAC address. This package was born out of a need to get the MAC address of hosts on the network without needing admin permissions, and a cross-platform way get the addresses of local interfaces.
@@ -343,6 +344,9 @@ Many of the methods used to acquire an address and the core logic framework are 
 - [String joining](https://stackoverflow.com/a/3258612/2214380)
 - [Facter](https://github.com/puppetlabs/facter) - Command output examples from Facter are leveraged for better test coverage
 - [GLPI Agent](https://github.com/glpi-project/glpi-agent) - Command output examples from GLPI Agent are leveraged for better test coverage
+- [Ansible](https://github.com/ansible/ansible) - NetBSD `ifconfig -a` output from Ansible's unit tests is leveraged for better test coverage
+- [Ohai](https://github.com/chef/ohai) - FreeBSD `route -n get default` output from Chef Ohai's specs is leveraged for better test coverage
+- [jackpal/gateway](https://github.com/jackpal/gateway) - FreeBSD `netstat -rn` output from its route tables is leveraged for better test coverage
 
 ## License
-The code is licensed MIT. The test data contains Apache 2.0 and GPLv2 licensed files, in the `tests/samples/third_party/` directory. These files are not included in the packages published to PyPI.
+The code is licensed MIT. The test data contains Apache 2.0, BSD 3-Clause, GPLv2, and GPLv3 (Ansible) licensed files, in the `tests/samples/third_party/` directory. These files are not included in the packages published to PyPI.

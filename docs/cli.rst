@@ -7,13 +7,6 @@ The ``getmac`` command provides developers and power users a cross-platform comm
 Basic Usage
 ===========
 
-.. note::
-   Depending on your Python environment, you may not be able to run the command directly (e.g. ``getmac``). If this is the case, then it will have to be invoked via the Python interpreter. See :ref:`python-invoke` for details.
-
-.. note::
-   On Windows, ``getmac.exe`` is a *system binary* included with Windows. Depending on the value of the ``PATH`` environment variable, it may get prioritized over the ``getmac`` executable shim installed by pip. Ensure the ``\Scripts\`` folder for your Python installation is added to the ``PATH`` variable for your user! Examples: ``C:\Users\<USERNAME>\AppData\Local\Programs\Python\Python39\Scripts``, ``C:\Users\<USERNAME>\scoop\apps\python\current\Scripts``. Or, just use ``py -m getmac``.
-
-
 .. code-block:: shell
 
    # Print usage and command line arguments
@@ -40,8 +33,36 @@ Basic Usage
 Only one of ``--interface``, ``--ip``, ``--ip6``, and ``--hostname`` can be used at a time.
 
 
+.. _python-invoke:
+
+Running it through Python
+=========================
+
+If ``getmac`` doesn't work, try ``python3 -m getmac``, where ``python3`` is whatever command you use to run Python and used to install the package. That happens when your Python environment doesn't have the command on the ``PATH``, and on Windows, where ``getmac`` can run Windows' own ``getmac.exe`` instead (if it prints a table that looks nothing like getmac's, that's why). See :doc:`troubleshooting`.
+
+On Windows, this may be ``py``, e.g. ``py -m getmac``, or just ``python``, e.g. ``python -m getmac``.
+
+When invoking in this fashion, replace calls to ``getmac`` in the examples on this page with ``python3 -m getmac`` (or whatever invocation applies to your platform).
+
+.. tab:: Linux/macOS
+
+   .. code-block:: shell
+
+      python3 -m getmac
+      python3 -m getmac --help
+      python3 -m getmac --version
+
+.. tab:: Windows
+
+   .. code-block:: shell
+
+      py -m getmac
+      py -m getmac --help
+      py -m getmac --version
+
+
 Output and exit codes
----------------------
+=====================
 
 - ``0``: the MAC was printed to stdout (also for ``--help`` and ``--version``).
 - ``1``: nothing was found, or every method failed, and nothing is printed. An uncaught :class:`RuntimeError` is a traceback, and exits with ``1`` too.
@@ -69,11 +90,8 @@ Log messages (``-v``) go to stderr, so stdout only ever has the MAC. This makes 
 Nothing found and a lookup that failed look the same (exit code ``1``, no output). Use ``-v`` to see why.
 
 
-Examples
-========
-
 Remote hosts
-------------
+============
 
 Getting the MAC address of a remote host requires the ARP table (IPv4) or NDP table (IPv6) to be populated. By default, getmac gets the host into the table with an ARP request (IPv4 only, on Windows or if ``arping`` is installed) or, if it can't, an empty UDP packet to a high port on the host (defaults to ``55555``). On Linux, it reads the ARP table file first, and sends nothing if the host is already there. This can be disabled with ``--no-net`` (or ``-N``), as shown below.
 
@@ -94,36 +112,14 @@ The UDP port can be changed with ``--override-port``.
 
    getmac --ip 192.168.0.1 --override-port 9001
 
-
-Advanced usage
-==============
-
-Controlling method selection
-----------------------------
-getmac has a selection of methods used to acquire information across platforms. The methods it uses are determined by the platform and if required commands/libraries are present. This system isn't perfect, and in some cases it can be beneficial to have control over method selection, such as in the case of debugging.
-
-The platform detected by getmac can be overridden via ``--override-platform``. This is useful when debugging issues or if you know a method for a different platform works on the current platform. Any value returned by ``platform.system()`` is valid.
-
-.. code-block:: shell
-
-   # Force "linux" to be the "detected" platform and use "linux" methods
-   getmac -i eth0 --override-platform linux
-
-   # Force "windows" to be the "detected" platform and use "windows" methods
-   getmac --ip 192.168.0.1 --override-platform windows
+:ref:`usage-remote-hosts` has the details, and :ref:`troubleshooting-remote-none` covers what to do when a host isn't found.
 
 
-A specific method can also be used with ``--force-method``, regardless of the consequences or if it even works. The method names are listed in the :doc:`api` (case doesn't matter).
+Troubleshooting options
+=======================
 
-.. code-block:: shell
-
-   getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
-
-:doc:`platforms` lists which methods are used on each platform, and :doc:`module_api` explains how they're chosen.
-
-
-Enabling logging messages and debugging
----------------------------------------
+Logging and debugging
+---------------------
 
 .. note::
    When reporting an issue or asking for help, please enable verbose and the highest level of debugging: ``getmac -v -dddd [arguments]``
@@ -159,53 +155,29 @@ There is also a debugging mode. There are multiple levels of debugging, up to 4.
 Level 2 shows which methods were considered and which one was chosen, and level 4 shows every command that was run and its output. The levels are described in :ref:`usage-logging`.
 
 
-.. _python-invoke:
+Controlling method selection
+----------------------------
 
-Invoking via interpreter
-========================
+getmac has a selection of methods used to acquire information across platforms. The methods it uses are determined by the platform and if required commands/libraries are present. This system isn't perfect, and in some cases it can be beneficial to have control over method selection, such as in the case of debugging.
 
-If ``getmac`` doesn't work, try ``python3 -m getmac``, where ``python3`` is whatever command you use to run Python and used to install the package.
+The platform detected by getmac can be overridden via ``--override-platform``. This is useful when debugging issues or if you know a method for a different platform works on the current platform. Any value returned by ``platform.system()`` is valid.
 
-On Windows, this may be ``py``, e.g. ``py -m getmac``, or just ``python``, e.g. ``python -m getmac``.
+.. code-block:: shell
 
-When invoking in this fashion, replace calls to ``getmac`` in the examples above with ``python3 -m getmac`` (or whatever invocation applies to your platform).
+   # Force "linux" to be the "detected" platform and use "linux" methods
+   getmac -i eth0 --override-platform linux
 
-.. tab:: Linux/macOS
-
-   .. code-block:: shell
-
-      python3 -m getmac
-      python3 -m getmac --help
-      python3 -m getmac --version
-
-.. tab:: Windows
-
-   .. code-block:: shell
-
-      py -m getmac
-      py -m getmac --help
-      py -m getmac --version
+   # Force "windows" to be the "detected" platform and use "windows" methods
+   getmac --ip 192.168.0.1 --override-platform windows
 
 
-Examples of running as a Python module with shorthands for the arguments
+A specific method can also be used with ``--force-method``, regardless of the consequences or if it even works. The method names are listed in the :doc:`api` (case doesn't matter).
 
-.. tab:: Linux/macOS
+.. code-block:: shell
 
-   .. code-block:: shell
+   getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 
-      python3 -m getmac -i 'Ethernet 4'
-      python3 -m getmac -4 192.168.0.1
-      python3 -m getmac -6 fe80::1
-      python3 -m getmac -n home.router
-
-.. tab:: Windows
-
-   .. code-block:: shell
-
-      py -m getmac -i 'Ethernet 4'
-      py -m getmac -4 192.168.0.1
-      py -m getmac -6 fe80::1
-      py -m getmac -n home.router
+:doc:`platforms` lists which methods are used on each platform, and :doc:`module_api` explains how they're chosen.
 
 
 .. _args:
