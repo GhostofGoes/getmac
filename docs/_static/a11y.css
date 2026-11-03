@@ -175,3 +175,101 @@ html {
   display: inline-block;
   min-height: 24px;
 }
+
+/* ---- Target size: 2.5.8 Target Size (Minimum, AA), 2.5.5 Target Size (Enhanced, AAA) ---- */
+
+/* "On this page" links are 15px tall with centres 22px apart; give each row
+   enough space for a 24px target. (Sidebar and TOC rows aren't raised to the
+   44px AAA size on purpose: it would change the theme's look a lot.) */
+.toc-tree li {
+  padding-top: 0;
+}
+.toc-tree li > a {
+  display: inline-block;
+  padding-block: 0.3rem;
+}
+
+/* Icon buttons: theme toggle, "View this page", copy button, and the mobile
+   drawer toggles, at 44 by 44px */
+.theme-toggle,
+.content-icon-container a,
+.nav-overlay-icon,
+.toc-overlay-icon {
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}
+.content-icon-container a {
+  display: flex;
+}
+.highlight button.copybtn {
+  min-width: 44px;
+  min-height: 44px;
+  top: 0;
+  right: 0;
+}
+
+/* Python module index collapse toggle: 9px image, padded to a 25px target */
+img.toggler {
+  box-sizing: content-box;
+  padding: 8px;
+  cursor: pointer;
+}
+
+/* Search box: 44px tall */
+.sidebar-search {
+  min-height: 44px;
+}
+
+/* Previous and Next links: 44px tall */
+.related-pages a {
+  min-height: 44px;
+  padding-block: 0.25rem;
+}
+
+/* ---- Text spacing: 1.4.8 Visual Presentation (AAA) ---- */
+
+/* Paragraph gap of at least 1.5 times the line height, and 1.5 line height in code */
+article p,
+article ul,
+article ol,
+article dl {
+  margin-block-end: 1.5lh;
+}
+article li > p,
+article dd > p:last-child,
+article li > ul,
+article li > ol {
+  margin-block-end: 0;
+}
+.highlight pre {
+  line-height: 1.5;
+}
+
+/* Lines of no more than 80 characters (measured: 56ch gives at most 80 in Furo's
+   font, 72ch gave up to 102). Admonition titles are left out,
+   since their coloured bar must reach the edge of the box. */
+article p:not(.admonition-title),
+article li,
+article dd {
+  max-width: 56ch;
+}
+
+/* ---- Motion: 2.3.3 Animation from Interactions (AAA) ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  .sidebar-scroll,
+  .toc-scroll {
+    scroll-behavior: auto !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+  }
+}
