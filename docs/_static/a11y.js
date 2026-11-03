@@ -7,6 +7,22 @@
 (function () {
   "use strict";
 
+  /* Visually hidden live region for short status messages. 4.1.3 Status Messages (AA) */
+  let liveRegion = null;
+  function announce(message) {
+    if (!liveRegion) {
+      liveRegion = document.createElement("div");
+      liveRegion.className = "visually-hidden";
+      liveRegion.setAttribute("role", "status");
+      document.body.appendChild(liveRegion);
+    }
+    liveRegion.textContent = "";
+    // Change the text on the next frame, so the same message is announced twice in a row
+    window.requestAnimationFrame(() => {
+      liveRegion.textContent = message;
+    });
+  }
+
   /* Text of an element, without its permalink and "[source]" link */
   function textOf(el) {
     const copy = el.cloneNode(true);
@@ -192,6 +208,116 @@
     });
   }
 
+  /* Sidebar captions ("Getting started", ...) have role="heading" but no level.
+     docs/_templates/sidebar/navigation.html adds aria-level; this covers any
+     caption it missed. 4.1.2 Name, Role, Value (A) */
+  function fixCaptions() {
+    document.querySelectorAll('[role="heading"]:not([aria-level])').forEach((el) => {
+      el.setAttribute("aria-level", "2");
+    });
+  }
+
+  /* Name the two sidebars, so they can be told apart. Best practice (landmark-unique) */
+  function labelLandmarks() {
+    const left = document.querySelector(".sidebar-drawer");
+    const right = document.querySelector(".toc-drawer");
+    if (left) left.setAttribute("aria-label", "Site sidebar");
+    if (right) right.setAttribute("aria-label", "Page contents sidebar");
+    const toc = document.querySelector(".toc-tree-container");
+    if (toc) {
+      toc.setAttribute("role", "navigation");
+      toc.setAttribute("aria-label", "On this page");
+    }
+    // The theme toggle and "View this page" link sit outside every landmark
+    const tools = document.querySelector(".content-icon-container");
+    if (tools) {
+      tools.setAttribute("role", "region");
+      tools.setAttribute("aria-label", "Page tools");
+    }
+  }
+
+  /* Tell screen readers which colour theme is in use after it's changed.
+     4.1.2 Name, Role, Value (A) */
+  function updateThemeToggle() {
+    const names = {
+      auto: "auto (follows your system setting)",
+      light: "light",
+      dark: "dark",
+    };
+    const theme = document.body.dataset.theme || "auto";
+    const label = `Change color theme. Current theme: ${names[theme] || theme}`;
+    document.querySelectorAll(".theme-toggle").forEach((button) => {
+      button.setAttribute("aria-label", label);
+    });
+    return names[theme] || theme;
+  }
+  function watchThemeToggle() {
+    updateThemeToggle();
+    new MutationObserver(() => {
+      const current = updateThemeToggle();
+      if (document.activeElement && document.activeElement.matches(".theme-toggle")) {
+        announce(`Color theme: ${current}`);
+      }
+    }).observe(document.body, { attributes: true, attributeFilter: ["data-theme"] });
+  }
+
+  /* sphinx-copybutton shows "Copied!" only as a visual tooltip. Announce it.
+     4.1.3 Status Messages (AA) */
+  function watchCopyButtons() {
+    const buttons = document.querySelectorAll("button.copybtn");
+    if (buttons.length === 0) return;
+    const observer = new MutationObserver((records) => {
+      records.forEach((record) => {
+        const button = record.target;
+        if (button.classList.contains("success")) announce("Copied to clipboard");
+      });
+    });
+    buttons.forEach((b) => observer.observe(b, { attributes: true, attributeFilter: ["class"] }));
+  }
+
+  /* sphinx-inline-tabs: give each set of tabs a group name, and link each tab
+     to its panel. 1.3.1 Info and Relationships (A), 4.1.2 (A) */
+  function labelTabs() {
+    document.querySelectorAll(".tab-set").forEach((set, i) => {
+      const section = set.closest("section");
+      const heading = section && section.querySelector("h1, h2, h3, h4, h5, h6");
+      set.setAttribute("role", "group");
+      set.setAttribute("aria-label", heading ? `${textOf(heading)}: tabs` : "Tabs");
+      set.querySelectorAll(":scope > input").forEach((input, j) => {
+        const panel = input.nextElementSibling && input.nextElementSibling.nextElementSibling;
+        if (panel && panel.classList.contains("tab-content")) {
+          panel.id = panel.id || `a11y-tab-panel-${i}-${j}`;
+          input.setAttribute("aria-controls", panel.id);
+        }
+      });
+    });
+  }
+
+  /*
+   * Give "¶", "[source]" and "[docs]" links names that make sense on their
+   * own. 2.4.4 Link Purpose (In Context, A), 2.4.9 Link Purpose (Link Only, AAA)
+   */
+  function nameLinks() {
+    document.querySelectorAll("a.headerlink").forEach((a) => {
+      const parent = a.parentElement;
+      const text = textOf(parent);
+      let kind = "section";
+      if (parent.matches("dt") && parent.closest("dl.glossary")) kind = "term";
+      else if (parent.matches("dt")) kind = "definition";
+      else if (parent.closest(".code-block-caption, figcaption, caption")) kind = "item";
+      a.setAttribute("aria-label", `Link to this ${kind}: ${text}`);
+    });
+    document.querySelectorAll(".viewcode-link").forEach((span) => {
+      const a = span.closest("a");
+      const dt = span.closest("dt");
+      if (a && dt) a.setAttribute("aria-label", `Source code of ${dt.id || textOf(dt)}`);
+    });
+    document.querySelectorAll("a.viewcode-back").forEach((a) => {
+      const name = decodeURIComponent(a.hash.slice(1));
+      if (name) a.setAttribute("aria-label", `Documentation for ${name}`);
+    });
+  }
+
   /* Python module index: the collapse toggle is a click-only image.
      2.1.1 Keyboard (A), 4.1.2 Name, Role, Value (A) */
   function fixIndexTogglers() {
@@ -217,7 +343,13 @@
   }
 
   function init() {
+    fixCaptions();
+    labelLandmarks();
+    labelTabs();
+    nameLinks();
     fixIndexTogglers();
+    watchThemeToggle();
+    watchCopyButtons();
     watchFocusObscured();
 
     setupDrawer("__navigation", ".sidebar-drawer", "label.nav-overlay-icon", "site navigation");
