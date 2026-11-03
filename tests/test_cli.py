@@ -42,6 +42,7 @@ def _restore_settings():
         settings.OVERRIDE_PLATFORM,
         settings.FORCE_METHOD,
         settings.ARP_TIMEOUT,
+        settings.COMMAND_TIMEOUT,
     )
     yield
     (
@@ -50,6 +51,7 @@ def _restore_settings():
         settings.OVERRIDE_PLATFORM,
         settings.FORCE_METHOD,
         settings.ARP_TIMEOUT,
+        settings.COMMAND_TIMEOUT,
     ) = orig
 
 
@@ -139,6 +141,7 @@ def test_build_parser_defaults():
     assert args.debug is None
     assert args.override_port is None
     assert args.arp_timeout is None
+    assert args.command_timeout is None
     assert args.override_platform is None
     assert args.force_method is None
 
@@ -160,6 +163,8 @@ def test_build_parser_defaults():
         (["--override-port", "12345"], "override_port", 12345),
         (["--arp-timeout", "1.5"], "arp_timeout", 1.5),
         (["--arp-timeout", "0"], "arp_timeout", 0),
+        (["--command-timeout", "2.5"], "command_timeout", 2.5),
+        (["--command-timeout", "0"], "command_timeout", 0),
         (["--override-platform", "freebsd"], "override_platform", "freebsd"),
         (["--force-method", "IpNeighborShow"], "force_method", "IpNeighborShow"),
     ],
@@ -239,6 +244,14 @@ def test_main_exit_code_failure(mock_get_mac, run_cli):
         (["--override-port", "abc"], "argument --override-port: invalid int value: 'abc'"),
         (["--arp-timeout", "abc"], "argument --arp-timeout: not a number of seconds: 'abc'"),
         (["--arp-timeout=-1"], "argument --arp-timeout: must be 0 or more seconds: '-1'"),
+        (
+            ["--command-timeout", "abc"],
+            "argument --command-timeout: not a number of seconds: 'abc'",
+        ),
+        (
+            ["--command-timeout=-1"],
+            "argument --command-timeout: must be 0 or more seconds: '-1'",
+        ),
         (["-i"], "argument -i/--interface: expected one argument"),
         (["--bogus"], "unrecognized arguments: --bogus"),
     ],
@@ -272,6 +285,8 @@ def test_main_help(mock_get_mac, run_cli, flag):
     [
         (["--override-port", "44444"], "PORT", 44444),
         (["--arp-timeout", "0.5"], "ARP_TIMEOUT", 0.5),
+        (["--command-timeout", "3"], "COMMAND_TIMEOUT", 3.0),
+        (["--command-timeout", "0"], "COMMAND_TIMEOUT", 0),
         (["--override-platform", " Linux "], "OVERRIDE_PLATFORM", "linux"),
         (["--override-platform", "FreeBSD"], "OVERRIDE_PLATFORM", "freebsd"),
         (["--force-method", " SomeMethod "], "FORCE_METHOD", "somemethod"),
@@ -302,7 +317,14 @@ def test_main_updates_settings_before_lookup(mock_get_mac, run_cli, args, attr, 
 @pytest.mark.parametrize("args", [[], ["-v"], ["--verbose"], ["-N"], ["-i", "eth0"]])
 def test_main_leaves_settings_alone_without_flags(run_cli, args):
     settings.DEBUG = 0
-    attrs = ("PORT", "DEBUG", "OVERRIDE_PLATFORM", "FORCE_METHOD")
+    attrs = (
+        "PORT",
+        "DEBUG",
+        "OVERRIDE_PLATFORM",
+        "FORCE_METHOD",
+        "ARP_TIMEOUT",
+        "COMMAND_TIMEOUT",
+    )
     before = {a: getattr(settings, a) for a in attrs}
 
     run_cli(*args)

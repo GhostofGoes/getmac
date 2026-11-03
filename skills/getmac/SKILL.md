@@ -50,6 +50,7 @@ Other flags:
 | `-v` / `-d` / `-dd` | Log progress / debug detail to **stderr**. stdout still carries only the MAC. |
 | `--override-port PORT` | UDP port used to provoke an ARP entry (default `55555`). |
 | `--arp-timeout SECONDS` | After the UDP packet, keep re-checking the ARP table for the host for up to this long (default `0`, check once). Helps with hosts that are slow to reply; misses take this much longer. |
+| `--command-timeout SECONDS` | Stop a command getmac runs (e.g. `arp`, `ipconfig.exe`) after this long and try the next method (default `15`; `0` waits forever). |
 | `--override-platform`, `--force-method` | Debugging aids only. `--override-platform` replaces the detected platform (methods are still tested). `--force-method` skips the method's test, and has no fallback. Neither will make an unsupported lookup work. |
 
 ## Python API

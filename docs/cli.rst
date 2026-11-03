@@ -180,6 +180,16 @@ A specific method can also be used with ``--force-method``, regardless of the co
 :doc:`platforms` lists which methods are used on each platform, and :doc:`module_api` explains how they're chosen.
 
 
+Slow commands
+-------------
+
+getmac stops a command that it runs (such as ``arp`` or ``ipconfig.exe``) if it doesn't finish in 15 seconds, and tries the next method. Use ``--command-timeout`` to change how long to wait, in seconds. ``0`` waits for as long as the command takes.
+
+.. code-block:: shell
+
+   getmac --ip 192.168.0.1 --command-timeout 5
+
+
 .. _args:
 
 Arguments reference

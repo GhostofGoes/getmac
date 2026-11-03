@@ -71,6 +71,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="After sending the UDP packet to refresh the ARP table, keep checking it for "
         "the host for up to this many seconds (default: 0, check once)",
     )
+    parser.add_argument(
+        "--command-timeout",
+        type=_seconds,
+        default=None,
+        metavar="SECONDS",
+        help="Stop a command that getmac runs (e.g. 'arp' or 'ipconfig.exe') if it takes "
+        "longer than this many seconds, and try the next method "
+        "(default: 15, 0 to wait for as long as it takes)",
+    )
 
     tshooting = parser.add_argument_group("troubleshooting")
     tshooting.add_argument(
@@ -136,6 +145,9 @@ def main() -> None:
 
     if args.arp_timeout is not None:
         settings.ARP_TIMEOUT = args.arp_timeout
+
+    if args.command_timeout is not None:
+        settings.COMMAND_TIMEOUT = args.command_timeout
 
     if args.override_platform:
         settings.OVERRIDE_PLATFORM = args.override_platform.strip().lower()
