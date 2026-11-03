@@ -4,7 +4,7 @@ Adding a new method
 
 getmac finds MAC addresses using *methods*, which are subclasses of :class:`~getmac.getmac.Method` that implement a technique for getting a MAC, such as running a command or reading a file. Supporting a new command, file, or platform means adding a new method.
 
-To use a custom method in your own code without changing getmac, see :doc:`module_api` instead. For setting up a development environment and the rules for pull requests, see :doc:`contributing`.
+To use a custom method in your own code without changing getmac, see :doc:`custom_methods` instead. For setting up a development environment and the rules for pull requests, see :doc:`contributing`.
 
 The examples on this page use a hypothetical ``IpAddrIface`` method, which gets the MAC address of an interface on Linux from the output of ``ip addr show <iface>``. It isn't part of getmac.
 
@@ -12,37 +12,15 @@ The examples on this page use a hypothetical ``IpAddrIface`` method, which gets 
 Collect sample output
 =====================
 
-Method tests run against real command output saved in ``tests/samples/``, so start by capturing output on the platform the method is for. In this context, a "command" would be ``ip addr`` on Linux.
+Method tests run against real command output saved in ``tests/samples/``, so start by capturing output on the platform the method is for. In this context, a "command" would be ``ip addr`` on Linux. :doc:`samples` covers how to do that with ``scripts/collect_samples.py`` (or by hand), what to name the files, and what to redact. If your method uses a command the script doesn't run yet, add it to the script as well, which :doc:`samples` also explains.
 
-``scripts/collect_samples.py`` runs the commands that getmac uses on the current platform, and saves the output of each one to a file in ``tests/samples/<platform>_<version>/`` (e.g. ``tests/samples/ubuntu_24.04/``). Exit codes and error messages are logged to ``collect_samples.log`` in the same directory. The script only needs Python, so it can be copied to a machine that doesn't have getmac. A copy outside the repo saves to ``./samples/<platform>_<version>/`` instead (or the directory given with ``--output-root``).
-
-.. code-block:: shell
-
-   python scripts/collect_samples.py --dry-run  # list what would be collected
-   python scripts/collect_samples.py  # Run the collection
-
-Alternatively, you can run the command by hand and save the output with ``tee``:
-
-.. code-block:: shell
-
-   mkdir -p tests/samples/ubuntu_24.04
-   ip addr show ens33 | tee tests/samples/ubuntu_24.04/ip_addr_show_ens33.out
-
-Guidelines
-----------
-
-- Samples go in a directory for the OS and version, such as ``ubuntu_18.04``, ``macos_10.12.6`` or ``windows_10``.
-- Files are named after the command line with a ``.out`` extension, with spaces replaced by underscores, e.g. ``arp_-an.out``.
-- Redact MACs, IPs, and hostnames you don't want to be public, but keep the output format intact. Locally administered MACs (``02:00:00:00:00:01``) and `documentation IP ranges <https://www.rfc-editor.org/info/rfc5737/>`__ (``192.0.2.0/24``) make good replacements.
-- Windows samples must go in a directory whose name starts with ``windows``, so ``.gitattributes`` can preserve their Windows line endings (CRLF).
-- Output taken from other projects goes in ``tests/samples/third_party/<project>/``, along with that project's license, and gets credited in the README.
-- You should also capture what the command does for something that doesn't exist, along with the exit code (``echo $?`` when running it by hand). For example, ``ip addr show eth9`` prints ``Device "eth9" does not exist.`` and exits with code 1.
+Capture what the command does for something that doesn't exist, along with the exit code. For example, ``ip addr show eth9`` prints ``Device "eth9" does not exist.`` and exits with code 1.
 
 
 Write the method
 ================
 
-Methods currently live in ``getmac/getmac.py``. Add the new class next to the methods with the same :attr:`~getmac.getmac.Method.method_type`. ``getmac/getmac.py`` already imports everything the example needs.
+Methods currently live in ``getmac/getmac.py``. Add the new class next to the methods with the same :attr:`~getmac.getmac.Method.method_type`. ``getmac/getmac.py`` already imports everything the example needs. The same steps apply to a method kept in your own code (see :doc:`custom_methods`), except that outside ``getmac.py`` you import ``utils`` and ``consts`` yourself.
 
 .. code-block:: python
 
@@ -123,7 +101,7 @@ Some things can only be found out by running the command, such as which argument
 get()
 -----
 
-:meth:`~getmac.getmac.Method.get` does the lookup. It returns the MAC address as a string, or :obj:`None` if it wasn't found. The MAC doesn't need to be pretty, since :func:`~getmac.getmac.get_mac_address` passes it through :func:`~getmac.utils.clean_mac`.
+:meth:`~getmac.getmac.Method.get` does the lookup. It returns the MAC address as a string, or :obj:`None` if it wasn't found. The MAC doesn't need to be pretty, since :func:`~getmac.get_mac_address` passes it through :func:`~getmac.utils.clean_mac`.
 
 ``default_iface`` methods don't use the argument, so they're declared as ``def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002``.
 
@@ -134,7 +112,7 @@ Raise an exception or set ``self.unusable = True`` when the method itself doesn'
 Helpers
 -------
 
-- :func:`utils.popen(command, args) <getmac.utils.popen>` runs a command and returns its output (stdout only) as a string. ``args`` is a single string. A non-zero exit code raises :class:`~subprocess.CalledProcessError`. Always call it as ``utils.popen(...)`` so tests can patch ``getmac.utils.popen``.
+- :func:`utils.popen(command, args) <getmac.utils.popen>` runs a command and returns its output (stdout only) as a string. ``args`` is a single string. A non-zero exit code raises :class:`~subprocess.CalledProcessError`, and a command that runs longer than :attr:`~getmac.variables.Settings.COMMAND_TIMEOUT` is stopped. Always call it as ``utils.popen(...)`` so tests can patch ``getmac.utils.popen``.
 - :func:`utils.read_file(path) <getmac.utils.read_file>` returns a file's contents, or :obj:`None` if it can't be read.
 - :func:`utils.search(regex, text) <getmac.utils.search>` returns the first capture group of the first match, or :obj:`None`. Use non-capturing groups (``(?:...)``) for everything except the MAC address.
 - :attr:`consts.MAC_RE_COLON <getmac.variables.Constants.MAC_RE_COLON>`, :attr:`consts.MAC_RE_DASH <getmac.variables.Constants.MAC_RE_DASH>` (Windows style), and :attr:`consts.MAC_RE_SHORT <getmac.variables.Constants.MAC_RE_SHORT>` (allows single-digit octets, like ``58:6d:8f:7:c9:94``) match a MAC address in a single capture group.
@@ -221,11 +199,16 @@ Things to cover:
 
 Tests run in parallel and in random order, so only change global state (settings, caches, platform flags in ``consts``) with ``mocker``, which undoes the change after the test, e.g. ``mocker.patch.object(consts, "DARWIN", True)``.
 
+The fuzz tests in ``tests/test_fuzz.py`` feed random and mutated output to every method's parser. If you add a parser, run them with ``pdm run fuzz`` before opening a PR (see :doc:`contributing`).
+
 To run just the new tests:
 
 .. code-block:: shell
 
    pdm run test tests/test_methods.py -k ipaddriface
+   pdm run test tests/test_collect_samples.py -k IpAddrIface
+
+The second one checks that ``scripts/collect_samples.py`` collects the commands the method uses.
 
 
 Try it on a real system
@@ -233,7 +216,7 @@ Try it on a real system
 
 .. code-block:: shell
 
-   pdm run getmac -dddd -i ens33 --force-method IpAddrIface
+   pdm run getmac -v -dddd -i ens33 --force-method IpAddrIface
 
 ``-dddd`` logs the command and its raw output.
 
@@ -241,7 +224,7 @@ Try it on a real system
 
 .. code-block:: shell
 
-   pdm run getmac -dd -i ens33
+   pdm run getmac -v -dd -i ens33
 
 ``--override-platform`` makes getmac choose methods as if it were running on a different platform.
 
@@ -249,6 +232,20 @@ Try it on a real system
 Finish up
 =========
 
-- Add the command, file, or library to "Commands and techniques by platform" in ``README.md``, and update "Platforms currently supported" if needed.
+- Add the method to its platform in :doc:`platforms`, and add the command, file, or library to "Commands and techniques by platform" in ``README.md``. Update "Platforms currently supported" in both if needed.
 - Add an entry to ``CHANGELOG.md`` under "Added" for the upcoming release, in plain language.
 - Follow the checklist in :doc:`contributing` and open a pull request!
+
+If it's a new platform
+----------------------
+
+A new platform touches more places than a new method. Search for an existing platform's name (say, ``dragonfly``) to find them:
+
+- ``Method.VALID_PLATFORM_NAMES``, and the ``platforms`` of every method that works on it.
+- ``variables.py``: a flag in ``consts`` only if code branches on it (and add it to ``BSD`` if it's a BSD), and the possible values in the ``PLATFORM`` docstring.
+- ``scripts/collect_samples.py``: ``PLATFORMS``, ``GROUPS``, and the names in ``detect_platform()``.
+- Tests: ``test_detect_platform`` and ``test_default_dir_name``, the per-platform cases in ``test_getmac.py``, and ``_GETMAC_PLATFORMS`` in ``test_collect_samples.py`` only if the script and getmac name the platform differently.
+- A samples directory, and a CI workflow if it can run in a VM.
+- :doc:`platforms`, the two README sections above, the ``pyproject.toml`` classifiers if one applies, ``CHANGELOG.md``, and the platform list in ``AGENTS.md``.
+
+`PR #127 <https://github.com/GhostofGoes/getmac/pull/127>`__ (DragonFly BSD) is a complete example.

@@ -99,8 +99,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         metavar="PLATFORM",
         help="Override the platform detection with the given value "
-        "(e.g. 'linux', 'windows', 'freebsd', etc.'). "
-        "Any values returned by platform.system() are valid.",
+        "(e.g. 'linux', 'windows', 'freebsd', etc.). "
+        "Any value returned by platform.system() is valid.",
     )
     tshooting.add_argument(
         "--force-method",
@@ -108,7 +108,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         metavar="METHOD",
         help="Force a specific method to be used, e.g. 'IpNeighborShow'. "
-        "This will be used regardless of it's method type or platform "
+        "This will be used regardless of its method type or platform "
         "compatibility, and Method.test() will NOT be checked!",
     )
 

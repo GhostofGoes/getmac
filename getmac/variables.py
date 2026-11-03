@@ -21,13 +21,24 @@ class Settings(VarsClass):
 
     DEBUG: int = 0
     """
-    Debugging level. Increased value => more output. 4 is roughly the highest.
+    Debugging level. A higher value means more output. 4 is roughly the highest.
+
+    - ``0`` (the default): warnings and errors, plus a few debug messages, such as
+      when a cache is built and the raw MAC that was found.
+    - ``1``: the methods that failed their test, the contents of the caches, each
+      lookup attempt, and how long the lookup took.
+    - ``2``: the methods left after filtering by type, by platform, and by their test.
+    - ``3``: every command that's run.
+    - ``4``: the output of every command, and the full list of methods.
+
+    Nothing is shown until logging is configured, e.g. with :func:`logging.basicConfig`.
+    On the command line, use ``-d`` (once per level, e.g. ``-dddd`` for level 4).
     """
 
     PORT: int = 55555
     """
     UDP port to use for populating the ARP table (IPv4) or NDP list (IPv6)
-    when looking up MACs for hosts or IPs.
+    when looking up MACs for hosts or IPs. On the command line, use ``--override-port``.
     """
 
     # TODO: This will change to a function argument in 1.0.0
@@ -40,12 +51,27 @@ class Settings(VarsClass):
     identifier such as ``"linux"`` or ``"wsl"``, or any value returned by
     :func:`platform.system`, such as ``"Darwin"``. Case and surrounding
     whitespace are ignored. An empty string (the default) means no override.
+
+    It's only read when the method cache for a lookup type is built, so set it
+    before the first lookup (or reset the caches).
+    On the command line, use ``--override-platform``.
     """
 
     FORCE_METHOD: str = ""
     """
     Force a specific method to be used for all lookups.
     Used for debugging and testing.
+
+    The value is a method class name, e.g. ``"IpNeighborShow"``, matched ignoring case.
+    It's checked on every lookup. When it's set:
+
+    - A new instance of the method is created for each lookup.
+    - :meth:`~getmac.getmac.Method.test` is not called, and the method type
+      and platforms of the method are ignored.
+    - There's no fallback, and exceptions raised by the method are not caught.
+    - If no method has that name, an error is logged and :obj:`None` is returned.
+
+    On the command line, use ``--force-method``.
     """
 
     # Added for https://github.com/GhostofGoes/getmac/issues/101
@@ -63,6 +89,7 @@ class Settings(VarsClass):
 
     This doesn't apply when getmac sends an ARP request itself and waits for the reply
     instead (:class:`~getmac.getmac.ArpingHost` or :class:`~getmac.getmac.CtypesHost`).
+    On the command line, use ``--arp-timeout``.
     """
 
     COMMAND_TIMEOUT: Optional[float] = 15.0
@@ -75,6 +102,7 @@ class Settings(VarsClass):
     Commands usually finish in well under a second, but some, such as ``arp`` without
     ``-n`` on macOS, can be slow due to DNS lookups.
     :obj:`None` or ``0`` waits for as long as the command takes.
+    There's no command-line flag for this one.
     """
 
 
@@ -211,6 +239,12 @@ class Variables(VarsClass):
     Get and cache the configured system PATH environment variable on import.
     The process environment does not change after a process is started.
 
+    getmac uses this copy to find commands, and it doesn't change the real ``PATH``.
+    On POSIX systems, ``/sbin`` and ``/usr/sbin`` are added to it. On Windows, Python
+    ``Scripts`` directories are removed from it, so Windows' own ``getmac.exe``
+    is run instead of this package's script. Changing ``os.environ`` after
+    getmac is imported has no effect.
+
     :meta hide-value:
     """
 
@@ -227,6 +261,10 @@ class Variables(VarsClass):
     """
     Use a copy of the environment so any modifications that need to be made
     for operation of getmac doesn't modify the process's current environment.
+
+    ``LC_ALL`` is set to ``C`` in the copy, and it's passed to every command getmac runs.
+    This stops commands from translating their output on POSIX systems, so it can be parsed.
+    It has no effect on Windows.
 
     :meta hide-value:
     """
