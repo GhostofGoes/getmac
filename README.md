@@ -28,6 +28,14 @@ The full documentation is at https://ghostofgoes.github.io/getmac/, including th
 [![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.svg)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
 
 
+## Features
+- Pure-Python (no compiled C-extensions required!)
+- Python 3.9+, on CPython and [PyPy](https://www.pypy.org/)
+- Lightweight, with no dependencies and a relatively small package size
+- Supports most platforms: Windows, Linux, macOS, the BSDs, Solaris and illumos, HP-UX, Android, WSL, and Docker (see [Platforms currently supported](#platforms-currently-supported))
+- Provides a simple command line tool
+- MIT licensed!
+
 ## Should you use this package?
 If you only need the addresses of network interfaces, have a limited set of platforms to support, and are able to handle C-extension modules, then you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/) package by Alastair Houghton ([@al45tair](https://github.com/al45tair)). It's significantly faster (thanks to it being C code) and has been around a long time and seen widespread usage. Unfortunately, it hasn't been maintained since [May 2021](https://github.com/al45tair/netifaces/commit/ec55b59e27542776f55e0f9e3213a75bf8e0f367), so it may not be a great choice for new projects. Another great option that fits these requirements is the well-known and battle-hardened [psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola.
 
@@ -38,6 +46,7 @@ If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to 
 ## Installation
 
 ### Stable release from PyPI
+Python 3.9+, CPython and PyPy, no dependencies. Older Pythons (3.8 and older) need an [older version of getmac](#legacy-python-versions).
 
 ```bash
 pip install getmac
@@ -61,7 +70,40 @@ sudo apt install getmac
 [![Packaging status](https://repology.org/badge/vertical-allrepos/getmac.svg)](https://repology.org/project/getmac/versions)
 
 ### Docker
-There's also a [Docker image](#docker) of the `getmac` command. Older Pythons (3.8 and older) need an [older version of getmac](#legacy-python-versions).
+A Docker image of the `getmac` command is published to the [GitHub Container Registry](https://github.com/GhostofGoes/getmac/pkgs/container/getmac) for `linux/amd64` and `linux/arm64`. The container runs `getmac` as an unprivileged user (`nobody`), and any arguments are passed to it.
+
+```bash
+docker run --rm ghcr.io/ghostofgoes/getmac --help
+docker run --rm ghcr.io/ghostofgoes/getmac --version
+docker run --rm ghcr.io/ghostofgoes/getmac -n localhost
+```
+
+The `latest` tag is the newest stable release, and releases are also tagged with their version (e.g. `1.0.0`, `1.0`, and `1`). Pre-releases are only tagged with their version. The `edge` tag is built from the `main` branch.
+
+By default the container is on Docker's bridge network, so it sees its own interfaces and ARP table, not the host's. On Linux, use `--network host` to look up the host's interfaces. In bridge mode, add `-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp` to read the host's ARP table. With Docker Desktop on macOS and Windows, the container only sees the Docker VM's network, not your computer's. IPv6 lookups (`-6`) need a Docker network with IPv6 enabled.
+
+```bash
+docker run --rm --network host ghcr.io/ghostofgoes/getmac
+docker run --rm -v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp ghcr.io/ghostofgoes/getmac -4 192.168.0.1
+```
+
+To build the image yourself, see the [Docker section of the contribution guide](https://ghostofgoes.github.io/getmac/contributing.html#docker).
+
+### Legacy Python versions
+If you are running an old Python (3.8 and older) or interpreter, then you can install an older version of `getmac` that supported that version. The wheels are available in the [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or from PyPI with a current version of `pip` and some special arguments.
+
+- Python 2.5: `get-mac==0.5.0`
+- Python 2.6: `getmac==0.6.0`
+- Python 2.7: `getmac<1.0.0`
+- Python 3.2: `get-mac==0.3.0`
+- Python 3.3: `get-mac==0.3.0`
+- Python 3.4: `getmac<1.0.0`
+- Python 3.5: `getmac<1.0.0`
+- Python 3.6: `getmac<1.0.0`
+- Python 3.7: `getmac<1.0.0`
+- Python 3.8: `getmac<1.0.0`
+
+NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
 
 ## Python examples
 ```python
@@ -102,6 +144,10 @@ getmac
 
 # Usage as a module
 python3 -m getmac
+
+# On Windows, `getmac` may run the built-in getmac.exe instead of this package, so use
+# `py -m getmac` or put your Python Scripts folder on PATH. More at
+# https://ghostofgoes.github.io/getmac/troubleshooting.html#windows-runs-the-wrong-getmac
 
 # Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
 getmac --interface ens33
@@ -158,7 +204,15 @@ The MAC is printed to stdout and the exit code is `0`. If nothing was found, not
     - If `arping` is installed (Linux and macOS), or on Windows, an ARP request is sent instead of the UDP packet (IPv4 only). On Linux, the ARP table file is read first, and nothing is sent if it has a complete entry for the host.
     - With no arguments on Windows, getmac connects a UDP socket to `1.1.1.1:53` to find the IP of the default interface (Note: the IP is [CloudFlare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/)). Nothing is sent, since connecting a UDP socket only picks a route. Skipped with `network_request=False`.
 
-Only one of the first four arguments can be used at a time. `ip` and `ip6` also accept objects from the standard library's `ipaddress` module (`IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`), and all four accept `bytes` (decoded as UTF-8).
+Only one of the first four arguments can be used at a time. `network_request` does nothing with `interface` (so it's safe to set in a script). With `ip`, `ip6` and `hostname`, it allows the ARP request or UDP packet. With no arguments, it only matters on Windows, for the socket step above. `ip` and `ip6` also accept objects from the standard library's `ipaddress` module (`IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`), and all four accept `bytes` (decoded as UTF-8).
+
+Some things worth knowing:
+
+- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, `None` is returned. On Windows, only the default interface is used, and with network requests enabled, the IP of the default interface is found first (a UDP socket is connected to `1.1.1.1:53`, but nothing is sent) and looked up as a host.
+- `hostname="localhost"` (`-n localhost`) and `ip="127.0.0.1"` (`-4 127.0.0.1`) return `"00:00:00:00:00:00"`, the MAC of the loopback interface. Other spellings, such as `::1`, `127.0.0.2`, `LOCALHOST`, or the host's own name, aren't short-circuited and return `None`.
+- **Most exceptions are handled silently and returned as `None`.** If you run into problems, set `DEBUG` to `1` or higher (or use `getmac -v -dddd` on the command line) to get more information about what's happening. If you're still having issues, check the [troubleshooting guide](https://ghostofgoes.github.io/getmac/troubleshooting.html), then please create an [issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and include the output with `DEBUG` enabled.
+- As of 1.0.0, a `RuntimeError` is raised if no methods match the type of request and platform, or if all matching methods fail their test (in other words, none of them work). On a platform getmac doesn't know, it falls back to generic methods and still shows a `RuntimeWarning` when it does. A `ValueError` is raised for an `ipaddress` network (e.g. `IPv4Network`), since getmac needs a host, not a network.
+- The first call is slower than the rest. getmac checks which methods work on your system the first time it needs one, and remembers the result for the rest of the process.
 
 ## Configuration
 Settings are attributes of `getmac.settings` (`from getmac import settings`). Set them before calling `get_mac_address()`.
@@ -171,25 +225,6 @@ Settings are attributes of `getmac.settings` (`from getmac import settings`). Se
 - `settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. `"linux"`, `"windows"`, `"freebsd"`, etc.). Any value returned by `platform.system()` is valid.
 - `settings.FORCE_METHOD`: Force a specific method to be used, e.g. `"IpNeighborShow"`. This will be used regardless of its method type or platform compatibility, and `Method.test()` will NOT be checked! The list of available methods is in `getmac.getmac.METHODS` (and in the [API reference](https://ghostofgoes.github.io/getmac/api.html)).
 - `ARP_PATH` (environment variable): The file to read the ARP table from, instead of `/proc/net/arp`. Linux only, and read when getmac is imported. Useful in containers.
-
-## Features
-- Pure-Python (no compiled C-extensions required!)
-- Python 3.9+
-- Lightweight, with no dependencies and a relatively small package size (no binary extensions)
-- Supports most platforms with NO binary extensions required!
-- Supports CPython and [PyPy](https://www.pypy.org/)
-- Provides a simple command line tool (when installed as a package)
-- MIT licensed!
-
-## Notes
-- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, `None` is returned. On Windows, only the default interface is used, and with network requests enabled, the IP of the default interface is found first (a UDP socket is connected to `1.1.1.1:53`, but nothing is sent) and looked up as a host.
-- `hostname="localhost"` (`-n localhost`) and `ip="127.0.0.1"` (`-4 127.0.0.1`) return `"00:00:00:00:00:00"`, the MAC of the loopback interface. Other spellings, such as `::1`, `127.0.0.2`, `LOCALHOST`, or the host's own name, aren't short-circuited and return `None`.
-- "Remote hosts" refer to hosts in your local layer 2 network, also commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
-- The first four arguments are mutually exclusive. `network_request` does nothing with `interface` (so it's safe to set in a script). With `ip`, `ip6` and `hostname`, it allows the ARP request or UDP packet. With no arguments, it only matters on Windows, for the socket step above.
-- The physical transport is assumed to be Ethernet or Wi-Fi. Others, such as Bluetooth or cellular, may work, but they're untested. I'm definitely open to pull requests or issues related to this, including error reports.
-- **Most exceptions are handled silently and returned as `None`.** If you run into problems, set `DEBUG` to `1` or higher (or use `getmac -v -dddd` on the command line) to get more information about what's happening. If you're still having issues, check the [troubleshooting guide](https://ghostofgoes.github.io/getmac/troubleshooting.html), then please create an [issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and include the output with `DEBUG` enabled.
-- As of 1.0.0, a `RuntimeError` is raised if no methods match the type of request and platform, or if all matching methods fail their test (in other words, none of them work). On a platform getmac doesn't know, it falls back to generic methods and still shows a `RuntimeWarning` when it does. A `ValueError` is raised for an `ipaddress` network (e.g. `IPv4Network`), since getmac needs a host, not a network.
-- The first call is slower than the rest. getmac checks which methods work on your system the first time it needs one, and remembers the result for the rest of the process.
 
 ## Commands and techniques by platform
 The [platforms page](https://ghostofgoes.github.io/getmac/platforms.html) lists the methods getmac tries on each platform, in order, and the [API reference](https://ghostofgoes.github.io/getmac/api.html) documents each method.
@@ -257,41 +292,11 @@ All or almost all features should work on "supported" platforms. While other ver
 - Docker
 - BusyBox (not technically a platform, but several of the methods work on this platform)
 
-## Legacy Python versions
-If you are running an old Python (3.8 and older) or interpreter, then you can install an older version of `getmac` that supported that version. The wheels are available in the [GitHub releases](https://github.com/GhostofGoes/getmac/releases), or from PyPI with a current version of `pip` and some special arguments.
-
-- Python 2.5: `get-mac==0.5.0`
-- Python 2.6: `getmac==0.6.0`
-- Python 2.7: `getmac<1.0.0`
-- Python 3.2: `get-mac==0.3.0`
-- Python 3.3: `get-mac==0.3.0`
-- Python 3.4: `getmac<1.0.0`
-- Python 3.5: `getmac<1.0.0`
-- Python 3.6: `getmac<1.0.0`
-- Python 3.7: `getmac<1.0.0`
-- Python 3.8: `getmac<1.0.0`
-
-NOTE: these versions do not have many of the performance improvements, platform support, and bug fixes that came with later releases. They generally work, just not as well. However, if you're using such an old Python, you probably don't care about all that :)
-
-## Docker
-A Docker image of the `getmac` command is published to the [GitHub Container Registry](https://github.com/GhostofGoes/getmac/pkgs/container/getmac) for `linux/amd64` and `linux/arm64`. The container runs `getmac` as an unprivileged user (`nobody`), and any arguments are passed to it.
-
-```bash
-docker run --rm ghcr.io/ghostofgoes/getmac --help
-docker run --rm ghcr.io/ghostofgoes/getmac --version
-docker run --rm ghcr.io/ghostofgoes/getmac -n localhost
-```
-
-The `latest` tag is the newest stable release, and releases are also tagged with their version (e.g. `1.0.0`, `1.0`, and `1`). Pre-releases are only tagged with their version. The `edge` tag is built from the `main` branch.
-
-By default the container is on Docker's bridge network, so it sees its own interfaces and ARP table, not the host's. On Linux, use `--network host` to look up the host's interfaces. In bridge mode, add `-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp` to read the host's ARP table. With Docker Desktop on macOS and Windows, the container only sees the Docker VM's network, not your computer's. IPv6 lookups (`-6`) need a Docker network with IPv6 enabled.
-
-```bash
-docker run --rm --network host ghcr.io/ghostofgoes/getmac
-docker run --rm -v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp ghcr.io/ghostofgoes/getmac -4 192.168.0.1
-```
-
-To build the image yourself, see the [Docker section of the contribution guide](https://ghostofgoes.github.io/getmac/contributing.html#docker).
+## Limitations
+- "Remote hosts" refer to hosts in your local layer 2 network, also commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
+- The physical transport is assumed to be Ethernet or Wi-Fi. Others, such as Bluetooth or cellular, may work, but they're untested. I'm definitely open to pull requests or issues related to this, including error reports.
+- The accuracy and reliability of the MAC address retrieval may vary depending on the network configuration, the target host's settings, and other factors.
+- Platform coverage is limited to what's under [Platforms currently supported](#platforms-currently-supported).
 
 ## Known Issues
 - Linux, WSL: Getting the mac of a local interface IP does not currently work (`getmac --ip 10.0.0.4` will fail if `10.0.0.4` is the IP address of a local interface). This issue may be present on other POSIX systems as well.

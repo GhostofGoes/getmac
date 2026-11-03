@@ -21,6 +21,11 @@ Features
 - Provides a simple command line tool
 - MIT licensed!
 
+Is getmac for you?
+==================
+
+If you only need local interfaces and can take C extensions, `netifaces <https://pypi.org/project/netifaces/>`__ or `psutil <https://github.com/giampaolo/psutil>`__ will be faster. If you're on Linux, can run as root, and C extensions are fine, `arpreq <https://pypi.org/project/arpreq/>`__ can be faster too. The `README <https://github.com/GhostofGoes/getmac#should-you-use-this-package>`__ has the longer version.
+
 Quick start
 ===========
 
@@ -61,16 +66,16 @@ Getting started
    :doc:`installation` has every way to install getmac, and :doc:`upgrading` covers what changed from 0.9.x.
 
 Using getmac
-   :doc:`usage` is the guide to the Python API and its settings. :doc:`cli` is the guide to the ``getmac`` command, and :doc:`docker` covers the Docker image.
-
-When something goes wrong
-   :doc:`troubleshooting` has fixes for common problems. :doc:`platforms` lists what's supported, and which commands getmac uses on each platform. :doc:`glossary` defines the terms used in these docs.
+   :doc:`usage` is the guide to the Python API and its settings. :doc:`cli` is the guide to the ``getmac`` command, :doc:`docker` covers the Docker image, and when something goes wrong, :doc:`troubleshooting` has the fixes.
 
 Reference
-   :doc:`api` is the full API reference, generated from the code. :doc:`module_api` explains how getmac picks a method, and :doc:`custom_methods` covers adding, removing, or forcing methods at runtime.
+   :doc:`api` is the full API reference, generated from the code. :doc:`module_api` explains how getmac picks a method, and :doc:`custom_methods` covers adding, removing, or forcing methods at runtime. :doc:`platforms` is where to check what's supported, and which commands getmac uses on each platform. :doc:`glossary` defines the terms used in these docs.
 
 Contributing
-   :doc:`contributing` is the contribution guide, including how to set up a development environment. :doc:`samples` explains how to collect the command output the tests use, :doc:`adding_methods` walks through adding support for a new command or platform, and :doc:`architecture` explains how the code is organized.
+   :doc:`contributing` is the contribution guide, including how to set up a development environment. :doc:`architecture` explains how the code is organized, :doc:`adding_methods` walks through adding support for a new command or platform, and :doc:`samples` explains how to collect the command output the tests use.
+
+Project
+   :doc:`changelog` lists what changed in each release. :doc:`security` is the security policy, including how to verify releases and Docker images, and :doc:`code_of_conduct` covers how we treat each other.
 
 .. toctree::
    :hidden:
@@ -89,8 +94,6 @@ Contributing
    cli
    docker
    troubleshooting
-   platforms
-   glossary
 
 .. toctree::
    :hidden:
@@ -100,6 +103,8 @@ Contributing
    api
    module_api
    custom_methods
+   platforms
+   glossary
 
 .. toctree::
    :hidden:
@@ -107,9 +112,9 @@ Contributing
    :caption: Contributing
 
    contributing
-   samples
-   adding_methods
    architecture
+   adding_methods
+   samples
 
 .. toctree::
    :hidden:
