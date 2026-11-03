@@ -21,3 +21,40 @@
   color: var(--color-foreground-secondary);
   opacity: 1;
 }
+
+/* ---- Focus indicators: 2.4.7 Focus Visible (AA), 2.4.13 Focus Appearance (AAA) ---- */
+
+/* A 3px solid ring in the link colour, at least 3:1 against page and sidebar in both themes */
+:focus-visible {
+  outline: 3px solid var(--color-brand-content);
+  outline-offset: 2px;
+}
+
+/* Sidebar links and the search box sit inside a scroll container that clips an
+   outer ring, so draw the ring inside them instead */
+.sidebar-tree a:focus-visible,
+.sidebar-search:focus-visible {
+  outline-offset: -3px;
+}
+
+/* Furo removes the search box outline; the background change alone is 1.05:1 */
+.sidebar-search:focus {
+  outline: 3px solid var(--color-brand-content);
+  outline-offset: -3px;
+}
+
+/* sphinx-copybutton hides the button (opacity 0) until the code block is hovered,
+   even when it has keyboard focus. Show it, in the hover colour, while focused. */
+.highlight button.copybtn:focus-visible {
+  opacity: 1;
+  color: var(--color-code-foreground);
+  outline: 3px solid var(--color-brand-content);
+  outline-offset: 2px;
+}
+
+/* sphinx-inline-tabs: the focusable element is a hidden radio input, so show
+   the ring on its label */
+.tab-set > input:focus-visible + label {
+  outline: 3px solid var(--color-brand-content);
+  outline-offset: 2px;
+}
