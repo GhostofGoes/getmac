@@ -37,7 +37,7 @@ With no arguments, you get the MAC of the system's default network interface, i.
 
 If the default interface can't be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, :obj:`None` is returned. On Windows, only the default interface is used, and with network requests enabled, getmac first looks up the IP of the default interface as a host (see :ref:`platforms-windows`).
 
-To get the *name* of the default interface, use :func:`~getmac.get_default_interface`. It finds the default interface without the fallbacks that :func:`~getmac.get_mac_address` applies later (the first interface with a MAC, the Windows host lookup, and the remembered default), so the MAC from :func:`~getmac.get_mac_address` can belong to a different interface than the name you get here. See :ref:`module-api-get-default-interface`.
+To get the *name* of the default interface, use :func:`~getmac.get_default_interface`. It finds the default interface without the fallbacks that :func:`~getmac.get_mac_address` applies later (the first interface with a MAC, the Windows host lookup, and the remembered default), so the MAC from :func:`~getmac.get_mac_address` can belong to a different interface than the name you get here. See :ref:`how the default interface is found <module-api-get-default-interface>`.
 
 .. code-block:: python
 
@@ -233,7 +233,7 @@ Limitations
 ===========
 
 - The physical transport is assumed to be Ethernet or Wi-Fi. Others, such as Bluetooth or cellular, may work, but they're untested. I'm definitely open to pull requests or issues related to this, including error reports.
-- Remote hosts have to be on your local network (see :ref:`above <usage-remote-hosts>`).
+- Remote hosts have to be on your local network (see :ref:`usage-remote-hosts`).
 - The accuracy and reliability of the MAC address retrieval may vary depending on the network configuration, the target host's settings, and other factors.
 
 The rest, such as Android's restrictions, local IPs on Linux, and hostnames for IPv6 devices, are listed per platform in :ref:`platforms-known-issues`.

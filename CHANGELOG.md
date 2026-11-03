@@ -1,7 +1,7 @@
 
 # Changelog
 
-**NOTE**: if any changes significantly impact your project or use case, please open an issue on [GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
+**NOTE**: if any changes significantly impact your project or use case, please [open an issue on GitHub](https://github.com/GhostofGoes/getmac/issues) or email me (see git commit author info for address).
 
 **Announcement**: Compatibility with Python versions older than 3.9 (2.7, 3.4, 3.5, 3.6, 3.7, 3.8) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
 
@@ -24,13 +24,13 @@
 * Improved HP-UX support
     * New method, `LanscanIface`, a proper implementation of `lanscan -ia` for HP-UX systems. This replaces the functionality of the removed `UuidLanscan` method, and is loosely based on CPython's `uuid._lanscan_getnode()` implementation.
     * Added platform detection for HP-UX
-* New setting, `settings.ARP_TIMEOUT` (`--arp-timeout` on the command line). After sending the UDP packet to populate the ARP/NDP table, getmac keeps checking it for the host for up to this many seconds, for hosts that are slow to reply. It's off (`0`) by default. (Issue [#101](https://github.com/GhostofGoes/getmac/issues/101))
-* Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [#90](https://github.com/GhostofGoes/getmac/issues/90))
+* New setting, `settings.ARP_TIMEOUT` (`--arp-timeout` on the command line). After sending the UDP packet to populate the ARP/NDP table, getmac keeps checking it for the host for up to this many seconds, for hosts that are slow to reply. It's off (`0`) by default. (Issue [issue #101](https://github.com/GhostofGoes/getmac/issues/101))
+* Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [issue #90](https://github.com/GhostofGoes/getmac/issues/90))
 * New setting, `settings.COMMAND_TIMEOUT`. Commands that getmac runs (such as `arp` or `ipconfig.exe`) are stopped if they take longer than this many seconds (15 by default), and the next method is tried. Before, a command that never finished made the lookup hang forever.
-* NetBSD support, tested on NetBSD 9.3, 10 and 11. (Issue [#45](https://github.com/GhostofGoes/getmac/issues/45))
+* NetBSD support, tested on NetBSD 9.3, 10 and 11. (Issue [issue #45](https://github.com/GhostofGoes/getmac/issues/45))
 * IPv6 host lookups on macOS, FreeBSD, NetBSD and OpenBSD, using `ndp -an` (new method `NdpNeighbors`).
 * DragonFly BSD support, tested on DragonFly 6.4.0 and 6.4.2.
-* Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) (Issue [#41](https://github.com/GhostofGoes/getmac/issues/41))
+* Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) (Issue [issue #41](https://github.com/GhostofGoes/getmac/issues/41))
     * Most methods now work for regular users, not just root.
         * New method, `DladmIface`, which gets interface MACs using `dladm`.
         * New method, `NetstatNetToMedia`, which looks up hosts in the ARP table and IPv6 neighbor cache with `netstat -pn`.
@@ -43,16 +43,16 @@
 * **BREAKING CHANGE**: `RuntimeError` is now raised in cases where no methods are found matching the type of request and platform, or if all matching methods fail to test.
     * This should almost never happen unless you're on an exotic platform or have an unusual configuration, or a recent platform update changed commands such that getmac no longer functions. If you encounter a `RuntimeError` exception, it means something went horribly wrong, and you should considor reporting the [issue on GitHub](https://github.com/GhostofGoes/getmac/issues).
 * Reduce size of wheel distribution (`.whl` file).
-* Fixed `get_mac_address()` returning an old MAC for an IP that is no longer in use on Linux. Incomplete and failed entries (Flags `0x0`) and proxy ARP entries (Flags `0xc`) in `/proc/net/arp` are now ignored and return `None`. Also fixed a lookup for an IP like `92.168.0.1` matching the entry for `192.168.0.1` (Issue [#76](https://github.com/GhostofGoes/getmac/issues/76)).
+* Fixed `get_mac_address()` returning an old MAC for an IP that is no longer in use on Linux. Incomplete and failed entries (Flags `0x0`) and proxy ARP entries (Flags `0xc`) in `/proc/net/arp` are now ignored and return `None`. Also fixed a lookup for an IP like `92.168.0.1` matching the entry for `192.168.0.1` (Issue [issue #76](https://github.com/GhostofGoes/getmac/issues/76)).
 * Fixed the default interface name from `ip route` including extra text when the route has no `proto` field, e.g. `ens193 onlink` instead of `ens193` for `default via 192.168.1.254 dev ens193 onlink`.
 * Fixed `ifconfig` parsing returning a wrong MAC for some interfaces.
 * Fixed `ifconfig` parsing on Solaris and Debian GNU/kFreeBSD, which print MACs without leading zeros (e.g. `0:c:29:c1:70:2a`).
 * Fixed the `CtypesHost` method on Windows passing a string instead of bytes to `inet_addr()` when looking up a hostname.
 * Fixed the `FcntlIface` method on Linux not closing its socket after each lookup.
 * Finding the default interface on macOS and the BSDs no longer does DNS lookups, which could be slow or hang until `COMMAND_TIMEOUT` when DNS is unreachable. The commands are now `route -n get default` and, on FreeBSD, `netstat -rn`.
-* `get_mac_address()` with no arguments: if the default interface can't be found (e.g. there aren't any routes) or doesn't have a MAC (e.g. a VPN tunnel), the first interface with a MAC that isn't a loopback interface is used (Issue [#78](https://github.com/GhostofGoes/getmac/issues/78)).
+* `get_mac_address()` with no arguments: if the default interface can't be found (e.g. there aren't any routes) or doesn't have a MAC (e.g. a VPN tunnel), the first interface with a MAC that isn't a loopback interface is used (Issue [issue #78](https://github.com/GhostofGoes/getmac/issues/78)).
     * It no longer guesses names like `eth0` or `en0`, or returns the loopback interface's `00:00:00:00:00:00`.
-    * Also helps address issue [#91](https://github.com/GhostofGoes/getmac/issues/91).
+    * Also helps address issue [issue #91](https://github.com/GhostofGoes/getmac/issues/91).
 * Windows: `get_mac_address()` with no arguments uses the actual default interface, instead of assuming it's named "Ethernet".
 * Windows: interface names now must match the whole name or description (case-insensitive). Before, "Wi-Fi" could return the MAC of the "Microsoft Wi-Fi Direct Virtual Adapter".
 * Windows: `GetmacExe` can now find interface names >15 characters long.
@@ -67,9 +67,9 @@
 * Fixed `ArpVariousArgs` not parsing the output of the Linux `arp` command from the `net-tools` package.
 * Fixed getmac's own `getmac` command being run instead of Windows' `getmac.exe` when getmac is installed in a virtual environment.
 * Fixed `IfconfigEther` (macOS) running `ifconfig` twice on the first lookup.
-* Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91)).
+* Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel (Issue [issue #91](https://github.com/GhostofGoes/getmac/issues/91)).
 * Windows: the path of each command getmac runs is now quoted. Before, a path with a space in it (e.g. `C:\Program Files\...`) could make Windows run a different program, such as `C:\Program.exe`.
-* Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95)).
+* Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android (Issue [issue #95](https://github.com/GhostofGoes/getmac/issues/95)).
 * Fixed several issues found with fuzz testing using [Hypothesis](https://hypothesis.readthedocs.io/):
     * Fixed `DefaultIfaceLinuxRouteFile` failing, and being marked unusable, when a line in `/proc/net/route` has fewer than two fields.
     * Fixed `LanscanIface` (HP-UX) failing when the interface name is empty or whitespace and `lanscan` prints a blank line.
@@ -125,7 +125,7 @@
 * Support BusyBox's ``arping``
 
 ### Changed
-* Improve how ARP is handled. If ``ArpFile`` method succeeds, use it instead of ``ArpingHost`` (this should fix [#86](https://github.com/GhostofGoes/getmac/issues/86), for realsies this time).
+* Improve how ARP is handled. If ``ArpFile`` method succeeds, use it instead of ``ArpingHost`` (this should fix [issue #86](https://github.com/GhostofGoes/getmac/issues/86), for realsies this time).
 * Speed up the first call to ``ArpingHost``
 * Fix FORCE_METHOD not being respected for IPv4 macs
 
@@ -137,7 +137,7 @@
 ## 0.9.2 (02/03/2023)
 
 ### Changed
-* Fix flakiness with UuidArpGetNode on MacOS by making it the last method attempted (Fixes issue [#82](https://github.com/GhostofGoes/getmac/issues/82))
+* Fix flakiness with UuidArpGetNode on MacOS by making it the last method attempted (Fixes issue [issue #82](https://github.com/GhostofGoes/getmac/issues/82))
 
 ## 0.9.1 (01/24/2023)
 
@@ -210,11 +210,11 @@ The new system has a number of benefits
 ## 0.8.3 (12/10/2021)
 
 ### Changed
-* Added support for Thomas Habets' version of `arping` in addition to the existing iputils one (contributed by Ville Skyttä (@scop) in [#52](https://github.com/GhostofGoes/getmac/pull/52) and [#54](https://github.com/GhostofGoes/getmac/pull/54))
-* Added support for docker in network bridge mode (contributed by Tomasz Duda (@tomaszduda23) in [#57](https://github.com/GhostofGoes/getmac/pull/57))
-* Add CHANGELOG URL to PyPI metadata (contributed by Ville Skyttä (@scop) in [#58](https://github.com/GhostofGoes/getmac/pull/58))
-* Fixed code quality test suite errors (includes changes by Daniel Flanagan (@FlantasticDan) in [#67](https://github.com/GhostofGoes/getmac/pull/67))
-* Improved Android support (contributed by @emadmahdi in [#71](https://github.com/GhostofGoes/getmac/pull/71))
+* Added support for Thomas Habets' version of `arping` in addition to the existing iputils one (contributed by Ville Skyttä (@scop) in [PR #52](https://github.com/GhostofGoes/getmac/pull/52) and [PR #54](https://github.com/GhostofGoes/getmac/pull/54))
+* Added support for docker in network bridge mode (contributed by Tomasz Duda (@tomaszduda23) in [PR #57](https://github.com/GhostofGoes/getmac/pull/57))
+* Add CHANGELOG URL to PyPI metadata (contributed by Ville Skyttä (@scop) in [PR #58](https://github.com/GhostofGoes/getmac/pull/58))
+* Fixed code quality test suite errors (includes changes by Daniel Flanagan (@FlantasticDan) in [PR #67](https://github.com/GhostofGoes/getmac/pull/67))
+* Improved Android support (contributed by @emadmahdi in [PR #71](https://github.com/GhostofGoes/getmac/pull/71))
 * Minor code quality fixes (2 years of neglecting master branch)
 * Add [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/main/CODE_OF_CONDUCT.md) for project contributors
 * Add [SECURITY.md](https://github.com/GhostofGoes/getmac/blob/main/SECURITY.md) for reporting security issues (e.g. vulnerabilities)
@@ -275,8 +275,8 @@ which could lead to a `ResourceWarning` (GH-42)
 * Removed the usage of third-party packages (`netifaces`, `psutil`, `scapy`, and `arpreq`).
 This should improve the performance of lookups of non-existent interfaces
 or hosts, since this feature was punishing that path without providing much value.
-If you want to use these packages directly, I have a guide on how to do so on a
-[GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
+If you want to use these packages directly, I have a guide on how to do so in
+[my Gist on using psutil, scapy, and netifaces](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
 ### Changed
 * Significantly improved the performance of the common cases on Linux

@@ -3,7 +3,7 @@
 Thanks for taking an interest in this awesome little project. We love to bring new members into the community, and can always use the help.
 
 ## Resources
-* Features suggestions and bug reports: [GitHub](https://github.com/GhostofGoes/getmac/issues)
+* Features suggestions and bug reports: [getmac issues on GitHub](https://github.com/GhostofGoes/getmac/issues)
 * Discussion and general questions/help: [GitHub discussions](https://github.com/GhostofGoes/getmac/discussions) or the [Python Discord server](https://discord.gg/python)
 
 
@@ -42,8 +42,8 @@ It's a (hopefully) straightforward and easy to follow policy. Therefore, if you 
     * [ ] Tests: `pdm run test`
     * [ ] Benchmarks: `pdm run benchmark`
     * [ ] Lint: `pdm run lint`
-* [ ] Update the [CHANGELOG](https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md) (if applicable, for non-trivial changes)
-* [ ] Add your name to the contributors list in the [README](https://github.com/GhostofGoes/getmac/blob/main/README.md) (please include what your contribution was after your name)
+* [ ] Update the [CHANGELOG.md on GitHub](https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md) (if applicable, for non-trivial changes)
+* [ ] Add your name to the contributors list in the [README.md on GitHub](https://github.com/GhostofGoes/getmac/blob/main/README.md) (please include what your contribution was after your name)
 * [ ] (AI Bots) The AI policy was followed
 
 ## Checklist before a Pull Request will be merged
@@ -141,7 +141,7 @@ Filing a bug report:
     * [ ] What did you do?
     * [ ] What did you expect to see?
     * [ ] What did you see instead?
-2. Put any excessive output into a [GitHub Gist](https://gist.github.com/) and include a link in the issue.
+2. Put any excessive output into a [new GitHub Gist](https://gist.github.com/) and include a link in the issue.
 3. Tag the issue with "Bug"
 
 **NOTE**: If the issue is a potential security vulnerability, do *NOT* open an issue! Instead, email: ghostofgoes(at)gmail(dot)com
@@ -151,7 +151,7 @@ Filing a bug report:
 Ideas for features or other things are welcomed. Open an issue on GitHub detailing the idea, and tag it appropriately (e.g. "Feature" for a new feature).
 
 
-## Resources
+## Further reading
 
 ### Regex resources (regular expressions)
 - https://pythex.org/

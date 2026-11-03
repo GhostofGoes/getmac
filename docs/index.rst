@@ -24,7 +24,7 @@ Features
 Is getmac for you?
 ==================
 
-If you only need local interfaces and can take C extensions, `netifaces <https://pypi.org/project/netifaces/>`__ or `psutil <https://github.com/giampaolo/psutil>`__ will be faster. If you're on Linux, can run as root, and C extensions are fine, `arpreq <https://pypi.org/project/arpreq/>`__ can be faster too. The `README <https://github.com/GhostofGoes/getmac#should-you-use-this-package>`__ has the longer version.
+If you only need local interfaces and can take C extensions, `netifaces <https://pypi.org/project/netifaces/>`__ or `psutil <https://github.com/giampaolo/psutil>`__ will be faster. If you're on Linux, can run as root, and C extensions are fine, `arpreq <https://pypi.org/project/arpreq/>`__ can be faster too. The longer version is in `the README's "Should you use this package?" section <https://github.com/GhostofGoes/getmac#should-you-use-this-package>`__.
 
 Quick start
 ===========

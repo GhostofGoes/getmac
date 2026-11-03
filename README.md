@@ -14,6 +14,8 @@
   <a href="https://github.com/astral-sh/ruff"><img alt="Code style: Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
 </p>
 
+# getmac
+
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 
 It provides a platform-independent interface to get the MAC addresses of:
@@ -39,11 +41,11 @@ The commands from the recording are also written out in [Terminal examples](#ter
 - MIT licensed!
 
 ## Should you use this package?
-If you only need the addresses of network interfaces, have a limited set of platforms to support, and are able to handle C-extension modules, then you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/) package by Alastair Houghton ([@al45tair](https://github.com/al45tair)). It's significantly faster (thanks to it being C code) and has been around a long time and seen widespread usage. Unfortunately, it hasn't been maintained since [May 2021](https://github.com/al45tair/netifaces/commit/ec55b59e27542776f55e0f9e3213a75bf8e0f367), so it may not be a great choice for new projects. Another great option that fits these requirements is the well-known and battle-hardened [psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola.
+If you only need the addresses of network interfaces, have a limited set of platforms to support, and are able to handle C-extension modules, then you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/) package by Alastair Houghton ([@al45tair](https://github.com/al45tair)). It's significantly faster (thanks to it being C code) and has been around a long time and seen widespread usage. Unfortunately, it hasn't been maintained since May 2021 ([the last commit to netifaces](https://github.com/al45tair/netifaces/commit/ec55b59e27542776f55e0f9e3213a75bf8e0f367)), so it may not be a great choice for new projects. Another great option that fits these requirements is the well-known and battle-hardened [psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola.
 
 If the only system you need to run on is Linux, you can run as root, and C-extension modules are fine, then you should instead check out the [arpreq](https://pypi.org/project/arpreq/) package by Sebastian Schrader. In some cases it can be significantly faster.
 
-If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to do so in a [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
+If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to do so in [my Gist on using psutil, scapy, and netifaces](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
 ## Installation
 
