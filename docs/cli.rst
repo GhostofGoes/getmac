@@ -30,7 +30,11 @@ Basic Usage
    getmac -6 fe80::1
    getmac -n home.router
 
-Only one of ``--interface``, ``--ip``, ``--ip6``, and ``--hostname`` can be used at a time.
+   # Print the name of the default network interface (e.g. "eth0"), instead of a MAC
+   getmac --default-interface
+   getmac -D
+
+Only one of ``--interface``, ``--ip``, ``--ip6``, ``--hostname``, and ``--default-interface`` can be used at a time.
 
 
 .. _python-invoke:

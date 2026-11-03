@@ -198,6 +198,9 @@ getmac --ip 192.168.0.1 --command-timeout 5
 getmac -i eth0 --override-platform linux
 getmac --ip 192.168.0.1 --override-platform windows
 
+# Print the name of the default interface (e.g. "eth0"), instead of its MAC
+getmac --default-interface
+
 # Force a specific method to be used, regardless of the consequences or if it even works
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 ```

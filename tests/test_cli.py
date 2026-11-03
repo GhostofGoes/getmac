@@ -144,6 +144,7 @@ def test_build_parser_defaults():
     assert args.command_timeout is None
     assert args.override_platform is None
     assert args.force_method is None
+    assert args.default_interface is False
 
 
 @pytest.mark.parametrize(
@@ -167,6 +168,8 @@ def test_build_parser_defaults():
         (["--command-timeout", "0"], "command_timeout", 0),
         (["--override-platform", "freebsd"], "override_platform", "freebsd"),
         (["--force-method", "IpNeighborShow"], "force_method", "IpNeighborShow"),
+        (["-D"], "default_interface", True),
+        (["--default-interface"], "default_interface", True),
     ],
 )
 def test_build_parser_flag_values(argv, attr, expected):
@@ -253,6 +256,7 @@ def test_main_exit_code_failure(mock_get_mac, run_cli):
             "argument --command-timeout: must be 0 or more seconds: '-1'",
         ),
         (["-i"], "argument -i/--interface: expected one argument"),
+        (["-D", "-i", "eth0"], "not allowed with argument"),
         (["--bogus"], "unrecognized arguments: --bogus"),
     ],
 )
@@ -465,6 +469,25 @@ def test_main_override_port_used_for_udp_packet(run_cli, mocker, args, expected_
         mock_socket.assert_not_called()
 
 
+# --- --default-interface -----------------------------------------------------
+
+
+@pytest.mark.parametrize("flag", ["-D", "--default-interface"])
+def test_main_default_interface(mock_get_mac, run_cli, mocker, flag):
+    mock_iface = mocker.patch("getmac.getmac.get_default_interface", return_value="eth0")
+
+    assert run_cli(flag) == (0, "eth0\n", "")
+    mock_iface.assert_called_once_with()
+    mock_get_mac.assert_not_called()
+
+
+def test_main_default_interface_not_found(mock_get_mac, run_cli, mocker):
+    mocker.patch("getmac.getmac.get_default_interface", return_value=None)
+
+    assert run_cli("-D") == (1, "", "")
+    mock_get_mac.assert_not_called()
+
+
 # --- true end-to-end subprocess smoke tests ----------------------------------
 
 
@@ -480,6 +503,14 @@ def test_cli_help():
     assert "usage: getmac" in proc.stdout
     assert proc.stderr == ""
     assert proc.returncode == 0
+
+
+def test_cli_default_interface():
+    proc = run_cmd("--default-interface")
+    iface = getmac.get_default_interface()
+    assert proc.stdout == (f"{iface}\n" if iface else "")
+    assert proc.stderr == ""
+    assert proc.returncode == (0 if iface else 1)
 
 
 def test_cli_version():
