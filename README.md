@@ -188,6 +188,9 @@ getmac --ip 192.168.0.1 --override-port 9001
 # Keep checking the ARP table for the host for up to 1 second after sending the UDP packet
 getmac --ip 192.168.0.1 --arp-timeout 1
 
+# Stop commands that getmac runs (e.g. arp) after 5 seconds instead of the default 15, and try the next method
+getmac --ip 192.168.0.1 --command-timeout 5
+
 # The platform detected by getmac can be overridden via '--override-platform'.
 # This is useful when debugging issues or if you know a method
 # for a different platform works on the current platform.

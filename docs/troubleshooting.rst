@@ -78,7 +78,7 @@ Lookups are slow
 
 - The first call is slower than the rest. getmac checks which methods work on your system the first time it needs one, and caches the result for the rest of the process.
 - Lookups of hosts that don't reply take ``ARP_TIMEOUT`` seconds longer (it's ``0`` by default).
-- Commands that getmac runs are stopped after 15 seconds (:attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`) and the next method is tried. If a command is hanging, for example on DNS lookups, the debug output shows which one. Lower the timeout, or open an issue so a faster command can be used.
+- Commands that getmac runs are stopped after 15 seconds (:attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`) and the next method is tried. If a command is hanging, for example on DNS lookups, the debug output shows which one. Lower the timeout (``--command-timeout`` on the command line), or open an issue so a faster command can be used.
 
 RuntimeError: no methods
 ========================
