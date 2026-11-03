@@ -2,6 +2,8 @@
 Platforms
 =========
 
+**In short:** getmac works on Windows, Linux, macOS, the BSDs, Solaris, illumos, Android, and more. On each one it runs the system's own commands, or reads its files, to find a MAC. This page lists them, in the order getmac tries them.
+
 This page covers which platforms getmac supports, and which methods (commands, files, and libraries) it uses to get :term:`MAC addresses <MAC address>` on each of them.
 
 Supported platforms
@@ -41,7 +43,7 @@ Linux, Windows, and macOS are tested in :abbr:`CI (continuous integration)` on e
 Methods by platform
 ===================
 
-getmac has a list of *methods*, each of which uses one command, file, or library to get a MAC. On each platform, getmac tries the methods for that platform in order, and uses the first one that works (:doc:`module_api` explains the details). The lists below are in the order the methods are tried in. Every method is documented in the :doc:`api`, including what it parses and any quirks.
+getmac has a list of *methods*, each of which uses one command, file, or library to get a MAC. On each platform, getmac tries the methods for that platform in order, and uses the first one that works. :doc:`module_api` explains the details. The lists below are in the order the methods are tried in. Every method is documented in the :doc:`api`, including what it parses and any quirks.
 
 To see which methods were chosen on your system, run ``getmac -v -dd``.
 
@@ -57,7 +59,7 @@ IPv4 hosts
 IPv6 hosts
    :class:`~getmac.getmac.NetshNeighbors` (``netsh.exe int ipv6 show neigh``)
 Default interface
-   :class:`~getmac.getmac.DefaultIfaceNetsh` (``netsh.exe int ipv4 show route``). With network requests enabled, ``get_mac_address()`` with no arguments first finds the IP of the default interface by connecting a UDP socket to ``1.1.1.1:53`` (Cloudflare's DNS server), and looks that IP up as a host. ``netsh.exe`` is only used if that doesn't find a MAC.
+   :class:`~getmac.getmac.DefaultIfaceNetsh` (``netsh.exe int ipv4 show route``). With network requests enabled, ``get_mac_address()`` with no arguments first finds the IP of the default interface by connecting a UDP socket to ``1.1.1.1:53`` (Cloudflare's DNS server). Then it looks that IP up as a host. ``netsh.exe`` is only used if that doesn't find a MAC.
 
 Linux
 -----
@@ -164,7 +166,7 @@ Hosts and default interface
 Other platforms
 ---------------
 
-On a platform getmac doesn't know, or for a type of lookup that has no methods for the platform, getmac falls back to generic methods that work on many Unix-like systems. It logs a warning and shows a :class:`RuntimeWarning` (using :mod:`warnings`) when it does. Running with ``python -W error::RuntimeWarning`` turns an unsupported platform into an error, which is how the NetBSD and DragonFly CI checks it.
+getmac falls back to generic methods that work on many Unix-like systems on a platform it doesn't know. It does the same for a type of lookup that has no methods for the platform. It logs a warning and shows a :class:`RuntimeWarning` (using :mod:`warnings`) when it does. Running with ``python -W error::RuntimeWarning`` turns an unsupported platform into an error, which is how the NetBSD and DragonFly CI checks it.
 
 Interfaces
    :class:`~getmac.getmac.IfconfigWithIfaceArg` (``ifconfig <iface>``), :class:`~getmac.getmac.IfconfigOther` (``ifconfig``, then with ``-a``, ``-v``, or ``-av`` if that fails), :class:`~getmac.getmac.IpLinkIface` (``ip link``), :class:`~getmac.getmac.NetstatIface` (``netstat -iae``)

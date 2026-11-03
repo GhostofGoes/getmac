@@ -2,6 +2,8 @@
 getmac
 ======
 
+**In short:** getmac tells you the MAC address of a network interface on your computer, or of another device on your network. It works from Python or the command line, on most operating systems, with nothing else to install.
+
 getmac is a pure-Python package to get the :term:`MAC addresses <MAC address>` of :term:`network interfaces <network interface>` and hosts on the local network.
 
 It provides a platform-independent interface to get the MAC addresses of:
@@ -72,10 +74,10 @@ Reference
    :doc:`api` is the full API reference, generated from the code. :doc:`module_api` explains how getmac picks a method, and :doc:`custom_methods` covers adding, removing, or forcing methods at runtime. :doc:`platforms` is where to check what's supported, and which commands getmac uses on each platform. :doc:`glossary` defines the terms used in these docs.
 
 Contributing
-   :doc:`contributing` is the contribution guide, including how to set up a development environment. :doc:`architecture` explains how the code is organized, :doc:`adding_methods` walks through adding support for a new command or platform, and :doc:`samples` explains how to collect the command output the tests use.
+   :doc:`contributing` is the contribution guide, including how to set up a development environment. :doc:`architecture` explains how the code is organized. :doc:`adding_methods` walks through adding support for a new command or platform, and :doc:`samples` explains how to collect the command output the tests use.
 
 Project
-   :doc:`changelog` lists what changed in each release. :doc:`security` is the security policy, including how to verify releases and Docker images, and :doc:`code_of_conduct` covers how we treat each other.
+   :doc:`changelog` lists what changed in each release. :doc:`security` is the security policy, including how to verify releases and Docker images. :doc:`code_of_conduct` covers how we treat each other.
 
 .. toctree::
    :hidden:

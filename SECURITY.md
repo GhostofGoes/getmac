@@ -1,5 +1,7 @@
 # Security Policy
 
+**In short:** if you find a security problem that someone could actually exploit, email me instead of opening an issue. For anything else, like a weak spot that can't be exploited directly, open an issue with the `security` label. The last section shows how to check that a release really came from this project.
+
 ## Supported Versions
 
 | Version    | Supported          |
@@ -11,15 +13,15 @@
 
 ## Reporting a Vulnerability or other security issue
 
-If the security issue is a general weakness or poor practice that is *not directly exploitable*, please open a [Issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and add the `security` label.
+If the security issue is a general weakness or poor practice that is *not directly exploitable*, please [open an issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and add the `security` label.
 
 If the security issue is a vulnerability that can *potentially be exploited or has a exploit developed/proven*, please email ghostofgoes(at)gmail.com.
-Please include in the email a description of the vulnerability, any proof of concept code/exploit code, and any other information that you believe may be relevant.
+Please describe the vulnerability in the email. Include any proof of concept or exploit code, and anything else you think may be relevant.
 PGP signed message is preferred but not required.
 
 ## Verifying releases
 
-Releases are built and published by GitHub Actions, and every published release has a signed [build provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations) that ties it to the commit and workflow run that built it. These can be checked with the [GitHub CLI](https://cli.github.com/).
+Releases are built and published by GitHub Actions. Every published release has a signed [build provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations) that ties it to the commit and workflow run that built it. These can be checked with the [GitHub CLI](https://cli.github.com/).
 
 The {term}`sdist` and {term}`wheel` on {term}`PyPI` (PyPI also stores their attestations, per PEP 740):
 

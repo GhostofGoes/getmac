@@ -38,7 +38,7 @@ Only one of ``--interface``, ``--ip``, ``--ip6``, and ``--hostname`` can be used
 Running it through Python
 =========================
 
-If ``getmac`` doesn't work, try ``python3 -m getmac``, where ``python3`` is whatever command you use to run Python and used to install the package. That happens when your Python environment doesn't have the command on the ``PATH``, and on Windows, where ``getmac`` can run Windows' own ``getmac.exe`` instead (if it prints a table that looks nothing like getmac's, that's why). See :doc:`troubleshooting`.
+If ``getmac`` doesn't work, try ``python3 -m getmac``, where ``python3`` is whatever command you use to run Python and used to install the package. That happens when your Python environment doesn't have the command on the ``PATH``. It also happens on Windows, where ``getmac`` can run Windows' own ``getmac.exe`` instead (if it prints a table that looks nothing like getmac's, that's why). See :doc:`troubleshooting`.
 
 On Windows, this may be ``py``, e.g. ``py -m getmac``, or just ``python``, e.g. ``python -m getmac``.
 

@@ -1,5 +1,7 @@
 # Contributor Covenant Code of Conduct
 
+**In short:** be kind and respectful to everyone, whoever they are. No harassment, insults, or personal attacks. If someone breaks these rules, report it to the email address in the "Enforcement" section, and it will be looked into fairly and privately. The full text below is the Contributor Covenant, which this project uses as its code of conduct.
+
 ## Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in our

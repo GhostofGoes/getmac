@@ -35,9 +35,9 @@ With no arguments, you get the MAC of the system's default network interface, i.
 
    get_mac_address()
 
-If the default interface can't be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a :term:`VPN` tunnel), then the first interface that has a MAC and isn't a :term:`loopback interface` is used. If there isn't one, :obj:`None` is returned. On Windows, only the default interface is used, and with :term:`network requests <network request>` enabled, getmac first looks up the IP of the default interface as a host (see :ref:`platforms-windows`).
+If the default interface can't be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a :term:`VPN` tunnel), then the first interface that has a MAC and isn't a :term:`loopback interface` is used. If there isn't one, :obj:`None` is returned. On Windows, only the default interface is used. With :term:`network requests <network request>` enabled, getmac first looks up the IP of the default interface as a host (see :ref:`platforms-windows`).
 
-To get the *name* of the default interface, use :func:`~getmac.get_default_interface`. It finds the default interface without the fallbacks that :func:`~getmac.get_mac_address` applies later (the first interface with a MAC, the Windows host lookup, and the remembered default), so the MAC from :func:`~getmac.get_mac_address` can belong to a different interface than the name you get here. See :ref:`how the default interface is found <module-api-get-default-interface>`.
+To get the *name* of the default interface, use :func:`~getmac.get_default_interface`. It finds the default interface without the fallbacks that :func:`~getmac.get_mac_address` applies later (the first interface with a MAC, the Windows host lookup, and the remembered default). So the MAC from :func:`~getmac.get_mac_address` can belong to a different interface than the name you get here. See :ref:`how the default interface is found <module-api-get-default-interface>`.
 
 .. code-block:: python
 
@@ -242,7 +242,7 @@ Errors and exceptions
 - **A lookup that finds nothing returns** :obj:`None`. This covers an interface that doesn't exist, a host that isn't in the ARP/NDP table, and a hostname that doesn't resolve. Exceptions raised by the platform-specific *methods* are caught and logged, and the next method is tried (see :ref:`module-api-fallback`). The one exception is a method forced with :attr:`~getmac.variables.Settings.FORCE_METHOD`, whose exceptions are not caught.
 - :class:`ValueError` means a bad argument: an :mod:`ipaddress` network (getmac needs a host, not a network), or an unsupported type such as :class:`int`.
 - :class:`RuntimeWarning` is shown (using :mod:`warnings`, and logged) when getmac has no methods for your platform and falls back to the generic ones (see :ref:`platforms-other`). It's only an exception if warnings are turned into errors, e.g. with ``python -W error`` or pytest's ``filterwarnings = error``.
-- :class:`RuntimeError` means getmac has no working method for this kind of lookup on this platform: either no methods match the type of request and platform, or all of them failed their test (in other words, none of them work). Retrying won't help, it's an environment problem or a bug worth reporting. See :doc:`troubleshooting`. This is new in 1.0.0, 0.9.x returned :obj:`None` with a warning.
+- :class:`RuntimeError` means getmac has no working method for this kind of lookup on this platform. Either no methods match the type of request and platform, or all of them failed their test (in other words, none of them work). Retrying won't help, it's an environment problem or a bug worth reporting. See :doc:`troubleshooting`. This is new in 1.0.0, 0.9.x returned :obj:`None` with a warning.
 
 
 Limitations
