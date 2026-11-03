@@ -11,6 +11,8 @@
 * Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
     * New pages: upgrading from 0.9.x, platforms (which methods and commands are used on each one), Docker, troubleshooting, customizing methods at runtime, collecting samples, architecture, and a glossary.
     * Shorter sentences and paragraphs throughout the docs and README, and fixed a few things that didn't match the code (e.g. the `--no-net`/`--no-network-requests` argument, and which exceptions `get_mac_address()` raises).
+    * The docs now meet WCAG 2.2 level AA, the web accessibility standard. Everything works with a keyboard (including the menus on phones), focus is always visible, colors have enough contrast in light and dark mode, and screen readers get proper names, landmarks, and status messages.
+    * Toward level AAA: all text and code colors are at least 7:1 contrast, buttons and links are bigger targets, there are breadcrumbs and help on the search page, animations stop if you've asked your system for reduced motion, long sections have sub-headings, the glossary has more terms and pages link to it, abbreviations are spelled out, and the main pages start with a plain-language summary.
 * Support Python 3.10 - 3.15
 * New function, `getmac.get_default_interface()`, which returns the name of the system's default interface.
 * Support for [ipaddress](https://docs.python.org/3/library/ipaddress.html) objects from the Python standard library: `IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`
