@@ -52,6 +52,13 @@ Python 3.9+, CPython and PyPy, no dependencies. Older Pythons (3.8 and older) ne
 pip install getmac
 ```
 
+### Pre-releases from PyPI
+Alpha, beta, and release candidate versions are published to PyPI before a stable release. `pip` skips them unless you pass the `--pre` flag:
+
+```bash
+pip install --pre getmac
+```
+
 ### Latest development version
 
 ```bash

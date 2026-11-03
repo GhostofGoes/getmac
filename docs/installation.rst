@@ -22,6 +22,26 @@ Stable release from PyPI
 This also installs the ``getmac`` command (see :doc:`cli`).
 
 
+Pre-releases from PyPI
+======================
+
+Alpha, beta, and release candidate versions of getmac are published to PyPI before a stable release. ``pip`` skips them unless you ask for them with the ``--pre`` flag.
+
+.. tab:: Linux/macOS
+
+   .. code-block:: shell
+
+      python3 -m pip install --pre getmac
+
+.. tab:: Windows
+
+   .. code-block:: powershell
+
+      py -m pip install --pre getmac
+
+You can also pin a specific pre-release, for example ``python3 -m pip install getmac==1.0.0rc1``. Pre-releases may have bugs and their behavior may change before the stable release, so please `report any issues <https://github.com/GhostofGoes/getmac/issues>`__ you run into.
+
+
 Debian-based Linux distributions
 ================================
 
