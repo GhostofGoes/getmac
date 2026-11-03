@@ -271,15 +271,19 @@
   /* sphinx-copybutton shows "Copied!" only as a visual tooltip. Announce it.
      4.1.3 Status Messages (AA) */
   function watchCopyButtons() {
-    const buttons = document.querySelectorAll("button.copybtn");
-    if (buttons.length === 0) return;
-    const observer = new MutationObserver((records) => {
+    // sphinx-copybutton adds its buttons after this script runs, so watch the whole page
+    new MutationObserver((records) => {
       records.forEach((record) => {
-        const button = record.target;
-        if (button.classList.contains("success")) announce("Copied to clipboard");
+        const el = record.target;
+        const added = !(record.oldValue || "").includes("success");
+        if (el.matches("button.copybtn.success") && added) announce("Copied to clipboard");
       });
+    }).observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+      attributeOldValue: true,
+      subtree: true,
     });
-    buttons.forEach((b) => observer.observe(b, { attributes: true, attributeFilter: ["class"] }));
   }
 
   /* sphinx-inline-tabs: give each set of tabs a group name, and link each tab
@@ -312,7 +316,9 @@
       if (parent.matches("dt") && parent.closest("dl.glossary")) kind = "term";
       else if (parent.matches("dt")) kind = "definition";
       else if (parent.closest(".code-block-caption, figcaption, caption")) kind = "item";
-      a.setAttribute("aria-label", `Link to this ${kind}: ${text}`);
+      // API definitions: use the object's full name, without "class" and the signature
+      const name = kind === "definition" && parent.id ? parent.id : text;
+      a.setAttribute("aria-label", `Link to this ${kind}: ${name}`);
     });
     document.querySelectorAll(".viewcode-link").forEach((span) => {
       const a = span.closest("a");
@@ -360,7 +366,7 @@
         "Your search did not match any documents. Please make sure that all words are spelled correctly and that you've selected enough categories.";
       Documentation.TRANSLATIONS[noMatch] =
         "No pages matched your search. Check the spelling, or try fewer or different words. " +
-        "The glossary and the index below the search box may also help.";
+        "The glossary and the index, linked above, may help too.";
     }
     let last = "";
     new MutationObserver(() => {
