@@ -23,7 +23,7 @@ Networking
 By default the container is on Docker's bridge network, so it sees its own interfaces and ARP table, not the host's.
 
 - On Linux, use ``--network host`` to look up the host's interfaces.
-- In bridge mode, add ``-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp`` to read the host's ARP table. ``ARP_PATH`` tells getmac where to find the ARP table (``/proc/net/arp`` by default).
+- In bridge mode, add ``-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp`` to read the host's ARP table. ``ARP_PATH`` tells getmac where to find the ARP table (``/proc/net/arp`` by default). See :ref:`usage-environment`.
 - With Docker Desktop on macOS and Windows, the container only sees the Docker VM's network, not your computer's.
 - IPv6 lookups (``-6``) need a Docker network with IPv6 enabled.
 

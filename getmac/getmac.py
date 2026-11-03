@@ -6,7 +6,7 @@ It provides a platform-independent interface to get the MAC addresses of:
 - System network interfaces (by interface name)
 - Remote hosts on the local network (by IPv4/IPv6 address or hostname)
 
-The key function is :func:`~getmac.getmac.get_mac_address`.
+The key function is :func:`~getmac.get_mac_address`.
 
 .. code-block:: python
    :caption: Examples
@@ -130,7 +130,7 @@ class Method:
         Returns:
             The raw value the technique found, or :obj:`None` if nothing was found.
             It isn't cleaned up, so it may not be a lowercase colon-separated MAC
-            (:func:`~getmac.getmac.get_mac_address` runs it through
+            (:func:`~getmac.get_mac_address` runs it through
             :func:`~getmac.utils.clean_mac`). For ``default_iface`` methods,
             it's the name of an interface instead of a MAC.
         """
@@ -148,6 +148,10 @@ class ArpFile(Method):
     Only complete entries are used. Incomplete, failed and proxy ARP entries are
     ignored, since the kernel keeps the last known (possibly stale) MAC for failed
     entries, and proxy ARP entries don't have a real MAC.
+
+    The file is ``/proc/net/arp`` unless the ``ARP_PATH`` environment variable
+    is set, which is useful in containers. It's read once, when getmac is imported,
+    so set it in the process environment or before ``import getmac``.
     """
 
     platforms = {"linux"}
@@ -2255,7 +2259,7 @@ def get_default_interface() -> Optional[str]:
     Get the name of the default network interface on the system.
 
     This is essentially a convenience wrapper around
-    :func:`get_by_method` with the ``default_iface`` method type.
+    :func:`~getmac.getmac.get_by_method` with the ``default_iface`` method type.
     The code is literally
     ``return getmac.getmac.get_by_method("default_iface")``.
 

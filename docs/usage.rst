@@ -2,9 +2,9 @@
 Usage
 =====
 
-getmac provides a Python function, :func:`~getmac.getmac.get_mac_address`, and a command-line interface, :ref:`getmac <args>`. This page covers using getmac from Python as a library. The command-line interface is documented in :doc:`cli`.
+getmac provides a Python function, :func:`~getmac.get_mac_address`, and a command-line interface, :ref:`getmac <args>`. This page covers using getmac from Python as a library. The command-line interface is documented in :doc:`cli`.
 
-If a MAC address was found, :func:`~getmac.getmac.get_mac_address` returns it as a lowercase, colon-separated string, e.g. ``'00:11:22:33:44:55'``. If no MAC was found, :obj:`None` is returned. See :ref:`usage-errors` for the exceptions it can raise.
+If a MAC address was found, :func:`~getmac.get_mac_address` returns it as a lowercase, colon-separated string, e.g. ``'00:11:22:33:44:55'``. If no MAC was found, :obj:`None` is returned. See :ref:`usage-errors` for the exceptions it can raise.
 
 Examples
 ========
@@ -66,7 +66,7 @@ With no arguments, you get the MAC of the system's default network interface, i.
 
 If the default interface can't be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, :obj:`None` is returned. On Windows, only the default interface is used, and with network requests enabled, getmac first looks up the IP of the default interface as a host (see :ref:`platforms-windows`).
 
-To get the *name* of the default interface, use :func:`~getmac.getmac.get_default_interface`. It finds the default interface without the fallbacks that :func:`~getmac.getmac.get_mac_address` applies later (the first interface with a MAC, the Windows host lookup, and the remembered default), so the MAC from :func:`~getmac.getmac.get_mac_address` can belong to a different interface than the name you get here. See :ref:`module-api-get-default-interface`.
+To get the *name* of the default interface, use :func:`~getmac.get_default_interface`. It finds the default interface without the fallbacks that :func:`~getmac.get_mac_address` applies later (the first interface with a MAC, the Windows host lookup, and the remembered default), so the MAC from :func:`~getmac.get_mac_address` can belong to a different interface than the name you get here. See :ref:`module-api-get-default-interface`.
 
 .. code-block:: python
 
@@ -104,24 +104,6 @@ The host's entry is only added to the table once it replies, which can take long
 What ``network_request`` does depends on the argument. With ``interface``, nothing, so it's safe to set in a script. With ``ip``, ``ip6``, and ``hostname``, it allows the ARP request or UDP packet above. With no arguments, it only matters on Windows, where it allows connecting the UDP socket to find the default interface's IP. :ref:`module-api-ipv4-network` has the exact sequence of what getmac does.
 
 
-Changing settings
------------------
-
-Available settings are documented in :ref:`configuration`. Here's an example of changing some settings at runtime:
-
-.. code-block:: python
-
-   from getmac import get_mac_address, settings
-
-   # Enable debugging
-   settings.DEBUG = 2  # DEBUG level 2
-   print(get_mac_address(interface="Ethernet 3"))
-
-   # Change the UDP port used for updating the ARP table (UDP packet)
-   settings.PORT = 44444  # Default port for getmac is 55555
-   print(get_mac_address(ip="192.168.0.1", network_request=True))
-
-
 Using ipaddress objects
 -----------------------
 
@@ -152,16 +134,43 @@ The ``ip`` and ``ip6`` arguments also accept objects from the standard library's
 All four lookup arguments also accept :class:`bytes`, which are decoded as UTF-8.
 
 
+.. _configuration:
+
+Configuration
+=============
+
+Settings that affect the behavior of getmac are attributes of ``getmac.settings`` (an instance of :class:`~getmac.variables.Settings`, which documents each one in full). Set them before calling :func:`~getmac.get_mac_address`. Logging is the exception, it's handled by Python's :mod:`logging` module (see :ref:`usage-logging`). The following settings are available, each with its command-line flag:
+
+- :attr:`~getmac.variables.Settings.DEBUG`: integer that controls debugging output. The higher the value, the more output you get (``0`` is the default, ``4`` is roughly the highest). Command line: ``-d``, repeated once per level.
+- :attr:`~getmac.variables.Settings.PORT`: the UDP port used to populate the ARP table (IPv4) or NDP table (IPv6) when looking up MACs for hosts or IPs. Default is ``55555``. Command line: ``--override-port``.
+- :attr:`~getmac.variables.Settings.ARP_TIMEOUT`: how long to keep checking the ARP table (IPv4) or NDP table (IPv6) for a host after sending the UDP packet, in seconds. ``0`` (the default) checks once, without waiting. Command line: ``--arp-timeout``.
+- :attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`: how long to wait for a command that getmac runs (such as ``arp`` or ``ipconfig.exe``) to finish, in seconds. A command that takes longer is stopped, and the next method is tried. The default is 15 seconds, and :obj:`None` or ``0`` waits for as long as the command takes. There's no command-line flag.
+- :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM`: override the platform detection with the given value (e.g. ``"linux"``, ``"windows"``, ``"freebsd"``, etc). Any value returned by :func:`platform.system` is valid. Set it before the first lookup. Command line: ``--override-platform``.
+- :attr:`~getmac.variables.Settings.FORCE_METHOD`: name of a method to use for every lookup, e.g. ``"IpNeighborShow"`` for :class:`~getmac.getmac.IpNeighborShow`. It's used regardless of its method type or platform compatibility, and :func:`~getmac.getmac.Method.test` is NOT checked! The list of available methods is in :data:`getmac.getmac.METHODS` and the :doc:`api`. Command line: ``--force-method``.
+
+The last two are for debugging and testing. :doc:`module_api` explains how they interact with method selection.
+
+Here's an example of changing some settings at runtime:
+
+.. code-block:: python
+
+   from getmac import get_mac_address, settings
+
+   # Enable debugging
+   settings.DEBUG = 2  # DEBUG level 2
+   print(get_mac_address(interface="Ethernet 3"))
+
+   # Change the UDP port used for updating the ARP table (UDP packet)
+   settings.PORT = 44444  # Default port for getmac is 55555
+   print(get_mac_address(ip="192.168.0.1", network_request=True))
+
+
+.. _usage-logging:
+
 Logging and debugging
 ---------------------
 
-Runtime messages and errors are recorded to the ``getmac`` logger using Python's :mod:`logging` module. Nothing is shown until logging is configured, e.g. with :func:`logging.basicConfig`. :attr:`~getmac.variables.Settings.DEBUG` controls how much detail is logged:
-
-- ``0`` (the default): warnings and errors, plus a few debug messages, such as when a cache is built and the raw MAC that was found.
-- ``1``: the methods that failed their test, the contents of the caches, each lookup attempt, and how long the lookup took.
-- ``2``: the methods left after filtering by type, by platform, and by their test.
-- ``3``: every command that's run.
-- ``4``: the output of every command, and the full list of methods.
+Runtime messages and errors are recorded to the ``getmac`` logger using Python's :mod:`logging` module. Nothing is shown until logging is configured, e.g. with :func:`logging.basicConfig`. :attr:`~getmac.variables.Settings.DEBUG` controls how much detail is logged, and its documentation describes each level.
 
 .. code-block:: python
 
@@ -177,21 +186,24 @@ Runtime messages and errors are recorded to the ``getmac`` logger using Python's
 When reporting an issue, use level 4. :ref:`module-api-logging` shows what the output looks like, and :doc:`troubleshooting` covers the common problems.
 
 
-.. _configuration:
+.. _usage-environment:
 
-Configuration
-=============
+Environment variables
+---------------------
 
-Settings that affect the behavior of getmac are attributes of ``getmac.settings`` (an instance of :class:`~getmac.variables.Settings`). Set them before calling :func:`~getmac.getmac.get_mac_address`. The exception is logging, which is handled by Python's :mod:`logging` module (see above). The following settings are available:
+A few environment variables change how getmac works. They're read once, when getmac is imported, so set them in the process environment (or before ``import getmac``).
 
-- :attr:`~getmac.variables.Settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get (``0`` is the default, ``4`` is roughly the highest, see the levels above).
-- :attr:`~getmac.variables.Settings.PORT`: the UDP port used to populate the ARP table (IPv4) or NDP table (IPv6) when looking up MACs for hosts or IPs. Default is ``55555``.
-- :attr:`~getmac.variables.Settings.ARP_TIMEOUT`: how long to keep checking the ARP table (IPv4) or NDP table (IPv6) for a host after sending the UDP packet, in seconds. ``0`` (the default) checks once, without waiting.
-- :attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`: how long to wait for a command that getmac runs (such as ``arp`` or ``ipconfig.exe``) to finish, in seconds. A command that takes longer is stopped, and the next method is tried. The default is 15 seconds, and :obj:`None` or ``0`` waits for as long as the command takes.
-- :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. ``"linux"``, ``"windows"``, ``"freebsd"``, etc). Any value returned by :func:`platform.system` is valid. Set it before the first lookup.
-- :attr:`~getmac.variables.Settings.FORCE_METHOD`: Name of a method to use for every lookup, e.g. ``"IpNeighborShow"`` for :class:`~getmac.getmac.IpNeighborShow`. It's used regardless of its method type or platform compatibility, and :func:`~getmac.getmac.Method.test` is NOT checked! The list of available methods is in :data:`getmac.getmac.METHODS` and the :doc:`api`.
+``ARP_PATH``
+   The file :class:`~getmac.getmac.ArpFile` reads the ARP table from, ``/proc/net/arp`` by default. It only applies on Linux (including WSL2 and Android). It's mostly useful in containers, e.g. to read the host's table (see :doc:`docker`).
 
-The last two are for debugging and testing. :doc:`module_api` explains how they interact with method selection.
+``ANDROID_STORAGE``
+   Used to detect Android. You don't set this, Android does.
+
+``PATH``
+   getmac copies ``PATH`` when it's imported and uses the copy to find commands. On POSIX systems, ``/sbin`` and ``/usr/sbin`` are added to the copy, since ``arp``, ``ip`` and friends often live there. On Windows, any ``Scripts`` directories are removed from it, so the real Windows ``getmac.exe`` is run instead of this package's script. It doesn't change your shell's ``PATH``, and changing ``os.environ`` after the import has no effect.
+
+``LC_ALL``
+   getmac sets ``LC_ALL=C`` for every command it runs, so the output isn't translated and can be parsed. That only has an effect on POSIX systems. On Windows, command output is still translated, see the ``ipconfig`` entry in :doc:`troubleshooting`.
 
 
 .. _usage-errors:

@@ -10,7 +10,7 @@ First, get the debug output
 Before anything else, get the debug output. It shows which methods getmac tried, which commands it ran, and what they returned, which usually makes the problem obvious.
 
 - On the command line: ``getmac -v -dddd [arguments]`` (see :doc:`cli`).
-- In Python: configure logging and set ``settings.DEBUG = 4`` (see :doc:`usage`).
+- In Python: configure logging and set ``settings.DEBUG = 4`` (see :ref:`usage-logging`).
 
 Windows runs the wrong getmac
 =============================
@@ -60,7 +60,7 @@ RuntimeError: no methods
 getmac raises a :class:`RuntimeError` when there are no methods that match the type of lookup and your platform, or all of them failed their test (i.e. the commands they need aren't installed). This should almost never happen unless you're on an exotic platform or have an unusual configuration, or a platform update changed the commands getmac uses.
 
 1. Get the debug output. Level 2 (``-dd``) shows which methods were considered, and which failed their test.
-2. Check that the commands for your platform are installed. :doc:`platforms` lists them.
+2. Check that the commands for your platform are installed. :doc:`platforms` lists them. getmac looks for commands on your ``PATH`` plus ``/sbin`` and ``/usr/sbin`` (see :ref:`usage-environment`).
 3. Report it on `GitHub <https://github.com/GhostofGoes/getmac/issues>`__ with the debug output, so getmac can be fixed for your platform.
 
 Android finds nothing

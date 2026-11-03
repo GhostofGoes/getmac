@@ -170,6 +170,7 @@ Settings are attributes of `getmac.settings` (`from getmac import settings`). Se
 - `settings.COMMAND_TIMEOUT`: How long to wait for a command that getmac runs (such as `arp` or `ipconfig.exe`) to finish, in seconds. A command that takes longer is stopped, and the next method is tried. Default is `15`. `None` or `0` waits for as long as the command takes.
 - `settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. `"linux"`, `"windows"`, `"freebsd"`, etc.). Any value returned by `platform.system()` is valid.
 - `settings.FORCE_METHOD`: Force a specific method to be used, e.g. `"IpNeighborShow"`. This will be used regardless of its method type or platform compatibility, and `Method.test()` will NOT be checked! The list of available methods is in `getmac.getmac.METHODS` (and in the [API reference](https://ghostofgoes.github.io/getmac/api.html)).
+- `ARP_PATH` (environment variable): The file to read the ARP table from, instead of `/proc/net/arp`. Linux only, and read when getmac is imported. Useful in containers.
 
 ## Features
 - Pure-Python (no compiled C-extensions required!)

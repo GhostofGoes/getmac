@@ -110,7 +110,8 @@ getmac.settings.ARP_TIMEOUT = 1.0  # seconds to keep re-checking after the probe
 
 To see the debug output, configure `logging` (e.g. `logging.basicConfig()`).
 `settings` also has `OVERRIDE_PLATFORM` and `FORCE_METHOD`, the library
-equivalents of the CLI debugging flags.
+equivalents of the CLI debugging flags. On Linux, the `ARP_PATH` environment
+variable (read at import) changes the ARP table file from `/proc/net/arp`.
 
 ## Gotchas
 

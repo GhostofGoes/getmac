@@ -4,7 +4,7 @@ Adding a new method
 
 getmac finds MAC addresses using *methods*, which are subclasses of :class:`~getmac.getmac.Method` that implement a technique for getting a MAC, such as running a command or reading a file. Supporting a new command, file, or platform means adding a new method.
 
-To use a custom method in your own code without changing getmac, see :doc:`module_api` instead. For setting up a development environment and the rules for pull requests, see :doc:`contributing`.
+To use a custom method in your own code without changing getmac, see :doc:`custom_methods` instead. For setting up a development environment and the rules for pull requests, see :doc:`contributing`.
 
 The examples on this page use a hypothetical ``IpAddrIface`` method, which gets the MAC address of an interface on Linux from the output of ``ip addr show <iface>``. It isn't part of getmac.
 
@@ -42,7 +42,7 @@ Guidelines
 Write the method
 ================
 
-Methods currently live in ``getmac/getmac.py``. Add the new class next to the methods with the same :attr:`~getmac.getmac.Method.method_type`. ``getmac/getmac.py`` already imports everything the example needs.
+Methods currently live in ``getmac/getmac.py``. Add the new class next to the methods with the same :attr:`~getmac.getmac.Method.method_type`. ``getmac/getmac.py`` already imports everything the example needs. The same steps apply to a method kept in your own code (see :doc:`custom_methods`), except that outside ``getmac.py`` you import ``utils`` and ``consts`` yourself.
 
 .. code-block:: python
 
@@ -123,7 +123,7 @@ Some things can only be found out by running the command, such as which argument
 get()
 -----
 
-:meth:`~getmac.getmac.Method.get` does the lookup. It returns the MAC address as a string, or :obj:`None` if it wasn't found. The MAC doesn't need to be pretty, since :func:`~getmac.getmac.get_mac_address` passes it through :func:`~getmac.utils.clean_mac`.
+:meth:`~getmac.getmac.Method.get` does the lookup. It returns the MAC address as a string, or :obj:`None` if it wasn't found. The MAC doesn't need to be pretty, since :func:`~getmac.get_mac_address` passes it through :func:`~getmac.utils.clean_mac`.
 
 ``default_iface`` methods don't use the argument, so they're declared as ``def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002``.
 

@@ -9,7 +9,7 @@ It provides a platform-independent interface to get the MAC addresses of:
 - System network interfaces (by interface name)
 - Remote hosts on the local network (by IPv4/IPv6 address or hostname)
 
-It provides a Python function, :func:`~getmac.getmac.get_mac_address`, and a command-line interface, :ref:`getmac <args>`.
+It provides a Python function, :func:`~getmac.get_mac_address`, and a command-line interface, :ref:`getmac <args>`.
 
 Features
 ========
@@ -67,7 +67,7 @@ When something goes wrong
    :doc:`troubleshooting` has fixes for common problems. :doc:`platforms` lists what's supported, and which commands getmac uses on each platform. :doc:`glossary` defines the terms used in these docs.
 
 Reference
-   :doc:`api` is the full API reference, generated from the code. :doc:`module_api` explains how getmac picks a method, and how to add, remove, or force methods at runtime.
+   :doc:`api` is the full API reference, generated from the code. :doc:`module_api` explains how getmac picks a method, and :doc:`custom_methods` covers adding, removing, or forcing methods at runtime.
 
 Contributing
    :doc:`contributing` is the contribution guide, including how to set up a development environment. :doc:`adding_methods` walks through adding support for a new command or platform, and :doc:`architecture` explains how the code is organized.
@@ -99,6 +99,7 @@ Contributing
 
    api
    module_api
+   custom_methods
 
 .. toctree::
    :hidden:

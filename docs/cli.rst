@@ -156,7 +156,7 @@ There is also a debugging mode. There are multiple levels of debugging, up to 4.
    # Debug level 4
    getmac -v -dddd -i eth0
 
-Level 2 shows which methods were considered and which one was chosen, and level 4 shows every command that was run and its output. The levels are described in :doc:`usage`.
+Level 2 shows which methods were considered and which one was chosen, and level 4 shows every command that was run and its output. The levels are described in :ref:`usage-logging`.
 
 
 .. _python-invoke:
@@ -216,3 +216,10 @@ Arguments reference
 .. sphinx_argparse_cli::
    :module: getmac.__main__
    :func: build_parser
+
+
+Environment
+===========
+
+``ARP_PATH``
+   The file to read the ARP table from, instead of ``/proc/net/arp``. Linux only. See :ref:`usage-environment` for this and the other environment variables getmac uses.
