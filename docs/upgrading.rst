@@ -1,20 +1,18 @@
-=====================
+==================
 Upgrading to 1.0.0
-=====================
+==================
 
-getmac 1.0.0 has changes that can break code that worked with 0.9.x. This page lists the changes that can need a change to your code or your environment. For the full list of changes, see the :doc:`changelog`.
+getmac 1.0.0 has a few changes that can break code written for 0.9.x. This page covers what you may need to change in your code or environment. The full list of changes is in the :doc:`changelog`.
 
 Python versions
 ===============
 
-getmac 1.0.0 needs Python 3.9 or newer. It supports CPython and PyPy.
-
-getmac 1.0.0 does not support Python 2.7 to 3.8, Jython, or IronPython. If you must use one of these, pin getmac to an older version, for example ``getmac<1.0.0``. :doc:`installation` lists the last version for each old Python version.
+getmac 1.0.0 requires Python 3.9 or newer, on CPython or PyPy. Support for Python 2.7 through 3.8, Jython, and IronPython was removed. If you're stuck on one of those, pin to an older version, e.g. ``getmac<1.0.0``. :doc:`installation` lists the last version that works with each old Python.
 
 Settings
 ========
 
-In 0.9.x, the settings were global variables in the ``getmac.getmac`` module. In 1.0.0, the settings are attributes of the ``getmac.settings`` object. If your code changes a setting, you must change your code.
+In 0.9.x, the settings were module-level variables in ``getmac.getmac``. In 1.0.0, they're attributes of the ``getmac.settings`` object. If your code changes a setting, you'll need to update it.
 
 .. list-table::
    :header-rows: 1
@@ -30,7 +28,7 @@ In 0.9.x, the settings were global variables in the ``getmac.getmac`` module. In
    * - ``getmac.getmac.FORCE_METHOD``
      - ``getmac.settings.FORCE_METHOD``
 
-For example, change this 0.9.x code:
+For example, this 0.9.x code:
 
 .. code-block:: python
 
@@ -38,7 +36,7 @@ For example, change this 0.9.x code:
 
    getmac.PORT = 44444
 
-to this 1.0.0 code:
+becomes:
 
 .. code-block:: python
 
@@ -46,14 +44,14 @@ to this 1.0.0 code:
 
    settings.PORT = 44444
 
-The platform constants, such as ``WINDOWS`` and ``PLATFORM``, are attributes of ``getmac.variables.consts`` in 1.0.0. The helper functions, such as ``check_command``, are in :mod:`getmac.utils`. :doc:`module_api` tells where each item is.
+The platform constants (``WINDOWS``, ``PLATFORM``, etc.) are now attributes of ``getmac.variables.consts``, and the helper functions (``check_command()``, etc.) are in :mod:`getmac.utils`. :doc:`architecture` covers where everything lives.
 
-Errors
-======
+Exceptions
+==========
 
-In 1.0.0, :func:`~getmac.getmac.get_mac_address` raises a :class:`RuntimeError` when no method can do the lookup. This occurs when no method agrees with the type of lookup and the platform, or when all those methods fail their test. In 0.9.x, getmac logged a critical message, showed a :class:`RuntimeWarning`, and returned :obj:`None`.
+In 1.0.0, :func:`~getmac.getmac.get_mac_address` raises a :class:`RuntimeError` when no method can do the lookup: either no methods match the type of request and platform, or all of them fail their test (in other words, none of them work). In 0.9.x, getmac logged a critical message, showed a :class:`RuntimeWarning`, and returned :obj:`None`.
 
-If your code must continue when getmac cannot do a lookup, catch the :class:`RuntimeError`:
+This should almost never happen unless you're on an exotic platform or have an unusual configuration (see :doc:`troubleshooting`). If your code has to keep going regardless, catch it:
 
 .. code-block:: python
 
@@ -64,27 +62,25 @@ If your code must continue when getmac cannot do a lookup, catch the :class:`Run
    except RuntimeError:
        mac = None
 
-:func:`~getmac.getmac.get_mac_address` also raises a :class:`ValueError` for :class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` objects.
+:func:`~getmac.getmac.get_mac_address` also raises a :class:`ValueError` for :class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` objects (they're networks, not hosts), and for arguments of an unsupported type.
 
 Removed methods
 ===============
 
-1.0.0 removes the ``UuidArpGetnode`` and ``UuidLanscan`` methods. If you set ``FORCE_METHOD`` or ``--force-method`` to one of these names, use a different method:
+The ``UuidArpGetnode`` and ``UuidLanscan`` methods were removed. If you set ``FORCE_METHOD`` (or ``--force-method``) to one of them, use :class:`~getmac.getmac.ArpVariousArgs` or :class:`~getmac.getmac.LanscanIface` instead.
 
-- Instead of ``UuidArpGetnode``, use ``ArpVariousArgs``.
-- Instead of ``UuidLanscan``, use ``LanscanIface``.
+Changes in results
+==================
 
-Changes in the results
-======================
+Some lookups return different results in 1.0.0:
 
-Some lookups give different results in 1.0.0:
-
-- ``get_mac_address()`` with no arguments does not guess interface names such as ``eth0`` or ``en0``. It also does not return ``00:00:00:00:00:00`` from the loopback interface. See :ref:`usage-errors` and the notes in :doc:`usage`.
-- On Windows, ``get_mac_address()`` with no arguments uses the real default interface. It does not assume that the interface name is "Ethernet".
-- On Windows, an interface name must be the same as the full name or description of the interface. Case is not important. In 0.9.x, a part of the name was sufficient. For example, "Wi-Fi" could return the MAC of the "Microsoft Wi-Fi Direct Virtual Adapter".
-- On Linux, ``get_mac_address()`` ignores incomplete, failed and proxy ARP entries in ``/proc/net/arp``. For these entries, it now returns :obj:`None`.
+- ``get_mac_address()`` with no arguments no longer guesses interface names like ``eth0`` or ``en0``, and no longer falls back to the loopback interface's ``00:00:00:00:00:00``. If the default interface can't be found or doesn't have a MAC, the first non-loopback interface with a MAC is used, and :obj:`None` if there isn't one. See :doc:`usage`.
+- On Windows, ``get_mac_address()`` with no arguments uses the actual default interface, instead of assuming it's named "Ethernet".
+- On Windows, interface names must match the whole name or description (case-insensitive). In 0.9.x, part of a name was enough, so "Wi-Fi" could return the MAC of the "Microsoft Wi-Fi Direct Virtual Adapter".
+- On Linux, incomplete, failed, and proxy ARP entries in ``/proc/net/arp`` are ignored, so an IP that's no longer in use returns :obj:`None` instead of a stale MAC.
+- Commands that getmac runs are stopped after 15 seconds (:attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`), and the next method is tried. Before, a command that never finished would hang the lookup forever.
 
 Removed packaging
 =================
 
-1.0.0 does not include RPM packaging.
+RPM packaging was removed, since it hadn't been maintained since 0.6.0.

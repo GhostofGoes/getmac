@@ -2,34 +2,67 @@
 Command-Line Interface
 ======================
 
-The ``getmac`` command gets MAC addresses from the command line, on all supported platforms. It is for developers and power users. ``pip`` installs the command when it installs the package.
+The ``getmac`` command provides developers and power users a cross-platform command line tool to get MAC addresses. It is installed when the pip package is installed.
 
 Basic Usage
 ===========
 
 .. note::
-   In some Python environments, the ``getmac`` command is not available directly. In that case, start it with the Python interpreter. See :ref:`python-invoke` for details.
+   Depending on your Python environment, you may not be able to run the command directly (e.g. ``getmac``). If this is the case, then it will have to be invoked via the Python interpreter. See :ref:`python-invoke` for details.
 
 .. note::
-   On Windows, ``getmac.exe`` is a *system binary* that is part of Windows. Windows can run it instead of the ``getmac`` command that ``pip`` installs. The order of the folders in the ``PATH`` environment variable controls which command runs. To prevent this problem, add the ``\Scripts\`` folder of your Python installation to the ``PATH`` variable of your user. Examples: ``C:\Users\<USERNAME>\AppData\Local\Programs\Python\Python39\Scripts``, ``C:\Users\<USERNAME>\scoop\apps\python\current\Scripts``.
+   On Windows, ``getmac.exe`` is a *system binary* included with Windows. Depending on the value of the ``PATH`` environment variable, it may get prioritized over the ``getmac`` executable shim installed by pip. Ensure the ``\Scripts\`` folder for your Python installation is added to the ``PATH`` variable for your user! Examples: ``C:\Users\<USERNAME>\AppData\Local\Programs\Python\Python39\Scripts``, ``C:\Users\<USERNAME>\scoop\apps\python\current\Scripts``. Or, just use ``py -m getmac``.
 
 
 .. code-block:: shell
 
-   # Show the usage and the command-line arguments
+   # Print usage and command line arguments
    getmac --help
 
-   # Show the current version
+   # Print the current version
    getmac --version
 
-   # With no arguments, show the MAC address of the default network interface
+   # No arguments returns the MAC address of the default network interface
    getmac
 
-   # Give an interface name, an IPv4 or IPv6 address, or a hostname
+   # Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
    getmac --interface ens33
    getmac --ip 192.168.0.1
    getmac --ip6 ::1
    getmac --hostname home.router
+
+   # The same, with the short forms of the arguments
+   getmac -i ens33
+   getmac -4 192.168.0.1
+   getmac -6 ::1
+   getmac -n home.router
+
+Only one of ``--interface``, ``--ip``, ``--ip6``, and ``--hostname`` can be used at a time.
+
+
+Output and exit codes
+---------------------
+
+On success, the MAC is printed to stdout and the exit code is ``0``. If nothing was found, nothing is printed and the exit code is ``1``. Log messages (``-v``) go to stderr, so stdout only ever has the MAC. This makes it easy to use in scripts:
+
+.. tab:: Linux/macOS
+
+   .. code-block:: shell
+
+      if mac=$(getmac -i eth0); then
+          echo "Found: $mac"
+      else
+          echo "No MAC found" >&2
+      fi
+
+.. tab:: Windows
+
+   .. code-block:: powershell
+
+      $mac = py -m getmac -i "Ethernet 3"
+      if ($LASTEXITCODE -eq 0) { "Found: $mac" } else { "No MAC found" }
+
+Nothing found and a lookup that failed look the same (exit code ``1``, no output). Use ``-v`` to see why.
 
 
 Examples
@@ -38,20 +71,20 @@ Examples
 Remote hosts
 ------------
 
-To get the MAC address of a remote host, the host must be in the ARP table. By default, getmac sends a UDP packet to a high port on the host to populate the table. The default port is ``55555``. To disable this, use ``--no-network-requests`` (or ``-N``):
+Getting the MAC address of a remote host requires the ARP table (IPv4) or NDP table (IPv6) to be populated. By default, getmac will populate the table by sending a UDP packet to a high port on the host (defaults to ``55555``), or an ARP request if ``arping`` is available (or on Windows). This can be disabled with ``--no-net`` (or ``-N``), as shown below.
 
 .. code-block:: shell
 
-   getmac --no-network-requests --ip 192.168.0.1
+   getmac --no-net --ip 192.168.0.1
    getmac -N -n home.router
 
-The system adds the host to the table only when the host replies. The reply can arrive after getmac checks the table. By default, getmac checks the table one time. To make getmac check the table again for a maximum number of seconds, use ``--arp-timeout``:
+The host's entry is only added to the table once it replies, which can take longer than getmac takes to check the table. Use ``--arp-timeout`` to keep checking for it for up to a number of seconds (by default, it's checked once).
 
 .. code-block:: shell
 
    getmac --ip 192.168.0.1 --arp-timeout 1
 
-To change the UDP port, use ``--override-port``:
+The UDP port can be changed with ``--override-port``.
 
 .. code-block:: shell
 
@@ -61,36 +94,37 @@ To change the UDP port, use ``--override-port``:
 Advanced usage
 ==============
 
-Control the method selection
+Controlling method selection
 ----------------------------
+getmac has a selection of methods used to acquire information across platforms. The methods it uses are determined by the platform and if required commands/libraries are present. This system isn't perfect, and in some cases it can be beneficial to have control over method selection, such as in the case of debugging.
 
-getmac has many methods to get information on different platforms. The platform, and the commands and libraries that are available, set which methods getmac uses. This system is not perfect. Sometimes you must control the method selection yourself, for example to debug a problem.
-
-To replace the platform that getmac detects, use ``--override-platform``. This is useful to debug problems. It is also useful when you know that a method for a different platform works on this platform. All values that ``platform.system()`` returns are valid.
+The platform detected by getmac can be overridden via ``--override-platform``. This is useful when debugging issues or if you know a method for a different platform works on the current platform. Any value returned by ``platform.system()`` is valid.
 
 .. code-block:: shell
 
-   # Use "linux" as the detected platform, and use the "linux" methods
+   # Force "linux" to be the "detected" platform and use "linux" methods
    getmac -i eth0 --override-platform linux
 
-   # Use "windows" as the detected platform, and use the "windows" methods
+   # Force "windows" to be the "detected" platform and use "windows" methods
    getmac --ip 192.168.0.1 --override-platform windows
 
 
-To use one specific method, use ``--force-method``. getmac then uses that method, even if the method does not work on this system.
+A specific method can also be used with ``--force-method``, regardless of the consequences or if it even works. The method names are listed in the :doc:`api` (case doesn't matter).
 
 .. code-block:: shell
 
    getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 
+:doc:`platforms` lists which methods are used on each platform, and :doc:`module_api` explains how they're chosen.
 
-Show log messages and debug output
-----------------------------------
+
+Enabling logging messages and debugging
+---------------------------------------
 
 .. note::
-   When you report an issue or ask for help, enable the log messages and the highest debug level: ``getmac -v -dddd [arguments]``
+   When reporting an issue or asking for help, please enable verbose and the highest level of debugging: ``getmac -v -dddd [arguments]``
 
-By default, getmac shows only the result. To show the log messages also, add the ``-v`` (``--verbose``) argument to the command. The messages help you debug problems and understand what getmac does.
+Normally, no log messages are printed, just the result from the command. Adding the ``-v`` (``--verbose``) argument to any command will enable these messages. This is useful for debugging issues or understanding what's happening.
 
 .. code-block:: shell
 
@@ -99,17 +133,17 @@ By default, getmac shows only the result. To show the log messages also, add the
    getmac --verbose --ip 192.168.0.1
 
 
-getmac also has a debug mode with 4 levels. The ``-d`` (``--debug``) argument enables debug level 1. Each additional ``d`` increases the level by 1. The debug output shows only if you also use ``-v`` (``--verbose``).
+There is also a debugging mode. There are multiple levels of debugging, up to 4. Adding the ``-d`` (``--debug``) argument enables debugging, and additional ``-d`` arguments increase the level of debugging. ``-d`` turns on the log messages too, so ``-v`` is optional when it's used.
 
 .. code-block:: shell
 
-   # Debug level 1
+   # Enable debugging at level 1
    getmac -v -d
 
-   # Debug level 1, with another argument
+   # Example with another argument
    getmac -v -d -i enp11s4
 
-   # Debug level 2 (two 'd' characters)
+   # Debug level 2 (note the two 'd' characters)
    getmac -v -dd -n home.router
 
    # Debug level 3
@@ -118,18 +152,19 @@ getmac also has a debug mode with 4 levels. The ``-d`` (``--debug``) argument en
    # Debug level 4
    getmac -v -dddd -i eth0
 
+Level 2 shows which methods were considered and which one was chosen, and level 4 shows every command that was run and its output. The levels are described in :doc:`usage`.
 
 
 .. _python-invoke:
 
-Start getmac with the Python interpreter
-========================================
+Invoking via interpreter
+========================
 
-If the ``getmac`` command does not work, use ``python3 -m getmac``. Replace ``python3`` with the command that starts Python. Use the same Python installation that you installed getmac into.
+If ``getmac`` doesn't work, try ``python3 -m getmac``, where ``python3`` is whatever command you use to run Python and used to install the package.
 
-On Windows, this command can be ``py``, for example ``py -m getmac``. It can also be ``python``, for example ``python -m getmac``.
+On Windows, this may be ``py``, e.g. ``py -m getmac``, or just ``python``, e.g. ``python -m getmac``.
 
-In the examples on this page, replace ``getmac`` with ``python3 -m getmac``, or with the command for your platform.
+When invoking in this fashion, replace calls to ``getmac`` in the examples above with ``python3 -m getmac`` (or whatever invocation applies to your platform).
 
 .. tab:: Linux/macOS
 
@@ -148,7 +183,7 @@ In the examples on this page, replace ``getmac`` with ``python3 -m getmac``, or 
       py -m getmac --version
 
 
-These examples start getmac as a Python module, with the short forms of the arguments:
+Examples of running as a Python module with shorthands for the arguments
 
 .. tab:: Linux/macOS
 

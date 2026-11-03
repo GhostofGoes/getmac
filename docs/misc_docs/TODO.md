@@ -21,7 +21,7 @@
 - [ ] Loopback lookups. On Linux `lo` is `00:00:00:00:00:00` (root can change it); on macOS, BSDs, Solaris, HP-UX and Windows the loopback interface has no MAC, so `00:00:00:00:00:00` is a getmac convention there.
     - The `localhost`/`127.0.0.1` shortcut only matches those exact strings. `LOCALHOST`, `127.0.0.2`, `::1` and the host's own name (`127.0.1.1` on Debian) return `None` and send a UDP packet to the host itself. Check `ipaddress.ip_address(...).is_loopback` after resolving instead.
     - Methods disagree on `lo`: `SysIfaceFile` and `FcntlIface` return the zero MAC, `IpLinkIface` and the `ifconfig` parsers return `None`.
-- [ ] Exceptions from a method forced with `FORCE_METHOD` aren't caught, which contradicts the `get_mac_address()` docstring and `docs/usage.rst`.
+- [ ] Exceptions from a method forced with `FORCE_METHOD` aren't caught, which contradicts the `get_mac_address()` docstring (`docs/usage.rst` documents the actual behavior).
 - [ ] Docstrings that don't match the code: `get_default_interface()` can raise `RuntimeError`, `get_instance_from_cache()` returns an instance (not a class), `utils.search()` uses `groups()` (not `groupdict()`), `get_method_by_name()` has no docstring, and `Method.get()` returns raw output (not a cleaned MAC).
 - [ ] Remote host that is actually an interface should resolve to localhost MAC
 - [ ] [Issue #91](https://github.com/GhostofGoes/getmac/issues/91): when the default interface is a VPN tunnel without a MAC (e.g. `utun0` on macOS), `get_mac_address()` falls back to the first interface (in `socket.if_nameindex()` order) that has a MAC. That may not be the interface the VPN traffic goes over, e.g. a Thunderbolt port (`en1`) instead of Wi-Fi (`en0`) on Apple Silicon Macs. Prefer the interface of another default route (`netstat -rn` lists scoped default routes on macOS, `ip route` can list several on Linux), or the macOS network service order (`networksetup -listnetworkserviceorder`). Collect samples on macOS with a VPN connected first.
@@ -252,8 +252,8 @@ methods (list): Optional list of methods to use for MAC address lookup.
 ## Documentation
 - [x] Add guide on using the modules API, e.g. registering a new method in `getmac.getmac.METHODS`, etc. (`docs/module_api.rst`)
 - [x] Write a short guide on how to add and test a new method (`docs/adding_methods.rst`)
-- [x] Rewrite the Sphinx pages and README prose in plain, ASD-STE100-style English, and add upgrading, platforms, Docker, troubleshooting, and glossary pages
-- [ ] Apply the same ASD-STE100-style pass to the docstrings (they make up the API reference page), `CONTRIBUTING.md`, and `SECURITY.md`
+- [x] Rewrite the docs and README for readability, and add upgrading, platforms, Docker, troubleshooting, architecture, and glossary pages
+- [ ] Give the docstrings (they make up the API reference page), `CONTRIBUTING.md`, and `SECURITY.md` the same readability pass
 
 ## Dev
 - [x] ~~Add typing stubs to [typeshed](https://github.com/python/typeshed) once getmac 1.0.0 is released~~ Not needed: getmac ships its own type hints and a `py.typed` marker (PEP 561), and typeshed doesn't take stubs for packages that do.

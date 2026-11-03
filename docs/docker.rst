@@ -2,9 +2,7 @@
 Docker
 ======
 
-A Docker image of the ``getmac`` command is available from the `GitHub Container Registry <https://github.com/GhostofGoes/getmac/pkgs/container/getmac>`__. The image is for ``linux/amd64`` and ``linux/arm64``.
-
-The container runs ``getmac`` as an unprivileged user (``nobody``). The container gives all arguments to ``getmac``.
+A Docker image of the ``getmac`` command is published to the `GitHub Container Registry <https://github.com/GhostofGoes/getmac/pkgs/container/getmac>`__ for ``linux/amd64`` and ``linux/arm64``. The container runs ``getmac`` as an unprivileged user (``nobody``), and any arguments are passed to it.
 
 .. code-block:: shell
 
@@ -16,17 +14,17 @@ Tags
 ====
 
 - ``latest``: the newest stable release.
-- ``<version>``: each release also has tags for its version, for example ``1.0.0``, ``1.0`` and ``1``. Pre-releases have only the tag for their version.
+- ``1.0.0``, ``1.0``, ``1``: releases are also tagged with their version. Pre-releases are only tagged with their version.
 - ``edge``: built from the ``main`` branch.
 
-Networks
-========
+Networking
+==========
 
-By default, the container is on the bridge network of Docker. Thus, the container sees its own interfaces and its own ARP table, not the interfaces and ARP table of the host.
+By default the container is on Docker's bridge network, so it sees its own interfaces and ARP table, not the host's.
 
-- On Linux, to look up the interfaces of the host, use ``--network host``.
-- In bridge mode, to read the ARP table of the host, add ``-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp``.
-- With Docker Desktop on macOS and Windows, the container sees only the network of the Docker VM, not the network of your computer.
+- On Linux, use ``--network host`` to look up the host's interfaces.
+- In bridge mode, add ``-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp`` to read the host's ARP table. ``ARP_PATH`` tells getmac where to find the ARP table (``/proc/net/arp`` by default).
+- With Docker Desktop on macOS and Windows, the container only sees the Docker VM's network, not your computer's.
 - IPv6 lookups (``-6``) need a Docker network with IPv6 enabled.
 
 .. code-block:: shell
@@ -34,7 +32,16 @@ By default, the container is on the bridge network of Docker. Thus, the containe
    docker run --rm --network host ghcr.io/ghostofgoes/getmac
    docker run --rm -v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp ghcr.io/ghostofgoes/getmac -4 192.168.0.1
 
-Build the image
-===============
+Verifying the image
+===================
+
+Published images have a signed build provenance attestation from GitHub, which can be checked with the `GitHub CLI <https://cli.github.com/>`__. See :doc:`security` for the details.
+
+.. code-block:: shell
+
+   gh attestation verify oci://ghcr.io/ghostofgoes/getmac:1.0.0 --repo GhostofGoes/getmac
+
+Building the image
+==================
 
 To build the image yourself, see the Docker section of :doc:`contributing`.
