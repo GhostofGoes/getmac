@@ -1,0 +1,19 @@
+{#-
+  Accessibility override of Furo's search.html (WCAG 2.2).
+  - 2.4.8 Location (AAA): breadcrumb trail.
+  - Best practice (page-has-heading-one): the page gets an <h1>.
+  - 3.3.5 Help (AAA): a line on how search works, with links to the glossary and index.
+-#}
+{% extends "!search.html" %}
+
+{% block content %}
+{% with crumb_title = _("Search") %}{% include "partials/breadcrumbs.html" %}{% endwith %}
+<h1>{{ _("Search") }}</h1>
+<p>
+  Type one or more words in the search box. Search lists the pages that have all of them,
+  best matches first. If you can't find a word, try the
+  <a href="{{ pathto('glossary') }}">glossary</a> or the
+  <a href="{{ pathto('genindex') }}">index</a>.
+</p>
+{{ super() }}
+{% endblock content %}

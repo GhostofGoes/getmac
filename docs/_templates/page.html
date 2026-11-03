@@ -1,0 +1,7 @@
+{#- Accessibility override of Furo's page.html: adds a breadcrumb trail (2.4.8 Location, AAA) -#}
+{% extends "!page.html" %}
+
+{% block content %}
+{% include "partials/breadcrumbs.html" %}
+{{ super() }}
+{% endblock content %}

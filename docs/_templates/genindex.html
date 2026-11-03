@@ -1,0 +1,7 @@
+{#- Accessibility override: breadcrumb trail on the index page (2.4.8 Location, AAA) -#}
+{% extends "!genindex.html" %}
+
+{% block content %}
+{% with crumb_title = _("Index") %}{% include "partials/breadcrumbs.html" %}{% endwith %}
+{{ super() }}
+{% endblock content %}

@@ -1,0 +1,16 @@
+{#-
+  Breadcrumb trail, for 2.4.8 Location (AAA). Furo has none, and hides the
+  sidebar on narrow screens, so this is the only "you are here" cue there.
+  Not shown on the home page.
+-#}
+{%- if pagename != master_doc %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="{{ pathto(master_doc) }}">{{ _("Home") }}</a></li>
+    {%- for parent in parents %}
+    <li><a href="{{ parent.link|e }}">{{ parent.title }}</a></li>
+    {%- endfor %}
+    <li><span aria-current="page">{{ crumb_title|default(title)|striptags }}</span></li>
+  </ol>
+</nav>
+{%- endif %}

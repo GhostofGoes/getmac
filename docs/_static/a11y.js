@@ -236,6 +236,13 @@
     }
   }
 
+  /* Mark the current page in the sidebar. 2.4.8 Location (AAA) */
+  function markCurrentPage() {
+    document.querySelectorAll(".sidebar-tree .current-page > a").forEach((a) => {
+      a.setAttribute("aria-current", "page");
+    });
+  }
+
   /* Tell screen readers which colour theme is in use after it's changed.
      4.1.2 Name, Role, Value (A) */
   function updateThemeToggle() {
@@ -342,14 +349,40 @@
     });
   }
 
+  /* Search page: announce the result count, and give a clearer message when
+     nothing matches. 4.1.3 Status Messages (AA), 3.3.5 Help (AAA) */
+  function improveSearch() {
+    const results = document.getElementById("search-results");
+    if (!results) return;
+    // doctools.js declares Documentation with const, so it isn't on window
+    if (typeof Documentation !== "undefined" && Documentation.TRANSLATIONS) {
+      const noMatch =
+        "Your search did not match any documents. Please make sure that all words are spelled correctly and that you've selected enough categories.";
+      Documentation.TRANSLATIONS[noMatch] =
+        "No pages matched your search. Check the spelling, or try fewer or different words. " +
+        "The glossary and the index below the search box may also help.";
+    }
+    let last = "";
+    new MutationObserver(() => {
+      const summary = results.querySelector(".search-summary");
+      const text = summary ? summary.textContent.trim() : "";
+      if (text && text !== last) {
+        last = text;
+        announce(text);
+      }
+    }).observe(results, { childList: true, subtree: true, characterData: true });
+  }
+
   function init() {
     fixCaptions();
     labelLandmarks();
+    markCurrentPage();
     labelTabs();
     nameLinks();
     fixIndexTogglers();
     watchThemeToggle();
     watchCopyButtons();
+    improveSearch();
     watchFocusObscured();
 
     setupDrawer("__navigation", ".sidebar-drawer", "label.nav-overlay-icon", "site navigation");

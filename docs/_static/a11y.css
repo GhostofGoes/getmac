@@ -142,3 +142,36 @@ button.toc-overlay-icon {
 html {
   scroll-padding-top: calc(var(--header-height) + 3.5rem);
 }
+
+/* ---- Location: 2.4.8 Location (AAA) ---- */
+
+/* Breadcrumb trail above the page title (docs/_templates/page.html) */
+.breadcrumbs {
+  /* Line up with Furo's icon row, which floats to the right of it */
+  padding-top: 1.5rem;
+}
+.breadcrumbs + section > h1:first-child {
+  margin-top: 0.75rem;
+}
+.breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  font-size: var(--font-size--small);
+  color: var(--color-foreground-secondary);
+}
+.breadcrumbs li {
+  margin: 0;
+  max-width: none;
+}
+.breadcrumbs li + li::before {
+  content: "/";
+  padding-inline: 0.5em;
+  color: var(--color-foreground-secondary);
+}
+.breadcrumbs a {
+  display: inline-block;
+  min-height: 24px;
+}
