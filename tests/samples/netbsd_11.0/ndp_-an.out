@@ -1,0 +1,3 @@
+Neighbor                                Linklayer Address  Netif Expire    S Fl
+fe80::a0b:c0d%wm0                       02:00:5e:10:20:30    wm0 permanent R 
+fd00:6e64:7000::10                      02:00:5e:0a:0b:0c    wm0 permanent R 

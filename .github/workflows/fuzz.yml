@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2017-2026 Christopher Goes
+# SPDX-License-Identifier: MIT
+
+name: Fuzz
+# Runs the fuzz tests (tests/test_fuzz.py) with many more generated inputs than the
+# regular test runs. Failures print the input that caused them, to add as a regression test.
+on:
+  schedule:
+    # Weekly, Monday at 06:17 UTC
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: Run fuzz tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
+        with:
+          python-version: "3.13"
+          cache: true
+      - name: Install dependencies
+        run: pdm sync -d -G test
+      - name: Run fuzz tests
+        run: pdm run fuzz

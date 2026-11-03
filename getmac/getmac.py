@@ -49,7 +49,7 @@ from . import utils
 from .variables import consts, gvars, settings
 
 #: Current version of getmac package
-__version__ = "1.0.0a0"
+__version__ = "1.0.0b1"
 
 
 class Method:
@@ -66,6 +66,8 @@ class Method:
         "wsl",
         "openbsd",
         "freebsd",
+        "netbsd",
+        "dragonfly",
         "sunos",
         "hp-ux",
         "other",
@@ -196,10 +198,11 @@ class ArpFile(Method):
 
 class ArpFreebsd(Method):
     """
-    Use the ``arp`` command to find the MAC address of a host on FreeBSD.
+    Use the ``arp`` command to find the MAC address of a host on FreeBSD, NetBSD
+    and DragonFly BSD.
     """
 
-    platforms = {"freebsd"}
+    platforms = {"freebsd", "netbsd", "dragonfly"}
     method_type = "ip"
 
     def test(self) -> bool:
@@ -225,6 +228,44 @@ class ArpOpenbsd(Method):
 
     def get(self, arg: str) -> Optional[str]:
         return utils.search(re.escape(arg) + self._regex, utils.popen("arp", "-an"))
+
+
+class NdpNeighbors(Method):
+    """
+    Use the ``ndp -an`` command to find the MAC address of an IPv6 host
+    in the NDP neighbor cache on macOS, FreeBSD, NetBSD, OpenBSD and DragonFly BSD.
+    """
+
+    platforms = {"darwin", "freebsd", "netbsd", "openbsd", "dragonfly"}
+    method_type = "ip6"
+
+    def test(self) -> bool:
+        return utils.check_command("ndp")
+
+    def get(self, arg: str) -> Optional[str]:
+        if not arg:
+            return None
+
+        # Link-local addresses have the interface appended, e.g. "fe80::2%wm0".
+        # Match it if it's part of the argument, or allow any interface if it isn't.
+        ip, has_scope, scope = arg.partition("%")
+        if scope.isdigit():
+            # ndp shows interface names, so "fe80::2%1" has to be "fe80::2%wm0"
+            try:
+                scope = socket.if_indextoname(int(scope))
+            except (OSError, OverflowError):
+                pass
+        regex = r"^" + re.escape(ip)
+        regex += r"%" + re.escape(scope) if has_scope else r"(?:%\S+)?"
+
+        # Columns: Neighbor, Linklayer Address, Netif, Expire, S, Flags
+        # Incomplete entries have "(incomplete)" instead of a MAC, so they don't match.
+        # macOS and DragonFly BSD leave out leading zeros, e.g. "2:0:5e:a:b:c".
+        return utils.search(
+            regex + r"[ \t]+" + consts.MAC_RE_SHORT + r"[ \t]",
+            utils.popen("ndp", "-an"),
+            flags=re.MULTILINE | re.IGNORECASE,
+        )
 
 
 class ArpVariousArgs(Method):
@@ -255,7 +296,7 @@ class ArpVariousArgs(Method):
     # If arguments have been tested
     _args_tested: bool = False
     # arguments that worked
-    _good_pair: Union[tuple, tuple[str, bool]] = ()
+    _good_pair: tuple[str, bool] = ("", False)
 
     def test(self) -> bool:
         return utils.check_command("arp")
@@ -287,9 +328,8 @@ class ArpVariousArgs(Method):
                             f"ArpVariousArgs pair test failed for "
                             f"({pair_to_test[0]}, {pair_to_test[1]}): {ex}"
                         )
-
-            # if no valid argument pair was found, mark unusable
-            if not self._good_pair:
+            else:
+                # if no valid argument pair was found, mark unusable
                 self.unusable = True
                 return None
 
@@ -378,6 +418,68 @@ class NetshNeighbors(Method):
         return mac
 
 
+class NetstatNetToMedia(Method):
+    """
+    Use ``netstat -p`` to find the MAC address of a host in the "Net to Media Table"
+    (the ARP table for IPv4, and the NDP neighbor cache for IPv6) on Solaris and illumos.
+
+    Unlike ``arp``, this works for IPv6, and doesn't fail when the host isn't in the table.
+    It doesn't need root.
+
+    illumos Documentation: `netstat <https://illumos.org/man/8/netstat>`__
+    """
+
+    platforms = {"sunos"}
+    method_type = "ip"
+
+    def test(self) -> bool:
+        return utils.check_command("netstat")
+
+    def get(self, arg: str) -> Optional[str]:
+        family = "inet6" if ":" in arg else "inet"
+        command_output = utils.popen("netstat", f"-pn -f {family}")
+
+        # Link-local IPv6 addresses can have the interface appended (e.g. "fe80::1%net0").
+        # The same address can be on more than one link (e.g. a router on each one),
+        # so if it's there, only that interface's entries match.
+        ip, _, zone = arg.partition("%")
+        try:
+            target = ip_address(ip)
+        except ValueError:
+            return None
+        if zone.isdigit():
+            # The table has interface names, so "fe80::1%2" has to be "fe80::1%net0"
+            try:
+                zone = socket.if_indextoname(int(zone))
+            except (OSError, OverflowError):
+                pass
+
+        # The columns are different for IPv4 and IPv6, and the flags column for IPv4
+        # is empty for most entries, so the number of fields varies:
+        #   IPv4: Device, IP Address, Mask, Flags, Phys Addr
+        #     net0   192.168.122.2        255.255.255.255          52:55:c0:a8:7a:02
+        #   IPv6: If, Physical Address, Type, State, Destination/Mask
+        #     net0  52:54:00:12:34:56  local   REACHABLE    fe80::5054:ff:fe12:3456
+        # Unresolved IPv4 entries don't have a MAC, and incomplete
+        # IPv6 entries have "00:00:00:00:00:00", so they're skipped.
+        for line in command_output.splitlines():
+            fields = line.split()
+            if len(fields) < 2 or not (
+                _is_same_ip(fields[1], target) or _is_same_ip(fields[-1], target)
+            ):
+                continue
+            if zone and fields[0] != zone:
+                continue
+            for field in (fields[-1], fields[1]):
+                if (
+                    re.fullmatch(consts.MAC_RE_SHORT, field)
+                    and utils.clean_mac(field) != "00:00:00:00:00:00"
+                ):
+                    return field
+
+        return None
+
+
 class ArpingHost(Method):
     """
     Use ``arping`` command to determine the MAC of a host
@@ -431,7 +533,7 @@ class ArpingHost(Method):
                 command_output = utils.popen("arping", f"{self._iputils_args} {arg}")
                 if command_output:
                     return utils.search(
-                        r" from %s \[(%s)\]" % (re.escape(arg), consts.MAC_RE_COLON),
+                        rf" from {re.escape(arg)} \[({consts.MAC_RE_COLON})\]",
                         command_output,
                     )
             else:
@@ -479,14 +581,14 @@ class CtypesHost(Method):
 
     def test(self) -> bool:
         try:
-            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # type: ignore
+            return ctypes.windll.wsock32.inet_addr(b"127.0.0.1") > 0  # type: ignore[attr-defined,no-any-return]
         except Exception:
             return False
 
     def get(self, arg: str) -> Optional[str]:
         try:
             # Convert to bytes on Python 3+ (Fixes GitHub issue #7)
-            inetaddr = ctypes.windll.wsock32.inet_addr(arg.encode())  # type: ignore
+            inetaddr = ctypes.windll.wsock32.inet_addr(arg.encode())  # type: ignore[attr-defined]
             if inetaddr in (0, -1):
                 raise Exception
         except Exception:
@@ -494,13 +596,13 @@ class CtypesHost(Method):
             #   We should be explicit about only accepting ipv4 addresses
             #   and handle any hostname resolution in calling code
             hostip = socket.gethostbyname(arg)
-            inetaddr = ctypes.windll.wsock32.inet_addr(hostip.encode())  # type: ignore
+            inetaddr = ctypes.windll.wsock32.inet_addr(hostip.encode())  # type: ignore[attr-defined]
 
         buffer = ctypes.c_buffer(6)
         addlen = ctypes.c_ulong(ctypes.sizeof(buffer))
 
         # https://docs.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-sendarp
-        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore
+        send_arp = ctypes.windll.Iphlpapi.SendARP  # type: ignore[attr-defined]
         if send_arp(inetaddr, 0, ctypes.byref(buffer), ctypes.byref(addlen)) != 0:
             return None
 
@@ -581,6 +683,9 @@ class LanscanIface(Method):
         return utils.check_command("lanscan")
 
     def get(self, arg: str) -> Optional[str]:
+        if not arg:
+            return None
+
         # -a: Display station addresses only. No headings.
         # -i: Display interface names only. No headings.
         output = utils.popen("lanscan", "-ai")
@@ -590,14 +695,109 @@ class LanscanIface(Method):
         # Find the line containing the interface name, e.g. "lan0"
         search_for = arg + " "  # space to prevent partial matches
         for line in output.splitlines():
-            if search_for in line:
+            fields = line.split()
+            if fields and search_for in line:
                 # Extract MAC address from the line
                 # The raw MAC will be something like "0x0012317D6209"
                 # Turn that into a 12-character string, then add colons
-                raw_mac = line.split()[0].replace("0x", "").strip()
+                raw_mac = fields[0].replace("0x", "").strip()
                 return ":".join(raw_mac[i : i + 2] for i in range(0, len(raw_mac), 2))
 
         return None
+
+
+class DladmIface(Method):
+    """
+    Use the ``dladm`` command to get the MAC address of a network interface on
+    Solaris 11 and illumos (e.g. OmniOS, OpenIndiana, SmartOS). Unlike ``ifconfig``,
+    which only shows the MAC to root, this works for any user.
+
+    The type of datalink is from ``dladm show-link``, and the MAC is from
+    ``dladm show-phys -m`` for physical links (NICs), ``dladm show-vnic`` for
+    virtual NICs (VNICs, which zones usually have), and ``dladm show-aggr -x`` for
+    link aggregations. A VLAN has the MAC of the link it's on.
+
+    Other types of datalinks (e.g. etherstubs and IP tunnels) don't have a MAC, and
+    neither do IPMP groups (e.g. ``ipmp0``), which aren't datalinks, so they're
+    :obj:`None`. ``ifconfig`` doesn't show a MAC for any of them either.
+
+    Solaris 10's ``dladm`` doesn't have ``-o``, so this is marked unusable there.
+
+    Documentation: `Oracle Solaris <https://docs.oracle.com/cd/E88353_01/html/E72487/dladm-8.html>`__,
+    `illumos <https://illumos.org/man/8/dladm>`__
+    """
+
+    platforms = {"sunos"}
+    method_type = "iface"
+
+    def test(self) -> bool:
+        return utils.check_command("dladm")
+
+    def get(self, arg: str) -> Optional[str]:
+        # The datalink of a logical interface (e.g. "net0:1") is the
+        # physical interface's datalink (e.g. "net0")
+        link = arg.partition(":")[0]
+        if not link:
+            return None
+
+        try:
+            links = utils.popen("dladm", "show-link -p -o link,class,over")
+        except CalledProcessError as ex:
+            gvars.log.debug(f"DladmIface failed, marking unusable: {ex}")
+            self.unusable = True
+            return None
+
+        try:
+            return self._get_link_mac(link, links)
+        except CalledProcessError as ex:
+            gvars.log.debug(f"DladmIface failed to get the MAC of '{link}': {ex}")
+            return None
+
+    @staticmethod
+    def _get_link_mac(link: str, links: str) -> Optional[str]:
+        # E.g. "net0:phys:", "vnic0:vnic:net0", "vlan5:vlan:net0",
+        # and "aggr0:aggr:net0,net1" ("net0 net1" on Oracle Solaris)
+        for line in links.splitlines():
+            name, _, rest = line.partition(":")
+            if name == link:
+                link_class, _, over = rest.partition(":")
+                break
+        else:
+            # E.g. "lo0" and IPMP groups aren't datalinks
+            return None
+
+        if link_class == "phys":
+            # A NIC can have more than one MAC "slot", only the "primary" one is used
+            output = utils.popen("dladm", "show-phys -m -p -o link,slot,address")
+            return _parse_dladm(link, output, "primary")
+        if link_class == "vnic":
+            output = utils.popen("dladm", "show-vnic -p -o link,macaddress")
+            return _parse_dladm(link, output)
+        if link_class == "aggr":
+            # The aggregation's own MAC is on the line without a port, the
+            # other lines are the MACs of the links in it
+            output = utils.popen("dladm", "show-aggr -x -p -o link,port,address")
+            return _parse_dladm(link, output, "")
+        if link_class == "vlan" and over and over != link:
+            # A VLAN is on a NIC or an aggregation
+            return DladmIface._get_link_mac(over, links)
+        return None
+
+
+def _parse_dladm(link: str, command_output: str, slot: Optional[str] = None) -> Optional[str]:
+    """
+    Get the MAC of a datalink from the parsable output of ``dladm`` (``-p -o link,...``),
+    e.g. ``net0:primary:52\\:54\\:0\\:12\\:34\\:56``. The fields are separated by colons,
+    and the colons in a MAC are escaped with a backslash. If ``slot`` isn't :obj:`None`,
+    the second field has to be the same.
+    """
+    for line in command_output.splitlines():
+        fields = [field.replace("\\:", ":") for field in re.split(r"(?<!\\):", line)]
+        if len(fields) < 2 or fields[0] != link or (slot is not None and fields[1] != slot):
+            continue
+        if re.fullmatch(consts.MAC_RE_SHORT, fields[-1]):
+            return fields[-1]
+    return None
 
 
 class FcntlIface(Method):
@@ -624,11 +824,9 @@ class FcntlIface(Method):
 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             # 0x8927 = SIOCGIFHWADDR, get the hardware (MAC) address
-            info = fcntl.ioctl(  # type: ignore
-                s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15])
-            )
+            info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15]))
 
-        return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
+        return ":".join(f"{byte:02x}" for byte in info[18:24])
 
 
 class GetmacExe(Method):
@@ -663,7 +861,9 @@ class GetmacExe(Method):
             return None
 
         # Columns: Connection Name, Network Adapter, Physical Address, Transport Name
-        rows = [row for row in csv.reader(command_output.splitlines()) if len(row) >= 3]
+        # The csv module raises an error for NUL characters before Python 3.11
+        lines = command_output.replace("\0", "").splitlines()
+        rows = [row for row in csv.reader(lines) if len(row) >= 3]
         name = arg.casefold()
 
         # Connection names first, since a connection could be named after another adapter
@@ -842,7 +1042,7 @@ class IfconfigWithIfaceArg(Method):
     (e.g. ``ifconfig eth0``) to determine MAC address of an interface.
     """
 
-    platforms = {"linux", "wsl", "freebsd", "openbsd", "other"}
+    platforms = {"linux", "wsl", "freebsd", "openbsd", "netbsd", "dragonfly", "sunos", "other"}
     method_type = "iface"
 
     def test(self) -> bool:
@@ -939,7 +1139,7 @@ class IfconfigOther(Method):
             for pair_to_test in self._args:
                 try:
                     command_output = utils.popen("ifconfig", pair_to_test[0])
-                    self._good_pair = list(pair_to_test)  # type: ignore
+                    self._good_pair = list(pair_to_test)
                     if isinstance(self._good_pair[1], str):
                         self._good_pair[1] += consts.MAC_RE_COLON + _IFCONFIG_MAC_END
                     break
@@ -1078,20 +1278,11 @@ class DefaultIfaceLinuxRouteFile(Method):
 
         if data is not None and len(data) > 1:
             for line in data.split("\n")[1:-1]:
-                line = line.strip()
-                if not line:
-                    continue
-
-                # Some have tab separators, some have spaces
-                if "\t" in line:
-                    sep = "\t"
-                else:
-                    sep = "    "
-
-                iface_name, dest = line.split(sep)[:2]
-
-                if dest == "00000000":
-                    return iface_name
+                # Some have tab separators, some have spaces. Skip lines without
+                # an interface name and a destination, instead of failing.
+                fields = line.split()
+                if len(fields) >= 2 and fields[1] == "00000000":
+                    return fields[0]
 
             if settings.DEBUG:
                 gvars.log.debug(
@@ -1132,18 +1323,21 @@ class DefaultIfaceRouteCommand(Method):
 
 class DefaultIfaceRouteGetCommand(Method):
     """
-    Determine default interface using the ``route get default`` command
-    on BSD-based platforms, including Darwin (MacOS).
+    Determine default interface using the ``route -n get default`` command
+    on BSD-based platforms, including Darwin (MacOS), and on Solaris and illumos.
+
+    ``-n`` skips the reverse DNS lookup of the gateway, which can be slow or
+    hang until the command times out when DNS is unreachable.
     """
 
-    platforms = {"darwin", "freebsd", "other"}
+    platforms = {"darwin", "freebsd", "netbsd", "dragonfly", "sunos", "other"}
     method_type = "default_iface"
 
     def test(self) -> bool:
         return utils.check_command("route")
 
     def get(self, arg: str = "") -> Optional[str]:
-        output = utils.popen("route", "get default")
+        output = utils.popen("route", "-n get default")
 
         if not output:
             return None
@@ -1203,7 +1397,8 @@ class DefaultIfaceFreeBsd(Method):
     """
     Determine the default interface on FreeBSD using the ``netstat`` command.
 
-    The full command is ``netstat -r``.
+    The full command is ``netstat -rn``. ``-n`` skips the DNS lookups of every
+    address in the routing table. This is the fallback if ``route`` fails.
     """
 
     platforms = {"freebsd"}
@@ -1213,7 +1408,7 @@ class DefaultIfaceFreeBsd(Method):
         return utils.check_command("netstat")
 
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
-        output = utils.popen("netstat", "-r")
+        output = utils.popen("netstat", "-rn")
         return utils.search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", output)
 
 
@@ -1238,7 +1433,9 @@ class DefaultIfaceNetsh(Method):
 
     def get(self, arg: str = "") -> Optional[str]:  # noqa: ARG002
         command_output = utils.popen("netsh.exe", "int ipv4 show route")
-        routes = re.findall(self._regex, command_output, flags=re.MULTILINE)
+        routes: list[tuple[str, str, str, str]] = re.findall(
+            self._regex, command_output, flags=re.MULTILINE
+        )
 
         # Default routes, lowest metric first
         default_routes = sorted(
@@ -1264,6 +1461,14 @@ def _is_ip_address(text: str) -> bool:
     return True
 
 
+def _is_same_ip(text: str, target: Union[IPv4Address, IPv6Address]) -> bool:
+    """If ``text`` is the IP address ``target``, ignoring a prefix length (e.g. ``/128``)."""
+    try:
+        return ip_address(text.partition("/")[0]) == target
+    except ValueError:
+        return False
+
+
 # TODO: order methods by effectiveness/reliability
 #   Use a class attribute maybe? e.g. "score", then sort by score in cache
 METHODS: list[type[Method]] = [
@@ -1274,12 +1479,15 @@ METHODS: list[type[Method]] = [
     SysIfaceFile,
     FcntlIface,
     LanscanIface,
+    DladmIface,
     GetmacExe,
     IpconfigExe,
     WmicExe,
     ArpExe,
     NetshNeighbors,
+    NetstatNetToMedia,
     DarwinNetworksetupIface,
+    NdpNeighbors,
     ArpFreebsd,
     ArpOpenbsd,
     IfconfigWithIfaceArg,
@@ -1378,7 +1586,7 @@ def _swap_method_fallback(method_type: str, swap_with: str) -> bool:
     curr = METHOD_CACHE[method_type]
     FALLBACK_CACHE[method_type].remove(found)
     METHOD_CACHE[method_type] = found
-    FALLBACK_CACHE[method_type].insert(0, curr)  # type: ignore
+    FALLBACK_CACHE[method_type].insert(0, curr)  # type: ignore[arg-type]
 
     return True
 
@@ -1506,11 +1714,9 @@ def initialize_method_cache(method_type: str, network_request: bool = True) -> b
         tested_strs = ", ".join(str(ts) for ts in tested_methods)
         gvars.log.debug(f"{len(tested_methods)} tested methods for '{method_type}': {tested_strs}")
 
-    # Populate fallback cache with all the tested methods, minus the currently active method
-    if METHOD_CACHE[method_type] and METHOD_CACHE[method_type] in tested_methods:
-        tested_methods.remove(METHOD_CACHE[method_type])  # type: ignore
-
-    FALLBACK_CACHE[method_type] = tested_methods
+    # The cache was empty, so the first tested method is the active method in METHOD_CACHE.
+    # The rest of the tested methods are the fallbacks.
+    FALLBACK_CACHE[method_type] = tested_methods[1:]
 
     if settings.DEBUG:
         gvars.log.debug(
@@ -1809,10 +2015,7 @@ def get_mac_address(
     """
 
     # If debugging, start the timer
-    if settings.DEBUG:
-        import timeit
-
-        start_time = timeit.default_timer()
+    start_time = time.perf_counter() if settings.DEBUG else 0.0
 
     # Convert bytes to str, assuming UTF-8 encoding
     if isinstance(interface, bytes):
@@ -1946,7 +2149,7 @@ def get_mac_address(
             if settings.DEBUG:
                 gvars.log.debug(
                     f"Attempting to populate ARP table with UDP packet "
-                    f"to {ip if ip else ip6}:{settings.PORT}"
+                    f"to {ip or ip6}:{settings.PORT}"
                 )
 
             if ip:
@@ -1998,7 +2201,7 @@ def get_mac_address(
 
     # Log how long it took
     if settings.DEBUG:
-        duration = timeit.default_timer() - start_time
+        duration = time.perf_counter() - start_time
         gvars.log.debug(f"getmac took {duration:0.4f} seconds")
 
     return utils.clean_mac(mac)

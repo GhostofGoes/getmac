@@ -1,0 +1,5 @@
+Neighbor                             Linklayer Address  Netif Expire    S Flags
+fe80::a0b:c0d%vtnet0                 02:00:5e:10:20:30 vtnet0 permanent R 
+fd00:6e64:7000::1                    52:54:00:12:34:56 vtnet0 permanent R 
+fe80::5054:ff:fe12:3456%vtnet0       52:54:00:12:34:56 vtnet0 permanent R 
+fd00:6e64:7000::10                   02:00:5e:0a:0b:0c vtnet0 permanent R 

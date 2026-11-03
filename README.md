@@ -1,13 +1,18 @@
 
-[![PyPI - Current Version](https://img.shields.io/pypi/v/getmac?label=PyPI)](https://pypi.org/project/getmac/)
-[![codecov](https://codecov.io/github/GhostofGoes/getmac/branch/main/graph/badge.svg?token=5NxlAE9eGY)](https://codecov.io/github/GhostofGoes/getmac)
-[![GitHub Actions Pipeline Status](https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostofGoes/getmac/actions)
-![Python Version](https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14-blue.svg)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9388/badge)](https://www.bestpractices.dev/projects/9388)
-[![Weekly PyPI downloads](https://pepy.tech/badge/getmac/week)](https://pepy.tech/project/getmac)
-[![PyPI downloads](https://pepy.tech/badge/getmac)](https://pepy.tech/project/getmac)
-[![PDM-managed](https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json)](https://pdm-project.org)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+<p align="center">
+  <a href="https://pypi.org/project/getmac/"><img alt="PyPI - Current Version" src="https://img.shields.io/pypi/v/getmac?label=PyPI"></a>
+  <img alt="Python Version" src="https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14|3.15-blue.svg">
+  <a href="https://pepy.tech/project/getmac"><img alt="Weekly PyPI downloads" src="https://pepy.tech/badge/getmac/week"></a>
+  <a href="https://pepy.tech/project/getmac"><img alt="PyPI downloads" src="https://pepy.tech/badge/getmac"></a>
+  <br>
+  <a href="https://github.com/GhostofGoes/getmac/actions"><img alt="GitHub Actions Pipeline Status" src="https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://codecov.io/github/GhostofGoes/getmac"><img alt="codecov" src="https://codecov.io/github/GhostofGoes/getmac/branch/main/graph/badge.svg?token=5NxlAE9eGY"></a>
+  <a href="https://www.bestpractices.dev/projects/9388"><img alt="OpenSSF Best Practices" src="https://www.bestpractices.dev/projects/9388/badge"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/GhostofGoes/getmac"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/GhostofGoes/getmac/badge"></a>
+  <br>
+  <a href="https://pdm-project.org"><img alt="PDM-managed" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json"></a>
+  <a href="https://github.com/astral-sh/ruff"><img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
+</p>
 
 getmac is a pure-Python package. It gets the MAC addresses of network interfaces and of hosts on the local network.
 
@@ -20,7 +25,7 @@ Its primary function is `get_mac_address()`.
 
 The full documentation is at https://ghostofgoes.github.io/getmac/.
 
-[![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.png)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
+[![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.svg)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
 
 
 ## Should you use this package?
@@ -199,17 +204,26 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 - HP-UX:
     - Commands: `lanscan`
 - Mac OSX (Darwin)
-    - Commands: `networksetup`, `arping`
+    - Commands: `networksetup`, `arping`, `ndp` (IPv6 hosts)
     - Many of the same commands as Linux
 - WSL
     - Windows commands are used for remote hosts
     - Unix commands are used for interfaces
 - OpenBSD
-    - Commands: `ifconfig`, `arp`
+    - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
     - Default interfaces: `route`
 - FreeBSD
-    - Commands: `ifconfig`, `arp`
+    - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
     - Default interfaces: `netstat`
+- NetBSD
+    - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
+    - Default interfaces: `route`
+- DragonFly BSD
+    - Commands: `ifconfig`, `arp`, `ndp` (IPv6 hosts)
+    - Default interfaces: `route`
+- Solaris and illumos
+    - Commands: `dladm`, `netstat`, `ifconfig`, `arp`
+    - Default interfaces: `route`
 - Android
     - The same commands and files as Linux, where they're available. See the note on Android below.
 
@@ -231,6 +245,10 @@ All or almost all features should work on the supported platforms. Other version
 - Windows Subsystem for Linux (WSL)
 - FreeBSD (11+)
 - OpenBSD
+- NetBSD (9.3+)
+- DragonFly BSD (6.4+)
+- Oracle Solaris 11.4
+- illumos distros: OmniOS (r151054+), OpenIndiana (2026.04+). Others like SmartOS should work, but are untested.
 - Docker
 - BusyBox. BusyBox is not a platform, but some of the methods work with it.
 

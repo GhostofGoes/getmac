@@ -299,6 +299,9 @@ The settings are attributes of ``getmac.settings``, an instance of :class:`~getm
 :attr:`~getmac.variables.Settings.ARP_TIMEOUT`
    The maximum time that getmac looks up a host again after it sends the UDP packet. See :ref:`module-api-ipv4-network`. On the command line, use ``--arp-timeout``.
 
+:attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`
+   How long a command can run before it's stopped. A method whose command is stopped is treated like one that raised an exception: it's marked unusable and removed from the caches, and the next method is tried.
+
 :attr:`~getmac.variables.Settings.DEBUG`
    The quantity of detail in the log. See :ref:`module-api-logging`.
 

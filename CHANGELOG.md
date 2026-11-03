@@ -9,9 +9,7 @@
 
 ### Added
 * Rewrote documentation and published on GitHub Pages: https://ghostofgoes.github.io/getmac/index.html
-    * New pages: upgrading from 0.9.x, supported platforms, Docker, troubleshooting, and a glossary.
-    * The documentation and README use plain English, based on ASD-STE100 (Simplified Technical English).
-* Support Python 3.10 - 3.14
+* Support Python 3.10 - 3.15
 * New function, `getmac.get_default_interface()`, which returns the name of the system's default interface.
 * Support for [ipaddress](https://docs.python.org/3/library/ipaddress.html) objects from the Python standard library: `IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`
     - These can be used with the `ip` and `ip6` arguments to `get_mac_address()`
@@ -26,6 +24,16 @@
     * Added platform detection for HP-UX
 * New setting, `settings.ARP_TIMEOUT` (`--arp-timeout` on the command line). After sending the UDP packet to populate the ARP/NDP table, getmac keeps checking it for the host for up to this many seconds, for hosts that are slow to reply. It's off (`0`) by default. (Issue [#101](https://github.com/GhostofGoes/getmac/issues/101))
 * Windows: IPv6 lookups and finding the default interface, using `netsh.exe` (new methods `NetshNeighbors` and `DefaultIfaceNetsh`). Before, these fell back to methods for other platforms, with a "No methods for platform 'windows'" warning. (Issue [#90](https://github.com/GhostofGoes/getmac/issues/90))
+* New setting, `settings.COMMAND_TIMEOUT`. Commands that getmac runs (such as `arp` or `ipconfig.exe`) are stopped if they take longer than this many seconds (15 by default), and the next method is tried. Before, a command that never finished made the lookup hang forever.
+* NetBSD support, tested on NetBSD 9.3, 10 and 11. (Issue [#45](https://github.com/GhostofGoes/getmac/issues/45))
+* IPv6 host lookups on macOS, FreeBSD, NetBSD and OpenBSD, using `ndp -an` (new method `NdpNeighbors`).
+* DragonFly BSD support, tested on DragonFly 6.4.0 and 6.4.2.
+* Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) (Issue [#41](https://github.com/GhostofGoes/getmac/issues/41))
+    * Most methods now work for regular users, not just root.
+        * New method, `DladmIface`, which gets interface MACs using `dladm`.
+        * New method, `NetstatNetToMedia`, which looks up hosts in the ARP table and IPv6 neighbor cache with `netstat -pn`.
+        * `DefaultIfaceRouteGetCommand` (`route -n get default`) is used on Solaris and illumos. Before, `get_default_interface()` always failed, since `route -n` doesn't work there.
+        * Tested on Oracle Solaris 11.4, OmniOS r151058 and r151054, and OpenIndiana 2026.04, with a new CI workflow that runs getmac in VMs.
 
 ### Changed
 * **BREAKING CHANGE**: refactored how settings are handled. Instead of module-level globals, they're implemented in a Settings singleton in `getmac.settings`. For example, `getmac.getmac.PORT` should now be `getmac.settings.PORT`.
@@ -39,6 +47,7 @@
 * Fixed `ifconfig` parsing on Solaris and Debian GNU/kFreeBSD, which print MACs without leading zeros (e.g. `0:c:29:c1:70:2a`).
 * Fixed the `CtypesHost` method on Windows passing a string instead of bytes to `inet_addr()` when looking up a hostname.
 * Fixed the `FcntlIface` method on Linux not closing its socket after each lookup.
+* Finding the default interface on macOS and the BSDs no longer does DNS lookups, which could be slow or hang until `COMMAND_TIMEOUT` when DNS is unreachable. The commands are now `route -n get default` and, on FreeBSD, `netstat -rn`.
 * `get_mac_address()` with no arguments: if the default interface can't be found (e.g. there aren't any routes) or doesn't have a MAC (e.g. a VPN tunnel), the first interface with a MAC that isn't a loopback interface is used (Issue [#78](https://github.com/GhostofGoes/getmac/issues/78)).
     * It no longer guesses names like `eth0` or `en0`, or returns the loopback interface's `00:00:00:00:00:00`.
     * Also helps address issue [#91](https://github.com/GhostofGoes/getmac/issues/91).
@@ -57,7 +66,13 @@
 * Fixed getmac's own `getmac` command being run instead of Windows' `getmac.exe` when getmac is installed in a virtual environment.
 * Fixed `IfconfigEther` (macOS) running `ifconfig` twice on the first lookup.
 * Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91)).
+* Windows: the path of each command getmac runs is now quoted. Before, a path with a space in it (e.g. `C:\Program Files\...`) could make Windows run a different program, such as `C:\Program.exe`.
 * Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95)).
+* Fixed several issues found with fuzz testing using [Hypothesis](https://hypothesis.readthedocs.io/):
+    * Fixed `DefaultIfaceLinuxRouteFile` failing, and being marked unusable, when a line in `/proc/net/route` has fewer than two fields.
+    * Fixed `LanscanIface` (HP-UX) failing when the interface name is empty or whitespace and `lanscan` prints a blank line.
+    * Fixed `GetmacExe` (Windows) failing on Python 3.10 and older when `getmac.exe` output contains a NUL character.
+    * MACs are now checked for non-hexadecimal characters before they're returned. Before, a value like `zz:zz:zz:zz:zz:zz` from a command's output was returned as a MAC.
 
 ### Removed
 * Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
@@ -77,12 +92,20 @@
 * Use [Ruff's formatter](https://docs.astral.sh/ruff/formatter/) instead of Black and isort
 * Updated development dependencies to their latest versions (pytest 8/9, Sphinx 9, mypy 2, etc.)
 * Updated GitHub Actions and pinned them to commit SHAs, and added `pdm run update-actions` to update the pins.
-* Setup PyPI Trusted Publishing with GitHub, and added GitHub Attestations.
+* mypy type checks the package in strict mode, and every `# type: ignore` comment now specifies the error being ignored.
+* Stricter pytest settings (unknown markers and settings are errors, and so are passing `xfail` tests), and more ruff rules (refurb, Perflint, flake8-logging, flynt).
+* Setup PyPI Trusted Publishing with GitHub, and added [GitHub Attestations](https://github.com/GhostofGoes/getmac/blob/main/SECURITY.md#verifying-releases).
 * CI tests on PyPy 3.10 and 3.11.
 * 100% code coverage! (a significant milestone for this project)
 * Added test samples from GitHub's macOS and Windows runners, collected with `scripts/collect_samples.py`.
-* Added test samples from two third-party projects, significantly increasing test coverage. To maintain license compatibility, these samples were checked into git as-is, and are not included in the source distribution.
+* Added test samples from two third-party projects (`facter` and `glpi_agent`), significantly increasing test coverage.
 * `settings` and `__version__` are now published in `getmac.__all__`, for type checkers.
+* Added an [OpenSSF Scorecard](https://scorecard.dev) workflow that publishes supply-chain security results to the code scanning dashboard and the public Scorecard API, and a Scorecard badge to the README.
+* Releases are fully automated in CI (no more manual cutting)
+* Added a weekly dependency report workflow for outdated dependencies
+* CodeQL runs on all pull requests
+* Added fuzz tests using [Hypothesis](https://hypothesis.readthedocs.io). They run with the regular tests with a small number of inputs (50) and with more inputs (5000) weekly in a "Fuzz" workflow or manually with `pdm run fuzz`.
+* Tests cover 100% of branches as well as lines, including the branches taken when debug logging is off.
 
 ## 0.9.6 (10/03/2026)
 

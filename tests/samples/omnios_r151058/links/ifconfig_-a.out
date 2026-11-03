@@ -1,0 +1,32 @@
+lo0: flags=2001000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv4,VIRTUAL> mtu 8232 index 1
+	inet 127.0.0.1 netmask ff000000 
+e1000g1: flags=1004843<UP,BROADCAST,RUNNING,MULTICAST,DHCP,IPv4> mtu 1500 index 3
+	inet 192.168.122.10 netmask ffffff00 broadcast 192.168.122.255
+	ether 52:54:0:12:34:56 
+vnic1: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 4
+	inet 0.0.0.0 netmask ff000000 
+	groupname ipmp0
+	ether 2:8:20:88:c6:c1 
+vnic2: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 5
+	inet 0.0.0.0 netmask ff000000 
+	groupname ipmp0
+	ether 2:8:20:1c:ca:40 
+ipmp0: flags=8001000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4,IPMP> mtu 1500 index 6
+	inet 10.9.9.9 netmask ffffff00 broadcast 10.9.9.255
+	groupname ipmp0
+lo0: flags=2002000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv6,VIRTUAL> mtu 8252 index 1
+	inet6 ::1/128 
+e1000g1: flags=20002000840<RUNNING,MULTICAST,IPv6> mtu 1500 index 3
+	inet6 ::/0 
+	ether 52:54:0:12:34:56 
+vnic1: flags=20002000840<RUNNING,MULTICAST,IPv6> mtu 1500 index 4
+	inet6 ::/0 
+	groupname ipmp0
+	ether 2:8:20:88:c6:c1 
+vnic2: flags=20002000840<RUNNING,MULTICAST,IPv6> mtu 1500 index 5
+	inet6 ::/0 
+	groupname ipmp0
+	ether 2:8:20:1c:ca:40 
+ipmp0: flags=28002000840<RUNNING,MULTICAST,IPv6,IPMP> mtu 1500 index 6
+	inet6 ::/0 
+	groupname ipmp0

@@ -16,8 +16,7 @@ from getmac.variables import consts
 # TODO: macos_10.12.6/netstat_-i.out
 # TODO: macos_10.12.6/netstat_-ia.out
 # TODO: these samples from GitHub's runners aren't read by any method yet:
-#   macos_15.7.9/ and macos_26.6.2/: ndp_-an.out (IPv6 neighbors, there's no working
-#     IPv6 method on macOS), netstat_-i.out, netstat_-ia.out,
+#   macos_15.7.9/ and macos_26.6.2/: netstat_-i.out, netstat_-ia.out,
 #     networksetup_-listallhardwareports.out, sw_vers.out
 #   windows_server_2025/, windows_server_2022/, windows_11_arm64/: arp_-a.out,
 #     getmac_-NH_-V.out (table format), netsh_int_ipv6_show_route.out,
@@ -95,6 +94,7 @@ def test_darwinnetworksetupiface_not_a_hardware_port(mocker, get_sample):
 
 FACTER_IFCONFIG = "third_party/facter/ifconfig/"
 GLPI_IFCONFIG = "third_party/glpi_agent/generic/ifconfig/"
+ANSIBLE = "third_party/ansible/"
 
 ifconfigether_samples = [
     ("2c:f0:ee:2f:c7:de", "en0", "OSX/ifconfig.out"),
@@ -299,6 +299,21 @@ def test_ifconfigother_infiniband(mocker, get_sample, args):
 
 
 # TODO: several of these should be a different method without a interface arg
+# Oracle Solaris and illumos VMs (GitHub Actions, vmactions), with a VNIC named "vnic0".
+# Tuples of (sample directory, physical interface, physical MAC, VNIC MAC).
+SUNOS_VMS = [
+    ("solaris_11.4", "net0", "52:54:00:12:34:56", "02:08:20:2a:99:4f"),
+    ("omnios_r151058", "e1000g1", "52:54:00:12:34:56", "02:08:20:d1:19:f5"),
+    ("omnios_r151054", "e1000g1", "52:54:00:12:34:56", "02:08:20:95:b8:1c"),
+    ("openindiana_2026.04", "e1000g0", "52:54:00:12:34:56", "02:08:20:3e:1f:10"),
+]
+
+
+def _short_octets(mac):
+    """A MAC as Solaris prints it, without leading zeros, e.g. "2:8:20:2a:99:4f"."""
+    return ":".join(octet.lstrip("0") or "0" for octet in mac.split(":"))
+
+
 ifconfig_samples = [
     ("74:d4:35:e9:45:71", "eth0", "ifconfig.out"),
     ("00:0c:29:b5:72:37", "ens33", "ubuntu_18.04/ifconfig_ens33.out"),
@@ -321,6 +336,24 @@ ifconfig_samples = [
     # NetBSD uses "address:" instead of "ether"
     ("08:00:27:ce:da:53", "wm0", "netbsd8.2/ifconfig.out"),
     ("08:00:27:ce:da:53", "wm0", "netbsd8.2/ifconfig_wm0.out"),
+    *(
+        ("52:54:00:12:34:56", "wm0", f"{version}/{sample}")
+        for version in ("netbsd_9.3", "netbsd_10.1")
+        for sample in ("ifconfig.out", "ifconfig_-a.out", "ifconfig_-av.out", "ifconfig_wm0.out")
+    ),
+    *(
+        ("52:54:00:12:34:56", "wm0", f"netbsd_11.0/{sample}")
+        for sample in ("ifconfig.out", "ifconfig_-a.out", "ifconfig_wm0.out")
+    ),
+    # DragonFly BSD uses "ether", like FreeBSD. 6.4.0 has an emulated e1000 NIC, 6.4.2 virtio.
+    *(
+        ("52:54:00:12:34:56", iface, f"{version}/{sample}")
+        for version, iface in (("dragonfly_6.4.0", "em0"), ("dragonfly_6.4.2", "vtnet0"))
+        for sample in ("ifconfig.out", "ifconfig_-a.out", f"ifconfig_{iface}.out")
+    ),
+    # Ansible samples (NetBSD 7.1, and the newer format with "/24" and "flags")
+    ("52:54:00:63:55:af", "re0", ANSIBLE + "netbsd_7.1_ifconfig_-a"),
+    ("52:54:00:63:55:af", "re0", ANSIBLE + "netbsd_post_7.1_ifconfig_-a"),
     # Facter samples
     ("00:0e:0c:68:67:7c", "fxp0", FACTER_IFCONFIG + "6.0-STABLE_FreeBSD_ifconfig"),
     ("00:0e:0c:68:67:7c", "fxp0", FACTER_IFCONFIG + "freebsd_6_0"),
@@ -404,6 +437,15 @@ def test_parse_ifconfig_samples(benchmark, get_sample, mac, iface, sample_file):
         ("e1000g0", FACTER_IFCONFIG + "solaris_ifconfig_all_with_multiple_interfaces"),
         ("bge0", FACTER_IFCONFIG + "sunos_ifconfig_all_with_multiple_interfaces"),
         ("e1000g0", GLPI_IFCONFIG + "oi-2021.10"),
+        *(
+            (iface, f"{vm}/non-root/{sample}")
+            for vm, phys, _, _ in SUNOS_VMS
+            for iface, sample in (
+                (phys, "ifconfig_-a.out"),
+                (phys, f"ifconfig_{phys}.out"),
+                ("vnic0", "ifconfig_vnic0.out"),
+            )
+        ),
         ("lo", FACTER_IFCONFIG + "linux_ifconfig_no_mac"),
         # OpenVZ venet and Atheros wifi0 have a 16 byte "HWaddr" with dashes, not a MAC
         ("venet0", FACTER_IFCONFIG + "linux_ifconfig_venet"),
@@ -464,6 +506,16 @@ def test_parse_ifconfig_no_mac_before_mac(get_sample, iface, sample_file):
         ("02:08:20:89:75:75", "2:8:20:89:75:75", "int0", FACTER_IFCONFIG + "open_solaris_b132"),
         ("00:15:17:7a:60:30", "0:15:17:7a:60:30", "e1000g0", GLPI_IFCONFIG + "solaris-10"),
         ("08:00:27:fc:ad:56", "8:0:27:fc:ad:56", "e1000g0", GLPI_IFCONFIG + "opensolaris"),
+        *(
+            (mac, raw_mac, iface, f"{vm}/{sample}")
+            for vm, phys, phys_mac, vnic_mac in SUNOS_VMS
+            for mac, raw_mac, iface, sample in (
+                (phys_mac, "52:54:0:12:34:56", phys, "ifconfig_-a.out"),
+                (phys_mac, "52:54:0:12:34:56", phys, f"ifconfig_{phys}.out"),
+                (vnic_mac, _short_octets(vnic_mac), "vnic0", "ifconfig_-a.out"),
+                (vnic_mac, _short_octets(vnic_mac), "vnic0", "ifconfig_vnic0.out"),
+            )
+        ),
         # Debian GNU/kFreeBSD
         (
             "00:11:0a:59:67:90",
@@ -835,6 +887,13 @@ def test_getmac_exe_no_mac(mocker):
     assert getmac.GetmacExe().get("Ethernet") is None
 
 
+def test_getmac_exe_nul_characters(mocker):
+    # The csv module raises an error for NUL characters before Python 3.11 (found by fuzzing)
+    output = '"Ethernet","Intel(R) Ethernet\0","00-1A-2B-3C-4D-5E","\\Device\\Tcpip_{1}"\r\n\0'
+    mocker.patch("getmac.utils.popen", return_value=output)
+    assert getmac.GetmacExe().get("Ethernet") == "00-1A-2B-3C-4D-5E"
+
+
 @pytest.mark.parametrize(
     ("mac", "ip", "sample_file"),
     [
@@ -876,6 +935,171 @@ def test_netsh_neighbors_samples(benchmark, mocker, get_sample, mac, ip, sample_
     mocker.patch("getmac.utils.check_command", return_value=False)
     assert getmac.NetshNeighbors().test() is False
     utils.check_command.assert_called_once_with("netsh.exe")
+
+
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"),
+    [
+        *(
+            entry
+            for vm, phys, phys_mac, vnic_mac in SUNOS_VMS
+            for entry in (
+                # The gateway, from both "netstat -pn" and "netstat -pn -f inet"
+                ("52:55:c0:a8:7a:02", "192.168.122.2", f"{vm}/netstat_-pn.out"),
+                ("52:55:c0:a8:7a:02", "192.168.122.2", f"{vm}/netstat_-pn_-f_inet.out"),
+                # The host's own addresses (flags "SPLA"), on the NIC and the VNIC
+                (phys_mac, "192.168.122.10", f"{vm}/netstat_-pn_-f_inet.out"),
+                (vnic_mac, "192.168.122.20", f"{vm}/netstat_-pn_-f_inet.out"),
+                # Not in the table, or only part of another address
+                (None, "192.168.122.1", f"{vm}/netstat_-pn_-f_inet.out"),
+                (None, "92.168.122.2", f"{vm}/netstat_-pn_-f_inet.out"),
+                (None, "255.255.255.255", f"{vm}/netstat_-pn_-f_inet.out"),
+                # IPv6: the host's own link-local address, and a multicast address
+                (phys_mac, "fe80::5054:ff:fe12:3456", f"{vm}/netstat_-pn_-f_inet6.out"),
+                ("33:33:00:00:00:01", "ff02::1", f"{vm}/netstat_-pn_-f_inet6.out"),
+                ("33:33:00:00:00:16", "FF02::16", f"{vm}/netstat_-pn_-f_inet6.out"),
+                # With a zone, only that interface's entries match
+                (phys_mac, f"fe80::5054:ff:fe12:3456%{phys}", f"{vm}/netstat_-pn_-f_inet6.out"),
+                (None, "fe80::5054:ff:fe12:3456%vnic1", f"{vm}/netstat_-pn_-f_inet6.out"),
+                ("33:33:00:00:00:01", f"ff02::1%{phys}", f"{vm}/netstat_-pn_-f_inet6.out"),
+                # An incomplete entry has the MAC "00:00:00:00:00:00"
+                (None, "fe80::2", f"{vm}/netstat_-pn_-f_inet6.out"),
+                (None, "fe80::1", f"{vm}/netstat_-pn_-f_inet6.out"),
+            )
+        ),
+        # Unresolved entries (flags "U") don't have a MAC
+        (None, "192.168.122.99", "solaris_11.4/netstat_-pn_-f_inet.out"),
+        # The VNIC's link-local address, as a neighbor of the NIC
+        ("02:08:20:2a:99:4f", "fe80::8:20ff:fe2a:994f", "solaris_11.4/netstat_-pn_-f_inet6.out"),
+        (
+            "02:08:20:2a:99:4f",
+            "fe80::8:20ff:fe2a:994f%net0",
+            "solaris_11.4/netstat_-pn_-f_inet6.out",
+        ),
+        # Only the VNIC has the incomplete entry
+        (None, "fe80::2%net0", "solaris_11.4/netstat_-pn_-f_inet6.out"),
+        # "ndp -an" on illumos prints the same table
+        ("02:08:20:3e:1f:10", "fe80::8:20ff:fe3e:1f10", "openindiana_2026.04/ndp_-an.out"),
+        # Not IP addresses
+        (None, "net0", "solaris_11.4/netstat_-pn_-f_inet.out"),
+        (None, "", "solaris_11.4/netstat_-pn_-f_inet.out"),
+    ],
+)
+def test_netstat_net_to_media_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
+    assert mac == benchmark(getmac.NetstatNetToMedia().get, arg=ip)
+    family = "inet6" if ":" in ip else "inet"
+    utils.popen.assert_called_with("netstat", f"-pn -f {family}")
+
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.NetstatNetToMedia().test() is False
+    utils.check_command.assert_called_once_with("netstat")
+
+
+def test_netstat_net_to_media_numeric_zone(mocker, get_sample):
+    # The table has interface names, so a zone that's an interface index is converted
+    mocker.patch(
+        "getmac.utils.popen", return_value=get_sample("solaris_11.4/netstat_-pn_-f_inet6.out")
+    )
+    mocker.patch("getmac.getmac.socket.if_indextoname", return_value="net0")
+    assert getmac.NetstatNetToMedia().get("fe80::5054:ff:fe12:3456%2") == "52:54:00:12:34:56"
+    getmac.socket.if_indextoname.assert_called_once_with(2)
+
+    # An index that doesn't exist is used as the name, so nothing matches
+    mocker.patch("getmac.getmac.socket.if_indextoname", side_effect=OSError)
+    assert getmac.NetstatNetToMedia().get("fe80::5054:ff:fe12:3456%9") is None
+
+
+# Real output from VMs with more types of datalinks: (directory, NIC, VNIC MAC, aggregation MAC).
+# See the README.md in each directory.
+SUNOS_LINK_VMS = [
+    ("solaris_11.4/links", "net0", "02:08:20:fc:a9:af", "7a:b9:70:a2:6e:dd"),
+    ("omnios_r151058/links", "e1000g1", "02:08:20:88:c6:c1", "6a:4d:b4:74:74:08"),
+    ("omnios_r151054/links", "e1000g1", "02:08:20:8b:31:25", "9e:08:fb:bd:fa:a1"),
+    ("openindiana_2026.04/links", "e1000g0", "02:08:20:89:b4:cb", "a2:e1:db:e2:9e:8f"),
+]
+
+
+def _dladm_samples(get_sample, vm):
+    """Fake "dladm" that returns the samples from a VM."""
+    samples = {
+        "show-link -p -o link,class,over": "dladm_show-link_-p_-o_link,class,over.out",
+        "show-phys -m -p -o link,slot,address": "dladm_show-phys_-m_-p_-o_link,slot,address.out",
+        "show-vnic -p -o link,macaddress": "dladm_show-vnic_-p_-o_link,macaddress.out",
+        "show-aggr -x -p -o link,port,address": "dladm_show-aggr_-x_-p_-o_link,port,address.out",
+    }
+    return lambda _command, args: get_sample(f"{vm}/{samples[args]}")
+
+
+@pytest.mark.parametrize(("vm", "phys", "vnic_mac", "aggr_mac"), SUNOS_LINK_VMS)
+def test_dladm_iface_samples(benchmark, mocker, get_sample, vm, phys, vnic_mac, aggr_mac):
+    mocker.patch("getmac.utils.popen", side_effect=_dladm_samples(get_sample, vm))
+    phys_mac = "52:54:00:12:34:56"
+
+    # dladm prints MACs without leading zeros in each octet, like ifconfig
+    assert benchmark(getmac.DladmIface().get, arg=phys) == "52:54:0:12:34:56"
+    assert utils.clean_mac(getmac.DladmIface().get(phys)) == phys_mac
+    utils.popen.assert_called_with("dladm", "show-phys -m -p -o link,slot,address")
+
+    # A logical interface (a second address on the NIC) has the NIC's MAC
+    assert utils.clean_mac(getmac.DladmIface().get(phys + ":1")) == phys_mac
+
+    # VNICs, on the NIC and on an etherstub
+    assert utils.clean_mac(getmac.DladmIface().get("vnic1")) == vnic_mac
+    utils.popen.assert_called_with("dladm", "show-vnic -p -o link,macaddress")
+    assert getmac.DladmIface().get("vnic9").startswith("2:8:20:")
+
+    # The aggregation's own MAC, not the MAC of a link in it
+    assert utils.clean_mac(getmac.DladmIface().get("aggr0")) == aggr_mac
+    utils.popen.assert_called_with("dladm", "show-aggr -x -p -o link,port,address")
+
+    # A VLAN has the MAC of the link it's on
+    assert utils.clean_mac(getmac.DladmIface().get("vlan5")) == phys_mac
+
+    # Datalinks without a MAC of their own, and interfaces that aren't datalinks
+    # (IPMP groups and loopback), don't have a MAC
+    for iface in ("stub0", "simnet0", "ipmp0", "lo0", "aggr", "primary", phys[:-1]):
+        assert getmac.DladmIface().get(iface) is None, iface
+
+    # A link that isn't in the output, e.g. if it's removed after "dladm show-link"
+    phys_output = get_sample(f"{vm}/dladm_show-phys_-m_-p_-o_link,slot,address.out")
+    assert getmac._parse_dladm("vnic1", phys_output, "primary") is None
+
+
+def test_dladm_iface_edge_cases(mocker):
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.DladmIface().test() is False
+    utils.check_command.assert_called_once_with("dladm")
+
+    mocker.patch("getmac.utils.popen", return_value="")
+    assert getmac.DladmIface().get("") is None
+    assert getmac.DladmIface().get(":1") is None
+    utils.popen.assert_not_called()
+    assert getmac.DladmIface().get("net0") is None
+
+    # A NIC with more than one MAC "slot" (e.g. ixgbe), only the primary MAC is in use
+    slots = "net0:1:0\\:1b\\:21\\:ab\\:cd\\:ef\nnet0:primary:0\\:1b\\:21\\:ab\\:cd\\:ee\n"
+    mocker.patch("getmac.utils.popen", side_effect=["net0:phys:\n", slots])
+    assert getmac.DladmIface().get("net0") == "0:1b:21:ab:cd:ee"
+
+    # A VLAN that's (wrongly) on itself doesn't loop forever
+    mocker.patch("getmac.utils.popen", return_value="vlan5:vlan:vlan5\n")
+    assert getmac.DladmIface().get("vlan5") is None
+
+    # If a command fails after "dladm show-link", the method can still be used
+    mocker.patch(
+        "getmac.utils.popen",
+        side_effect=["vnic0:vnic:net0\n", CalledProcessError(cmd="dladm", returncode=2)],
+    )
+    method = getmac.DladmIface()
+    assert method.get("vnic0") is None
+    assert method.unusable is False
+
+    # Solaris 10's dladm doesn't have "-o"
+    mocker.patch("getmac.utils.popen", side_effect=CalledProcessError(cmd="dladm", returncode=1))
+    method = getmac.DladmIface()
+    assert method.get("e1000g0") is None
+    assert method.unusable is True
 
 
 @pytest.mark.parametrize(
@@ -1010,10 +1234,23 @@ def test_openbsd_remote(benchmark, mocker, get_sample):
     utils.check_command.assert_called_once_with("arp")
 
 
-def test_freebsd_get_default_iface(benchmark, mocker, get_sample):
-    content = get_sample("freebsd11/netstat_r.out")
+@pytest.mark.parametrize(
+    ("iface", "sample_file"),
+    [
+        ("em0", "freebsd11/netstat_r.out"),
+        ("vtnet0", "freebsd_13.5/netstat_-rn.out"),
+        ("vtnet0", "freebsd_15.0/netstat_-rn.out"),
+        (None, "freebsd_13.5/netstat_-rn_no_default_route.out"),
+        (None, "freebsd_15.0/netstat_-rn_no_default_route.out"),
+        ("ena0", "third_party/jackpal_gateway/freeBSD.txt"),
+        (None, "third_party/jackpal_gateway/freeBSDNoRoute.txt"),
+    ],
+)
+def test_freebsd_get_default_iface(benchmark, mocker, get_sample, iface, sample_file):
+    content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
-    assert "em0" == benchmark(getmac.DefaultIfaceFreeBsd().get)
+    assert iface == benchmark(getmac.DefaultIfaceFreeBsd().get)
+    utils.popen.assert_called_with("netstat", "-rn")
 
     mocker.patch("getmac.utils.check_command", return_value=False)
     assert getmac.DefaultIfaceFreeBsd().test() is False
@@ -1026,6 +1263,30 @@ def test_freebsd_get_default_iface(benchmark, mocker, get_sample):
         ("52:54:00:12:35:02", "10.0.2.2", "freebsd11/arp_-a.out"),
         ("08:00:27:ab:b0:67", "10.0.2.15", "freebsd11/arp_-a.out"),
         ("52:54:00:12:35:02", "10.0.2.2", "freebsd11/arp_10-0-2-2.out"),
+        # NetBSD's "arp" prints the same format. NetBSD 10 adds the expiry and state.
+        ("52:54:00:12:35:02", "10.0.2.2", "netbsd8.2/arp_10-0-2-2.out"),
+        ("52:54:00:12:35:03", "10.0.2.3", "netbsd8.2/arp_a.out"),
+        *(
+            ("52:55:c0:a8:4c:02", "192.168.76.2", f"{version}/{sample}")
+            for version in ("netbsd_9.3", "netbsd_10.1")
+            for sample in ("arp_192-168-76-2.out", "arp_-a.out", "arp_-an.out")
+        ),
+        *(
+            ("52:55:c0:a8:7a:02", "192.168.122.2", f"netbsd_11.0/{sample}")
+            for sample in ("arp_192-168-122-2.out", "arp_-a.out", "arp_-an.out")
+        ),
+        # DragonFly BSD prints the same format, and marks static entries (made with
+        # "arp -s") as "permanent"
+        *(
+            entry
+            for version in ("dragonfly_6.4.0", "dragonfly_6.4.2")
+            for entry in (
+                ("52:55:c0:a8:7a:02", "192.168.122.2", f"{version}/arp_192-168-122-2.out"),
+                ("52:55:c0:a8:7a:02", "192.168.122.2", f"{version}/arp_-a.out"),
+                ("52:55:c0:a8:7a:03", "192.168.122.3", f"{version}/arp_-an.out"),
+                ("02:00:5e:0a:0b:0c", "192.168.122.77", f"{version}/arp_-an.out"),
+            )
+        ),
     ],
 )
 def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
@@ -1042,6 +1303,128 @@ def test_arpfreebsd_samples(benchmark, mocker, get_sample, mac, ip, sample_file)
     mocker.patch("getmac.utils.check_command", return_value=False)
     assert getmac.ArpFreebsd().test() is False
     utils.check_command.assert_called_once_with("arp")
+
+
+@pytest.mark.parametrize("version", ["dragonfly_6.4.0", "dragonfly_6.4.2"])
+def test_arpfreebsd_no_entry(mocker, get_sample, version):
+    """DragonFly BSD prints "-- no entry" (exit code 0) for hosts that aren't in the table."""
+    content = get_sample(f"{version}/arp_-n_192-168-122-99.out")
+    mocker.patch("getmac.utils.popen", return_value=content)
+    assert getmac.ArpFreebsd().get("192.168.122.99") is None
+
+
+@pytest.mark.parametrize(
+    ("mac", "ip", "sample_file"),
+    [
+        *(
+            entry
+            for version in ("netbsd_9.3", "netbsd_10.1")
+            for entry in (
+                ("52:56:00:00:00:02", "fe80::2", f"{version}/ndp_-an.out"),
+                ("52:56:00:00:00:02", "fe80::2%wm0", f"{version}/ndp_-an.out"),
+                ("52:56:00:00:00:02", "FE80::2", f"{version}/ndp_-an.out"),
+                # Wrong interface, or a different (shorter or longer) address
+                (None, "fe80::2%lo0", f"{version}/ndp_-an.out"),
+                (None, "fe80::", f"{version}/ndp_-an.out"),
+                (None, "fe80::20", f"{version}/ndp_-an.out"),
+                (None, "e80::2", f"{version}/ndp_-an.out"),
+            )
+        ),
+        # The rest are from VMs, after adding fd00:6e64:7000::1 to the interface and
+        # static entries for fd00:6e64:7000::10 and fe80::a0b:c0d with "ndp -s".
+        # NetBSD doesn't list the interface's own addresses, and FreeBSD and OpenBSD do.
+        ("02:00:5e:0a:0b:0c", "fd00:6e64:7000::10", "netbsd_11.0/ndp_-an.out"),
+        ("02:00:5e:10:20:30", "fe80::a0b:c0d%wm0", "netbsd_11.0/ndp_-an.out"),
+        (None, "fd00:6e64:7000::1", "netbsd_11.0/ndp_-an.out"),
+        *(
+            entry
+            for version, iface in (
+                ("freebsd_14.5", "vtnet0"),
+                ("freebsd_15.1", "vtnet0"),
+                ("openbsd_7.9", "vio0"),
+                ("openbsd_8.0", "vio0"),
+            )
+            for entry in (
+                ("02:00:5e:0a:0b:0c", "fd00:6e64:7000::10", f"{version}/ndp_-an.out"),
+                ("52:54:00:12:34:56", "fd00:6e64:7000::1", f"{version}/ndp_-an.out"),
+                ("02:00:5e:10:20:30", "fe80::a0b:c0d", f"{version}/ndp_-an.out"),
+                ("02:00:5e:10:20:30", f"fe80::a0b:c0d%{iface}", f"{version}/ndp_-an.out"),
+                ("52:54:00:12:34:56", "fe80::5054:ff:fe12:3456", f"{version}/ndp_-an.out"),
+                (None, "fe80::a0b:c0d%lo0", f"{version}/ndp_-an.out"),
+                (None, "fd00:6e64:7000::", f"{version}/ndp_-an.out"),
+                (None, "fd00:6e64:7000::100", f"{version}/ndp_-an.out"),
+            )
+        ),
+        # macOS and DragonFly BSD leave out leading zeros in MACs. These have the same
+        # static entries as FreeBSD (on macOS, the global one expired and has an
+        # incomplete duplicate after it).
+        ("2:0:5e:a:b:c", "fd00:6e64:7000::10", "dragonfly_6.4.2/ndp_-an.out"),
+        ("52:54:0:12:34:56", "fd00:6e64:7000::1", "dragonfly_6.4.2/ndp_-an.out"),
+        ("2:0:5e:10:20:30", "fe80::a0b:c0d%vtnet0", "dragonfly_6.4.2/ndp_-an.out"),
+        ("52:54:0:12:34:56", "fe80::5054:ff:fe12:3456", "dragonfly_6.4.2/ndp_-an.out"),
+        (None, "fe80::1%lo0", "dragonfly_6.4.2/ndp_-an.out"),
+        # DragonFly BSD 6.4.0, with only the interface's own address
+        ("52:54:0:12:34:56", "fe80::5054:ff:fe12:3456%em0", "dragonfly_6.4.0/ndp_-an.out"),
+        (None, "fe80::5054:ff:fe12:3456%vtnet0", "dragonfly_6.4.0/ndp_-an.out"),
+        (None, "fe80::1", "dragonfly_6.4.0/ndp_-an.out"),
+        *(
+            entry
+            for sample in (
+                "macos_15.7.9/ndp_-an_static.out",
+                "macos_15.7.9_x86_64/ndp_-an_static.out",
+                "macos_26.6.2/ndp_-an_static.out",
+            )
+            for entry in (
+                ("2:0:5e:a:b:c", "fd00:6e64:7000::10", sample),
+                ("2:0:5e:10:20:30", "fe80::a0b:c0d", sample),
+                ("2:0:5e:10:20:30", "fe80::a0b:c0d%en0", sample),
+                (None, "fe80::a0b:c0d%en1", sample),
+                (None, "fe80::1", sample),
+                (None, "fe80::a200:a210:a220:a230%utun0", sample),
+            )
+        ),
+        ("12:34:56:78:9:ab", "fd00:6e64:7000::1", "macos_15.7.9/ndp_-an_static.out"),
+        (
+            "12:34:56:78:9a:bc",
+            "fe80::1a10:a110:a120:a130",
+            "macos_15.7.9_x86_64/ndp_-an_static.out",
+        ),
+        ("12:0:0:a:bc:de", "fe80::1a10:a110:a120:a13%en0", "macos_26.6.2/ndp_-an_static.out"),
+        # macOS, with only the interfaces' own addresses
+        ("12:34:56:15:a0:10", "fe80::a10:a110:a120:a130", "macos_15.7.9/ndp_-an.out"),
+        ("12:34:56:26:a0:10", "fe80::a1:a110:a120:a130%en0", "macos_26.6.2/ndp_-an.out"),
+        (None, "fe80::1", "macos_15.7.9/ndp_-an.out"),
+        (None, "fe80::a200:a210:a220:a230", "macos_15.7.9/ndp_-an.out"),
+    ],
+)
+def test_ndp_neighbors_samples(benchmark, mocker, get_sample, mac, ip, sample_file):
+    mocker.patch("getmac.utils.popen", return_value=get_sample(sample_file))
+    assert mac == benchmark(getmac.NdpNeighbors().get, arg=ip)
+    utils.popen.assert_called_with("ndp", "-an")
+
+    assert not getmac.NdpNeighbors().get("")
+
+    mocker.patch("getmac.utils.check_command", return_value=False)
+    assert getmac.NdpNeighbors().test() is False
+    utils.check_command.assert_called_once_with("ndp")
+
+
+@pytest.mark.parametrize("version", ["netbsd_9.3", "netbsd_10.1"])
+def test_ndp_neighbors_numeric_scope(mocker, get_sample, version):
+    """A numeric scope (interface index) matches the interface name ndp shows."""
+    mocker.patch("getmac.utils.popen", return_value=get_sample(f"{version}/ndp_-an.out"))
+    names = {1: "wm0", 2: "lo0"}
+
+    def if_indextoname(index):
+        if index not in names:
+            raise OSError("no interface with this index")
+        return names[index]
+
+    mocker.patch("getmac.getmac.socket.if_indextoname", side_effect=if_indextoname)
+    assert getmac.NdpNeighbors().get("fe80::2%1") == "52:56:00:00:00:02"
+    assert getmac.NdpNeighbors().get("fe80::2%2") is None
+    # Unknown indexes are matched as they are, which doesn't match anything
+    assert getmac.NdpNeighbors().get("fe80::2%3") is None
 
 
 @pytest.mark.parametrize(
@@ -1370,6 +1753,13 @@ def test_defaultifacelinuxroutefile(mocker):
     mocker.patch("getmac.utils.read_file", return_value="")
     assert getmac.DefaultIfaceLinuxRouteFile().get() is None
 
+    # Lines without a destination are skipped (found by fuzzing)
+    mocker.patch(
+        "getmac.utils.read_file",
+        return_value="Iface\tDestination\tGateway\nbogus\n\t\nens33\t00000000\t0210A8C0\n",
+    )
+    assert getmac.DefaultIfaceLinuxRouteFile().get() == "ens33"
+
 
 @pytest.mark.parametrize(
     ("iface", "sample_file"),
@@ -1431,14 +1821,35 @@ def test_defaultifaceiproute(mocker):
         ("en0", "macos_26.6.2/route_get_default.out"),
         ("en0", "macos_26.6.2/route_-n_get_default.out"),
         ("em0", "freebsd11/route_get_default.out"),
-        # Solaris (uses the "other" platform methods)
+        ("vtnet0", "freebsd_13.5/route_get_default.out"),
+        ("vtnet0", "freebsd_13.5/route_-n_get_default.out"),
+        ("vtnet0", "freebsd_15.0/route_get_default.out"),
+        ("vtnet0", "freebsd_15.0/route_-n_get_default.out"),
+        ("vtnet0", "third_party/ohai/freebsd_route_-n_get_default"),
+        ("wm0", "netbsd_9.3/route_get_default.out"),
+        ("wm0", "netbsd_9.3/route_-n_get_default.out"),
+        ("wm0", "netbsd_10.1/route_get_default.out"),
+        ("wm0", "netbsd_10.1/route_-n_get_default.out"),
+        ("wm0", "netbsd_11.0/route_get_default.out"),
+        ("wm0", "netbsd_11.0/route_-n_get_default.out"),
+        *(
+            (iface, f"{version}/{sample}")
+            for version, iface in (("dragonfly_6.4.0", "em0"), ("dragonfly_6.4.2", "vtnet0"))
+            for sample in ("route_get_default.out", "route_-n_get_default.out")
+        ),
         ("net0", "third_party/facter/route_n_get_default"),
+        *(
+            (phys, f"{vm}/{sample}")
+            for vm, phys, _, _ in SUNOS_VMS
+            for sample in ("route_get_default.out", "route_-n_get_default.out")
+        ),
     ],
 )
 def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, iface, sample_file):
     content = get_sample(sample_file)
     mocker.patch("getmac.utils.popen", return_value=content)
     assert iface == benchmark(getmac.DefaultIfaceRouteGetCommand().get)
+    utils.popen.assert_called_with("route", "-n get default")
 
     mocker.patch("getmac.utils.popen", return_value=None)
     assert not getmac.DefaultIfaceRouteGetCommand().get()
@@ -1483,6 +1894,12 @@ def test_defaultifaceroutegetcommand_samples(benchmark, mocker, get_sample, ifac
         ("52:54:00:12:35:02", "52:54:00:12:35:02", "10.0.2.2", "netbsd8.2/arp_10-0-2-2.out"),
         ("52:54:00:12:35:03", "52:54:00:12:35:03", "10.0.2.3", "netbsd8.2/arp_a.out"),
         ("52:54:00:12:35:02", "52:54:0:12:35:2", "10.0.2.2", "solaris10/arp_10-0-2-2.out"),
+        (
+            "52:55:c0:a8:7a:02",
+            "52:55:c0:a8:7a:2",
+            "192.168.122.2",
+            "solaris_11.4/arp_192-168-122-2.out",
+        ),
         # GitHub's macOS runners. macOS 15 prints "0" instead of "00".
         *(
             (mac, raw_mac, ip, f"{version}/{sample}")
@@ -1677,3 +2094,9 @@ def test_lanscan_iface_edge_cases(mocker):
     mocker.patch("getmac.utils.popen", return_value="")
     assert not getmac.LanscanIface().get("lan0")
     utils.popen.assert_called_once_with("lanscan", "-ai")
+
+    # An empty or whitespace name doesn't match blank lines (found by fuzzing)
+    mocker.patch("getmac.utils.popen", return_value="0x0012317D6209 lan0 snap0\n \n")
+    assert getmac.LanscanIface().get("") is None
+    assert getmac.LanscanIface().get(" ") is None
+    assert getmac.LanscanIface().get("lan0") == "00:12:31:7D:62:09"

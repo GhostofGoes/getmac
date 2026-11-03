@@ -1,0 +1,9 @@
+Name  Mtu  Net/Dest      Address        Ipkts  Ierrs Opkts  Oerrs Collis Queue 
+lo0   8232 loopback      localhost      52     0     52     0     0      0     
+e1000g1 1500 192.168.122.0 192.168.122.10 1848   0     838    0     0      0     
+vnic0 1500 192.168.122.0 192.168.122.20 12     0     20     0     0      0     
+
+Name  Mtu  Net/Dest                    Address                     Ipkts  Ierrs Opkts  Oerrs Collis
+lo0   8252 localhost                   localhost                   52     0     52     0     0     
+e1000g1 1500 fe80::5054:ff:fe12:3456/10  fe80::5054:ff:fe12:3456     1856   0     847    0     0     
+vnic0 1500 fe80::8:20ff:fed1:19f5/10   fe80::8:20ff:fed1:19f5      12     0     20     0     0     

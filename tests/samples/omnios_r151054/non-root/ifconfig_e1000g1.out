@@ -1,0 +1,2 @@
+e1000g1: flags=1004843<UP,BROADCAST,RUNNING,MULTICAST,DHCP,IPv4> mtu 1500 index 3
+	inet 192.168.122.10 netmask ffffff00 broadcast 192.168.122.255

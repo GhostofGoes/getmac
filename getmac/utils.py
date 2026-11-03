@@ -14,6 +14,10 @@ from typing import Optional, Union
 
 from .variables import consts, gvars, settings
 
+# A clean MAC: lowercase hexadecimal digits in six colon-separated pairs.
+# Compiled once, since clean_mac() checks every MAC that getmac returns.
+_CLEAN_MAC_RE = re.compile(r"[0-9a-f]{2}(?::[0-9a-f]{2}){5}")
+
 
 def check_command(command: str) -> bool:
     """
@@ -44,18 +48,18 @@ def check_path(filepath: str) -> bool:
     return os.path.exists(filepath) and os.access(filepath, os.R_OK)
 
 
-def clean_mac(mac: Optional[str]) -> Optional[str]:
+def clean_mac(mac: Union[str, bytes, None]) -> Optional[str]:
     """
     Check and format a string result to be lowercase colon-separated MAC.
 
-    It will clean out any garbage and ensure the length and colons are correct,
+    It will clean out any garbage and ensure the length, colons and hexadecimal digits are correct,
     and replace ``-`` characters with ``:`` characters.
 
     If string is invalid after as much cleanup as possible, then :obj:`None`
     is returned. The specific issue is logged as a warning.
 
     Args:
-        mac: MAC address string to clean
+        mac: MAC address string to clean (``bytes`` are decoded as UTF-8)
 
     Returns:
         Cleaned and formatted MAC address string, or :obj:`None` if
@@ -101,6 +105,9 @@ def clean_mac(mac: Optional[str]) -> Optional[str]:
         mac = None
     elif mac.count(":") != 5:
         gvars.log.warning(f"MAC address {mac} is missing colon (':') characters")
+        mac = None
+    elif not _CLEAN_MAC_RE.fullmatch(mac):
+        gvars.log.warning(f"MAC address {mac} has characters that aren't hexadecimal digits")
         mac = None
     return mac
 
@@ -171,6 +178,8 @@ def popen(command: str, args: str) -> str:
 
     Raises:
         CalledProcessError: the command failed to execute
+        TimeoutExpired: the command took longer than
+            :attr:`~getmac.variables.Settings.COMMAND_TIMEOUT` seconds, and was stopped
     """
     for directory in gvars.PATH:
         executable = os.path.join(directory, command)
@@ -208,14 +217,23 @@ def call_proc(executable: str, args: str) -> str:
 
     Raises:
         CalledProcessError: the command failed to execute
+        TimeoutExpired: the command took longer than
+            :attr:`~getmac.variables.Settings.COMMAND_TIMEOUT` seconds, and was stopped
     """
+    cmd: Union[str, list[str]]
     if consts.WINDOWS:
-        cmd = executable + " " + args  # type: ignore
+        # Quote the path, otherwise CreateProcess splits one with spaces and could run
+        # e.g. "C:\Program.exe" instead of "C:\Program Files\...\arp.exe".
+        # Windows paths can't contain quotes, so wrapping it is always safe.
+        cmd = f'"{executable}" {args}'
     else:
-        cmd = [executable, *shlex.split(args)]  # type: ignore
+        cmd = [executable, *shlex.split(args)]
 
     output: Union[str, bytes] = subprocess.check_output(
-        cmd, stderr=subprocess.DEVNULL, env=gvars.ENV
+        cmd,
+        stderr=subprocess.DEVNULL,
+        env=gvars.ENV,
+        timeout=settings.COMMAND_TIMEOUT or None,
     )
 
     if settings.DEBUG >= 4:
@@ -246,4 +264,5 @@ def fetch_ip_using_dns() -> str:
     """
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.connect(("1.1.1.1", 53))
-        return s.getsockname()[0]
+        address: str = s.getsockname()[0]
+        return address

@@ -44,9 +44,6 @@ jobs:
     name: Run tests
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 20
-    # Python 3.15 is a pre-release, so failures there are reported but don't fail the workflow.
-    # TODO: remove this once Python 3.15.0 is released
-    continue-on-error: ${{ matrix.python-version == '3.15' }}
     strategy:
       fail-fast: false
       # Versions available:
@@ -63,6 +60,10 @@ jobs:
           - "3.13"
           - "3.14"
           - "3.15"
+          # Free-threaded ("no GIL") builds of CPython. 3.13t isn't tested: it's experimental,
+          # and Hypothesis can't be built for it (PyO3 only supports free-threaded 3.14+).
+          - "3.14t"
+          - "3.15t"
           - "pypy3.10"
           - "pypy3.11"
         architecture:
@@ -71,19 +72,48 @@ jobs:
           - arm64
         platform:
           - ubuntu-24.04
+          - ubuntu-24.04-arm
           - windows-2025
+          - windows-11-arm
           - macos-26
         exclude:
           - platform: ubuntu-24.04
             architecture: x86
           - platform: ubuntu-24.04
             architecture: arm64
+          - platform: ubuntu-24.04-arm
+            architecture: x86
+          - platform: ubuntu-24.04-arm
+            architecture: x64
           - platform: windows-2025
             architecture: arm64
+          - platform: windows-11-arm
+            architecture: x86
+          - platform: windows-11-arm
+            architecture: x64
           - platform: macos-26
             architecture: x86
           - platform: macos-26
             architecture: x64
+          # There are no Windows arm64 builds of CPython 3.9 and 3.10, or of PyPy
+          - platform: windows-11-arm
+            python-version: "3.9"
+          - platform: windows-11-arm
+            python-version: "3.10"
+          - platform: windows-11-arm
+            python-version: "pypy3.10"
+          - platform: windows-11-arm
+            python-version: "pypy3.11"
+          # Fewer free-threaded jobs on Windows: none on 32-bit, and no 3.14t on arm64,
+          # where Hypothesis has to be built from source
+          - platform: windows-2025
+            architecture: x86
+            python-version: "3.14t"
+          - platform: windows-2025
+            architecture: x86
+            python-version: "3.15t"
+          - platform: windows-11-arm
+            python-version: "3.14t"
           # PyPy has no 32-bit Windows builds
           - platform: windows-2025
             architecture: x86
@@ -104,8 +134,15 @@ jobs:
           cache: true
       - name: Install dependencies
         run: pdm sync -d -G test
+      # Free-threaded Python turns the GIL back on when it imports a C extension that
+      # doesn't declare free-threading support (e.g. a test dependency built from an sdist).
+      # PYTHON_GIL=0 keeps it off, so the tests really run without the GIL.
+      - name: Keep the GIL disabled on free-threaded Python
+        if: endsWith(matrix.python-version, 't')
+        shell: bash
+        run: echo "PYTHON_GIL=0" >> "$GITHUB_ENV"
       - name: Show platform and environment information
-        run: pdm run python -c "import os, platform, sys; print(sys.version); print(platform.python_implementation(), platform.machine()); print('sys.platform:', sys.platform, 'os.name:', os.name); print(platform.uname())"
+        run: pdm run python -c "import os, platform, sys; print(sys.version); print(platform.python_implementation(), platform.machine()); print('sys.platform:', sys.platform, 'os.name:', os.name); print('GIL enabled:', sys._is_gil_enabled() if hasattr(sys, '_is_gil_enabled') else True); print(platform.uname())"
       # TODO: fix benchmark results (maybe a separate Job?)
       - name: Run tests
         run: pdm run test
@@ -183,6 +220,11 @@ jobs:
           python-version: "3.13"
       - name: Build the sdist and wheel
         run: pdm build
+      - name: Install twine
+        run: pdm sync -d -G build --no-self
+      # Fails on anything PyPI would reject, and on warnings, e.g. a README that doesn't render
+      - name: Check the package metadata with twine
+        run: pdm run check_package
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: python-package-distributions
@@ -218,11 +260,87 @@ jobs:
       # Attestations stored on GitHub, which can be checked with:
       #   gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac
       - name: Generate build provenance attestations
+        id: attest
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-path: "dist/*"
+      # The signed attestation bundle is also attached to the GitHub release (see the
+      # github-release job). It's kept out of dist/ so it isn't uploaded to PyPI.
+      - name: Save the attestation bundle
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir provenance
+          jq -c . "$BUNDLE" > "provenance/getmac-${TAG}.intoto.jsonl"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: provenance
+          path: provenance/
+          if-no-files-found: error
       # Also uploads PEP 740 attestations to PyPI (on by default with Trusted Publishing)
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           attestations: true
+
+  # Creates a draft GitHub release for the tag, with the CHANGELOG section as its
+  # notes and the sdist, wheel, manpage, and signed build provenance as its files.
+  # The maintainer checks the draft and publishes it. The provenance file is what
+  # OpenSSF Scorecard's Signed-Releases check looks for, and it can be verified with:
+  #   gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac \
+  #     --bundle getmac-1.0.0.intoto.jsonl
+  github-release:
+    name: Create the GitHub release
+    needs: publish-pypi
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # Create the release and upload its files
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: python-package-distributions
+          path: release/
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: provenance
+          path: release/
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: manpage
+          path: release/
+      # The notes are the CHANGELOG section for the version, e.g. "## 1.0.0 (10/13/2026)"
+      - name: Get the release notes from the CHANGELOG
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          awk -v tag="$TAG" '
+            /^## / { if (found) exit; if (index($0, "## " tag " ") == 1) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::warning::No CHANGELOG section for '${TAG}', so the release notes are empty"
+            echo "See the [CHANGELOG](https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md)." > release-notes.md
+          fi
+      # Pre-releases (e.g. 1.0.0rc1) are marked as such. If the release already
+      # exists, its files are replaced and its notes are left as they are.
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ls -l release/
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" release/* --clobber
+          else
+            prerelease=()
+            if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.post[0-9]+)?$ ]]; then
+              prerelease=(--prerelease)
+            fi
+            gh release create "$TAG" release/* --draft --verify-tag "${prerelease[@]}" \
+              --title "getmac $TAG" --notes-file release-notes.md
+          fi

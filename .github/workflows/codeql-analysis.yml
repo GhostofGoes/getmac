@@ -14,11 +14,14 @@ name: "CodeQL"
 on:
   push:
     branches: [ main ]
+  # All pull requests, so every change is scanned before it's merged
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ main ]
   schedule:
     - cron: '19 17 * * 0'
+
+# Jobs only get read access to the repository unless they ask for more
+permissions:
+  contents: read
 
 jobs:
   analyze:

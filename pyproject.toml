@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 name = "getmac"
 dynamic = ["version"]
-description = "Platform-independent pure-Python module to get a MAC address"
+description = "Platform-independent pure-Python module to get a MAC address of network interfaces and remote hosts."
 dependencies = []
 readme = "README.md"
 authors = [
@@ -20,22 +20,29 @@ classifiers = [
     "Operating System :: OS Independent",
     "Operating System :: Android",
     "Operating System :: Microsoft :: Windows",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
     "Operating System :: POSIX",
     "Operating System :: POSIX :: BSD",
     "Operating System :: POSIX :: BSD :: FreeBSD",
     "Operating System :: POSIX :: BSD :: NetBSD",
     "Operating System :: POSIX :: BSD :: OpenBSD",
+    "Operating System :: POSIX :: HP-UX",
     "Operating System :: POSIX :: Linux",
     "Operating System :: POSIX :: Other",
+    "Operating System :: POSIX :: SunOS/Solaris",
     "Operating System :: MacOS",
+    "Operating System :: MacOS :: MacOS X",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Intended Audience :: Developers",
@@ -47,9 +54,9 @@ classifiers = [
     "Topic :: System :: Networking",
     "Topic :: Utilities",
     "Typing :: Typed",
+    "Natural Language :: English",
 ]
 keywords = [
-    "getmac",
     "get-mac",
     "macaddress",
     "mac-address",
@@ -61,16 +68,27 @@ keywords = [
     "layer2",
     "layer-2",
     "802.3",
+    "eui-48",
+    "hardware-address",
+    "arp",
+    "ndp",
+    "ipv4",
+    "ipv6",
+    "lan",
+    "cross-platform",
+    "cli",
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/GhostofGoes/getmac"
+"Homepage" = "https://ghostofgoes.github.io/getmac/"
 "Documentation" = "https://ghostofgoes.github.io/getmac/"
 "Changelog" = "https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md"
 "Issue tracker" = "https://github.com/GhostofGoes/getmac/issues"
 "Source" = "https://github.com/GhostofGoes/getmac"
 "Security" = "https://github.com/GhostofGoes/getmac/security/policy"
-"Discord server" = "https://discord.gg/python"
+"Releases" = "https://github.com/GhostofGoes/getmac/releases"
+"Docker image" = "https://github.com/GhostofGoes/getmac/pkgs/container/getmac"
+"Discussions" = "https://github.com/GhostofGoes/getmac/discussions"
 
 [project.scripts]
 getmac = "getmac.__main__:main"
@@ -87,6 +105,9 @@ test = [
     "pytest-sugar",
     "psutil",
     "pygments>=2.13",
+    # Hypothesis ships compiled wheels that don't load on PyPy, so the
+    # fuzz tests (tests/test_fuzz.py) are skipped on PyPy
+    "hypothesis; platform_python_implementation != 'PyPy'",
 ]
 lint = [
     "codespell>=2.2.4",
@@ -94,6 +115,10 @@ lint = [
     "ruff",
     "vulture",
     "mypy>=1.3.0",
+]
+# twine 6.1.0 is the first version that understands License-Expression (PEP 639) metadata
+build = [
+    "twine>=6.1.0",
 ]
 docs = [
     "furo; python_version >= \"3.12\"",
@@ -187,6 +212,15 @@ pytest
   -n auto
 """
 
+[tool.pdm.scripts.fuzz]
+help = "Run the fuzz tests with many more generated inputs (takes several minutes)"
+cmd = "pytest tests/test_fuzz.py --benchmark-disable -n auto"
+env = { HYPOTHESIS_PROFILE = "fuzz" }
+
+[tool.pdm.scripts.check_package]
+help = "Check that the built sdist and wheel in dist/ meet PyPI's requirements, using twine"
+cmd = "twine check --strict dist/*"
+
 [tool.pdm.scripts.html]
 help = "Build HTML documentation using Sphinx"
 cmd = "sphinx-build -j auto -W --keep-going -b html ./docs ./html_docs"
@@ -228,7 +262,10 @@ cmd = "bash packaging/build-docker.sh"
 [tool.pytest.ini_options]
 testpaths = "tests"
 norecursedirs = ".github getmac samples scripts .git .tox .vagrant .idea .vscode dist build *.egg .* .venv"
-addopts = "--tb=short"
+# -ra: summarize skipped and failed tests at the end. Typos in marker names and in this
+# configuration are errors, and an "xfail" test that passes fails the run.
+addopts = "--tb=short -ra --strict-markers --strict-config"
+xfail_strict = true
 
 
 # --- Coverage configuration ---
@@ -242,7 +279,34 @@ exclude_also = ['if __name__ == "__main__":']
 [tool.codespell]
 check-filenames = true
 skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.idea,.vscode,_build,.doctrees,htmlcov,.venv,.mypy_cache,deb_dist,built_docs,.pytest_cache,.pdm-build,manpage,html_docs,third_party'
-ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso,connexion,adresse'
+ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso,connexion,adresse,intoto'
+
+
+# --- Mypy configuration ---
+[tool.mypy]
+strict = true
+# Check as if on Linux, so results are the same on every OS. The Windows-only
+# ctypes.windll calls are ignored (they're guarded by consts.WINDOWS at runtime).
+platform = "linux"
+enable_error_code = [
+    "ignore-without-code",
+    "possibly-undefined",
+    "redundant-expr",
+    "truthy-bool",
+]
+
+[[tool.mypy.overrides]]
+# getmac/__init__.py re-exports "settings", which getmac.getmac imports from getmac.variables
+module = ["getmac.getmac"]
+implicit_reexport = true
+
+[[tool.mypy.overrides]]
+# Tests use pytest fixtures and mocks, which aren't annotated (ruff's ANN rules are off for them)
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+check_untyped_defs = false
 
 
 # --- Ruff configuration ---
@@ -298,6 +362,10 @@ select = [
     "PLR",  # Pylint - Refactor
     "PLW",  # Pylint - Warnings
     "UP",   # pyupgrade
+    "FURB", # refurb
+    "PERF", # Perflint
+    "LOG",  # flake8-logging
+    "FLY",  # flynt
     "RUF",  # Ruff-specific rules
 ]
 
@@ -308,7 +376,6 @@ ignore = [
     "PLW2901", # for loop variable overwritten by assignment target
     "G004",    # Logging statement uses f-string
     "PIE790",  # no-unnecessary-pass
-    "PGH003",  # Use specific rule codes when ignoring type issues
     # "PLC1901", # compare-to-empty-string
     "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
     "S603",    # subprocess-without-shell-equals-true
@@ -316,7 +383,6 @@ ignore = [
     "PLR0915",
     "PLR0912",
     "PLR2004",
-    "UP031",
 ]
 
 [tool.ruff.lint.per-file-ignores]

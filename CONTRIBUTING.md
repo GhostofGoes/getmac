@@ -172,6 +172,9 @@ pdm run -l
 # Run tests
 pdm run test
 
+# Run the fuzz tests with many more generated inputs (takes several minutes)
+pdm run fuzz
+
 # Lint checks
 pdm run lint
 
@@ -179,6 +182,8 @@ pdm run lint
 pdm run getmac --help
 pdm run getmac --version
 ```
+
+The fuzz tests in `tests/test_fuzz.py` use [Hypothesis](https://hypothesis.readthedocs.io) to feed random and mutated command output to every method's parser, and random arguments to `get_mac_address()`. They run a few examples with the regular tests (except on PyPy, where Hypothesis isn't installed), and many more weekly in the "Fuzz" workflow. If you add or change a parser, run `pdm run fuzz` before opening a PR. When a fuzz test fails, Hypothesis prints the input that caused it. Add that input as an `@example` or a regular test along with the fix.
 
 ## Documentation
 

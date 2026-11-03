@@ -1,0 +1,3 @@
+LINK         PROPERTY        PERM VALUE          DEFAULT        POSSIBLE
+e1000g1      mac-address     ?    ?              ?              ?
+vnic0        mac-address     ?    ?              ?              ?

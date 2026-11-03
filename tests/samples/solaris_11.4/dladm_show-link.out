@@ -1,0 +1,3 @@
+LINK                CLASS     MTU    STATE    OVER
+net0                phys      1500   up       --
+vnic0               vnic      1500   up       net0
