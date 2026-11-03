@@ -4,10 +4,10 @@ How methods are chosen and used
 
 :func:`~getmac.get_mac_address` covers most uses of getmac. This page covers the internal methods used by getmac to resolve MAC addresses on various platforms.
 
-Internally, getmac picks a *method* for each kind of lookup. The method is a class that knows a particular way of finding a MAC address, such as reading ``/sys/class/net/<iface>/address`` or running ``ip neighbor show``. This page explains how those methods are chosen and used. To change them in your own code, see :doc:`custom_methods`. To contribute a method to getmac, see :doc:`adding_methods`.
+Internally, getmac picks a *method* for each kind of lookup. The method is a class that knows a particular way of finding a :term:`MAC address`, such as reading ``/sys/class/net/<iface>/address`` or running ``ip neighbor show``. This page explains how those methods are chosen and used. To change them in your own code, see :doc:`custom_methods`. To contribute a method to getmac, see :doc:`adding_methods`.
 
 .. warning::
-   Most of what this page describes lives in :mod:`getmac.getmac` and is an internal API that may change between releases. Use it with care.
+   Most of what this page describes lives in :mod:`getmac.getmac` and is an internal :abbr:`API (application programming interface)` that may change between releases. Use it with care.
 
 :doc:`architecture` describes where everything lives in the package. Every built-in method and its docstring is listed in the :doc:`api`.
 
@@ -64,7 +64,7 @@ Method types
      - Interface name
 
 .. note::
-   ``get_mac_address()`` with no arguments does a ``default_iface`` lookup, then an ``iface`` lookup of the interface it finds. If the default interface can't be found or it doesn't have a MAC, the first interface from :func:`socket.if_nameindex` that has a MAC and isn't a loopback interface is used instead, except on Windows.
+   ``get_mac_address()`` with no arguments does a ``default_iface`` lookup, then an ``iface`` lookup of the interface it finds. If the :term:`default interface` can't be found or it doesn't have a MAC, the first interface from :func:`socket.if_nameindex` that has a MAC and isn't a :term:`loopback interface` is used instead, except on Windows.
 
    On Windows with ``network_request=True`` (the default), it first gets the IP address of the interface with the default route from :func:`~getmac.utils.fetch_ip_using_dns`, and does an ``ip4`` lookup of that address. The ``default_iface`` lookup is only done if that doesn't find a MAC.
 
@@ -114,25 +114,25 @@ The first time a lookup is performed for a particular type (e.g. ``ip4``), the c
 Falling back during a lookup
 ----------------------------
 
-Each lookup calls ``get()`` on the primary method from the cache and:
+Each lookup calls ``get()`` on the :term:`primary method` from the cache and:
 
 - If ``get()`` returns a value, winner winner chicken dinner, that's the result.
 - If ``get()`` returns :obj:`None`, the result is :obj:`None`. The fallbacks are **not** tried. :obj:`None` means "not found", for example "there's no such interface", *not* "this method doesn't work".
 - If ``get()`` raises an exception, or sets ``self.unusable = True`` and returns :obj:`None`, the method is removed from the cache. The first fallback becomes the primary method, and the lookup is retried with it using the same argument. The exception is logged as a warning, not raised.
 - A :class:`~subprocess.CalledProcessError` with exit code 1 is treated like returning :obj:`None`, because many commands exit with 1 when the interface or host doesn't exist. Any other exit code counts as a failure and leads to a fallback.
 - A command that runs longer than :attr:`settings.COMMAND_TIMEOUT <getmac.variables.Settings.COMMAND_TIMEOUT>` is stopped, and the method is treated like one that raised an exception.
-- With ``network_request=False``, methods that send network requests (their ``network_request`` attribute is :obj:`True`) are skipped, both for the lookup and as fallbacks. They stay in the cache, since the cache may have been built by a lookup that allowed them.
+- With ``network_request=False``, methods that send :term:`network requests <network request>` (their ``network_request`` attribute is :obj:`True`) are skipped, both for the lookup and as fallbacks. They stay in the cache, since the cache may have been built by a lookup that allowed them.
 
 .. _module-api-ipv4-network:
 
 IPv4 lookups and network requests
 ---------------------------------
 
-When :func:`~getmac.get_mac_address` looks up an IPv4 address (``ip=`` or ``hostname=``) with ``network_request=True`` (the default), it first tries to make sure the host is in the system's ARP table:
+When :func:`~getmac.get_mac_address` looks up an IPv4 address (``ip=`` or ``hostname=``) with ``network_request=True`` (the default), it first tries to make sure the host is in the system's :term:`ARP table`:
 
 1. If :class:`~getmac.getmac.ArpFile` is in the ``ip4`` cache, it's tried first, since reading ``/proc/net/arp`` is fast. If it fails, it's removed from the cache, but no other method is tried yet. If it finds the host, nothing is sent on the network.
 2. Then, if the host wasn't found and :class:`~getmac.getmac.CtypesHost` or :class:`~getmac.getmac.ArpingHost` is in the ``ip4`` cache, it's made the primary method, since it sends an ARP request itself.
-3. If neither applies, an empty UDP packet is sent to the host on the port specified by :attr:`settings.PORT <getmac.variables.Settings.PORT>` to force the system to populate the ARP table.
+3. If neither applies, an empty :term:`UDP` packet is sent to the host on the port specified by :attr:`settings.PORT <getmac.variables.Settings.PORT>` to force the system to populate the ARP table.
 
 Then the host is looked up with the ``ip4`` cache. If the UDP packet was sent and the host isn't found, it's looked up again until it's found or :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` seconds have passed (by default, it isn't looked up again). IPv6 lookups send the UDP packet and use ``ARP_TIMEOUT`` the same way, but there's no ``ArpFile`` or ARP request step.
 

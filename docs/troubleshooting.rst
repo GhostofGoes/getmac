@@ -30,10 +30,10 @@ Your Python environment doesn't have the ``getmac`` command on the ``PATH``. Run
 None for a remote host
 ======================
 
-getmac finds the MAC of a remote host in your system's ARP table (IPv4) or NDP table (IPv6). If the host isn't in there, you get :obj:`None`.
+getmac finds the :term:`MAC <MAC address>` of a :term:`remote host` in your system's :term:`ARP table` (IPv4) or :term:`NDP table` (IPv6). If the host isn't in there, you get :obj:`None`.
 
-- Make sure the host is on your local network (the same layer 2 network, LAN, or VLAN). MACs aren't visible across routers, so ``getmac -4 8.8.8.8`` returning nothing is expected, not a bug.
-- Make sure network requests are enabled (they are by default). Don't use ``--no-net`` or ``network_request=False`` unless you have to.
+- Make sure the host is on your local network (the same :term:`layer 2 network`, :term:`LAN`, or :term:`VLAN`). MACs aren't visible across routers, so ``getmac -4 8.8.8.8`` returning nothing is expected, not a bug.
+- Make sure :term:`network requests <network request>` are enabled (they are by default). Don't use ``--no-net`` or ``network_request=False`` unless you have to.
 - The host may reply after getmac checks the table. Use ``--arp-timeout`` or :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` to keep checking for a second or two. See :doc:`usage`.
 - If ``arping`` is installed but getmac can't use it, you get :obj:`None` without a fallback. See :ref:`troubleshooting-privileges`.
 - Check that the host is actually there, e.g. ``ping`` it, then try again. If it shows up in the table (``arp -a``, ``ip neigh``, etc.) but getmac still returns :obj:`None`, that's a bug (unless it's the ``arping`` problem above). Please `open a bug report <https://github.com/GhostofGoes/getmac/issues/new?template=1-bug-report.yml>`__ with the debug output.
@@ -41,17 +41,17 @@ getmac finds the MAC of a remote host in your system's ARP table (IPv4) or NDP t
 None for a local IP address
 ===========================
 
-On Linux and WSL, getmac can't get the MAC of an IP address that belongs to one of your own interfaces (e.g. ``getmac --ip 10.0.0.4`` when ``10.0.0.4`` is this machine). Other POSIX systems may have this issue too. Use the interface name instead, e.g. ``getmac -i eth0``.
+On Linux and :term:`WSL`, getmac can't get the MAC of an IP address that belongs to one of your own interfaces (e.g. ``getmac --ip 10.0.0.4`` when ``10.0.0.4`` is this machine). Other :term:`POSIX` systems may have this issue too. Use the interface name instead, e.g. ``getmac -i eth0``.
 
 This is one of the :ref:`known issues <platforms-known-issues>`.
 
 None for an interface name
 ==========================
 
-- Check the name against the real ones. ``ip link`` (Linux), ``ifconfig -a`` or ``ifconfig -l`` (macOS and the BSDs), ``networksetup -listallhardwareports`` (macOS), and ``dladm show-link`` (Solaris and illumos) list them. In Python, :func:`~getmac.get_default_interface` gives the name of the default one.
+- Check the name against the real ones. ``ip link`` (Linux), ``ifconfig -a`` or ``ifconfig -l`` (macOS and the BSDs), ``networksetup -listallhardwareports`` (macOS), and ``dladm show-link`` (Solaris and :term:`illumos`) list them. In Python, :func:`~getmac.get_default_interface` gives the name of the default one.
 - Modern Linux doesn't name interfaces ``eth0`` anymore. Expect names like ``enp3s0``, ``ens33``, or ``wlp2s0``. On macOS, Wi-Fi is usually ``en0``.
 - Names are case-sensitive on Unix.
-- Tunnels (``utun0``, ``tun0``) and some virtual interfaces don't have a MAC, so :obj:`None` is expected. This is also why the default interface sometimes gives you a different interface's MAC (see :doc:`usage`).
+- Tunnels (``utun0``, ``tun0``) and some virtual interfaces don't have a MAC, so :obj:`None` is expected. This is also why the :term:`default interface` sometimes gives you a different interface's MAC (see :doc:`usage`).
 - ``getmac -v -d`` shows the argument getmac tried, in case a shell or script changed it.
 
 None for a Windows interface name
@@ -67,7 +67,7 @@ Do I need root or admin?
 
 Mostly no. Looking up an interface, the default interface, or a host that's already in the ARP/NDP table works as a normal user. The exceptions:
 
-- ``arping`` sends the ARP request, and it needs root (or ``CAP_NET_RAW``) on Linux and root on macOS. Debian's ``arping`` package sets that capability for you. If ``arping`` is installed but getmac can't use it, the lookup returns :obj:`None`, without falling back to another method or sending the UDP packet. Check with ``arping -c 1 <ip>`` and ``getmac -v -dddd``. To work around it, run as root, or give ``arping`` the capability (``setcap cap_net_raw+ep $(which arping)``), or ``ping`` the host first and use ``--no-net``, or use ``--force-method IpNeighborShow``.
+- ``arping`` sends the ARP request, and it needs root (or :term:`CAP_NET_RAW`) on Linux and root on macOS. Debian's ``arping`` package sets that capability for you. If ``arping`` is installed but getmac can't use it, the lookup returns :obj:`None`, without falling back to another method or sending the :term:`UDP` packet. Check with ``arping -c 1 <ip>`` and ``getmac -v -dddd``. To work around it, run as root, or give ``arping`` the capability (``setcap cap_net_raw+ep $(which arping)``), or ``ping`` the host first and use ``--no-net``, or use ``--force-method IpNeighborShow``.
 - On Solaris and illumos, ``ifconfig`` only shows the MAC to root, but ``dladm`` (the method tried first) doesn't need it.
 - Android restricts access to network information whatever user you are (see :ref:`platforms-android`).
 
@@ -78,7 +78,7 @@ Lookups are slow
 
 - The first call is slower than the rest. getmac checks which methods work on your system the first time it needs one, and caches the result for the rest of the process.
 - Lookups of hosts that don't reply take ``ARP_TIMEOUT`` seconds longer (it's ``0`` by default).
-- Commands that getmac runs are stopped after 15 seconds (:attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`) and the next method is tried. If a command is hanging, for example on DNS lookups, the debug output shows which one. Lower the timeout, or open an issue so a faster command can be used.
+- Commands that getmac runs are stopped after 15 seconds (:attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`) and the next method is tried. If a command is hanging, for example on :term:`DNS` lookups, the debug output shows which one. Lower the timeout, or open an issue so a faster command can be used.
 
 RuntimeError: no methods
 ========================

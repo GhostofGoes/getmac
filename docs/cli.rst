@@ -2,7 +2,7 @@
 Command-Line Interface
 ======================
 
-The ``getmac`` command provides developers and power users a cross-platform command line tool to get MAC addresses. It is installed when the pip package is installed.
+The ``getmac`` command provides developers and power users a cross-platform command line tool to get :term:`MAC addresses <MAC address>`. It is installed when the pip package is installed.
 
 Basic Usage
 ===========
@@ -93,7 +93,7 @@ Nothing found and a lookup that failed look the same (exit code ``1``, no output
 Remote hosts
 ============
 
-Getting the MAC address of a remote host requires the ARP table (IPv4) or NDP table (IPv6) to be populated. By default, getmac gets the host into the table with an ARP request (IPv4 only, on Windows or if ``arping`` is installed) or, if it can't, an empty UDP packet to a high port on the host (defaults to ``55555``). On Linux, it reads the ARP table file first, and sends nothing if the host is already there. This can be disabled with ``--no-net`` (or ``-N``), as shown below.
+Getting the MAC address of a :term:`remote host` requires the :term:`ARP table` (IPv4) or :term:`NDP table` (IPv6) to be populated. By default, getmac gets the host into the table with an ARP request (IPv4 only, on Windows or if ``arping`` is installed) or, if it can't, an empty :term:`UDP` packet to a high port on the host (defaults to ``55555``). On Linux, it reads the ARP table file first, and sends nothing if the host is already there. This can be disabled with ``--no-net`` (or ``-N``), as shown below.
 
 .. code-block:: shell
 

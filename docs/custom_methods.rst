@@ -3,7 +3,7 @@ Customizing methods at runtime
 ==============================
 
 .. warning::
-   Most of what this page describes lives in :mod:`getmac.getmac` and is an internal API that may change between releases. Use it with care.
+   Most of what this page describes lives in :mod:`getmac.getmac` and is an internal :abbr:`API (application programming interface)` that may change between releases. Use it with care.
 
 This page covers changing which methods getmac uses, from your own code: adding a method, removing a built-in one, and undoing your changes in tests. :doc:`module_api` explains how methods are chosen, which is worth reading first, and :doc:`architecture` has a :ref:`"Where things live" <architecture-where>` section on what to import from where.
 
@@ -15,7 +15,7 @@ You can add your own methods at runtime, for example to support a command getmac
 Writing the class
 -----------------
 
-The examples below use this method, which always returns the same MAC. Save it as ``my_methods.py``.
+The examples below use this method, which always returns the same :term:`MAC <MAC address>`. Save it as ``my_methods.py``.
 
 .. code-block:: python
    :caption: my_methods.py
@@ -39,7 +39,7 @@ The examples below use this method, which always returns the same MAC. Save it a
 
 Things the example doesn't show:
 
-- Set ``network_request = True`` if ``get()`` can result in network traffic (e.g. an ARP request).
+- Set ``network_request = True`` if ``get()`` can result in network traffic (e.g. an :term:`ARP <ARP table>` request).
 - Keep ``test()`` cheap, such as checking that a command or file exists. If it raises, getmac treats it as a failed test.
 - Return :obj:`None` from ``get()`` when the MAC wasn't found. If it can't work on this system, raise an exception or set ``self.unusable = True`` instead, so getmac moves on to the next method (see :ref:`module-api-fallback`).
 - A ``default_iface`` method's ``get()`` is called with an empty string, so define it as ``def get(self, arg: str = "")``.
@@ -77,7 +77,7 @@ Here's a more realistic method. It parses the output of ``ip -brief link show de
 Registering it
 --------------
 
-Add the class to :data:`~getmac.getmac.METHODS` before the first lookup of its type (e.g. ``"iface"``). The order of :data:`~getmac.getmac.METHODS` is the order methods are tested in, so insert it at the front to make it the primary method:
+Add the class to :data:`~getmac.getmac.METHODS` before the first lookup of its type (e.g. ``"iface"``). The order of :data:`~getmac.getmac.METHODS` is the order methods are tested in, so insert it at the front to make it the :term:`primary method`:
 
 .. code-block:: python
 
@@ -131,7 +131,7 @@ Example output on Linux:
    00:00:00:00:00:00
    02:00:00:00:00:01
 
-To start over completely, reset every type. Also clear :attr:`gvars.DEFAULT_IFACE <getmac.variables.Variables.DEFAULT_IFACE>`, where ``get_mac_address()`` remembers the default interface after the first call without arguments. Without that, a new ``default_iface`` method is never used by ``get_mac_address()``.
+To start over completely, reset every type. Also clear :attr:`gvars.DEFAULT_IFACE <getmac.variables.Variables.DEFAULT_IFACE>`, where ``get_mac_address()`` remembers the :term:`default interface` after the first call without arguments. Without that, a new ``default_iface`` method is never used by ``get_mac_address()``.
 
 .. code-block:: python
 

@@ -21,7 +21,7 @@ PGP signed message is preferred but not required.
 
 Releases are built and published by GitHub Actions, and every published release has a signed [build provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations) that ties it to the commit and workflow run that built it. These can be checked with the [GitHub CLI](https://cli.github.com/).
 
-The sdist and wheel on PyPI (PyPI also stores their attestations, per PEP 740):
+The {term}`sdist` and {term}`wheel` on {term}`PyPI` (PyPI also stores their attestations, per PEP 740):
 
 ```bash
 pip download --no-deps getmac==1.0.0 -d dist/

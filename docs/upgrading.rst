@@ -7,7 +7,7 @@ getmac 1.0.0 has a few changes that can break code written for 0.9.x. This page 
 Python versions
 ===============
 
-getmac 1.0.0 requires Python 3.9 or newer, on CPython or PyPy. Support for Python 2.7 through 3.8, Jython, and IronPython was removed. If you're stuck on one of those, pin to an older version, e.g. ``getmac<1.0.0``. :doc:`installation` lists the last version that works with each old Python.
+getmac 1.0.0 requires Python 3.9 or newer, on :term:`CPython` or :term:`PyPy`. Support for Python 2.7 through 3.8, Jython, and IronPython was removed. If you're stuck on one of those, pin to an older version, e.g. ``getmac<1.0.0``. :doc:`installation` lists the last version that works with each old Python.
 
 Settings
 ========
@@ -74,10 +74,10 @@ Changes in results
 
 Some lookups return different results in 1.0.0:
 
-- ``get_mac_address()`` with no arguments no longer guesses interface names like ``eth0`` or ``en0``, and no longer falls back to the loopback interface's ``00:00:00:00:00:00``. If the default interface can't be found or doesn't have a MAC, the first non-loopback interface with a MAC is used, and :obj:`None` if there isn't one. See :doc:`usage`.
+- ``get_mac_address()`` with no arguments no longer guesses interface names like ``eth0`` or ``en0``, and no longer falls back to the :term:`loopback interface`'s ``00:00:00:00:00:00``. If the :term:`default interface` can't be found or doesn't have a :term:`MAC <MAC address>`, the first non-loopback interface with a MAC is used, and :obj:`None` if there isn't one. See :doc:`usage`.
 - On Windows, ``get_mac_address()`` with no arguments uses the actual default interface, instead of assuming it's named "Ethernet".
 - On Windows, interface names must match the whole name or description (case-insensitive). In 0.9.x, part of a name was enough, so "Wi-Fi" could return the MAC of the "Microsoft Wi-Fi Direct Virtual Adapter".
-- On Linux, incomplete, failed, and proxy ARP entries in ``/proc/net/arp`` are ignored, so an IP that's no longer in use returns :obj:`None` instead of a stale MAC.
+- On Linux, incomplete, failed, and proxy :term:`ARP <ARP table>` entries in ``/proc/net/arp`` are ignored, so an IP that's no longer in use returns :obj:`None` instead of a stale MAC.
 - Commands that getmac runs are stopped after 15 seconds (:attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`), and the next method is tried. Before, a command that never finished would hang the lookup forever.
 
 Removed packaging

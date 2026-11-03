@@ -2,7 +2,7 @@
 Installation
 ============
 
-getmac supports Python 3.9 and newer, on CPython and PyPy, and has no dependencies.
+getmac supports Python 3.9 and newer, on :term:`CPython` and :term:`PyPy`, and has no dependencies.
 
 Stable release from PyPI
 ========================
@@ -25,7 +25,7 @@ This also installs the ``getmac`` command (see :doc:`cli`).
 Pre-releases from PyPI
 ======================
 
-Alpha, beta, and release candidate versions of getmac are published to PyPI before a stable release. ``pip`` skips them unless you ask for them with the ``--pre`` flag.
+Alpha, beta, and release candidate versions of getmac are published to :term:`PyPI` before a stable release. ``pip`` skips them unless you ask for them with the ``--pre`` flag.
 
 .. tab:: Linux/macOS
 
@@ -88,7 +88,7 @@ This will install the latest version from the ``main`` branch on GitHub.
 Legacy Python versions
 ======================
 
-If you are running an old Python (3.8 and older) or interpreter, then you can install an older version of getmac that supported that version. The wheels are available in the `GitHub releases <https://github.com/GhostofGoes/getmac/releases>`__, or from PyPI with a current version of ``pip`` and some special arguments.
+If you are running an old Python (3.8 and older) or interpreter, then you can install an older version of getmac that supported that version. The :term:`wheels <wheel>` are available in the `GitHub releases <https://github.com/GhostofGoes/getmac/releases>`__, or from PyPI with a current version of ``pip`` and some special arguments.
 
 .. list-table::
    :header-rows: 1

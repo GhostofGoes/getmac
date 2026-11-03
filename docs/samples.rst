@@ -20,7 +20,7 @@ Running the script
    python scripts/collect_samples.py --dry-run  # list what would be collected
    python scripts/collect_samples.py  # run the collection
 
-Commands that aren't installed are skipped. Exit codes and error messages for everything it ran are logged to ``collect_samples.log`` in the same directory. A few commands, such as ``arping``, only work as root (or Administrator on Windows), so run it again with ``sudo`` if you want those too. By default, it looks up every interface it finds, and the default gateway as the remote host. The options below change that.
+Commands that aren't installed are skipped. Exit codes and error messages for everything it ran are logged to ``collect_samples.log`` in the same directory. A few commands, such as ``arping``, only work as root (or Administrator on Windows), so run it again with ``sudo`` if you want those too. By default, it looks up every interface it finds, and the default gateway as the :term:`remote host`. The options below change that.
 
 Options
 -------
@@ -36,7 +36,7 @@ Options
 ``-p``, ``--platform``
    Collect the commands for this platform instead of the detected one. Use ``other`` to collect the commands getmac falls back to on a platform it doesn't know.
 ``-i``, ``--interface``
-   An interface to run the interface commands for. Can be repeated. ``--default-interface-only`` runs them for just the default interface.
+   An interface to run the interface commands for. Can be repeated. ``--default-interface-only`` runs them for just the :term:`default interface`.
 ``--ip``
    The IP of a remote host to look up. Can be repeated.
 ``--no-network``
@@ -93,7 +93,7 @@ If you're not sure, run the script with ``--dry-run`` to see the exact names it 
 Cleaning up samples
 ===================
 
-The samples contain real MAC addresses, IP addresses, and hostnames from your system, so review and redact them before you commit or share them. Keep the output format intact. Locally administered MACs (``02:00:00:00:00:01``) and `documentation IP ranges <https://www.rfc-editor.org/info/rfc5737/>`__ (``192.0.2.0/24``) make good replacements.
+The samples contain real :term:`MAC addresses <MAC address>`, IP addresses, and hostnames from your system, so review and redact them before you commit or share them. Keep the output format intact. Locally administered MACs (``02:00:00:00:00:01``) and `documentation IP ranges <https://www.rfc-editor.org/info/rfc5737/>`__ (``192.0.2.0/24``) make good replacements.
 
 
 Where samples go

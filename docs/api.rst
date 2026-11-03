@@ -2,7 +2,7 @@
 API
 ===
 
-Full API reference for the `getmac` package, split by how much you should rely on it.
+Full :abbr:`API (application programming interface)` reference for the `getmac` package, split by how much you should rely on it.
 
 Public API
 ==========

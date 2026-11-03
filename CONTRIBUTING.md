@@ -14,7 +14,7 @@ Your code *must*:
 * Work with all *supported* Python versions
 * Work on all *supported* platforms
 * Pass linting (code quality checks)
-* Pass CI (GitHub Actions)
+* Pass {abbr}`CI (continuous integration)` (GitHub Actions)
 * Adhere to the [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/main/CODE_OF_CONDUCT.md)
 * Adhere to the [AI policy below](#ai-policy)
 * Branch names and commits must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) notation, e.g. a branch should be `feat-my-feature`, not `patch-1`, and commits should be `feat: myfeature description`, not `add some cool thing check it out`.
@@ -63,8 +63,8 @@ It's a (hopefully) straightforward and easy to follow policy. Therefore, if you 
 
 ### Main areas of focus
 * Writing parsers for new commands (Example: `netsh int ipv6`)
-* Addressing missing functionality (Example: default interface detection for IPv6 on Windows)
-* Adding new features (Example: ability to find MAC by interface index integer)
+* Addressing missing functionality (Example: {term}`default interface` detection for IPv6 on Windows)
+* Adding new features (Example: ability to find {term}`MAC <MAC address>` by interface index integer)
 * Adding tests for internal methods and mocking where necessary
 
 ### Platform testing
@@ -112,7 +112,7 @@ Some notes:
 1. Create your own fork of the code through GitHub web interface ([Here's a Guide](https://gist.github.com/Chaser324/ce0505fbed06b947d962))
 1. Clone the fork to your computer. This can be done using the [GitHub desktop](https://desktop.github.com/) GUI , `git clone <fork-url>`, or the Git tools in your favorite editor or IDE.
 1. Create and checkout a new branch in the fork with either your username (e.g. "ghostofgoes"), or the name of the feature or issue you're working on (e.g. "openbsd-support"). Again, this can be done using the GUI, your favorite editor, or `git checkout -b <branch> origin/<branch>`.
-2. Install PDM (2.20+): https://pdm-project.org/en/latest/#installation
+2. Install {abbr}`PDM (Python Development Master)` (2.20+): https://pdm-project.org/en/latest/#installation
 3. Create local environment:
     ```bash
     pdm install -d
@@ -183,7 +183,7 @@ pdm run getmac --help
 pdm run getmac --version
 ```
 
-The fuzz tests in `tests/test_fuzz.py` use [Hypothesis](https://hypothesis.readthedocs.io) to feed random and mutated command output to every method's parser, and random arguments to `get_mac_address()`. They run a few examples with the regular tests (except on PyPy, where Hypothesis isn't installed), and many more weekly in the "Fuzz" workflow. If you add or change a parser, run `pdm run fuzz` before opening a PR. When a fuzz test fails, Hypothesis prints the input that caused it. Add that input as an `@example` or a regular test along with the fix.
+The fuzz tests in `tests/test_fuzz.py` use [Hypothesis](https://hypothesis.readthedocs.io) to feed random and mutated command output to every method's parser, and random arguments to `get_mac_address()`. They run a few examples with the regular tests (except on {term}`PyPy`, where Hypothesis isn't installed), and many more weekly in the "Fuzz" workflow. If you add or change a parser, run `pdm run fuzz` before opening a PR. When a fuzz test fails, Hypothesis prints the input that caused it. Add that input as an `@example` or a regular test along with the fix.
 
 ## Documentation
 
@@ -230,7 +230,7 @@ The Docker workflow (`.github/workflows/docker.yml`) builds and tests the image 
 * Running the workflow manually on `main` or a release tag publishes the same tags again.
 * Pull requests, other branches, and forks only build and test the image.
 
-Published images have SBOM and provenance attestations, and a signed build provenance attestation from GitHub that can be checked with `gh attestation verify oci://ghcr.io/ghostofgoes/getmac:<tag> --repo GhostofGoes/getmac`.
+Published images have {abbr}`SBOM (software bill of materials)` and provenance attestations, and a signed build provenance attestation from GitHub that can be checked with `gh attestation verify oci://ghcr.io/ghostofgoes/getmac:<tag> --repo GhostofGoes/getmac`.
 
 **For maintainers:** packages published to a personal account are private at first, even when the repository is public. After the first publish, make the package public on GitHub: on the package's page, click "Package settings", then "Change visibility" (under "Danger Zone"), and select "Public". This only needs to be done once, and it can't be undone.
 

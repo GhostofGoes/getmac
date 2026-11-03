@@ -2,7 +2,7 @@
 Adding a new method
 ===================
 
-getmac finds MAC addresses using *methods*, which are subclasses of :class:`~getmac.getmac.Method` that implement a technique for getting a MAC, such as running a command or reading a file. Supporting a new command, file, or platform means adding a new method.
+getmac finds :term:`MAC addresses <MAC address>` using *methods*, which are subclasses of :class:`~getmac.getmac.Method` that implement a technique for getting a MAC, such as running a command or reading a file. Supporting a new command, file, or platform means adding a new method.
 
 To use a custom method in your own code without changing getmac, see :doc:`custom_methods` instead. For setting up a development environment and the rules for pull requests, see :doc:`contributing`.
 
@@ -66,7 +66,7 @@ Class attributes
 
    - ``ip4``, ``ip6`` and ``ip`` (both) methods are given an IP address and return that host's MAC
    - ``iface`` methods are given an interface name (``"eth0"``) and return its MAC
-   - ``default_iface`` methods are given an empty string and return the name of the default interface.
+   - ``default_iface`` methods are given an empty string and return the name of the :term:`default interface`.
 
    :ref:`module-api-method-types` lists where each type is used.
 
@@ -115,7 +115,7 @@ Helpers
 - :func:`utils.popen(command, args) <getmac.utils.popen>` runs a command and returns its output (stdout only) as a string. ``args`` is a single string. A non-zero exit code raises :class:`~subprocess.CalledProcessError`, and a command that runs longer than :attr:`~getmac.variables.Settings.COMMAND_TIMEOUT` is stopped. Always call it as ``utils.popen(...)`` so tests can patch ``getmac.utils.popen``.
 - :func:`utils.read_file(path) <getmac.utils.read_file>` returns a file's contents, or :obj:`None` if it can't be read.
 - :func:`utils.search(regex, text) <getmac.utils.search>` returns the first capture group of the first match, or :obj:`None`. Use non-capturing groups (``(?:...)``) for everything except the MAC address.
-- :attr:`consts.MAC_RE_COLON <getmac.variables.Constants.MAC_RE_COLON>`, :attr:`consts.MAC_RE_DASH <getmac.variables.Constants.MAC_RE_DASH>` (Windows style), and :attr:`consts.MAC_RE_SHORT <getmac.variables.Constants.MAC_RE_SHORT>` (allows single-digit octets, like ``58:6d:8f:7:c9:94``) match a MAC address in a single capture group.
+- :attr:`consts.MAC_RE_COLON <getmac.variables.Constants.MAC_RE_COLON>`, :attr:`consts.MAC_RE_DASH <getmac.variables.Constants.MAC_RE_DASH>` (Windows style), and :attr:`consts.MAC_RE_SHORT <getmac.variables.Constants.MAC_RE_SHORT>` (allows single-digit :term:`octets <octet>`, like ``58:6d:8f:7:c9:94``) match a MAC address in a single capture group.
 - Log with ``gvars.log``, and wrap detailed debug messages in ``if settings.DEBUG:``.
 
 When parsing output:
@@ -245,7 +245,7 @@ A new platform touches more places than a new method. Search for an existing pla
 - ``variables.py``: a flag in ``consts`` only if code branches on it (and add it to ``BSD`` if it's a BSD), and the possible values in the ``PLATFORM`` docstring.
 - ``scripts/collect_samples.py``: ``PLATFORMS``, ``GROUPS``, and the names in ``detect_platform()``.
 - Tests: ``test_detect_platform`` and ``test_default_dir_name``, the per-platform cases in ``test_getmac.py``, and ``_GETMAC_PLATFORMS`` in ``test_collect_samples.py`` only if the script and getmac name the platform differently.
-- A samples directory, and a CI workflow if it can run in a VM.
+- A samples directory, and a :abbr:`CI (continuous integration)` workflow if it can run in a VM.
 - :doc:`platforms`, the two README sections above, the ``pyproject.toml`` classifiers if one applies, ``CHANGELOG.md``, and the platform list in ``AGENTS.md``.
 
 `PR #127 <https://github.com/GhostofGoes/getmac/pull/127>`__ (DragonFly BSD) is a complete example.
