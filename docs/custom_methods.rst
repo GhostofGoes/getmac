@@ -191,7 +191,7 @@ Forcing a custom method
 Removing a built-in method
 ==========================
 
-To stop getmac from using a built-in method, for example one that misbehaves on your system, remove it from :data:`~getmac.getmac.METHODS`. As with adding a method, :ref:`reset the type's cache <module-api-reset>` if a lookup of that type already happened.
+To stop getmac from using a built-in method, for example one that misbehaves on your system, remove it from :data:`~getmac.getmac.METHODS`. As with adding a method, :ref:`reset the type's cache <module-api-reset>` if a lookup of that type already happened. On the command line, use ``--exclude-method`` (see :doc:`cli`).
 
 .. code-block:: python
 

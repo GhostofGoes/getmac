@@ -153,6 +153,7 @@ This is going to be a bit more complicated since the highest metric routes are g
         - List/Iterable of methods (as above, string/subclass/instance)
         - Add a CLI argument to reference class by name/names
     - Add ability to exclude methods. Just remove them from METHODS list so they never get used. Useful for testing specific methods or working around buggy methods.
+        - [x] CLI: `--exclude-method` (repeatable). Not in the Python API yet: remove the class from `getmac.getmac.METHODS` instead (see "Removing a built-in method" in the docs).
     - Document these features in the README/docs, including the CLI arguments
 
 ```
