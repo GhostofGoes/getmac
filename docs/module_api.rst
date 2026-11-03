@@ -130,8 +130,8 @@ IPv4 lookups and network requests
 
 When :func:`~getmac.getmac.get_mac_address` looks up an IPv4 address (``ip=`` or ``hostname=``) with ``network_request=True`` (the default), it first tries to make sure the host is in the system's ARP table:
 
-1. If :class:`~getmac.getmac.ArpFile` is in the ``ip4`` cache, it's tried first, since reading ``/proc/net/arp`` is fast. If it fails, it's removed from the cache, but no other method is tried yet.
-2. Otherwise, if :class:`~getmac.getmac.CtypesHost` or :class:`~getmac.getmac.ArpingHost` is in the ``ip4`` cache, it's made the primary method, since it sends an ARP request itself.
+1. If :class:`~getmac.getmac.ArpFile` is in the ``ip4`` cache, it's tried first, since reading ``/proc/net/arp`` is fast. If it fails, it's removed from the cache, but no other method is tried yet. If it finds the host, nothing is sent on the network.
+2. Then, if the host wasn't found and :class:`~getmac.getmac.CtypesHost` or :class:`~getmac.getmac.ArpingHost` is in the ``ip4`` cache, it's made the primary method, since it sends an ARP request itself.
 3. If neither applies, an empty UDP packet is sent to the host on the port specified by :attr:`settings.PORT <getmac.variables.Settings.PORT>` to force the system to populate the ARP table.
 
 Then the host is looked up with the ``ip4`` cache. If the UDP packet was sent and the host isn't found, it's looked up again until it's found or :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` seconds have passed (by default, it isn't looked up again). IPv6 lookups send the UDP packet and use ``ARP_TIMEOUT`` the same way, but there's no ``ArpFile`` or ARP request step.
@@ -195,7 +195,7 @@ Example output on Linux, shortened:
 .. code-block:: text
 
    DEBUG    Initializing 'iface' method cache (platform: 'linux')
-   DEBUG    12 type-filtered methods for 'iface': SysIfaceFile, FcntlIface, LanscanIface, ...
+   DEBUG    13 type-filtered methods for 'iface': SysIfaceFile, FcntlIface, LanscanIface, ...
    DEBUG    6 platform-filtered methods for 'linux' (method_type='iface'): SysIfaceFile, FcntlIface, IfconfigWithIfaceArg, IfconfigOther, IpLinkIface, NetstatIface
    DEBUG    Test failed for method 'IfconfigWithIfaceArg'
    DEBUG    Test failed for method 'IfconfigOther'
@@ -238,7 +238,9 @@ A few more things to know:
 
 - An empty argument returns :obj:`None` and logs an error, except for ``default_iface`` type methods, which take no argument.
 - It raises :class:`RuntimeError` when no method can be used, as described in :ref:`module-api-choosing`.
-- Its ``network_request`` argument has the same effect as in :func:`~getmac.getmac.initialize_method_cache`, and **only applies if that type's cache hasn't been built yet**.
+- Its ``network_request`` argument is passed to :func:`~getmac.getmac.initialize_method_cache` when that type's cache is first built. It's also applied on every later lookup, where methods that send network requests are skipped, both as the primary method and as fallbacks (see :ref:`module-api-fallback`).
+
+.. _module-api-get-default-interface:
 
 get_default_interface()
 -----------------------
@@ -267,7 +269,7 @@ The settings are attributes of ``getmac.settings``, an instance of :class:`~getm
    - ``platforms``, ``method_type`` and ``network_request`` are ignored, and the caches aren't used or changed.
    - There's no fallback, and exceptions raised by the method are not caught.
    - It applies to every lookup type, including ``get_mac_address()`` called with no arguments.
-   - For an IPv4 lookup with ``network_request=True``, ``get_mac_address()`` still goes through the steps in :ref:`module-api-ipv4-network` before calling the forced method, so the ``ip4`` cache is still built, and the UDP packet is still sent (unless the forced method is ``"CtypesHost"`` or ``"ArpingHost"``, since they send an ARP request themselves). If ``"ArpFile"`` is forced and the cached ``ArpFile`` instance finds the MAC in step 1, that's returned, and the forced method is never called.
+   - For an IPv4 lookup with ``network_request=True``, ``get_mac_address()`` still goes through the steps in :ref:`module-api-ipv4-network` before calling the forced method, so the ``ip4`` cache is still built, and the UDP packet is still sent (unless the forced method is ``"CtypesHost"`` or ``"ArpingHost"`` *and* it's in the ``ip4`` cache, i.e. it passed its test, since they send an ARP request themselves; otherwise the UDP packet is still sent). If ``"ArpFile"`` is forced and the cached ``ArpFile`` instance finds the MAC in step 1, that's returned, and the forced method is never called.
 
 :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM`
    Override the detected platform identifier to whatever you set, e.g. ``"linux"``. Use ``--override-platform`` on the command line. It's only read when a cache is built, so set it before the first lookup or :ref:`reset the caches <module-api-reset>` afterwards. It only changes which methods are chosen. Other platform-specific behavior in ``get_mac_address()``, such as how the default interface is found on Windows, still follows the detected platform.
@@ -464,6 +466,8 @@ Forcing a custom method
 
    print(get_mac_address(interface="eth0"))  # 02:00:00:00:00:01
 
+
+.. _module-api-removing-method:
 
 Removing a built-in method
 ==========================

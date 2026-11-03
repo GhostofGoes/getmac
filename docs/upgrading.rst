@@ -49,7 +49,7 @@ The platform constants (``WINDOWS``, ``PLATFORM``, etc.) are now attributes of `
 Exceptions
 ==========
 
-In 1.0.0, :func:`~getmac.getmac.get_mac_address` raises a :class:`RuntimeError` when no method can do the lookup: either no methods match the type of request and platform, or all of them fail their test (in other words, none of them work). In 0.9.x, getmac logged a critical message, showed a :class:`RuntimeWarning`, and returned :obj:`None`.
+In 1.0.0, :func:`~getmac.getmac.get_mac_address` raises a :class:`RuntimeError` when no method can do the lookup: either no methods match the type of request and platform, or all of them fail their test (in other words, none of them work). In 0.9.x, getmac logged a critical message, showed a :class:`RuntimeWarning`, and returned :obj:`None`. The :class:`RuntimeWarning` is still shown in 1.0.0 when getmac falls back to the generic ``other`` methods on a platform it doesn't know.
 
 This should almost never happen unless you're on an exotic platform or have an unusual configuration (see :doc:`troubleshooting`). If your code has to keep going regardless, catch it:
 

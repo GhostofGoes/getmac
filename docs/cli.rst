@@ -28,13 +28,13 @@ Basic Usage
    # Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
    getmac --interface ens33
    getmac --ip 192.168.0.1
-   getmac --ip6 ::1
+   getmac --ip6 fe80::1
    getmac --hostname home.router
 
    # The same, with the short forms of the arguments
    getmac -i ens33
    getmac -4 192.168.0.1
-   getmac -6 ::1
+   getmac -6 fe80::1
    getmac -n home.router
 
 Only one of ``--interface``, ``--ip``, ``--ip6``, and ``--hostname`` can be used at a time.
@@ -43,7 +43,11 @@ Only one of ``--interface``, ``--ip``, ``--ip6``, and ``--hostname`` can be used
 Output and exit codes
 ---------------------
 
-On success, the MAC is printed to stdout and the exit code is ``0``. If nothing was found, nothing is printed and the exit code is ``1``. Log messages (``-v``) go to stderr, so stdout only ever has the MAC. This makes it easy to use in scripts:
+- ``0``: the MAC was printed to stdout (also for ``--help`` and ``--version``).
+- ``1``: nothing was found, or every method failed, and nothing is printed. An uncaught :class:`RuntimeError` is a traceback, and exits with ``1`` too.
+- ``2``: the arguments are invalid or conflict (e.g. ``-i`` with ``-4``). The usage message goes to stderr.
+
+Log messages (``-v``) go to stderr, so stdout only ever has the MAC. This makes it easy to use in scripts:
 
 .. tab:: Linux/macOS
 
@@ -71,7 +75,7 @@ Examples
 Remote hosts
 ------------
 
-Getting the MAC address of a remote host requires the ARP table (IPv4) or NDP table (IPv6) to be populated. By default, getmac will populate the table by sending a UDP packet to a high port on the host (defaults to ``55555``), or an ARP request if ``arping`` is available (or on Windows). This can be disabled with ``--no-net`` (or ``-N``), as shown below.
+Getting the MAC address of a remote host requires the ARP table (IPv4) or NDP table (IPv6) to be populated. By default, getmac gets the host into the table with an ARP request (IPv4 only, on Windows or if ``arping`` is installed) or, if it can't, an empty UDP packet to a high port on the host (defaults to ``55555``). On Linux, it reads the ARP table file first, and sends nothing if the host is already there. This can be disabled with ``--no-net`` (or ``-N``), as shown below.
 
 .. code-block:: shell
 
@@ -191,7 +195,7 @@ Examples of running as a Python module with shorthands for the arguments
 
       python3 -m getmac -i 'Ethernet 4'
       python3 -m getmac -4 192.168.0.1
-      python3 -m getmac -6 ::1
+      python3 -m getmac -6 fe80::1
       python3 -m getmac -n home.router
 
 .. tab:: Windows
@@ -200,7 +204,7 @@ Examples of running as a Python module with shorthands for the arguments
 
       py -m getmac -i 'Ethernet 4'
       py -m getmac -4 192.168.0.1
-      py -m getmac -6 ::1
+      py -m getmac -6 fe80::1
       py -m getmac -n home.router
 
 

@@ -70,8 +70,8 @@ from getmac import get_mac_address, settings
 eth_mac = get_mac_address(interface="eth0")
 win_mac = get_mac_address(interface="Ethernet 3")
 ip_mac = get_mac_address(ip="192.168.0.1")
-ip6_mac = get_mac_address(ip6="::1")
-host_mac = get_mac_address(hostname="localhost")
+ip6_mac = get_mac_address(ip6="fe80::1")
+host_mac = get_mac_address(hostname="home.router")
 updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
 
 # Enable debugging
@@ -106,13 +106,13 @@ python3 -m getmac
 # Interface names, IPv4/IPv6 addresses, or Hostnames can be specified
 getmac --interface ens33
 getmac --ip 192.168.0.1
-getmac --ip6 ::1
+getmac --ip6 fe80::1
 getmac --hostname home.router
 
 # Running as a Python module with shorthands for the arguments
 python -m getmac -i 'Ethernet 4'
 python -m getmac -4 192.168.0.1
-python -m getmac -6 ::1
+python -m getmac -6 fe80::1
 python -m getmac -n home.router
 
 # Getting the MAC address of a remote host requires the ARP table to be populated.
@@ -146,7 +146,7 @@ getmac --ip 192.168.0.1 --override-platform windows
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 ```
 
-The MAC is printed to stdout and the exit code is `0`. If nothing was found, nothing is printed and the exit code is `1`. Log messages (`-v`) go to stderr.
+The MAC is printed to stdout and the exit code is `0`. If nothing was found, nothing is printed and the exit code is `1`. Bad arguments (e.g. using two lookup options at once) exit with `2`. Log messages (`-v`) go to stderr.
 
 ## API: `get_mac_address()`
 - `interface`: Name of a network interface on the system
@@ -155,8 +155,8 @@ The MAC is printed to stdout and the exit code is `0`. If nothing was found, not
 - `hostname`: Hostname of a remote host
 - `network_request`: If a network request should be made to update and populate the ARP/NDP table of remote hosts used to lookup MACs in most circumstances. Disable this if you want to just use what's already in the table, or if you have requirements to prevent network traffic.
     - The network request is an empty UDP packet sent to a high port, `55555` by default. This can be changed by setting `getmac.settings.PORT` to the desired integer value.
-    - If `arping` is available (Linux and macOS), or on Windows, an ARP request is sent instead of the UDP packet.
-    - Additionally, on Windows, this will send a UDP packet to `1.1.1.1:53` to attempt to determine the default interface (Note: the IP is [CloudFlare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/)).
+    - If `arping` is installed (Linux and macOS), or on Windows, an ARP request is sent instead of the UDP packet (IPv4 only). On Linux, the ARP table file is read first, and nothing is sent if it has a complete entry for the host.
+    - With no arguments on Windows, getmac connects a UDP socket to `1.1.1.1:53` to find the IP of the default interface (Note: the IP is [CloudFlare's DNS server](https://www.cloudflare.com/learning/dns/what-is-1.1.1.1/)). Nothing is sent, since connecting a UDP socket only picks a route. Skipped with `network_request=False`.
 
 Only one of the first four arguments can be used at a time. `ip` and `ip6` also accept objects from the standard library's `ipaddress` module (`IPv4Address`, `IPv4Interface`, `IPv6Address`, `IPv6Interface`), and all four accept `bytes` (decoded as UTF-8).
 
@@ -164,7 +164,7 @@ Only one of the first four arguments can be used at a time. `ip` and `ip6` also 
 Settings are attributes of `getmac.settings` (`from getmac import settings`). Set them before calling `get_mac_address()`.
 
 - `logging.getLogger("getmac")`: Runtime messages and errors are recorded to the `getmac` logger using Python's [logging](https://docs.python.org/3/library/logging.html) module. They can be configured by using [logging.basicConfig()](https://docs.python.org/3/library/logging.html#logging.basicConfig) or adding handlers to the `"getmac"` logger.
-- `settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get (`0` is off, `4` is roughly the highest).
+- `settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get (`0` is the default, `4` is roughly the highest).
 - `settings.PORT`: UDP port used to populate the ARP/NDP table (see the documentation of the `network_request` argument in `get_mac_address()` for details). Default is `55555`.
 - `settings.ARP_TIMEOUT`: How long to keep checking the ARP/NDP table for a host after sending the UDP packet, in seconds. The host's entry is only added once it replies, which can take longer than getmac takes to check. Default is `0` (check once, without waiting). Lookups of hosts that don't reply take this much longer.
 - `settings.COMMAND_TIMEOUT`: How long to wait for a command that getmac runs (such as `arp` or `ipconfig.exe`) to finish, in seconds. A command that takes longer is stopped, and the next method is tried. Default is `15`. `None` or `0` waits for as long as the command takes.
@@ -181,13 +181,13 @@ Settings are attributes of `getmac.settings` (`from getmac import settings`). Se
 - MIT licensed!
 
 ## Notes
-- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, `None` is returned. On Windows, only the default interface is used.
-- `"localhost"` and `"127.0.0.1"` always return `"00:00:00:00:00:00"`, the MAC of the loopback interface.
+- If none of the arguments are selected, the default network interface for the system will be used. If the default network interface cannot be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, `None` is returned. On Windows, only the default interface is used, and with network requests enabled, the IP of the default interface is found first (a UDP socket is connected to `1.1.1.1:53`, but nothing is sent) and looked up as a host.
+- `hostname="localhost"` (`-n localhost`) and `ip="127.0.0.1"` (`-4 127.0.0.1`) return `"00:00:00:00:00:00"`, the MAC of the loopback interface. Other spellings, such as `::1`, `127.0.0.2`, `LOCALHOST`, or the host's own name, aren't short-circuited and return `None`.
 - "Remote hosts" refer to hosts in your local layer 2 network, also commonly referred to as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please [open a GitHub issue](https://github.com/GhostofGoes/getmac/issues) or shoot me an email, I'd love to be wrong about this.
-- The first four arguments are mutually exclusive. `network_request` does not have any functionality when the `interface` argument is specified, and can be safely set if using in a script.
-- The physical transport is assumed to be Ethernet (802.3). Others, such as Wi-Fi (802.11), are currently not tested or considered. I plan to address this in the future, and am definitely open to pull requests or issues related to this, including error reports.
+- The first four arguments are mutually exclusive. `network_request` does nothing with `interface` (so it's safe to set in a script). With `ip`, `ip6` and `hostname`, it allows the ARP request or UDP packet. With no arguments, it only matters on Windows, for the socket step above.
+- The physical transport is assumed to be Ethernet or Wi-Fi. Others, such as Bluetooth or cellular, may work, but they're untested. I'm definitely open to pull requests or issues related to this, including error reports.
 - **Most exceptions are handled silently and returned as `None`.** If you run into problems, set `DEBUG` to `1` or higher (or use `getmac -v -dddd` on the command line) to get more information about what's happening. If you're still having issues, check the [troubleshooting guide](https://ghostofgoes.github.io/getmac/troubleshooting.html), then please create an [issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and include the output with `DEBUG` enabled.
-- As of 1.0.0, a `RuntimeError` is raised if no methods match the type of request and platform, or if all matching methods fail their test (in other words, none of them work). A `ValueError` is raised for an `ipaddress` network (e.g. `IPv4Network`), since getmac needs a host, not a network.
+- As of 1.0.0, a `RuntimeError` is raised if no methods match the type of request and platform, or if all matching methods fail their test (in other words, none of them work). On a platform getmac doesn't know, it falls back to generic methods and still shows a `RuntimeWarning` when it does. A `ValueError` is raised for an `ipaddress` network (e.g. `IPv4Network`), since getmac needs a host, not a network.
 - The first call is slower than the rest. getmac checks which methods work on your system the first time it needs one, and remembers the result for the rest of the process.
 
 ## Commands and techniques by platform
@@ -198,7 +198,7 @@ The [platforms page](https://ghostofgoes.github.io/getmac/platforms.html) lists 
     - Libraries: `ctypes`, `socket`
     - Default interfaces: `netsh.exe`
 - Linux/Unix
-    - Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`, `arping` (both iputils and Habets' variants)
+    - Commands: `arp`, `ip`, `ifconfig`, `netstat`, `ip link`, `arping` (iputils, Habets', and BusyBox variants)
     - Libraries:  `fcntl`, `socket`
     - Files: `/sys/class/net/{iface}/address`, `/proc/net/arp`
     - Default interfaces: `/proc/net/route`, `route`, `ip route list`

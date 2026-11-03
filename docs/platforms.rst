@@ -33,7 +33,7 @@ All or almost all features should work on "supported" platforms. While other ver
 - Docker. See :doc:`docker`.
 - BusyBox (not technically a platform, but several of the methods work on this platform)
 
-Linux, Windows, and macOS are tested in CI on every change, and so are NetBSD, DragonFly BSD, Solaris, and illumos (in VMs). FreeBSD and OpenBSD are tested by hand, so help testing them is always welcome. HP-UX has an interface method (``lanscan``), but I don't have a way to test it.
+Linux, Windows, and macOS are tested in CI on every code change, and so are NetBSD, DragonFly BSD, Solaris, and illumos (in VMs). FreeBSD and OpenBSD are tested by hand, so help testing them is always welcome. HP-UX has an interface method (``lanscan``), but I don't have a way to test it.
 
 .. _platforms-methods:
 
@@ -43,6 +43,8 @@ Methods by platform
 getmac has a list of *methods*, each of which uses one command, file, or library to get a MAC. On each platform, getmac tries the methods for that platform in order, and uses the first one that works (:doc:`module_api` explains the details). The lists below are in the order the methods are tried in. Every method is documented in the :doc:`api`, including what it parses and any quirks.
 
 To see which methods were chosen on your system, run ``getmac -v -dd``.
+
+.. _platforms-windows:
 
 Windows
 -------
@@ -62,7 +64,7 @@ Linux
 Also used on Android and WSL2 (see below).
 
 Interfaces
-   :class:`~getmac.getmac.SysIfaceFile` (``/sys/class/net/<iface>/address``), :class:`~getmac.getmac.FcntlIface` (:func:`fcntl.ioctl`), :class:`~getmac.getmac.IfconfigWithIfaceArg` (``ifconfig <iface>``), :class:`~getmac.getmac.IfconfigOther` (``ifconfig -a``, ``-v``, or ``-av``), :class:`~getmac.getmac.IpLinkIface` (``ip link``), :class:`~getmac.getmac.NetstatIface` (``netstat -iae``)
+   :class:`~getmac.getmac.SysIfaceFile` (``/sys/class/net/<iface>/address``), :class:`~getmac.getmac.FcntlIface` (:func:`fcntl.ioctl`), :class:`~getmac.getmac.IfconfigWithIfaceArg` (``ifconfig <iface>``), :class:`~getmac.getmac.IfconfigOther` (``ifconfig``, then with ``-a``, ``-v``, or ``-av`` if that fails), :class:`~getmac.getmac.IpLinkIface` (``ip link``), :class:`~getmac.getmac.NetstatIface` (``netstat -iae``)
 IPv4 hosts
    :class:`~getmac.getmac.ArpFile` (``/proc/net/arp``), :class:`~getmac.getmac.ArpingHost` (``arping``, sends an ARP request), :class:`~getmac.getmac.IpNeighborShow` (``ip neighbor show``), :class:`~getmac.getmac.ArpVariousArgs` (``arp``)
 IPv6 hosts
@@ -137,7 +139,7 @@ Default interface
 Solaris and illumos
 -------------------
 
-Platform ``sunos`` covers Oracle Solaris and the illumos distros (OmniOS, OpenIndiana, SmartOS). All of these methods work for regular users, not just root.
+Platform ``sunos`` covers Oracle Solaris and the illumos distros (OmniOS, OpenIndiana, SmartOS). All of these methods except the ``ifconfig`` fallback work for regular users, not just root.
 
 Interfaces
    :class:`~getmac.getmac.DladmIface` (``dladm show-link``, then ``show-phys -m``, ``show-vnic``, or ``show-aggr -x`` depending on the type of link), :class:`~getmac.getmac.IfconfigWithIfaceArg` (``ifconfig <iface>``, which only shows the MAC to root)
@@ -161,10 +163,10 @@ Hosts and default interface
 Other platforms
 ---------------
 
-On a platform getmac doesn't know, or for a type of lookup that has no methods for the platform, getmac falls back to generic methods that work on many Unix-like systems:
+On a platform getmac doesn't know, or for a type of lookup that has no methods for the platform, getmac falls back to generic methods that work on many Unix-like systems. It logs a warning and shows a :class:`RuntimeWarning` (using :mod:`warnings`) when it does. Running with ``python -W error::RuntimeWarning`` turns an unsupported platform into an error, which is how the NetBSD and DragonFly CI checks it.
 
 Interfaces
-   :class:`~getmac.getmac.IfconfigWithIfaceArg` (``ifconfig <iface>``), :class:`~getmac.getmac.IfconfigOther` (``ifconfig``), :class:`~getmac.getmac.IpLinkIface` (``ip link``), :class:`~getmac.getmac.NetstatIface` (``netstat -iae``)
+   :class:`~getmac.getmac.IfconfigWithIfaceArg` (``ifconfig <iface>``), :class:`~getmac.getmac.IfconfigOther` (``ifconfig``, then with ``-a``, ``-v``, or ``-av`` if that fails), :class:`~getmac.getmac.IpLinkIface` (``ip link``), :class:`~getmac.getmac.NetstatIface` (``netstat -iae``)
 Hosts
    :class:`~getmac.getmac.IpNeighborShow` (``ip neighbor show``), :class:`~getmac.getmac.ArpVariousArgs` (``arp``)
 Default interface
@@ -188,7 +190,7 @@ Known issues
 
 - Linux, WSL: Getting the MAC of a local interface IP does not currently work (``getmac --ip 10.0.0.4`` will fail if ``10.0.0.4`` is the IP address of a local interface). This issue may be present on other POSIX systems as well. Use the interface name instead.
 - WSL1: remote IPv6 hosts aren't supported yet.
-- Windows: ``ipconfig.exe`` (a fallback for when ``getmac.exe`` doesn't work) only finds interfaces by name in English output, since the adapter headers are translated. Adapter descriptions and MACs are found in any language.
+- Windows: ``ipconfig.exe`` (a fallback for when ``getmac.exe`` doesn't work) only finds interfaces by name in English output, since the adapter headers are translated. Adapter descriptions are found if the label is "Description" (English), and MACs are found in any language.
 - Windows: ``wmic.exe`` is deprecated as of Windows 10 21H1 and is being removed from Windows 11, so :class:`~getmac.getmac.WmicExe` may not work there. It's the last fallback for interfaces, so this only matters if ``getmac.exe`` and ``ipconfig.exe`` both fail.
 - Android: see above.
 - Hostnames for IPv6 devices are not yet supported.

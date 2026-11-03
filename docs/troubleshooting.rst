@@ -33,7 +33,8 @@ getmac finds the MAC of a remote host in your system's ARP table (IPv4) or NDP t
 - Make sure the host is on your local network (the same layer 2 network, LAN, or VLAN). MACs aren't visible across routers, so ``getmac -4 8.8.8.8`` returning nothing is expected, not a bug.
 - Make sure network requests are enabled (they are by default). Don't use ``--no-net`` or ``network_request=False`` unless you have to.
 - The host may reply after getmac checks the table. Use ``--arp-timeout`` or :attr:`settings.ARP_TIMEOUT <getmac.variables.Settings.ARP_TIMEOUT>` to keep checking for a second or two. See :doc:`usage`.
-- Check that the host is actually there, e.g. ``ping`` it, then try again. If it shows up in the table (``arp -a``, ``ip neigh``, etc.) but getmac still returns :obj:`None`, that's a bug. Please report it with the debug output.
+- If ``arping`` is installed but can't send (it usually needs root or ``CAP_NET_RAW``), getmac returns :obj:`None` without falling back to another method, and without sending the UDP packet. Check with ``arping -c 1 <ip>`` and ``getmac -v -dddd``. To work around it, run as root, or ``ping`` the host first and use ``--no-net``, or use ``--force-method IpNeighborShow``, or remove ``ArpingHost`` from ``METHODS`` (see :ref:`module-api-removing-method`).
+- Check that the host is actually there, e.g. ``ping`` it, then try again. If it shows up in the table (``arp -a``, ``ip neigh``, etc.) but getmac still returns :obj:`None`, that's a bug (unless it's the ``arping`` problem above). Please report it with the debug output.
 
 None for a local IP address
 ===========================
@@ -44,7 +45,7 @@ None for a Windows interface name
 =================================
 
 - The name has to match the whole connection name (``Ethernet 3``) or adapter description (``Intel(R) Ethernet Connection I217-V``). Case doesn't matter, but part of a name isn't enough. ``getmac.exe /V`` or ``ipconfig /all`` show the names.
-- If ``getmac.exe`` doesn't work and getmac falls back to ``ipconfig.exe``, names are only found in English output, since Windows translates the adapter headers. Descriptions are found in any language.
+- If ``getmac.exe`` doesn't work and getmac falls back to ``ipconfig.exe``, names are only found in English output, since Windows translates the adapter headers. Descriptions are found if the label is "Description" (English), and MACs are found in any language.
 
 Lookups are slow
 ================

@@ -45,12 +45,12 @@ IP addresses and hostnames
    get_mac_address(ip="192.168.0.1")
 
    # IPv6 example
-   get_mac_address(ip6="::1")
+   get_mac_address(ip6="fe80::1")
 
    # Hostname example
-   get_mac_address(hostname="localhost")
+   get_mac_address(hostname="home.router")
 
-Only one of ``interface``, ``ip``, ``ip6``, and ``hostname`` can be used at a time. A hostname is resolved to an IPv4 address with DNS, then looked up like ``ip``. ``"localhost"`` and ``"127.0.0.1"`` always return ``"00:00:00:00:00:00"``, the MAC of the loopback interface.
+Only one of ``interface``, ``ip``, ``ip6``, and ``hostname`` can be used at a time. A hostname is resolved to an IPv4 address with DNS, then looked up like ``ip``. ``hostname="localhost"`` (``-n localhost`` on the command line) and ``ip="127.0.0.1"`` (``-4 127.0.0.1``) return ``"00:00:00:00:00:00"``, the MAC of the loopback interface, without looking anything up. Other spellings, such as ``::1``, ``127.0.0.2``, ``LOCALHOST``, or the host's own name, aren't short-circuited, and return :obj:`None`.
 
 
 Default interface
@@ -64,9 +64,9 @@ With no arguments, you get the MAC of the system's default network interface, i.
 
    get_mac_address()
 
-If the default interface can't be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, :obj:`None` is returned. On Windows, only the default interface is used.
+If the default interface can't be determined (for example, if there aren't any routes) or doesn't have a MAC (for example, a VPN tunnel), then the first interface that has a MAC and isn't a loopback interface is used. If there isn't one, :obj:`None` is returned. On Windows, only the default interface is used, and with network requests enabled, getmac first looks up the IP of the default interface as a host (see :ref:`platforms-windows`).
 
-To get the *name* of the default interface, use :func:`~getmac.getmac.get_default_interface`. It uses the same logic that :func:`~getmac.getmac.get_mac_address` uses when it's called without any arguments.
+To get the *name* of the default interface, use :func:`~getmac.getmac.get_default_interface`. It finds the default interface without the fallbacks that :func:`~getmac.getmac.get_mac_address` applies later (the first interface with a MAC, the Windows host lookup, and the remembered default), so the MAC from :func:`~getmac.getmac.get_mac_address` can belong to a different interface than the name you get here. See :ref:`module-api-get-default-interface`.
 
 .. code-block:: python
 
@@ -80,8 +80,9 @@ Remote hosts and network requests
 
 Finding the MAC of a remote host means finding it in the system's ARP table (IPv4) or NDP table (IPv6). The host is only in the table if the system has talked to it recently, so by default (``network_request=True``) getmac tries to get it in there first:
 
-- On Linux and macOS with ``arping`` installed, and on Windows, getmac sends an ARP request to the host and waits for the reply.
-- Otherwise, getmac sends an empty UDP packet to the host on port ``55555`` (:attr:`~getmac.variables.Settings.PORT`). To send the packet, the system has to resolve the host's MAC with ARP (or NDP), which adds it to the table.
+1. On Linux, getmac reads the ARP table file first. If it has a complete entry for the host, nothing is sent on the network.
+2. If it doesn't, then on Windows, or on Linux and macOS with ``arping`` installed, getmac sends an ARP request to the host and waits for the reply (IPv4 only).
+3. If neither applies, getmac sends an empty UDP packet to the host on port ``55555`` (:attr:`~getmac.variables.Settings.PORT`). To send the packet, the system has to resolve the host's MAC with ARP (or NDP), which adds it to the table. IPv6 hosts always use this step.
 
 Set ``network_request=False`` to only use what's already in the table, for example if you have requirements to prevent network traffic:
 
@@ -100,7 +101,7 @@ The host's entry is only added to the table once it replies, which can take long
    settings.ARP_TIMEOUT = 1.0  # Default is 0, check once
    get_mac_address(ip="10.0.0.1")
 
-``network_request`` does not have any functionality when the ``interface`` argument is specified, so it can be safely set if using in a script. :ref:`module-api-ipv4-network` has the exact sequence of what getmac does.
+What ``network_request`` does depends on the argument. With ``interface``, nothing, so it's safe to set in a script. With ``ip``, ``ip6``, and ``hostname``, it allows the ARP request or UDP packet above. With no arguments, it only matters on Windows, where it allows connecting the UDP socket to find the default interface's IP. :ref:`module-api-ipv4-network` has the exact sequence of what getmac does.
 
 
 Changing settings
@@ -139,13 +140,13 @@ The ``ip`` and ``ip6`` arguments also accept objects from the standard library's
    ipv4_addr = ip_address("192.168.0.1")
    print(get_mac_address(ip=ipv4_addr))
 
-   ipv6_addr = ip_address("::1")
+   ipv6_addr = ip_address("fe80::1")
    print(get_mac_address(ip=ipv6_addr))
 
    ipv4_iface = IPv4Interface("192.168.0.1/24")
    print(get_mac_address(ip=ipv4_iface))
 
-   ipv6_iface = IPv6Interface("::1/128")
+   ipv6_iface = IPv6Interface("fe80::1/64")
    print(get_mac_address(ip=ipv6_iface))
 
 All four lookup arguments also accept :class:`bytes`, which are decoded as UTF-8.
@@ -183,7 +184,7 @@ Configuration
 
 Settings that affect the behavior of getmac are attributes of ``getmac.settings`` (an instance of :class:`~getmac.variables.Settings`). Set them before calling :func:`~getmac.getmac.get_mac_address`. The exception is logging, which is handled by Python's :mod:`logging` module (see above). The following settings are available:
 
-- :attr:`~getmac.variables.Settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get (``0`` is off, ``4`` is roughly the highest).
+- :attr:`~getmac.variables.Settings.DEBUG`: integer value that controls debugging output. The higher the value, the more output you get (``0`` is the default, ``4`` is roughly the highest, see the levels above).
 - :attr:`~getmac.variables.Settings.PORT`: the UDP port used to populate the ARP table (IPv4) or NDP table (IPv6) when looking up MACs for hosts or IPs. Default is ``55555``.
 - :attr:`~getmac.variables.Settings.ARP_TIMEOUT`: how long to keep checking the ARP table (IPv4) or NDP table (IPv6) for a host after sending the UDP packet, in seconds. ``0`` (the default) checks once, without waiting.
 - :attr:`~getmac.variables.Settings.COMMAND_TIMEOUT`: how long to wait for a command that getmac runs (such as ``arp`` or ``ipconfig.exe``) to finish, in seconds. A command that takes longer is stopped, and the next method is tried. The default is 15 seconds, and :obj:`None` or ``0`` waits for as long as the command takes.
@@ -200,13 +201,14 @@ Errors and exceptions
 
 - **A lookup that finds nothing returns** :obj:`None`. This covers an interface that doesn't exist, a host that isn't in the ARP/NDP table, and a hostname that doesn't resolve. Exceptions raised by the platform-specific *methods* are caught and logged, and the next method is tried (see :ref:`module-api-fallback`). The one exception is a method forced with :attr:`~getmac.variables.Settings.FORCE_METHOD`, whose exceptions are not caught.
 - :class:`ValueError` means a bad argument: an :mod:`ipaddress` network (getmac needs a host, not a network), or an unsupported type such as :class:`int`.
+- :class:`RuntimeWarning` is shown (using :mod:`warnings`, and logged) when getmac has no methods for your platform and falls back to the generic ones (see :ref:`platforms-other`). It's only an exception if warnings are turned into errors, e.g. with ``python -W error`` or pytest's ``filterwarnings = error``.
 - :class:`RuntimeError` means getmac has no working method for this kind of lookup on this platform: either no methods match the type of request and platform, or all of them failed their test (in other words, none of them work). Retrying won't help, it's an environment problem or a bug worth reporting. See :doc:`troubleshooting`. This is new in 1.0.0, 0.9.x returned :obj:`None` with a warning.
 
 
 Limitations
 ===========
 
-- The physical transport is assumed to be Ethernet (802.3). Others, such as Wi-Fi (802.11), are currently not tested or considered. I plan to address this in the future, and am definitely open to pull requests or issues related to this, including error reports.
+- The physical transport is assumed to be Ethernet or Wi-Fi. Others, such as Bluetooth or cellular, may work, but they're untested. I'm definitely open to pull requests or issues related to this, including error reports.
 - "Remote hosts" refer to hosts in *your local layer 2 network*, also known as a "broadcast domain", "LAN", or "VLAN". As far as I know, there is not a reliable method to get a MAC address for a remote host external to the LAN. If you know any methods otherwise, please `open an issue on GitHub <https://github.com/GhostofGoes/getmac/issues>`_ or shoot me an email, I'd love to be wrong about this.
 - Hostnames for IPv6 devices are not yet supported.
 - The accuracy and reliability of the MAC address retrieval may vary depending on the network configuration, the target host's settings, and other factors.

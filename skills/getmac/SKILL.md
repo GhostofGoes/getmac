@@ -29,9 +29,10 @@ python -m getmac -n router.lan      # hostname (resolved to IPv4 via DNS, then l
 ```
 
 **Output contract:** on success, stdout contains only the MAC (lowercase,
-colon-separated, e.g. `00:0c:29:be:5c:9e`) and the exit code is `0`. On any
-failure, stdout is empty and the exit code is `1`. Check the exit code
-instead of matching text:
+colon-separated, e.g. `00:0c:29:be:5c:9e`) and the exit code is `0`. If
+nothing was found or every method failed, stdout is empty and the exit code
+is `1`. Invalid or conflicting arguments exit with `2` (usage on stderr).
+Check the exit code instead of matching text:
 
 ```bash
 if mac=$(python -m getmac -i "$IFACE"); then
@@ -49,7 +50,7 @@ Other flags:
 | `-v` / `-d` / `-dd` | Log progress / debug detail to **stderr**. stdout still carries only the MAC. |
 | `--override-port PORT` | UDP port used to provoke an ARP entry (default `55555`). |
 | `--arp-timeout SECONDS` | After the UDP packet, keep re-checking the ARP table for the host for up to this long (default `0`, check once). Helps with hosts that are slow to reply; misses take this much longer. |
-| `--override-platform`, `--force-method` | Debugging aids only. They bypass platform detection and method feasibility checks, so they won't make an unsupported lookup work. |
+| `--override-platform`, `--force-method` | Debugging aids only. `--override-platform` replaces the detected platform (methods are still tested). `--force-method` skips the method's test, and has no fallback. Neither will make an unsupported lookup work. |
 
 ## Python API
 
@@ -92,6 +93,8 @@ strings.
   of request on this platform, e.g. none of the commands it relies on are
   available. Retrying won't help; it's an environment problem, or a bug worth
   reporting upstream.
+- **`RuntimeWarning`** is shown when getmac has no methods for the platform and
+  falls back to the generic ones. It's only an exception if warnings are errors.
 
 ### Settings
 
@@ -100,7 +103,7 @@ Settings live on the `getmac.settings` object. Set them before calling:
 ```python
 import getmac
 
-getmac.settings.DEBUG = 2     # 0 (off) to ~4; logs via the "getmac" logger
+getmac.settings.DEBUG = 2     # 0 (default) to ~4; logs via the "getmac" logger
 getmac.settings.PORT = 44444  # UDP port for the ARP-refresh probe
 getmac.settings.ARP_TIMEOUT = 1.0  # seconds to keep re-checking after the probe (default 0)
 ```
@@ -114,8 +117,11 @@ equivalents of the CLI debugging flags.
 - **The target must be on the local network.** MACs aren't visible across
   routers, so `-4 8.8.8.8` returning nothing is expected, not a bug.
 - **Failures are indistinguishable.** A nonexistent interface and an
-  unreachable host both give `None` / exit code 1 with empty stdout.
-- **`localhost` / `127.0.0.1` return `00:00:00:00:00:00`.**
+  unreachable host both give `None` / exit code 1 with empty stdout. Bad
+  arguments exit with 2.
+- **`hostname="localhost"` (`-n localhost`) and `ip="127.0.0.1"` (`-4 127.0.0.1`)
+  return `00:00:00:00:00:00`.** Other spellings (`::1`, `127.0.0.2`, `LOCALHOST`,
+  the host's own name) aren't short-circuited and return `None`.
 - **No arguments means the default interface.** If it can't be found (e.g. no
   routes) or has no MAC (e.g. a VPN tunnel), the first non-loopback interface
   with a MAC is used, and `None` if there isn't one (except on Windows, which

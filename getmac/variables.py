@@ -40,12 +40,24 @@ class Settings(VarsClass):
     identifier such as ``"linux"`` or ``"wsl"``, or any value returned by
     :func:`platform.system`, such as ``"Darwin"``. Case and surrounding
     whitespace are ignored. An empty string (the default) means no override.
+
+    It's only read when the method cache for a lookup type is built, so set it
+    before the first lookup (or reset the caches).
     """
 
     FORCE_METHOD: str = ""
     """
     Force a specific method to be used for all lookups.
     Used for debugging and testing.
+
+    The value is a method class name, e.g. ``"IpNeighborShow"``, matched ignoring case.
+    It's checked on every lookup. When it's set:
+
+    - A new instance of the method is created for each lookup.
+    - :meth:`~getmac.getmac.Method.test` is not called, and the method type
+      and platforms of the method are ignored.
+    - There's no fallback, and exceptions raised by the method are not caught.
+    - If no method has that name, an error is logged and :obj:`None` is returned.
     """
 
     # Added for https://github.com/GhostofGoes/getmac/issues/101
