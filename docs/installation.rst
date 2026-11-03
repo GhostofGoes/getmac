@@ -55,9 +55,7 @@ Debian-based Linux distributions
 OS Packaging Status
 ===================
 
-.. image:: https://repology.org/badge/vertical-allrepos/getmac.svg
-   :alt: OS Packaging status
-   :target: https://repology.org/project/getmac/versions
+To see which operating systems package getmac, and which version each one has, check `getmac's packaging status on Repology <https://repology.org/project/getmac/versions>`__.
 
 
 Docker

@@ -1,17 +1,17 @@
 
 <p align="center">
-  <a href="https://pypi.org/project/getmac/"><img alt="PyPI - Current Version" src="https://img.shields.io/pypi/v/getmac?label=PyPI"></a>
-  <img alt="Python Version" src="https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14|3.15-blue.svg">
-  <a href="https://pepy.tech/project/getmac"><img alt="Weekly PyPI downloads" src="https://pepy.tech/badge/getmac/week"></a>
-  <a href="https://pepy.tech/project/getmac"><img alt="PyPI downloads" src="https://pepy.tech/badge/getmac"></a>
+  <a href="https://pypi.org/project/getmac/"><img alt="PyPI version badge" src="https://img.shields.io/pypi/v/getmac?label=PyPI"></a>
+  <img alt="Supports Python 3.9 to 3.15" src="https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14|3.15-blue.svg">
+  <a href="https://pepy.tech/project/getmac"><img alt="Weekly PyPI downloads badge" src="https://pepy.tech/badge/getmac/week"></a>
+  <a href="https://pepy.tech/project/getmac"><img alt="Total PyPI downloads badge" src="https://pepy.tech/badge/getmac"></a>
   <br>
-  <a href="https://github.com/GhostofGoes/getmac/actions"><img alt="GitHub Actions Pipeline Status" src="https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://codecov.io/github/GhostofGoes/getmac"><img alt="codecov" src="https://codecov.io/github/GhostofGoes/getmac/branch/main/graph/badge.svg?token=5NxlAE9eGY"></a>
-  <a href="https://www.bestpractices.dev/projects/9388"><img alt="OpenSSF Best Practices" src="https://www.bestpractices.dev/projects/9388/badge"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/GhostofGoes/getmac"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/GhostofGoes/getmac/badge"></a>
+  <a href="https://github.com/GhostofGoes/getmac/actions"><img alt="CI status badge (GitHub Actions)" src="https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://codecov.io/github/GhostofGoes/getmac"><img alt="Code coverage badge (Codecov)" src="https://codecov.io/github/GhostofGoes/getmac/branch/main/graph/badge.svg?token=5NxlAE9eGY"></a>
+  <a href="https://www.bestpractices.dev/projects/9388"><img alt="OpenSSF Best Practices badge" src="https://www.bestpractices.dev/projects/9388/badge"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/GhostofGoes/getmac"><img alt="OpenSSF Scorecard badge" src="https://api.scorecard.dev/projects/github.com/GhostofGoes/getmac/badge"></a>
   <br>
-  <a href="https://pdm-project.org"><img alt="PDM-managed" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json"></a>
-  <a href="https://github.com/astral-sh/ruff"><img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
+  <a href="https://pdm-project.org"><img alt="Managed with PDM" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json"></a>
+  <a href="https://github.com/astral-sh/ruff"><img alt="Code style: Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
 </p>
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
@@ -25,7 +25,9 @@ It provides one primary function, `get_mac_address()`, and a command line tool, 
 
 The full documentation is at https://ghostofgoes.github.io/getmac/, including the [usage guide](https://ghostofgoes.github.io/getmac/usage.html), the [command line reference](https://ghostofgoes.github.io/getmac/cli.html), [troubleshooting](https://ghostofgoes.github.io/getmac/troubleshooting.html), and how to [upgrade from 0.9.x](https://ghostofgoes.github.io/getmac/upgrading.html).
 
-[![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.svg)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
+[![Terminal recording: getmac CLI demo](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.svg)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
+
+The commands from the recording are also written out in [Terminal examples](#terminal-examples).
 
 
 ## Features
@@ -74,7 +76,9 @@ sudo apt install getmac
 
 ### OS Packaging Status
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/getmac.svg)](https://repology.org/project/getmac/versions)
+[![Packaging status for getmac across OS repositories (opens the full table on repology.org)](https://repology.org/badge/vertical-allrepos/getmac.svg)](https://repology.org/project/getmac/versions)
+
+The badge shows which OS repositories package getmac, and the version each one has. The same list is on [getmac's packaging status page on Repology](https://repology.org/project/getmac/versions).
 
 ### Docker
 A Docker image of the `getmac` command is published to the [GitHub Container Registry](https://github.com/GhostofGoes/getmac/pkgs/container/getmac) for `linux/amd64` and `linux/arm64`. The container runs `getmac` as an unprivileged user (`nobody`), and any arguments are passed to it.
