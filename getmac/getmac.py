@@ -1576,6 +1576,16 @@ def get_method_by_name(method_name: str) -> Optional[type[Method]]:
     return None
 
 
+def get_platform_names() -> set[str]:
+    """
+    The platform names that :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM` can be
+    set to: :attr:`Method.VALID_PLATFORM_NAMES <getmac.getmac.Method.VALID_PLATFORM_NAMES>`,
+    and any other platform a method in :data:`~getmac.getmac.METHODS` is for (e.g. one
+    added with a custom method).
+    """
+    return set(Method.VALID_PLATFORM_NAMES).union(*(method.platforms for method in METHODS))
+
+
 def get_instance_from_cache(method_type: str, method_name: str) -> Optional[Method]:
     """
     Get the cached instance of a named :class:`~getmac.getmac.Method`.

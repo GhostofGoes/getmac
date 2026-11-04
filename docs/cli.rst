@@ -197,7 +197,7 @@ Example output on Linux:
 
 getmac uses the ``primary`` method for a lookup. If that method fails, getmac tries the ``fallback`` methods in order (see :ref:`module-api-fallback`). The other options change the list too, such as ``--override-platform``, ``--exclude-method``, and ``--no-net`` (which skips methods that send packets).
 
-The platform detected by getmac can be overridden via ``--override-platform``. This is useful when debugging issues or if you know a method for a different platform works on the current platform. Any value returned by ``platform.system()`` is valid.
+The platform detected by getmac can be overridden via ``--override-platform``. This is useful when debugging issues or if you know a method for a different platform works on the current platform. The platforms are the ones in :attr:`Method.platforms <getmac.getmac.Method.platforms>`: ``android``, ``darwin``, ``dragonfly``, ``freebsd``, ``hp-ux``, ``linux``, ``netbsd``, ``openbsd``, ``other``, ``sunos``, ``windows``, and ``wsl`` (case doesn't matter). Any other name is an error.
 
 .. code-block:: shell
 
@@ -208,7 +208,7 @@ The platform detected by getmac can be overridden via ``--override-platform``. T
    getmac --ip 192.168.0.1 --override-platform windows
 
 
-A specific method can also be used with ``--force-method``, regardless of the consequences or if it even works. The method names are listed in the :doc:`api` (case doesn't matter), and ``--list-methods`` shows the ones for your platform.
+A specific method can also be used with ``--force-method``, regardless of the consequences or if it even works. The method names are listed in the :doc:`api` (case doesn't matter), and ``--list-methods`` shows the ones for your platform. A name that isn't a method, or is also given to ``--exclude-method``, is an error.
 
 .. code-block:: shell
 

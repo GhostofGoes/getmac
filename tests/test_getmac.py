@@ -92,6 +92,17 @@ def test_popen(mocker):
     m.assert_called_once_with("TESTCMD", "ARGS")
 
 
+def test_get_platform_names(mocker):
+    assert getmac.get_platform_names() == getmac.Method.VALID_PLATFORM_NAMES
+
+    class FakeOsIface(getmac.Method):
+        platforms = {"fakeos", "linux"}
+        method_type = "iface"
+
+    mocker.patch("getmac.getmac.METHODS", [*getmac.METHODS, FakeOsIface])
+    assert getmac.get_platform_names() == {*getmac.Method.VALID_PLATFORM_NAMES, "fakeos"}
+
+
 def test_get_method_by_name():
     assert not getmac.get_method_by_name("")
     assert not getmac.get_method_by_name("invalidmethodname")
