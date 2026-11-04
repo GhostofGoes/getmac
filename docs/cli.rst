@@ -69,8 +69,12 @@ Output and exit codes
 =====================
 
 - ``0``: the MAC was printed to stdout (also for ``--help`` and ``--version``).
-- ``1``: nothing was found, or every method failed, and nothing is printed. An uncaught :class:`RuntimeError` is a traceback, and exits with ``1`` too.
+- ``1``: nothing was found, and nothing is printed.
 - ``2``: the arguments are invalid or conflict (e.g. ``-i`` with ``-4``). The usage message goes to stderr.
+- ``3``: the lookup failed with an error, for example there aren't any methods for the platform, or none of them work. The error is printed to stderr as ``getmac: error: ...``, and with ``-d``, the traceback too.
+- ``130``: getmac was stopped with :kbd:`Ctrl-C`.
+
+Warnings are printed to stderr as ``getmac: warning: ...``.
 
 Log messages (``-v``) go to stderr, so stdout only ever has the MAC. This makes it easy to use in scripts:
 
@@ -91,7 +95,7 @@ Log messages (``-v``) go to stderr, so stdout only ever has the MAC. This makes 
       $mac = py -m getmac -i "Ethernet 3"
       if ($LASTEXITCODE -eq 0) { "Found: $mac" } else { "No MAC found" }
 
-Nothing found and a lookup that failed look the same (exit code ``1``, no output). Use ``-v`` to see why.
+If nothing was found (exit code ``1``), use ``-v`` to see why.
 
 
 Remote hosts

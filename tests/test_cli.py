@@ -3,6 +3,7 @@ import logging
 import os
 import subprocess
 import sys
+import warnings
 from typing import Union
 
 import pytest
@@ -244,6 +245,74 @@ def test_main_exit_code_failure(mock_get_mac, run_cli):
 
     assert run_cli() == (1, "", "")
     mock_get_mac.assert_called_once()
+
+
+# --- errors, warnings, and Ctrl-C ---------------------------------------------
+
+
+@pytest.mark.parametrize("args", [[], ["-i", "eth0"], ["-D"]])
+def test_main_runtime_error_is_a_message(mocker, run_cli, args):
+    error = RuntimeError("All 3 'iface' methods failed to test!")
+    mocker.patch("getmac.getmac.get_mac_address", side_effect=error)
+    mocker.patch("getmac.getmac.get_default_interface", side_effect=error)
+
+    assert run_cli(*args) == (
+        3,
+        "",
+        "getmac: error: All 3 'iface' methods failed to test!\n",
+    )
+
+
+@pytest.mark.parametrize("args", [[], ["-D"]])
+def test_main_unexpected_error_asks_for_a_report(mocker, run_cli, args):
+    error = OSError("boom")
+    mocker.patch("getmac.getmac.get_mac_address", side_effect=error)
+    mocker.patch("getmac.getmac.get_default_interface", side_effect=error)
+
+    code, out, err = run_cli(*args)
+
+    assert (code, out) == (3, "")
+    assert err.startswith("getmac: error: unexpected OSError: boom\n")
+    assert "https://github.com/GhostofGoes/getmac/issues" in err
+    assert "Traceback" not in err
+
+
+@pytest.mark.parametrize("error", [RuntimeError("no methods"), OSError("boom")])
+def test_main_error_with_debug_prints_traceback(mock_get_mac, run_cli, error):
+    mock_get_mac.side_effect = error
+
+    code, out, err = run_cli("-d")
+
+    assert (code, out) == (3, "")
+    assert "Traceback (most recent call last):" in err
+    assert f"{type(error).__name__}: {error}" in err
+    assert "getmac: error: " in err
+
+
+@pytest.mark.parametrize("args", [[], ["-D"], ["--list-methods"]])
+def test_main_ctrl_c_exits_130_quietly(mocker, run_cli, args):
+    mocker.patch("getmac.getmac.get_mac_address", side_effect=KeyboardInterrupt)
+    mocker.patch("getmac.getmac.get_default_interface", side_effect=KeyboardInterrupt)
+    mocker.patch("getmac.__main__._list_methods", side_effect=KeyboardInterrupt)
+
+    assert run_cli(*args) == (130, "", "")
+
+
+@pytest.mark.parametrize("flag", [None, "-v"])
+def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
+    def _lookup(**_kwargs):
+        warnings.warn("No methods for platform 'x'!", RuntimeWarning, stacklevel=2)
+        return MAC
+
+    mock_get_mac.side_effect = _lookup
+    original = warnings.showwarning
+
+    assert run_cli(*([flag] if flag else [])) == (
+        0,
+        f"{MAC}\n",
+        "getmac: warning: No methods for platform 'x'!\n",
+    )
+    assert warnings.showwarning is original  # Put back when main() is done
 
 
 # --- argparse handling -------------------------------------------------------
