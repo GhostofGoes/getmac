@@ -141,7 +141,7 @@ def search(regex: str, text: str, group_index: int = 0, flags: int = 0) -> Optio
         text: data to search
         group_index: index into ``match.groups()`` of the value to return
             (``0`` is the first capture group)
-        flags: flags to :mod:`re` functions, e.g. :const:`re.IGNORECASE`
+        flags: flags to :mod:`re` functions, e.g. :data:`re.IGNORECASE`
 
     Returns:
         The result, or :obj:`None` if the parsing failed
@@ -177,8 +177,8 @@ def popen(command: str, args: str) -> str:
         stdout from the command (stderr is discarded)
 
     Raises:
-        CalledProcessError: the command failed to execute
-        TimeoutExpired: the command took longer than
+        subprocess.CalledProcessError: the command failed to execute
+        subprocess.TimeoutExpired: the command took longer than
             :attr:`~getmac.variables.Settings.COMMAND_TIMEOUT` seconds, and was stopped
     """
     for directory in gvars.PATH:
@@ -216,8 +216,8 @@ def call_proc(executable: str, args: str) -> str:
         stdout from the command (stderr is discarded)
 
     Raises:
-        CalledProcessError: the command failed to execute
-        TimeoutExpired: the command took longer than
+        subprocess.CalledProcessError: the command failed to execute
+        subprocess.TimeoutExpired: the command took longer than
             :attr:`~getmac.variables.Settings.COMMAND_TIMEOUT` seconds, and was stopped
     """
     cmd: Union[str, list[str]]

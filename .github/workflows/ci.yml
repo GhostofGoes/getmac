@@ -180,6 +180,9 @@ jobs:
         with:
           name: manpage
           path: manpage/getmac.1
+      # Last, so the docs artifacts are uploaded even if a link is broken
+      - name: Check links
+        run: pdm run linkcheck
   deploy:
     name: Publish docs to GitHub Pages
     needs: docs

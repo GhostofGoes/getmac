@@ -2,7 +2,7 @@
 Command-Line Interface
 ======================
 
-The ``getmac`` command is primarily provided to enable debugging and troubleshooting of ``getmac``. It also provides a handy cross-platform command line tool to get MAC addresses, in case you needed one. It's installed along with ``getmac`` when pip installed, and can be invoked as long as your Python's ``Scripts`` folder is on your PATH.
+The ``getmac`` command is primarily provided to enable debugging and troubleshooting of ``getmac``. It also provides a handy cross-platform command line tool to get :term:`MAC addresses <MAC address>`, in case you needed one. It's installed along with ``getmac`` when pip installed, and can be invoked as long as your Python's ``Scripts`` folder is on your PATH.
 
 Basic Usage
 ===========
@@ -42,7 +42,7 @@ Only one of ``--interface``, ``--ip``, ``--ip6``, ``--hostname``, ``--default-in
 Running it through Python
 =========================
 
-If ``getmac`` doesn't work, try ``python3 -m getmac``, where ``python3`` is whatever command you use to run Python and used to install the package. That happens when your Python environment doesn't have the command on the ``PATH``, and on Windows, where ``getmac`` can run Windows' own ``getmac.exe`` instead (if it prints a table that looks nothing like getmac's, that's why). See :doc:`troubleshooting`.
+If ``getmac`` doesn't work, try ``python3 -m getmac``, where ``python3`` is whatever command you use to run Python and used to install the package. That happens when your Python environment doesn't have the command on the ``PATH``. It also happens on Windows, where ``getmac`` can run Windows' own ``getmac.exe`` instead (if it prints a table that looks nothing like getmac's, that's why). See :doc:`troubleshooting`.
 
 On Windows, this may be ``py``, e.g. ``py -m getmac``, or just ``python``, e.g. ``python -m getmac``.
 
@@ -97,7 +97,7 @@ Nothing found and a lookup that failed look the same (exit code ``1``, no output
 Remote hosts
 ============
 
-Getting the MAC address of a remote host requires the ARP table (IPv4) or NDP table (IPv6) to be populated. By default, getmac gets the host into the table with an ARP request (IPv4 only, on Windows or if ``arping`` is installed) or, if it can't, an empty UDP packet to a high port on the host (defaults to ``55555``). On Linux, it reads the ARP table file first, and sends nothing if the host is already there. This can be disabled with ``--no-net`` (or ``-N``), as shown below.
+Getting the MAC address of a :term:`remote host` requires the :term:`ARP table` (IPv4) or :term:`NDP table` (IPv6) to be populated. By default, getmac gets the host into the table with an ARP request (IPv4 only, on Windows or if ``arping`` is installed) or, if it can't, an empty :term:`UDP` packet to a high port on the host (defaults to ``55555``). On Linux, it reads the ARP table file first, and sends nothing if the host is already there. This can be disabled with ``--no-net`` (or ``-N``), as shown below.
 
 .. code-block:: shell
 

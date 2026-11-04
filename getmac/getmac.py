@@ -1519,9 +1519,11 @@ METHODS: list[type[Method]] = [
     DefaultIfaceNetsh,
 ]
 """
-All of the methods getmac knows about. The order matters: for each lookup type,
-the first method that passes its test is the primary method, and the rest are
-fallbacks, in this order. The goal is to put them in order of:
+All of the methods getmac knows about, in the order they're tried.
+
+For each lookup type, the first method that passes its test is the primary
+method, and the rest are fallbacks, in this order. The goal is to put them in
+order of:
 
 - Platform and version
 - Performance (a file read before a command)
