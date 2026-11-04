@@ -32,6 +32,7 @@
 * DragonFly BSD support, tested on DragonFly 6.4.0 and 6.4.2.
 * New command line argument, `--default-interface` (`-D`), which prints the name of the default interface.
 * New command line argument, `--exclude-method METHOD` (`-E`), that enables skipping of one or more methods (useful for troubleshooting).
+* New command line argument, `--list-methods`, that lists the available methods for the current platform and shows their status (primary, fallback, or test failed).
 * Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) (Issue [#41](https://github.com/GhostofGoes/getmac/issues/41))
     * Most methods now work for regular users, not just root.
         * New method, `DladmIface`, which gets interface MACs using `dladm`.

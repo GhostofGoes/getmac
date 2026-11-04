@@ -53,6 +53,7 @@ Other flags:
 | `--arp-timeout SECONDS` | After the UDP packet, keep re-checking the ARP table for the host for up to this long (default `0`, check once). Helps with hosts that are slow to reply; misses take this much longer. |
 | `--command-timeout SECONDS` | Stop a command getmac runs (e.g. `arp`, `ipconfig.exe`) after this long and try the next method (default `15`). `0` waits for as long as the command takes. |
 | `--exclude-method METHOD` | Don't use this method (case-insensitive). getmac uses the next method that works instead. Repeatable. An unknown name exits with code `2`. |
+| `--list-methods` | Print the methods for each lookup type on this platform, in the order getmac tries them. Each one is `primary`, a `fallback`, or `doesn't work here (test() failed)`. Run this first when a lookup fails unexpectedly. |
 | `--override-platform`, `--force-method` | Debugging aids only. `--override-platform` replaces the detected platform (methods are still tested). `--force-method` skips the method's test, and has no fallback. Neither will make an unsupported lookup work. |
 
 ## Python API
