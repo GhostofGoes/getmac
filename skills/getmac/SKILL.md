@@ -31,8 +31,10 @@ python -m getmac -D                 # NAME of the default interface (e.g. eth0),
 
 **Output contract:** on success, stdout contains only the MAC (lowercase,
 colon-separated, e.g. `00:0c:29:be:5c:9e`) and the exit code is `0`. If
-nothing was found or every method failed, stdout is empty and the exit code
-is `1`. Invalid or conflicting arguments exit with `2` (usage on stderr).
+nothing was found, stdout is empty and the exit code is `1`. Invalid or
+conflicting arguments exit with `2` (usage on stderr). If the lookup fails
+with an error (e.g. no methods work on this platform), stdout is empty, a
+`getmac: error: ...` line goes to stderr, and the exit code is `3`.
 Check the exit code instead of matching text:
 
 ```bash
@@ -121,9 +123,9 @@ variable (read at import) changes the ARP table file from `/proc/net/arp`.
 
 - **The target must be on the local network.** MACs aren't visible across
   routers, so `-4 8.8.8.8` returning nothing is expected, not a bug.
-- **Failures are indistinguishable.** A nonexistent interface and an
+- **"Not found" failures are indistinguishable.** A nonexistent interface and an
   unreachable host both give `None` / exit code 1 with empty stdout. Bad
-  arguments exit with 2.
+  arguments exit with 2, and errors (`RuntimeError` in Python) exit with 3.
 - **`hostname="localhost"` (`-n localhost`) and `ip="127.0.0.1"` (`-4 127.0.0.1`)
   return `00:00:00:00:00:00`.** Other spellings (`::1`, `127.0.0.2`, `LOCALHOST`,
   the host's own name) aren't short-circuited and return `None`.

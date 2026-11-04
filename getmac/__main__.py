@@ -3,9 +3,21 @@
 import argparse
 import logging
 import sys
+import traceback
+import warnings
+from typing import NoReturn, Union
 
 from . import getmac
 from .variables import consts, gvars, settings
+
+ISSUES_URL = "https://github.com/GhostofGoes/getmac/issues"
+
+# Exit codes
+EXIT_FOUND = 0
+EXIT_NOT_FOUND = 1
+EXIT_USAGE = 2  # What argparse uses for invalid arguments
+EXIT_ERROR = 3
+EXIT_INTERRUPTED = 130  # 128 + SIGINT, what shells use for Ctrl-C
 
 
 def _seconds(value: str) -> float:
@@ -204,7 +216,32 @@ def _list_methods(network_request: bool) -> None:
             print(f"  {method_class.__name__:<28} {status}")  # noqa: T201
 
 
+def _show_warning(message: Union[Warning, str], *_args: object, **_kwargs: object) -> None:
+    """Print warnings like the other messages, without a file path and a line of code."""
+    print(f"getmac: warning: {message}", file=sys.stderr)  # noqa: T201
+
+
+def _error(message: str) -> NoReturn:
+    print(f"getmac: error: {message}", file=sys.stderr)  # noqa: T201
+    sys.exit(EXIT_ERROR)
+
+
 def main() -> None:
+    """
+    Run the ``getmac`` command. Exits with :data:`EXIT_FOUND` (``0``) if the MAC (or
+    interface) was found and printed, :data:`EXIT_NOT_FOUND` (``1``) if it wasn't,
+    :data:`EXIT_USAGE` (``2``) if the arguments are invalid, :data:`EXIT_ERROR` (``3``)
+    if the lookup failed with an error, and :data:`EXIT_INTERRUPTED` (``130``) on Ctrl-C.
+    """
+    try:
+        with warnings.catch_warnings():
+            warnings.showwarning = _show_warning
+            _main()
+    except KeyboardInterrupt:
+        sys.exit(EXIT_INTERRUPTED)
+
+
+def _main() -> NoReturn:
     parser = build_parser()
     args = parser.parse_args()
 
@@ -238,30 +275,41 @@ def main() -> None:
     if args.exclude_method:
         _exclude_methods(parser, args.exclude_method)
 
-    if args.default_interface:
-        iface = getmac.get_default_interface()
-        if iface:
-            print(iface)  # noqa: T201
-            sys.exit(0)
-        sys.exit(1)
-
     if args.list_methods:
         _list_methods(network_request=not args.NO_NET)
-        sys.exit(0)
+        sys.exit(EXIT_FOUND)
 
-    mac = getmac.get_mac_address(
-        interface=args.interface,
-        ip=args.ip,
-        ip6=args.ip6,
-        hostname=args.hostname,
-        network_request=not args.NO_NET,
-    )
+    try:
+        if args.default_interface:
+            result = getmac.get_default_interface()
+        else:
+            result = getmac.get_mac_address(
+                interface=args.interface,
+                ip=args.ip,
+                ip6=args.ip6,
+                hostname=args.hostname,
+                network_request=not args.NO_NET,
+            )
+    except RuntimeError as ex:
+        # No methods for the platform, or none of them work. The message says why.
+        if args.debug:
+            traceback.print_exc()
+        _error(str(ex))
+    except Exception as ex:
+        # E.g. a method forced with --force-method raised. Its exceptions aren't caught.
+        if args.debug:
+            traceback.print_exc()
+        _error(
+            f"unexpected {type(ex).__name__}: {ex}\n"
+            f"If this looks like a bug, please report it at {ISSUES_URL}, "
+            "with the output of the same command with '-v -dddd' added"
+        )
 
-    if mac is not None:
-        print(mac)  # noqa: T201
-        sys.exit(0)  # Exit success!
-    else:
-        sys.exit(1)  # Exit with error since it failed to find a MAC
+    if result:
+        print(result)  # noqa: T201
+        sys.exit(EXIT_FOUND)
+
+    sys.exit(EXIT_NOT_FOUND)
 
 
 if __name__ == "__main__":
