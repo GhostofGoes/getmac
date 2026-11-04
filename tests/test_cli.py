@@ -9,7 +9,7 @@ from typing import Union
 import pytest
 
 from getmac import __version__, get_mac_address, getmac
-from getmac.__main__ import build_parser, main
+from getmac.__main__ import _join_negative_values, build_parser, main
 from getmac.variables import consts, gvars, settings
 
 BASE_CMD = [sys.executable, "-m", "getmac"]
@@ -323,9 +323,50 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
     [
         *((a + b, "not allowed with argument") for a, b in itertools.combinations(TARGET_ARGS, 2)),
         (["--interface", "eth0", "--hostname", "myhost"], "not allowed with argument"),
-        (["--override-port", "abc"], "argument --override-port: invalid int value: 'abc'"),
+        (["--override-port", "abc"], "argument --override-port: not a port number: 'abc'"),
+        *(
+            (
+                ["--override-port", port],
+                f"argument --override-port: must be a port from 1 to 65535: '{port}'",
+            )
+            for port in ("0", "65536", "-1", "-80")
+        ),
         (["--arp-timeout", "abc"], "argument --arp-timeout: not a number of seconds: 'abc'"),
         (["--arp-timeout=-1"], "argument --arp-timeout: must be 0 or more seconds: '-1'"),
+        # Not "expected one argument" (argparse takes -1 for an option, because of -4 and -6)
+        (["--arp-timeout", "-1"], "argument --arp-timeout: must be 0 or more seconds: '-1'"),
+        (["--arp-timeout", "-.5"], "argument --arp-timeout: must be 0 or more seconds: '-.5'"),
+        (
+            ["--command-timeout", "-1.5"],
+            "argument --command-timeout: must be 0 or more seconds: '-1.5'",
+        ),
+        *(
+            (
+                ["--arp-timeout", value],
+                f"argument --arp-timeout: not a number of seconds: '{value}'",
+            )
+            for value in ("nan", "inf", "-inf", "Infinity")
+        ),
+        *(
+            (
+                ["--command-timeout", value],
+                f"argument --command-timeout: not a number of seconds: '{value}'",
+            )
+            for value in ("nan", "inf")
+        ),
+        (["--arp-timeout"], "argument --arp-timeout: expected one argument"),
+        (
+            ["--override-platform", "BoGuS"],
+            "argument --override-platform: unknown platform 'BoGuS' (choose from android, ",
+        ),
+        (
+            ["--force-method", "BoGuS"],
+            "argument --force-method: unknown method 'BoGuS' (--list-methods shows",
+        ),
+        (
+            ["--force-method", "arpfile", "-E", "ArpFile"],
+            "argument --force-method: 'arpfile' is excluded with --exclude-method",
+        ),
         (
             ["--command-timeout", "abc"],
             "argument --command-timeout: not a number of seconds: 'abc'",
@@ -341,7 +382,9 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
         (["--bogus"], "unrecognized arguments: --bogus"),
     ],
 )
-def test_main_argparse_errors(mock_get_mac, run_cli, args, error):
+def test_main_argparse_errors(mock_get_mac, run_cli, mocker, args, error):
+    mocker.patch("getmac.getmac.METHODS", list(getmac.METHODS))  # -E removes from it
+
     code, out, err = run_cli(*args)
 
     assert code == 2
@@ -374,7 +417,7 @@ def test_main_help(mock_get_mac, run_cli, flag):
         (["--command-timeout", "0"], "COMMAND_TIMEOUT", 0),
         (["--override-platform", " Linux "], "OVERRIDE_PLATFORM", "linux"),
         (["--override-platform", "FreeBSD"], "OVERRIDE_PLATFORM", "freebsd"),
-        (["--force-method", " SomeMethod "], "FORCE_METHOD", "somemethod"),
+        (["--force-method", " ArpFile "], "FORCE_METHOD", "arpfile"),
         (["--force-method", "IpNeighborShow"], "FORCE_METHOD", "ipneighborshow"),
         (["-d"], "DEBUG", 1),
         (["--debug"], "DEBUG", 1),
@@ -757,13 +800,36 @@ def test_cli_version():
 
 @pytest.mark.parametrize("flag", [None, "-v", "-d"])
 def test_cli_logging_goes_to_stderr_only(flag):
-    # An unknown forced method fails the lookup before any real command runs
-    proc = run_cmd(*([flag] if flag else []), "--force-method", " BoGuS ", "-i", "eth0")
+    # An IPv6 address without a ':' fails the lookup before any real command runs
+    proc = run_cmd(*([flag] if flag else []), "--override-port", "44444", "-6", "BoGuS")
 
     assert proc.stdout == ""
     assert proc.returncode == 1
     if flag:
-        assert "WARNING  Forcing method 'bogus' to be used for 'iface' lookup" in proc.stderr
-        assert "ERROR    Invalid FORCE_METHOD method name 'bogus'\n" in proc.stderr
+        assert "DEBUG    Using UDP port 44444" in proc.stderr
+        assert "ERROR    Invalid IPv6 address (no ':'): BoGuS\n" in proc.stderr
     else:
         assert proc.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("argv", "expected"),
+    [
+        ([], []),
+        (["-i", "eth0"], ["-i", "eth0"]),
+        (["--arp-timeout", "-1", "-v"], ["--arp-timeout=-1", "-v"]),
+        (["--override-port", "-80"], ["--override-port=-80"]),
+        (["--command-timeout", "-.5"], ["--command-timeout=-.5"]),
+        (["--arp-timeout", "-1e3"], ["--arp-timeout=-1e3"]),
+        (["--arp-timeout", "-inf"], ["--arp-timeout=-inf"]),
+        (["--arp-timeout", "-Infinity"], ["--arp-timeout=-Infinity"]),
+        (["--arp-timeout", "1"], ["--arp-timeout", "1"]),
+        (["--arp-timeout", "-v"], ["--arp-timeout", "-v"]),  # Not a number
+        (["--arp-timeout", "-4", "10.0.0.1"], ["--arp-timeout=-4", "10.0.0.1"]),
+        (["--arp-timeout"], ["--arp-timeout"]),
+        (["-i", "-1"], ["-i", "-1"]),  # Only for options that take a number
+        (["--", "--arp-timeout", "-1"], ["--", "--arp-timeout", "-1"]),
+    ],
+)
+def test_join_negative_values(argv, expected):
+    assert _join_negative_values(argv) == expected

@@ -2,6 +2,8 @@
 
 import argparse
 import logging
+import math
+import re
 import sys
 import traceback
 import warnings
@@ -20,14 +22,65 @@ EXIT_ERROR = 3
 EXIT_INTERRUPTED = 130  # 128 + SIGINT, what shells use for Ctrl-C
 
 
+# Options whose value can be a negative number, which argparse otherwise takes
+# for an option (since -4 and -6 are options), see _join_negative_values()
+NUMBER_OPTIONS = ("--arp-timeout", "--command-timeout", "--override-port")
+NEGATIVE_NUMBER = re.compile(r"-(\d+\.?\d*(e\d+)?|\.\d+|inf(inity)?|nan)", re.IGNORECASE)
+
+
 def _seconds(value: str) -> float:
     try:
         seconds = float(value)
     except ValueError:
         raise argparse.ArgumentTypeError(f"not a number of seconds: '{value}'") from None
+    if not math.isfinite(seconds):  # nan and inf
+        raise argparse.ArgumentTypeError(f"not a number of seconds: '{value}'")
     if seconds < 0:
         raise argparse.ArgumentTypeError(f"must be 0 or more seconds: '{value}'")
     return seconds
+
+
+def _port(value: str) -> int:
+    try:
+        port = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a port number: '{value}'") from None
+    if not 1 <= port <= 65535:
+        raise argparse.ArgumentTypeError(f"must be a port from 1 to 65535: '{value}'")
+    return port
+
+
+def _join_negative_values(argv: list[str]) -> list[str]:
+    """
+    Turn e.g. ``--arp-timeout -1`` into ``--arp-timeout=-1``. Because ``-4`` and ``-6``
+    are options, argparse takes ``-1`` for an option too, and says the option is
+    "expected one argument" instead of saying what's wrong with the value.
+    """
+    joined: list[str] = []
+    args = iter(argv)
+    for arg in args:
+        if arg == "--":
+            joined.append(arg)
+            joined.extend(args)
+            break
+        if arg in NUMBER_OPTIONS:
+            value = next(args, None)
+            if value is not None and NEGATIVE_NUMBER.fullmatch(value):
+                joined.append(f"{arg}={value}")
+                continue
+            joined.append(arg)
+            if value is not None:
+                joined.append(value)
+            continue
+        joined.append(arg)
+    return joined
+
+
+def _platform_names() -> set[str]:
+    """Platforms that ``--override-platform`` accepts: any that a method is for."""
+    return set(getmac.Method.VALID_PLATFORM_NAMES).union(
+        *(method.platforms for method in getmac.METHODS)
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -121,7 +174,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     tshooting.add_argument(
         "--override-port",
-        type=int,
+        type=_port,
         metavar="PORT",
         help="Override the default UDP port used to refresh the ARP table "
         "if network requests are enabled and arping is unavailable",
@@ -243,7 +296,7 @@ def main() -> None:
 
 def _main() -> NoReturn:
     parser = build_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(_join_negative_values(sys.argv[1:]))
 
     if args.debug or args.verbose:
         logging.basicConfig(
@@ -267,13 +320,31 @@ def _main() -> NoReturn:
         settings.COMMAND_TIMEOUT = args.command_timeout
 
     if args.override_platform:
-        settings.OVERRIDE_PLATFORM = args.override_platform.strip().lower()
+        platform = args.override_platform.strip().lower()
+        if platform not in _platform_names():
+            parser.error(
+                f"argument --override-platform: unknown platform '{args.override_platform}' "
+                f"(choose from {', '.join(sorted(_platform_names()))})"
+            )
+        settings.OVERRIDE_PLATFORM = platform
 
+    forced = None
     if args.force_method:
+        forced = getmac.get_method_by_name(args.force_method.strip())
+        if forced is None:
+            parser.error(
+                f"argument --force-method: unknown method '{args.force_method}' "
+                "(--list-methods shows the methods for this platform)"
+            )
         settings.FORCE_METHOD = args.force_method.strip().lower()
 
     if args.exclude_method:
         _exclude_methods(parser, args.exclude_method)
+
+    if forced is not None and forced not in getmac.METHODS:
+        parser.error(
+            f"argument --force-method: '{args.force_method}' is excluded with --exclude-method"
+        )
 
     if args.list_methods:
         _list_methods(network_request=not args.NO_NET)

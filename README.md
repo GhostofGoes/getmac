@@ -194,7 +194,7 @@ getmac --ip 192.168.0.1 --command-timeout 5
 # The platform detected by getmac can be overridden via '--override-platform'.
 # This is useful when debugging issues or if you know a method
 # for a different platform works on the current platform.
-# Any values returned by platform.system() are valid.
+# 'getmac --help' lists the platforms.
 getmac -i eth0 --override-platform linux
 getmac --ip 192.168.0.1 --override-platform windows
 

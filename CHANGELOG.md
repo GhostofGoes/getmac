@@ -74,6 +74,7 @@
 * Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91)).
 * Windows: the path of each command getmac runs is now quoted. Before, a path with a space in it (e.g. `C:\Program Files\...`) could make Windows run a different program, such as `C:\Program.exe`.
 * Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95)).
+* The command line checks its arguments before doing anything: `--force-method` and `--override-platform` must name a method or platform that exists (before, a typo looked like "not found", or was a traceback), `--force-method` can't name a method given to `--exclude-method`, `--override-port` must be from 1 to 65535, and `--arp-timeout` and `--command-timeout` don't accept `nan` or `inf`. A negative number, e.g. `--arp-timeout -1`, now says what's wrong with it instead of "expected one argument".
 * Fixed several issues found with fuzz testing using [Hypothesis](https://hypothesis.readthedocs.io/):
     * Fixed `DefaultIfaceLinuxRouteFile` failing, and being marked unusable, when a line in `/proc/net/route` has fewer than two fields.
     * Fixed `LanscanIface` (HP-UX) failing when the interface name is empty or whitespace and `lanscan` prints a blank line.
