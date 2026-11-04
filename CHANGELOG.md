@@ -33,6 +33,7 @@
 * New command line argument, `--default-interface` (`-D`), which prints the name of the default interface.
 * New command line argument, `--exclude-method METHOD` (`-E`), that enables skipping of one or more methods (useful for troubleshooting).
 * New command line argument, `--list-methods`, that lists the available methods for the current platform and shows their status (primary, fallback, or test failed).
+* `getmac --help` has examples, the exit codes, and links to the docs and the issue tracker, and the help for `-v`, `-d`, `--override-port`, `--override-platform`, and `--force-method` says what they do without mentioning getmac's internals.
 * The command line prints errors as one line on stderr, `getmac: error: ...`, and exits with code `3`, instead of a traceback with exit code `1` (for example, when no methods work on the platform). `-d` adds the traceback. Warnings are one line too, `getmac: warning: ...`, without the file path and line of code. Ctrl-C exits with code `130`, without a traceback.
 * Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) (Issue [#41](https://github.com/GhostofGoes/getmac/issues/41))
     * Most methods now work for regular users, not just root.

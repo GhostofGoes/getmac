@@ -5,6 +5,7 @@ import logging
 import math
 import re
 import sys
+import textwrap
 import traceback
 import warnings
 from typing import NoReturn, Union
@@ -12,7 +13,28 @@ from typing import NoReturn, Union
 from . import getmac
 from .variables import consts, gvars, settings
 
+DOCS_URL = "https://ghostofgoes.github.io/getmac/cli.html"
 ISSUES_URL = "https://github.com/GhostofGoes/getmac/issues"
+
+EPILOG = f"""\
+examples:
+  getmac                    MAC of the default interface
+  getmac -i eth0            MAC of an interface
+  getmac -4 192.168.0.1     MAC of a host on the LAN
+  getmac -n home.router     MAC of a host on the LAN, by name
+  getmac -D                 name of the default interface
+
+exit codes:
+  0    found, and printed to stdout
+  1    not found
+  2    invalid arguments
+  3    error (printed to stderr)
+  130  stopped with Ctrl-C
+
+docs:   {DOCS_URL}
+issues: {ISSUES_URL}
+        (include the output of the command with '-v -dddd' added)
+"""
 
 # Exit codes
 EXIT_FOUND = 0
@@ -83,10 +105,21 @@ def _platform_names() -> set[str]:
     )
 
 
+class _HelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Keeps the description and examples as written, and doesn't split '--list-methods'."""
+
+    def _split_lines(self, text: str, width: int) -> list[str]:
+        text = self._whitespace_matcher.sub(" ", text).strip()
+        return textwrap.wrap(text, width, break_on_hyphens=False)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="getmac",
-        description="Get MAC addresses of network interfaces or LAN hosts",
+        description="Get MAC addresses of network interfaces or LAN hosts.\n"
+        "With no arguments, prints the MAC of the default interface.",
+        epilog=EPILOG,
+        formatter_class=_HelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"getmac {getmac.__version__}")
 
@@ -163,39 +196,39 @@ def build_parser() -> argparse.ArgumentParser:
         "-v",
         "--verbose",
         action="store_true",
-        help="Enable logging messages (by default, only the MAC is printed to the terminal)",
+        help="Print log messages to stderr, e.g. which methods were tried "
+        "(by default, only the result is printed)",
     )
     tshooting.add_argument(
         "-d",
         "--debug",
         action="count",
-        help="Enable debugging output. Add 'd' characters to "
-        "increase verbosity of output, e.g. '-dd' to set DEBUG=2.",
+        help="Print more detail about each method getmac tries, and implies -v. "
+        "Give it more than once for more detail, up to -dddd (every command and its output).",
     )
     tshooting.add_argument(
         "--override-port",
         type=_port,
         metavar="PORT",
-        help="Override the default UDP port used to refresh the ARP table "
-        "if network requests are enabled and arping is unavailable",
+        help="Send the UDP packet that refreshes the ARP table to this port "
+        "(default: 55555). Only used if arping isn't available and -N isn't set.",
     )
     tshooting.add_argument(
         "--override-platform",
         type=str,
         default=None,
         metavar="PLATFORM",
-        help="Override the platform detection with the given value "
-        "(e.g. 'linux', 'windows', 'freebsd', etc.). "
-        "Any value returned by platform.system() is valid.",
+        help="Use the methods for this platform instead of the one getmac detects: "
+        + ", ".join(sorted(getmac.Method.VALID_PLATFORM_NAMES)),
     )
     tshooting.add_argument(
         "--force-method",
         type=str,
         default=None,
         metavar="METHOD",
-        help="Force a specific method to be used, e.g. 'IpNeighborShow'. "
-        "This will be used regardless of its method type or platform "
-        "compatibility, and Method.test() will NOT be checked!",
+        help="Use only this method, e.g. 'IpNeighborShow', even if it isn't for this "
+        "platform or type of lookup, and without checking first that it works here "
+        "(see --list-methods for the names)",
     )
     tshooting.add_argument(
         "-E",
