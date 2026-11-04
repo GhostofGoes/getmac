@@ -121,15 +121,15 @@ build = [
     "twine>=6.1.0",
 ]
 docs = [
-    "furo; python_version >= \"3.12\"",
-    "sphinx>7.0.0; python_version >= \"3.12\"",
-    "sphinx-autodoc-typehints; python_version >= \"3.12\"",
-    "sphinx-copybutton; python_version >= \"3.12\"",
-    "sphinx-inline-tabs; python_version >= \"3.12\"",
-    "sphinx-argparse-cli; python_version >= \"3.12\"",
-    "sphinx-automodapi; python_version >= \"3.12\"",
-    "sphinx-issues; python_version >= \"3.12\"",
-    "myst-parser; python_version >= \"3.12\"",
+    "furo; python_version >= \"3.13\"",
+    "sphinx>7.0.0; python_version >= \"3.13\"",
+    "sphinx-autodoc-typehints; python_version >= \"3.13\"",
+    "sphinx-copybutton; python_version >= \"3.13\"",
+    "sphinx-inline-tabs; python_version >= \"3.13\"",
+    "sphinx-argparse-cli; python_version >= \"3.13\"",
+    "sphinx-automodapi; python_version >= \"3.13\"",
+    "sphinx-issues; python_version >= \"3.13\"",
+    "myst-parser; python_version >= \"3.13\"",
 ]
 
 [tool.pdm.build]
@@ -229,6 +229,10 @@ cmd = "sphinx-build -j auto -W --keep-going -b html ./docs ./html_docs"
 help = "Build Manpage documentation using Sphinx"
 cmd = "sphinx-build -j auto -W --keep-going -b man ./docs ./manpage"
 
+[tool.pdm.scripts.linkcheck]
+help = "Check that the links in the documentation work"
+cmd = "sphinx-build -j auto -b linkcheck ./docs ./linkcheck"
+
 [tool.pdm.scripts.docs]
 help = "Build all documentation formats using Sphinx"
 composite = [
@@ -278,7 +282,7 @@ exclude_also = ['if __name__ == "__main__":']
 # --- Codespell configuration ---
 [tool.codespell]
 check-filenames = true
-skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.idea,.vscode,_build,.doctrees,htmlcov,.venv,.mypy_cache,deb_dist,built_docs,.pytest_cache,.pdm-build,manpage,html_docs,third_party'
+skip = '*.log,*.out,build,dist,*.pyc,*.class,*.git,*.vagrant,*.tox,*.egg-info,*.idea,.vscode,_build,.doctrees,htmlcov,.venv,.mypy_cache,deb_dist,built_docs,.pytest_cache,.pdm-build,manpage,html_docs,linkcheck,third_party'
 ignore-words-list = 'ether,Expresso,expresso,Espresso,espresso,connexion,adresse,intoto'
 
 

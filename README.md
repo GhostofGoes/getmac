@@ -1,18 +1,20 @@
 
 <p align="center">
-  <a href="https://pypi.org/project/getmac/"><img alt="PyPI - Current Version" src="https://img.shields.io/pypi/v/getmac?label=PyPI"></a>
-  <img alt="Python Version" src="https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14|3.15-blue.svg">
-  <a href="https://pepy.tech/project/getmac"><img alt="Weekly PyPI downloads" src="https://pepy.tech/badge/getmac/week"></a>
-  <a href="https://pepy.tech/project/getmac"><img alt="PyPI downloads" src="https://pepy.tech/badge/getmac"></a>
+  <a href="https://pypi.org/project/getmac/"><img alt="PyPI version badge" src="https://img.shields.io/pypi/v/getmac?label=PyPI"></a>
+  <img alt="Supports Python 3.9 to 3.15" src="https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13|3.14|3.15-blue.svg">
+  <a href="https://pepy.tech/project/getmac"><img alt="Weekly PyPI downloads badge" src="https://pepy.tech/badge/getmac/week"></a>
+  <a href="https://pepy.tech/project/getmac"><img alt="Total PyPI downloads badge" src="https://pepy.tech/badge/getmac"></a>
   <br>
-  <a href="https://github.com/GhostofGoes/getmac/actions"><img alt="GitHub Actions Pipeline Status" src="https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://codecov.io/github/GhostofGoes/getmac"><img alt="codecov" src="https://codecov.io/github/GhostofGoes/getmac/branch/main/graph/badge.svg?token=5NxlAE9eGY"></a>
-  <a href="https://www.bestpractices.dev/projects/9388"><img alt="OpenSSF Best Practices" src="https://www.bestpractices.dev/projects/9388/badge"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/GhostofGoes/getmac"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/GhostofGoes/getmac/badge"></a>
+  <a href="https://github.com/GhostofGoes/getmac/actions"><img alt="CI status badge (GitHub Actions)" src="https://github.com/ghostofgoes/getmac/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://codecov.io/github/GhostofGoes/getmac"><img alt="Code coverage badge (Codecov)" src="https://codecov.io/github/GhostofGoes/getmac/branch/main/graph/badge.svg?token=5NxlAE9eGY"></a>
+  <a href="https://www.bestpractices.dev/projects/9388"><img alt="OpenSSF Best Practices badge" src="https://www.bestpractices.dev/projects/9388/badge"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/GhostofGoes/getmac"><img alt="OpenSSF Scorecard badge" src="https://api.scorecard.dev/projects/github.com/GhostofGoes/getmac/badge"></a>
   <br>
-  <a href="https://pdm-project.org"><img alt="PDM-managed" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json"></a>
-  <a href="https://github.com/astral-sh/ruff"><img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
+  <a href="https://pdm-project.org"><img alt="Managed with PDM" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json"></a>
+  <a href="https://github.com/astral-sh/ruff"><img alt="Code style: Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
 </p>
+
+# getmac
 
 Pure-Python package to get the MAC address of network interfaces and hosts on the local network.
 
@@ -25,23 +27,25 @@ It provides one primary function, `get_mac_address()`, and a command line tool, 
 
 The full documentation is at https://ghostofgoes.github.io/getmac/, including the [usage guide](https://ghostofgoes.github.io/getmac/usage.html), the [command line reference](https://ghostofgoes.github.io/getmac/cli.html), [troubleshooting](https://ghostofgoes.github.io/getmac/troubleshooting.html), and how to [upgrade from 0.9.x](https://ghostofgoes.github.io/getmac/upgrading.html).
 
-[![asciicast](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.svg)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
+[![Terminal recording: getmac CLI demo](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv.svg)](https://asciinema.org/a/n3insrxfyECch6wxtJEl3LHfv)
+
+The commands from the recording are also written out in [Terminal examples](#terminal-examples).
 
 
 ## Features
 - Pure-Python (no compiled C-extensions required!)
-- Python 3.9+, on CPython and [PyPy](https://www.pypy.org/)
+- Python 3.9+, on CPython and [PyPy](https://pypy.org/)
 - Lightweight, with no dependencies and a relatively small package size
 - Supports most platforms: Windows, Linux, macOS, the BSDs, Solaris and illumos, HP-UX, Android, WSL, and Docker (see [Platforms currently supported](#platforms-currently-supported))
 - Provides a simple command line tool
 - MIT licensed!
 
 ## Should you use this package?
-If you only need the addresses of network interfaces, have a limited set of platforms to support, and are able to handle C-extension modules, then you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/) package by Alastair Houghton ([@al45tair](https://github.com/al45tair)). It's significantly faster (thanks to it being C code) and has been around a long time and seen widespread usage. Unfortunately, it hasn't been maintained since [May 2021](https://github.com/al45tair/netifaces/commit/ec55b59e27542776f55e0f9e3213a75bf8e0f367), so it may not be a great choice for new projects. Another great option that fits these requirements is the well-known and battle-hardened [psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola.
+If you only need the addresses of network interfaces, have a limited set of platforms to support, and are able to handle C-extension modules, then you should instead check out the excellent [netifaces](https://pypi.org/project/netifaces/) package by Alastair Houghton ([@al45tair](https://github.com/al45tair)). It's significantly faster (thanks to it being C code) and has been around a long time and seen widespread usage. Unfortunately, it hasn't been maintained since May 2021 ([the last commit to netifaces](https://github.com/al45tair/netifaces/commit/ec55b59e27542776f55e0f9e3213a75bf8e0f367)), so it may not be a great choice for new projects. Another great option that fits these requirements is the well-known and battle-hardened [psutil](https://github.com/giampaolo/psutil) package by Giampaolo Rodola.
 
 If the only system you need to run on is Linux, you can run as root, and C-extension modules are fine, then you should instead check out the [arpreq](https://pypi.org/project/arpreq/) package by Sebastian Schrader. In some cases it can be significantly faster.
 
-If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to do so in a [GitHub Gist](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
+If you want to use `psutil`, `scapy`, or `netifaces`, I have examples of how to do so in [my Gist on using psutil, scapy, and netifaces](https://gist.github.com/GhostofGoes/0a8e82930e75afcefbd879a825ba4c26).
 
 ## Installation
 

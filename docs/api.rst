@@ -2,7 +2,9 @@
 API
 ===
 
-Full API reference for the `getmac` package, split by how much you should rely on it.
+Full :abbr:`API (application programming interface)` reference for the `getmac` package.
+
+**In short:** most people only need :func:`~getmac.get_mac_address`, and maybe :func:`~getmac.get_default_interface` and :data:`~getmac.settings`. Those three are the public API. The rest of this page is internal, and can change between releases.
 
 Public API
 ==========
@@ -17,7 +19,7 @@ These are the names in ``__all__`` that you can import from ``getmac``. ``settin
 Methods and lookup functions
 ============================
 
-:class:`~getmac.getmac.Method` is the base class of every method, and the built-in methods, the caches (:data:`~getmac.getmac.METHODS`, :data:`~getmac.getmac.METHOD_CACHE` and :data:`~getmac.getmac.FALLBACK_CACHE`), and the lower-level lookup functions are all here. :doc:`platforms` lists the methods for each platform and lookup type, in the order they're tried, and :doc:`module_api` explains how one is selected.
+:class:`~getmac.getmac.Method` is the base class of every method, and the built-in methods, the caches (:data:`~getmac.getmac.METHODS`, :data:`~getmac.getmac.METHOD_CACHE` and :data:`~getmac.getmac.FALLBACK_CACHE`), and the lower-level lookup functions are all here. :doc:`platforms` lists the methods for each platform and lookup type, in the order they're tried. :doc:`module_api` explains how one is selected.
 
 .. automodapi:: getmac.getmac
    :include-all-objects:

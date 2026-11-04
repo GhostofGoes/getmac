@@ -20,7 +20,7 @@ Tags
 Networking
 ==========
 
-By default the container is on Docker's bridge network, so it sees its own interfaces and ARP table, not the host's.
+By default the container is on Docker's bridge network, so it sees its own interfaces and :term:`ARP table`, not the host's.
 
 - On Linux, use ``--network host`` to look up the host's interfaces.
 - In bridge mode, add ``-v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp`` to read the host's ARP table. ``ARP_PATH`` tells getmac where to find the ARP table (``/proc/net/arp`` by default). See :ref:`usage-environment`.
@@ -30,7 +30,8 @@ By default the container is on Docker's bridge network, so it sees its own inter
 .. code-block:: shell
 
    docker run --rm --network host ghcr.io/ghostofgoes/getmac
-   docker run --rm -v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp ghcr.io/ghostofgoes/getmac -4 192.168.0.1
+   docker run --rm -v /proc/1/net/arp:/host/arp:ro -e ARP_PATH=/host/arp \
+       ghcr.io/ghostofgoes/getmac -4 192.168.0.1
 
 Verifying the image
 ===================

@@ -7,10 +7,17 @@
     - `docs/architecture.rst` is now a superset of #110's `docs/architecture.md`, so drop #110's `docs/architecture.md`.
     - Change the link in #110's `assurance.md` (line 3) from `architecture.md` to `architecture.rst`.
     - Regroup #110's `index.rst` entries into the grouped sidebar. Project order: changelog, roadmap, governance, security, assurance, code_of_conduct.
+    - #110's new pages predate the accessibility work (`docs-accessibility`): link glossary terms on first use (`:term:`), expand abbreviations, give images real alt text, and start long pages with an "In short" summary.
     - #110's `architecture.md` and `assurance.md` say methods that need root are "skipped when they fail". That's inaccurate: `arping` is tried when it's installed, and if it fails getmac returns `None` without falling back (see the troubleshooting page).
 
 
 # Etc
+- [ ] Accessibility issues left in the docs that need fixes in Furo, Sphinx, or the extensions (consider reporting them upstream). These stop the docs meeting WCAG 2.2 AA:
+    - Sidebar captions have `role="heading"` but no `aria-level` (Sphinx toctree captions). Dropping `:caption:` from the toctrees in `docs/index.rst` would avoid it, but loses the grouped sidebar.
+    - Code blocks and tables that scroll sideways can't be reached by keyboard, mostly on narrow screens.
+    - Furo's mobile navigation and "On this page" drawers can't be opened by keyboard, and links in a closed drawer stay in the tab order.
+    - Sidebar expanders and heading permalinks (¶) can't be reached by keyboard.
+    - The copy button (sphinx-copybutton) and tab labels (sphinx-inline-tabs) have no visible focus, and the sidebar search box has no focus outline.
 - [ ] cache the result of executable checks in `getmac.utils.popen()`
 - TODO: MAC -> IP. "to_find='mac'"? (create GitHub issue?)
 

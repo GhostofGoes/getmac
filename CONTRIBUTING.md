@@ -3,7 +3,7 @@
 Thanks for taking an interest in this awesome little project. We love to bring new members into the community, and can always use the help.
 
 ## Resources
-* Features suggestions and bug reports: [GitHub](https://github.com/GhostofGoes/getmac/issues)
+* Features suggestions and bug reports: [getmac issues on GitHub](https://github.com/GhostofGoes/getmac/issues)
 * Discussion and general questions/help: [GitHub discussions](https://github.com/GhostofGoes/getmac/discussions) or the [Python Discord server](https://discord.gg/python)
 
 
@@ -14,12 +14,12 @@ Your code *must*:
 * Work with all *supported* Python versions
 * Work on all *supported* platforms
 * Pass linting (code quality checks)
-* Pass CI (GitHub Actions)
+* Pass GitHub Actions workflows
 * Adhere to the [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/main/CODE_OF_CONDUCT.md)
 * Adhere to the [AI policy below](#ai-policy)
 * Branch names and commits must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) notation, e.g. a branch should be `feat-my-feature`, not `patch-1`, and commits should be `feat: myfeature description`, not `add some cool thing check it out`.
 
-Most of these requirements are checked in CI (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Ruff's formatter](https://docs.astral.sh/ruff/formatter/). You can write whatever format you want, as long as you run the formatter before pushing, you're good (`pdm run format`).
+Most of these requirements are checked in {abbr}`CI (continuous integration)` (GitHub Actions), including Python versions and most supported platforms. Code is formatted with [Ruff's formatter](https://docs.astral.sh/ruff/formatter/). You can write whatever format you want, as long as you run the formatter before pushing, you're good (`pdm run format`).
 
 Please be respectful and follow the [Code of Conduct](https://github.com/GhostofGoes/getmac/blob/main/CODE_OF_CONDUCT.md). Memes, references, and jokes are OK. Be nice, we're all human (well, most of us), and code is the great equalizer.
 
@@ -42,8 +42,8 @@ It's a (hopefully) straightforward and easy to follow policy. Therefore, if you 
     * [ ] Tests: `pdm run test`
     * [ ] Benchmarks: `pdm run benchmark`
     * [ ] Lint: `pdm run lint`
-* [ ] Update the [CHANGELOG](https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md) (if applicable, for non-trivial changes)
-* [ ] Add your name to the contributors list in the [README](https://github.com/GhostofGoes/getmac/blob/main/README.md) (please include what your contribution was after your name)
+* [ ] Update the [CHANGELOG.md file](https://github.com/GhostofGoes/getmac/blob/main/CHANGELOG.md) (if applicable, for non-trivial changes)
+* [ ] Add your name to the contributors list in the [README.md file](https://github.com/GhostofGoes/getmac/blob/main/README.md) (please include what your contribution was after your name)
 * [ ] (AI Bots) The AI policy was followed
 
 ## Checklist before a Pull Request will be merged
@@ -110,7 +110,7 @@ Some notes:
 
 ## Getting started
 1. Create your own fork of the code through GitHub web interface ([Here's a Guide](https://gist.github.com/Chaser324/ce0505fbed06b947d962))
-1. Clone the fork to your computer. This can be done using the [GitHub desktop](https://desktop.github.com/) GUI , `git clone <fork-url>`, or the Git tools in your favorite editor or IDE.
+1. Clone the fork to your computer. This can be done using the [GitHub desktop](https://github.com/apps/desktop) GUI , `git clone <fork-url>`, or the Git tools in your favorite editor or IDE.
 1. Create and checkout a new branch in the fork with either your username (e.g. "ghostofgoes"), or the name of the feature or issue you're working on (e.g. "openbsd-support"). Again, this can be done using the GUI, your favorite editor, or `git checkout -b <branch> origin/<branch>`.
 2. Install PDM (2.20+): https://pdm-project.org/en/latest/#installation
 3. Create local environment:
@@ -141,7 +141,7 @@ Filing a bug report:
     * [ ] What did you do?
     * [ ] What did you expect to see?
     * [ ] What did you see instead?
-2. Put any excessive output into a [GitHub Gist](https://gist.github.com/) and include a link in the issue.
+2. Put any excessive output into a [new GitHub Gist](https://gist.github.com/) and include a link in the issue.
 3. Tag the issue with "Bug"
 
 **NOTE**: If the issue is a potential security vulnerability, do *NOT* open an issue! Instead, email: ghostofgoes(at)gmail(dot)com
@@ -151,7 +151,7 @@ Filing a bug report:
 Ideas for features or other things are welcomed. Open an issue on GitHub detailing the idea, and tag it appropriately (e.g. "Feature" for a new feature).
 
 
-## Resources
+## Further reading
 
 ### Regex resources (regular expressions)
 - https://pythex.org/
@@ -189,7 +189,7 @@ The fuzz tests in `tests/test_fuzz.py` use [Hypothesis](https://hypothesis.readt
 
 The docs are built using Sphinx. They are located in the `docs/` folder, and the configuration is in `docs/conf.py`.
 
-To build docs locally (requires Python 3.12 or newer):
+To build docs locally (requires Python 3.13 or newer):
 ```shell
 pdm run docs
 ```

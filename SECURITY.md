@@ -11,15 +11,15 @@
 
 ## Reporting a Vulnerability or other security issue
 
-If the security issue is a general weakness or poor practice that is *not directly exploitable*, please open a [Issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and add the `security` label.
+If the security issue is a general weakness or poor practice that is *not directly exploitable*, please [open an issue on GitHub](https://github.com/GhostofGoes/getmac/issues) and add the `security` label.
 
 If the security issue is a vulnerability that can *potentially be exploited or has a exploit developed/proven*, please email ghostofgoes(at)gmail.com.
-Please include in the email a description of the vulnerability, any proof of concept code/exploit code, and any other information that you believe may be relevant.
+Please describe the vulnerability in the email. Include any proof of concept or exploit code, and anything else you think may be relevant.
 PGP signed message is preferred but not required.
 
 ## Verifying releases
 
-Releases are built and published by GitHub Actions, and every published release has a signed [build provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations) that ties it to the commit and workflow run that built it. These can be checked with the [GitHub CLI](https://cli.github.com/).
+Releases are built and published by GitHub Actions. Every published release has a signed [build provenance attestation](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations) that ties it to the commit and workflow run that built it. These can be checked with the [GitHub CLI](https://cli.github.com/).
 
 The sdist and wheel on PyPI (PyPI also stores their attestations, per PEP 740):
 
@@ -31,7 +31,8 @@ gh attestation verify dist/getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getm
 The files attached to a [GitHub release](https://github.com/GhostofGoes/getmac/releases), with the provenance file attached to the same release:
 
 ```bash
-gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac --bundle getmac-1.0.0.intoto.jsonl
+gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac \
+    --bundle getmac-1.0.0.intoto.jsonl
 ```
 
 Docker images on the GitHub Container Registry:
