@@ -210,6 +210,9 @@ getmac --list-methods
 
 # Force a specific method to be used, regardless of the consequences or if it even works
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
+
+# Print the result as JSON, with the method that found it and the platform
+getmac --json -i eth0
 ```
 
 The MAC is printed to stdout and the exit code is `0`. If nothing was found, nothing is printed and the exit code is `1`. Bad arguments (e.g. using two lookup options at once) exit with `2`. If the lookup fails with an error (e.g. no methods work on this platform), the error is printed to stderr and the exit code is `3`. Log messages (`-v`) go to stderr.

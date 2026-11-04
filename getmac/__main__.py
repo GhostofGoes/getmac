@@ -2,6 +2,7 @@
 
 import argparse
 import difflib
+import json
 import logging
 import math
 import re
@@ -10,7 +11,7 @@ import textwrap
 import traceback
 import warnings
 from collections.abc import Iterable
-from typing import NoReturn, Optional, Union
+from typing import Any, NoReturn, Optional, Union
 
 from . import getmac
 from .variables import consts, gvars, settings
@@ -238,6 +239,12 @@ def build_parser() -> argparse.ArgumentParser:
         "longer than this many seconds, and try the next method "
         "(default: 15, 0 to wait for as long as it takes)",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the result as JSON, with the method that found it and the platform. "
+        "Also works with -D and --list-methods.",
+    )
 
     tshooting = parser.add_argument_group("troubleshooting")
     tshooting.add_argument(
@@ -309,13 +316,27 @@ def _exclude_methods(parser: argparse.ArgumentParser, names: list[str]) -> None:
             gvars.log.debug(f"Excluding method '{method.__name__}'")
 
 
-def _list_methods(network_request: bool) -> None:
+# --list-methods statuses, and what they're shown as without --json
+METHOD_STATUSES = {
+    "primary": "primary",
+    "fallback": "fallback",
+    "failed": "doesn't work here (test() failed)",
+    "skipped": "skipped (sends packets, and --no-net is set)",
+}
+
+
+def _platform() -> str:
+    return settings.OVERRIDE_PLATFORM.strip().lower() or consts.PLATFORM
+
+
+def _method_statuses(network_request: bool) -> dict[str, list[tuple[str, str]]]:
     """
-    Print the methods that would be considered for each type of lookup, the way
-    :func:`~getmac.getmac.initialize_method_cache` picks them, and their test results.
+    The methods that would be considered for each type of lookup, the way
+    :func:`~getmac.getmac.initialize_method_cache` picks them, and their status
+    (a key of :data:`METHOD_STATUSES`).
     """
-    platform = settings.OVERRIDE_PLATFORM.strip().lower() or consts.PLATFORM
-    print(f"Platform: {platform}")  # noqa: T201
+    platform = _platform()
+    statuses: dict[str, list[tuple[str, str]]] = {}
 
     for method_type in getmac.METHOD_CACHE:
         type_methods = [
@@ -328,15 +349,11 @@ def _list_methods(network_request: bool) -> None:
             m for m in type_methods if "other" in m.platforms
         ]
 
-        print(f"\n{method_type}:")  # noqa: T201
-        if not candidates:
-            print("  (none)")  # noqa: T201
-            continue
-
+        statuses[method_type] = []
         chosen = False
         for method_class in candidates:
             if method_class.network_request and not network_request:
-                status = "skipped (sends packets, and --no-net is set)"
+                status = "skipped"
             else:
                 try:
                     works = method_class().test()
@@ -344,13 +361,44 @@ def _list_methods(network_request: bool) -> None:
                     works = False
 
                 if not works:
-                    status = "doesn't work here (test() failed)"
+                    status = "failed"
                 elif chosen:
                     status = "fallback"
                 else:
                     status = "primary"
                     chosen = True
-            print(f"  {method_class.__name__:<28} {status}")  # noqa: T201
+            statuses[method_type].append((method_class.__name__, status))
+
+    return statuses
+
+
+def _list_methods(network_request: bool, as_json: bool) -> None:
+    statuses = _method_statuses(network_request)
+
+    if as_json:
+        _print_json(
+            {
+                "platform": _platform(),
+                "methods": {
+                    method_type: [{"name": name, "status": status} for name, status in methods]
+                    for method_type, methods in statuses.items()
+                },
+            }
+        )
+        return
+
+    print(f"Platform: {_platform()}")  # noqa: T201
+    for method_type, methods in statuses.items():
+        print(f"\n{method_type}:")  # noqa: T201
+        if not methods:
+            print("  (none)")  # noqa: T201
+        for name, status in methods:
+            print(f"  {name:<28} {METHOD_STATUSES[status]}")  # noqa: T201
+
+
+def _print_json(data: dict[str, Any]) -> None:
+    # Indented for people, one line for scripts (e.g. to read it line by line)
+    print(json.dumps(data, indent=2 if sys.stdout.isatty() else None))  # noqa: T201
 
 
 def _show_warning(message: Union[Warning, str], *_args: object, **_kwargs: object) -> None:
@@ -437,8 +485,10 @@ def _main() -> NoReturn:
         )
 
     if args.list_methods:
-        _list_methods(network_request=not args.NO_NET)
+        _list_methods(network_request=not args.NO_NET, as_json=args.json)
         sys.exit(EXIT_FOUND)
+
+    gvars.LAST_METHOD = ""
 
     try:
         if args.default_interface:
@@ -466,11 +516,33 @@ def _main() -> NoReturn:
             "with the output of the same command with '-v -dddd' added"
         )
 
-    if result:
+    if args.json:
+        _print_json(_result_json(args, result or None))
+    elif result:
         print(result)  # noqa: T201
-        sys.exit(EXIT_FOUND)
 
-    sys.exit(EXIT_NOT_FOUND)
+    sys.exit(EXIT_FOUND if result else EXIT_NOT_FOUND)
+
+
+def _result_json(args: argparse.Namespace, result: Optional[str]) -> dict[str, Any]:
+    """What ``--json`` prints for a lookup. ``result`` is :obj:`None` if nothing was found."""
+    method = (gvars.LAST_METHOD or None) if result else None
+
+    if args.default_interface:
+        return {"interface": result, "method": method, "platform": _platform()}
+
+    lookup, target = "default", None
+    for name in ("interface", "ip", "ip6", "hostname"):
+        if getattr(args, name) is not None:
+            lookup, target = name, getattr(args, name)
+
+    return {
+        "mac": result,
+        "lookup": lookup,
+        "target": target,
+        "method": method,
+        "platform": _platform(),
+    }
 
 
 if __name__ == "__main__":

@@ -100,6 +100,33 @@ Log messages (``-v``) go to stderr, so stdout only ever has the MAC. This makes 
 If nothing was found (exit code ``1``), use ``-v`` to see why.
 
 
+JSON output
+-----------
+
+``--json`` prints the result as JSON, with the method that found it and the platform. It's one line, or indented if stdout is a terminal. If nothing was found, ``mac`` is ``null`` and the exit code is ``1``. If there's an error (exit code ``3``), nothing is printed to stdout.
+
+.. code-block:: shell
+
+   $ getmac --json -i eth0
+   {"mac": "00:0c:29:b5:72:37", "lookup": "interface", "target": "eth0", "method": "SysIfaceFile", "platform": "linux"}
+
+``lookup`` is ``interface``, ``ip``, ``ip6``, ``hostname``, or ``default`` (no arguments), and ``target`` is the value given for it (``null`` for ``default``). ``method`` is ``null`` if no method was used, e.g. for ``localhost``.
+
+With ``--default-interface``, the result is the interface's name:
+
+.. code-block:: shell
+
+   $ getmac --json -D
+   {"interface": "eth0", "method": "DefaultIfaceLinuxRouteFile", "platform": "linux"}
+
+With ``--list-methods``, each type of lookup has a list of its methods, in the order getmac tries them. The ``status`` is ``primary``, ``fallback``, ``failed`` (its test failed), or ``skipped`` (it sends packets, and ``--no-net`` is set).
+
+.. code-block:: shell
+
+   $ getmac --json --list-methods
+   {"platform": "linux", "methods": {"ip4": [{"name": "ArpFile", "status": "primary"}, ...], ...}}
+
+
 Remote hosts
 ============
 

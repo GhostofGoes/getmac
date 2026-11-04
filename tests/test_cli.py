@@ -1,4 +1,5 @@
 import itertools
+import json
 import logging
 import os
 import subprocess
@@ -71,6 +72,7 @@ def run_cli(mocker, capsys):
     def _run_cli(*args: str) -> tuple[Union[int, str, None], str, str]:
         mocker.patch.object(sys, "argv", ["getmac", *args])
         mocker.patch.dict(os.environ, NO_COLOR_ENV)
+        mocker.patch.object(gvars, "LAST_METHOD", gvars.LAST_METHOD)  # main() changes it
         root = logging.getLogger()
         orig_handlers, orig_level = root.handlers, root.level
         root.handlers = []
@@ -148,6 +150,7 @@ def test_build_parser_defaults():
     assert args.default_interface is False
     assert args.exclude_method is None
     assert args.list_methods is False
+    assert args.json is False
 
 
 @pytest.mark.parametrize(
@@ -182,6 +185,7 @@ def test_build_parser_defaults():
             ["ArpFile", "IpNeighborShow"],
         ),
         (["--list-methods"], "list_methods", True),
+        (["--json"], "json", True),
     ],
 )
 def test_build_parser_flag_values(argv, attr, expected):
@@ -804,6 +808,133 @@ def test_main_list_methods_override_platform_and_exclude(run_cli):
     )
 
 
+# --- --json --------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("args", "lookup", "target"),
+    [
+        (["-i", "eth0"], "interface", "eth0"),
+        (["-4", "192.0.2.1", "-N"], "ip", "192.0.2.1"),
+    ],
+)
+@pytest.mark.usefixtures("stub_methods")
+def test_main_json(run_cli, args, lookup, target):
+    gvars.LAST_METHOD = "FromAnEarlierLookup"
+    code, out, err = run_cli("--json", *args)
+
+    assert (code, err) == (0, "")
+    assert out.count("\n") == 1  # One line, since stdout isn't a terminal
+    assert json.loads(out) == {
+        "mac": MAC,
+        "lookup": lookup,
+        "target": target,
+        "method": "StubIp4" if lookup == "ip" else "StubIface",
+        "platform": consts.PLATFORM,
+    }
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_json_not_found(run_cli, mocker):
+    mocker.patch.object(StubFakeOsIface, "get", return_value=None)
+    gvars.LAST_METHOD = "FromAnEarlierLookup"
+
+    code, out, err = run_cli("--json", "-i", "eth9", "--override-platform", "fakeos")
+
+    assert (code, err) == (1, "")
+    assert json.loads(out) == {
+        "mac": None,
+        "lookup": "interface",
+        "target": "eth9",
+        "method": None,
+        "platform": "fakeos",
+    }
+
+
+@pytest.mark.parametrize(("method", "expected"), [("SysIfaceFile", "SysIfaceFile"), ("", None)])
+@pytest.mark.parametrize("args", [[], ["-n", "localhost"]])
+def test_main_json_default_and_hostname(mock_get_mac, run_cli, args, method, expected):
+    def _lookup(**_kwargs):
+        gvars.LAST_METHOD = method  # E.g. empty for localhost, which doesn't use a method
+        return MAC
+
+    mock_get_mac.side_effect = _lookup
+
+    code, out, _ = run_cli("--json", *args)
+
+    assert code == 0
+    assert json.loads(out) == {
+        "mac": MAC,
+        "lookup": "hostname" if args else "default",
+        "target": "localhost" if args else None,
+        "method": expected,
+        "platform": consts.PLATFORM,
+    }
+
+
+@pytest.mark.parametrize("iface", ["eth0", None])
+def test_main_json_default_interface(mock_get_mac, run_cli, mocker, iface):
+    def _default_interface():
+        gvars.LAST_METHOD = "DefaultIfaceIpRoute"
+        return iface
+
+    mocker.patch("getmac.getmac.get_default_interface", side_effect=_default_interface)
+
+    code, out, err = run_cli("-D", "--json")
+
+    assert (code, err) == (0 if iface else 1, "")
+    assert json.loads(out) == {
+        "interface": iface,
+        "method": "DefaultIfaceIpRoute" if iface else None,
+        "platform": consts.PLATFORM,
+    }
+    mock_get_mac.assert_not_called()
+
+
+def test_main_json_is_indented_in_a_terminal(mock_get_mac, run_cli, mocker):
+    mocker.patch.object(sys.stdout, "isatty", return_value=True)
+
+    code, out, _ = run_cli("--json")
+
+    assert code == 0
+    assert out.startswith('{\n  "mac": "00:11:22:33:44:55",\n')
+    mock_get_mac.assert_called_once()
+
+
+def test_main_json_error_prints_no_json(mock_get_mac, run_cli):
+    mock_get_mac.side_effect = RuntimeError("no methods")
+
+    assert run_cli("--json") == (3, "", "getmac: error: no methods\n")
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_list_methods_json(mock_get_mac, run_cli, mocker):
+    mocker.patch("getmac.getmac.METHODS", list(LIST_METHODS))
+
+    code, out, err = run_cli("--list-methods", "--json", "-N")
+
+    assert (code, err) == (0, "")
+    assert json.loads(out) == {
+        "platform": consts.PLATFORM,
+        "methods": {
+            "ip4": [
+                {"name": "StubNetIp4", "status": "skipped"},
+                {"name": "StubIp4", "status": "primary"},
+                {"name": "StubIp", "status": "fallback"},
+            ],
+            "ip6": [{"name": "StubIp", "status": "primary"}],
+            "iface": [
+                {"name": "StubFailingIface", "status": "failed"},
+                {"name": "StubIface", "status": "primary"},
+                {"name": "StubRaisingIface", "status": "failed"},
+                {"name": "StubIfaceFallback", "status": "fallback"},
+            ],
+            "default_iface": [{"name": "StubOtherDefaultIface", "status": "primary"}],
+        },
+    }
+    mock_get_mac.assert_not_called()
+
+
 # --- true end-to-end subprocess smoke tests ----------------------------------
 
 
@@ -836,6 +967,18 @@ def test_cli_list_methods():
         assert f"\n{method_type}:\n" in proc.stdout
     assert proc.stderr == ""
     assert proc.returncode == 0
+
+
+def test_cli_json():
+    proc = run_cmd("--json")
+    mac = get_mac_address()
+    result = json.loads(proc.stdout)
+
+    assert result["mac"] == mac
+    assert result["lookup"] == "default"
+    assert result["platform"] == consts.PLATFORM
+    assert proc.stderr == ""
+    assert proc.returncode == (0 if mac else 1)
 
 
 def test_cli_version():
