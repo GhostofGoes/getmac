@@ -146,6 +146,7 @@ def test_build_parser_defaults():
     assert args.force_method is None
     assert args.default_interface is False
     assert args.exclude_method is None
+    assert args.list_methods is False
 
 
 @pytest.mark.parametrize(
@@ -178,6 +179,7 @@ def test_build_parser_defaults():
             "exclude_method",
             ["ArpFile", "IpNeighborShow"],
         ),
+        (["--list-methods"], "list_methods", True),
     ],
 )
 def test_build_parser_flag_values(argv, attr, expected):
@@ -266,6 +268,7 @@ def test_main_exit_code_failure(mock_get_mac, run_cli):
         (["-i"], "argument -i/--interface: expected one argument"),
         (["-D", "-i", "eth0"], "not allowed with argument"),
         (["--exclude-method", "BoGuS"], "argument --exclude-method: unknown method 'BoGuS'"),
+        (["--list-methods", "-4", "10.0.0.1"], "not allowed with argument"),
         (["--bogus"], "unrecognized arguments: --bogus"),
     ],
 )
@@ -534,6 +537,114 @@ def test_main_exclude_method_named_twice(run_cli):
     assert getmac.METHODS == [StubFakeOsIface, StubIp4]
 
 
+# --- --list-methods ----------------------------------------------------------
+
+
+class StubFailingIface(StubIface):
+    def test(self) -> bool:
+        return False
+
+
+class StubRaisingIface(StubIface):
+    def test(self) -> bool:
+        raise OSError("boom")
+
+
+class StubNetIp4(StubIp4):
+    network_request = True
+
+
+class StubOtherDefaultIface(StubIface):
+    platforms = {"other"}
+    method_type = "default_iface"
+
+
+class StubIp(StubIface):
+    method_type = "ip"
+
+
+LIST_METHODS = [
+    StubNetIp4,
+    StubFailingIface,
+    StubIface,
+    StubRaisingIface,
+    StubIfaceFallback,
+    StubFakeOsIface,
+    StubIp4,
+    StubIp,
+    StubOtherDefaultIface,
+]
+
+
+@pytest.mark.parametrize(
+    ("args", "expected_ip4"),
+    [
+        (
+            [],
+            ["StubNetIp4", "primary"],
+        ),
+        (["-N"], ["StubNetIp4", "skipped (sends packets, and --no-net is set)"]),
+    ],
+)
+@pytest.mark.usefixtures("stub_methods")
+def test_main_list_methods(mock_get_mac, run_cli, mocker, args, expected_ip4):
+    mocker.patch("getmac.getmac.METHODS", list(LIST_METHODS))
+    ip4_status = "fallback" if expected_ip4[1] == "primary" else "primary"
+
+    def row(name: str, status: str) -> str:
+        return f"  {name:<28} {status}\n"
+
+    expected = (
+        f"Platform: {consts.PLATFORM}\n"
+        "\nip4:\n"
+        + row(*expected_ip4)
+        + row("StubIp4", ip4_status)
+        + row("StubIp", "fallback")
+        + "\nip6:\n"
+        + row("StubIp", "primary")
+        + "\niface:\n"
+        + row("StubFailingIface", "doesn't work here (test() failed)")
+        + row("StubIface", "primary")
+        + row("StubRaisingIface", "doesn't work here (test() failed)")
+        + row("StubIfaceFallback", "fallback")
+        + "\ndefault_iface:\n"
+        + row("StubOtherDefaultIface", "primary")
+    )
+
+    assert run_cli("--list-methods", *args) == (0, expected, "")
+    mock_get_mac.assert_not_called()
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_list_methods_override_platform(run_cli):
+    code, out, _ = run_cli("--list-methods", "--override-platform", " FakeOS ")
+
+    assert code == 0
+    assert out == (
+        "Platform: fakeos\n"
+        "\nip4:\n  (none)\n"
+        "\nip6:\n  (none)\n"
+        f"\niface:\n  {'StubFakeOsIface':<28} primary\n"
+        "\ndefault_iface:\n  (none)\n"
+    )
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_list_methods_override_platform_and_exclude(run_cli):
+    code, out, _ = run_cli(
+        "--list-methods", "--override-platform", "fakeos", "-E", "StubFakeOsIface"
+    )
+
+    assert code == 0
+    assert out == (
+        "Platform: fakeos\n"
+        "\nip4:\n  (none)\n"
+        "\nip6:\n  (none)\n"
+        "\niface:\n  (none)\n"
+        "\ndefault_iface:\n  (none)\n"
+    )
+
+
 # --- true end-to-end subprocess smoke tests ----------------------------------
 
 
@@ -557,6 +668,15 @@ def test_cli_default_interface():
     assert proc.stdout == (f"{iface}\n" if iface else "")
     assert proc.stderr == ""
     assert proc.returncode == (0 if iface else 1)
+
+
+def test_cli_list_methods():
+    proc = run_cmd("--list-methods")
+    assert proc.stdout.startswith(f"Platform: {consts.PLATFORM}\n")
+    for method_type in getmac.METHOD_CACHE:
+        assert f"\n{method_type}:\n" in proc.stdout
+    assert proc.stderr == ""
+    assert proc.returncode == 0
 
 
 def test_cli_version():

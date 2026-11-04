@@ -205,6 +205,9 @@ getmac --default-interface
 getmac -i eth0 --exclude-method SysIfaceFile
 getmac -i eth0 --exclude-method SysIfaceFile --exclude-method ArpFile
 
+# List the methods for this platform, in the order getmac tries them, and which ones work here
+getmac --list-methods
+
 # Force a specific method to be used, regardless of the consequences or if it even works
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 ```
