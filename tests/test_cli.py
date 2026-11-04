@@ -164,6 +164,7 @@ def test_build_parser_defaults():
         (["-d"], "debug", 1),
         (["-dd"], "debug", 2),
         (["-dddd"], "debug", 4),
+        (["-vdd"], "debug", 2),  # Short options can still be combined
         (["--override-port", "12345"], "override_port", 12345),
         (["--arp-timeout", "1.5"], "arp_timeout", 1.5),
         (["--arp-timeout", "0"], "arp_timeout", 0),
@@ -380,6 +381,37 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
         (["--exclude-method", "BoGuS"], "argument --exclude-method: unknown method 'BoGuS'"),
         (["--list-methods", "-4", "10.0.0.1"], "not allowed with argument"),
         (["--bogus"], "unrecognized arguments: --bogus"),
+        # The start of an option isn't accepted (allow_abbrev=False)
+        (["--int", "eth0"], "unrecognized arguments: --int eth0"),
+        (["--no", "-4", "10.0.0.1"], "arguments: --no (did you mean '--no-net'?)\n"),
+        # Suggestions for typos
+        (
+            ["--interfaces", "eth0"],
+            "unrecognized arguments: --interfaces eth0 (did you mean '--interface'?)\n",
+        ),
+        (
+            ["--interfaces=eth0", "--no-nett", "--zzzzzzzz"],
+            (
+                "unrecognized arguments: --interfaces=eth0 --no-nett --zzzzzzzz (did you mean "
+                "'--interface' for '--interfaces=eth0', '--no-net' for '--no-nett'?)\n"
+            ),
+        ),
+        (["-z"], "unrecognized arguments: -z\n"),  # Short options are too short to guess
+        (
+            ["--override-platform", "Linx"],
+            "argument --override-platform: unknown platform 'Linx' (did you mean 'linux'?)\n",
+        ),
+        (
+            ["--force-method", "ipneighbourshow"],
+            (
+                "argument --force-method: unknown method 'ipneighbourshow' "
+                "(did you mean 'IpNeighborShow'?)\n"
+            ),
+        ),
+        (
+            ["-E", "arpfil"],
+            "argument --exclude-method: unknown method 'arpfil' (did you mean 'ArpFile'?)\n",
+        ),
     ],
 )
 def test_main_argparse_errors(mock_get_mac, run_cli, mocker, args, error):

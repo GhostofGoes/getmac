@@ -1576,6 +1576,16 @@ def get_method_by_name(method_name: str) -> Optional[type[Method]]:
     return None
 
 
+def get_method_names() -> list[str]:
+    """
+    The names of the :class:`~getmac.getmac.Method` classes in
+    :data:`~getmac.getmac.METHODS`, in order, e.g. ``["ArpFile", ...]``. These are the
+    names :func:`~getmac.getmac.get_method_by_name` and
+    :attr:`~getmac.variables.Settings.FORCE_METHOD` accept (ignoring case).
+    """
+    return [method.__name__ for method in METHODS]
+
+
 def get_platform_names() -> set[str]:
     """
     The platform names that :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM` can be

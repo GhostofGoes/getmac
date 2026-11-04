@@ -92,6 +92,14 @@ def test_popen(mocker):
     m.assert_called_once_with("TESTCMD", "ARGS")
 
 
+def test_get_method_names():
+    names = getmac.get_method_names()
+
+    assert names == [method.__name__ for method in getmac.METHODS]
+    assert "ArpFile" in names
+    assert all(getmac.get_method_by_name(name) for name in names)
+
+
 def test_get_platform_names(mocker):
     assert getmac.get_platform_names() == getmac.Method.VALID_PLATFORM_NAMES
 
