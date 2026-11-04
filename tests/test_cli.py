@@ -405,6 +405,21 @@ def test_main_help(mock_get_mac, run_cli, flag):
     mock_get_mac.assert_not_called()
 
 
+@pytest.mark.parametrize("columns", ["40", "80", "200"])
+def test_help_text(mocker, columns):
+    mocker.patch.dict(os.environ, {"COLUMNS": columns})
+    text = build_parser().format_help()
+
+    assert "With no arguments, prints the MAC of the default interface." in text
+    assert "\nexamples:\n  getmac                    MAC of the default interface\n" in text
+    assert "\nexit codes:\n" in text
+    assert "  3    error (printed to stderr)\n" in text
+    assert "docs:   https://ghostofgoes.github.io/getmac/cli.html\n" in text
+    assert "issues: https://github.com/GhostofGoes/getmac/issues\n" in text
+    # Options in the help text aren't split at the '-', e.g. '--list-' and 'methods'
+    assert not any(line.endswith("-") for line in text.splitlines())
+
+
 # --- settings mutation + logging ---------------------------------------------
 
 
