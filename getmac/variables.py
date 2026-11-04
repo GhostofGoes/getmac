@@ -289,6 +289,13 @@ class Variables(VarsClass):
     Name of the local host's default network interface.
     """
 
+    LAST_METHOD: str = ""
+    """
+    Name of the method that found the last result (a MAC, or the default interface's
+    name), e.g. ``"SysIfaceFile"``. The ``getmac`` command's ``--json`` option uses it.
+    It isn't cleared when a lookup finds nothing.
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
