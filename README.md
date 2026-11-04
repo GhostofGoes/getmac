@@ -201,6 +201,10 @@ getmac --ip 192.168.0.1 --override-platform windows
 # Print the name of the default interface (e.g. "eth0"), instead of its MAC
 getmac --default-interface
 
+# Exclude one or more methods
+getmac -i eth0 --exclude-method SysIfaceFile
+getmac -i eth0 --exclude-method SysIfaceFile --exclude-method ArpFile
+
 # Force a specific method to be used, regardless of the consequences or if it even works
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 ```

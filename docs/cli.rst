@@ -2,7 +2,7 @@
 Command-Line Interface
 ======================
 
-The ``getmac`` command provides developers and power users a cross-platform command line tool to get MAC addresses. It is installed when the pip package is installed.
+The ``getmac`` command is primarily provided to enable debugging and troubleshooting of ``getmac``. It also provides a handy cross-platform command line tool to get MAC addresses, in case you needed one. It's installed along with ``getmac`` when pip installed, and can be invoked as long as your Python's ``Scripts`` folder is on your PATH.
 
 Basic Usage
 ===========
@@ -163,6 +163,13 @@ Controlling method selection
 ----------------------------
 
 getmac has a selection of methods used to acquire information across platforms. The methods it uses are determined by the platform and if required commands/libraries are present. This system isn't perfect, and in some cases it can be beneficial to have control over method selection, such as in the case of debugging.
+
+To stop getmac from using a method, for example one that gives a wrong result on your system, use ``--exclude-method`` (``-E``). getmac uses the next method that works instead. To exclude more than one method, give the argument more than once.
+
+.. code-block:: shell
+
+   getmac -i eth0 --exclude-method SysIfaceFile
+   getmac --ip 192.168.0.1 -E arpfile -E ipneighborshow
 
 The platform detected by getmac can be overridden via ``--override-platform``. This is useful when debugging issues or if you know a method for a different platform works on the current platform. Any value returned by ``platform.system()`` is valid.
 

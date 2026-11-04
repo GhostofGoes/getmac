@@ -145,6 +145,7 @@ def test_build_parser_defaults():
     assert args.override_platform is None
     assert args.force_method is None
     assert args.default_interface is False
+    assert args.exclude_method is None
 
 
 @pytest.mark.parametrize(
@@ -170,6 +171,13 @@ def test_build_parser_defaults():
         (["--force-method", "IpNeighborShow"], "force_method", "IpNeighborShow"),
         (["-D"], "default_interface", True),
         (["--default-interface"], "default_interface", True),
+        (["-E", "SysIfaceFile"], "exclude_method", ["SysIfaceFile"]),
+        (["--exclude-method", "ArpFile"], "exclude_method", ["ArpFile"]),
+        (
+            ["--exclude-method", "ArpFile", "--exclude-method", "IpNeighborShow"],
+            "exclude_method",
+            ["ArpFile", "IpNeighborShow"],
+        ),
     ],
 )
 def test_build_parser_flag_values(argv, attr, expected):
@@ -257,6 +265,7 @@ def test_main_exit_code_failure(mock_get_mac, run_cli):
         ),
         (["-i"], "argument -i/--interface: expected one argument"),
         (["-D", "-i", "eth0"], "not allowed with argument"),
+        (["--exclude-method", "BoGuS"], "argument --exclude-method: unknown method 'BoGuS'"),
         (["--bogus"], "unrecognized arguments: --bogus"),
     ],
 )
@@ -486,6 +495,43 @@ def test_main_default_interface_not_found(mock_get_mac, run_cli, mocker):
 
     assert run_cli("-D") == (1, "", "")
     mock_get_mac.assert_not_called()
+
+
+# --- --exclude-method --------------------------------------------------------
+
+
+class StubIfaceFallback(StubIface):
+    """A second iface method, after StubIface."""
+
+    def get(self, arg: str) -> str:  # noqa: ARG002
+        return FAKEOS_MAC
+
+
+@pytest.mark.parametrize("name", ["StubIface", "stubiface", " STUBIFACE "])
+@pytest.mark.usefixtures("stub_methods")
+def test_main_exclude_method(run_cli, mocker, name):
+    mocker.patch("getmac.getmac.METHODS", [StubIface, StubIfaceFallback, StubIp4])
+
+    assert run_cli("-i", "eth0", "--exclude-method", name) == (0, f"{FAKEOS_MAC}\n", "")
+    assert getmac.METHODS == [StubIfaceFallback, StubIp4]
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_exclude_method_unknown_leaves_methods_alone(run_cli):
+    before = list(getmac.METHODS)
+
+    assert run_cli("--exclude-method", "StubIp4", "--exclude-method", "nope")[0] == 2
+    assert getmac.METHODS == before
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_exclude_method_named_twice(run_cli):
+    code, out, _ = run_cli(
+        "-4", "10.0.0.1", "-N", "-E", "StubIface", "--exclude-method", "stubiface"
+    )
+
+    assert (code, out) == (0, f"{MAC}\n")
+    assert getmac.METHODS == [StubFakeOsIface, StubIp4]
 
 
 # --- true end-to-end subprocess smoke tests ----------------------------------

@@ -126,8 +126,32 @@ def build_parser() -> argparse.ArgumentParser:
         "This will be used regardless of its method type or platform "
         "compatibility, and Method.test() will NOT be checked!",
     )
+    tshooting.add_argument(
+        "-E",
+        "--exclude-method",
+        action="append",
+        default=None,
+        metavar="METHOD",
+        help="Don't use this method, e.g. 'ArpFile'. getmac uses the next method "
+        "that works instead. Give it more than once to exclude more methods.",
+    )
 
     return parser
+
+
+def _exclude_methods(parser: argparse.ArgumentParser, names: list[str]) -> None:
+    # Check every name before removing any, so a typo doesn't leave METHODS half-changed
+    excluded = []
+    for name in names:
+        method = getmac.get_method_by_name(name.strip())
+        if method is None:
+            parser.error(f"argument --exclude-method: unknown method '{name}'")
+        excluded.append(method)
+
+    for method in excluded:
+        if method in getmac.METHODS:  # The same method can be named twice
+            getmac.METHODS.remove(method)
+            gvars.log.debug(f"Excluding method '{method.__name__}'")
 
 
 def main() -> None:
@@ -160,6 +184,9 @@ def main() -> None:
 
     if args.force_method:
         settings.FORCE_METHOD = args.force_method.strip().lower()
+
+    if args.exclude_method:
+        _exclude_methods(parser, args.exclude_method)
 
     if args.default_interface:
         iface = getmac.get_default_interface()
