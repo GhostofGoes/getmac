@@ -33,6 +33,9 @@
 * New command line argument, `--default-interface` (`-D`), which prints the name of the default interface.
 * New command line argument, `--exclude-method METHOD` (`-E`), that enables skipping of one or more methods (useful for troubleshooting).
 * New command line argument, `--list-methods`, that lists the available methods for the current platform and shows their status (primary, fallback, or test failed).
+* New command line argument, `--json`, that prints the result as JSON, with the method that found it and the platform. It works with `--default-interface` and `--list-methods` too. The method's name is also in the new `gvars.LAST_METHOD`.
+* `getmac --help` has examples, the exit codes, and links to the docs and the issue tracker, and the help for `-v`, `-d`, `--override-port`, `--override-platform`, and `--force-method` says what they do without mentioning getmac's internals.
+* The command line prints errors as one line on stderr, `getmac: error: ...`, and exits with code `3`, instead of a traceback with exit code `1` (for example, when no methods work on the platform). `-d` adds the traceback. Warnings are one line too, `getmac: warning: ...`, without the file path and line of code. Ctrl-C exits with code `130`, without a traceback.
 * Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) (Issue [#41](https://github.com/GhostofGoes/getmac/issues/41))
     * Most methods now work for regular users, not just root.
         * New method, `DladmIface`, which gets interface MACs using `dladm`.
@@ -73,6 +76,8 @@
 * Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel (Issue [#91](https://github.com/GhostofGoes/getmac/issues/91)).
 * Windows: the path of each command getmac runs is now quoted. Before, a path with a space in it (e.g. `C:\Program Files\...`) could make Windows run a different program, such as `C:\Program.exe`.
 * Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android (Issue [#95](https://github.com/GhostofGoes/getmac/issues/95)).
+* **BREAKING CHANGE**: command line options must be written in full, e.g. `--interface` instead of `--int`. Before, any start of an option that matched only one was accepted, so adding an option could break a script that used one. A typo in an option, or in a method or platform name, suggests the closest one, e.g. `(did you mean '--interface'?)`.
+* The command line checks its arguments before doing anything: `--force-method` and `--override-platform` must name a method or platform that exists (before, a typo looked like "not found", or was a traceback), `--force-method` can't name a method given to `--exclude-method`, `--override-port` must be from 1 to 65535, and `--arp-timeout` and `--command-timeout` don't accept `nan` or `inf`. A negative number, e.g. `--arp-timeout -1`, now says what's wrong with it instead of "expected one argument".
 * Fixed several issues found with fuzz testing using [Hypothesis](https://hypothesis.readthedocs.io/):
     * Fixed `DefaultIfaceLinuxRouteFile` failing, and being marked unusable, when a line in `/proc/net/route` has fewer than two fields.
     * Fixed `LanscanIface` (HP-UX) failing when the interface name is empty or whitespace and `lanscan` prints a blank line.

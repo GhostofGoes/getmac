@@ -1853,6 +1853,9 @@ def _attempt_method_get(
 
         return _attempt_method_get(new_method, method_type, arg, network_request)
 
+    if result:
+        gvars.LAST_METHOD = str(method)
+
     return result
 
 
@@ -1892,7 +1895,10 @@ def get_by_method(method_type: str, arg: str = "", network_request: bool = True)
             gvars.log.error(f"Invalid FORCE_METHOD method name '{settings.FORCE_METHOD}'")
             return None
 
-        return forced_method().get(arg)
+        result = forced_method().get(arg)
+        if result:
+            gvars.LAST_METHOD = forced_method.__name__
+        return result
 
     # Initialize the cache if it hasn't been already
     if not METHOD_CACHE.get(method_type) and not initialize_method_cache(
