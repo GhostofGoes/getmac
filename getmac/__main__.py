@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import difflib
 import logging
 import math
 import re
@@ -8,7 +9,8 @@ import sys
 import textwrap
 import traceback
 import warnings
-from typing import NoReturn, Union
+from collections.abc import Iterable
+from typing import NoReturn, Optional, Union
 
 from . import getmac
 from .variables import consts, gvars, settings
@@ -98,6 +100,10 @@ def _join_negative_values(argv: list[str]) -> list[str]:
     return joined
 
 
+def _method_names() -> list[str]:
+    return [method.__name__ for method in getmac.METHODS]
+
+
 def _platform_names() -> set[str]:
     """Platforms that ``--override-platform`` accepts: any that a method is for."""
     return set(getmac.Method.VALID_PLATFORM_NAMES).union(
@@ -113,9 +119,51 @@ class _HelpFormatter(argparse.RawDescriptionHelpFormatter):
         return textwrap.wrap(text, width, break_on_hyphens=False)
 
 
+def _closest(name: str, names: Iterable[str]) -> Optional[str]:
+    """The one of ``names`` that's closest to ``name`` (ignoring case), if any are close."""
+    lowered = {n.lower(): n for n in names}
+    matches = difflib.get_close_matches(name.strip().lower(), lowered, n=1)
+    return lowered[matches[0]] if matches else None
+
+
+def _did_you_mean(name: str, names: Iterable[str]) -> str:
+    closest = _closest(name, names)
+    return f" (did you mean '{closest}'?)" if closest else ""
+
+
+class _ArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        """Suggest the option that was meant, e.g. '--interface' for '--interfaces'."""
+        prefix = "unrecognized arguments: "
+        if message.startswith(prefix):
+            options = [
+                opt
+                for action in self._actions
+                for opt in action.option_strings
+                if opt.startswith("--")
+            ]
+            suggestions = []
+            for arg in message[len(prefix) :].split():
+                closest = _closest(arg.split("=", 1)[0], options) if arg.startswith("--") else None
+                if closest:
+                    suggestions.append((arg, closest))
+            if len(suggestions) == 1:
+                message += f" (did you mean '{suggestions[0][1]}'?)"
+            elif suggestions:
+                message += (
+                    " (did you mean "
+                    + ", ".join(f"'{closest}' for '{arg}'" for arg, closest in suggestions)
+                    + "?)"
+                )
+        super().error(message)
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = _ArgumentParser(
         prog="getmac",
+        # Don't accept the start of an option, e.g. "--int" for "--interface". If scripts
+        # use them, adding an option with the same start (e.g. "--interval") breaks them.
+        allow_abbrev=False,
         description="Get MAC addresses of network interfaces or LAN hosts.\n"
         "With no arguments, prints the MAC of the default interface.",
         epilog=EPILOG,
@@ -249,7 +297,10 @@ def _exclude_methods(parser: argparse.ArgumentParser, names: list[str]) -> None:
     for name in names:
         method = getmac.get_method_by_name(name.strip())
         if method is None:
-            parser.error(f"argument --exclude-method: unknown method '{name}'")
+            parser.error(
+                f"argument --exclude-method: unknown method '{name}'"
+                + _did_you_mean(name, _method_names())
+            )
         excluded.append(method)
 
     for method in excluded:
@@ -356,8 +407,11 @@ def _main() -> NoReturn:
         platform = args.override_platform.strip().lower()
         if platform not in _platform_names():
             parser.error(
-                f"argument --override-platform: unknown platform '{args.override_platform}' "
-                f"(choose from {', '.join(sorted(_platform_names()))})"
+                f"argument --override-platform: unknown platform '{args.override_platform}'"
+                + (
+                    _did_you_mean(platform, _platform_names())
+                    or f" (choose from {', '.join(sorted(_platform_names()))})"
+                )
             )
         settings.OVERRIDE_PLATFORM = platform
 
@@ -366,8 +420,11 @@ def _main() -> NoReturn:
         forced = getmac.get_method_by_name(args.force_method.strip())
         if forced is None:
             parser.error(
-                f"argument --force-method: unknown method '{args.force_method}' "
-                "(--list-methods shows the methods for this platform)"
+                f"argument --force-method: unknown method '{args.force_method}'"
+                + (
+                    _did_you_mean(args.force_method, _method_names())
+                    or " (--list-methods shows the methods for this platform)"
+                )
             )
         settings.FORCE_METHOD = args.force_method.strip().lower()
 
