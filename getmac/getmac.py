@@ -848,6 +848,9 @@ class FcntlIface(Method):
         # Interface names are at most 15 bytes (IFNAMSIZ - 1). A longer name isn't one,
         # and would be cut off below.
         if len(encoded_arg) > 15:
+            gvars.log.warning(
+                f"FcntlIface: interface name '{arg}' is longer than 15 bytes, not looking it up"
+            )
             return None
 
         try:

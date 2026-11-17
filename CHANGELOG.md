@@ -63,7 +63,7 @@
 * Improved `IpconfigExe` to handle non-English `ipconfig` output, without relying on the "Physical Address" label. Interfaces are still only found by name in English output, which is a limitation that will be addressed in a future release.
 * Fixed interface names with characters like `(`, `*` and `.` not being found (e.g. `vEthernet (WSL)`).
 * Fixed `NetstatIface` returning the MAC of another interface.
-* `FcntlIface` returns `None` for an interface name longer than 15 bytes. Before, the name was cut off.
+* `FcntlIface` logs a warning and returns `None` for an interface name longer than 15 bytes. Before, the name was cut off.
 * Fixed Windows commands failing on systems where adapter names have non-English characters.
 * Fixed `network_request=False` (`--no-net`) not always preventing methods that send network requests from being used.
 * Fixed `FORCE_METHOD` set to `ArpingHost` or `CtypesHost` still sending a UDP packet before the ARP request.
