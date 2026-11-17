@@ -154,17 +154,18 @@ def test_arpfile_incomplete_entry(mocker, get_sample, debug_logs):
 
 def test_arp_various_args_fallback_args(mocker, get_sample, debug_logs):
     """
-    "arp <ip>" fails, so "arp -an" is used, which doesn't take the IP
+    "arp -n <ip>" and "arp <ip>" fail, so "arp -an" is used, which doesn't take the IP
     as an argument. The arguments that worked are reused for the next lookup.
     """
     content = get_sample("ubuntu_18.04/arp_-an.out")
     cpe = CalledProcessError(cmd="arp", returncode=1)
-    mocker.patch("getmac.utils.popen", side_effect=[cpe, content, content])
+    mocker.patch("getmac.utils.popen", side_effect=[cpe, cpe, content, content])
 
     inst = getmac.ArpVariousArgs()
     assert inst.get("192.168.16.2") == "00:50:56:f1:4c:50"
     assert inst.get("192.168.16.2") == "00:50:56:f1:4c:50"
     assert utils.popen.call_args_list == [
+        mocker.call("arp", "-n 192.168.16.2"),
         mocker.call("arp", " 192.168.16.2"),
         mocker.call("arp", "-an"),
         mocker.call("arp", "-an"),

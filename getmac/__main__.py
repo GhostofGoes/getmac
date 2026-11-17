@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import math
 import sys
 
 from . import getmac
@@ -13,6 +14,9 @@ def _seconds(value: str) -> float:
         seconds = float(value)
     except ValueError:
         raise argparse.ArgumentTypeError(f"not a number of seconds: '{value}'") from None
+    if not math.isfinite(seconds):
+        # "inf" and "nan" are numbers to float(), but can't be waited for
+        raise argparse.ArgumentTypeError(f"not a number of seconds: '{value}' (use 0 for none)")
     if seconds < 0:
         raise argparse.ArgumentTypeError(f"must be 0 or more seconds: '{value}'")
     return seconds

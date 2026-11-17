@@ -221,6 +221,8 @@ jobs:
         uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4
         with:
           python-version: "3.13"
+          # The version of PDM that builds releases is pinned, and updated on purpose
+          version: "2.29.7"
       - name: Build the sdist and wheel
         run: pdm build
       - name: Install twine
@@ -233,9 +235,36 @@ jobs:
           name: python-package-distributions
           path: dist/
           if-no-files-found: error
+  # Before anything is published for a tag, check where the tag is
+  check-tag:
+    name: Check the release tag
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      # All the branches are fetched, to see which ones the tag is on
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Check that the tag is on main or a release branch
+        run: |
+          # A release has to come from main or a release branch (e.g. "1.0.x"). A tag on
+          # some other commit, e.g. on a branch that was never merged, isn't published.
+          released=false
+          for branch in $(git for-each-ref --format='%(refname)' \
+              refs/remotes/origin/main 'refs/remotes/origin/[0-9]*.[0-9]*.x'); do
+            if git merge-base --is-ancestor "$GITHUB_SHA" "$branch"; then
+              released=true
+            fi
+          done
+          if [[ "$released" != true ]]; then
+            echo "::error::Tag '$GITHUB_REF_NAME' ($GITHUB_SHA) isn't on main or a release branch"
+            exit 1
+          fi
   publish-pypi:
     name: Publish to PyPI
-    needs: [lint, test, docs, build]
+    needs: [lint, test, docs, build, check-tag]
     # Only for version tags pushed to this repository (not forks)
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && github.repository == 'GhostofGoes/getmac'
     runs-on: ubuntu-24.04
@@ -261,7 +290,8 @@ jobs:
             exit 1
           fi
       # Attestations stored on GitHub, which can be checked with:
-      #   gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac
+      #   gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac \
+      #     --signer-workflow GhostofGoes/getmac/.github/workflows/ci.yml
       - name: Generate build provenance attestations
         id: attest
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
