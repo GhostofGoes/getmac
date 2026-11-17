@@ -141,6 +141,10 @@ def test_initialize_method_cache_valid_types(mocker, method_type):
     )
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {})
     mocker.patch("getmac.getmac.PLATFORM", "linux")
+    # Every command and file of the Linux methods is there, whatever system
+    # the tests are run on
+    mocker.patch("getmac.getmac.check_command", return_value=True)
+    mocker.patch("getmac.getmac.check_path", return_value=True)
     assert getmac.initialize_method_cache(method_type)
     assert getmac.METHOD_CACHE[method_type] is not None
     if method_type in ["ip4", "ip6"]:
