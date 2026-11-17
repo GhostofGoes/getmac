@@ -45,20 +45,21 @@ jobs:
         with:
           release: ${{ matrix.release }}
           # "python3" is the default Python in DPorts. Which version that is changes
-          # over time, and the pip and Hypothesis packages have the version in their
-          # names (e.g. "py311-pip"), so the names are made from the Python that was installed.
-          # Hypothesis has no DragonFly BSD wheels and needs Rust to build, so it's from DPorts.
+          # over time, and the pip package has the version in its name (e.g. "py312-pip"),
+          # so the name is made from the Python that was installed.
           prepare: |
             pkg install -y python3
-            pypkg="py$(/usr/local/bin/python3 -c 'import sys; print("%d%d" % sys.version_info[:2])')"
-            pkg install -y "$pypkg-pip" "$pypkg-hypothesis"
+            pkg install -y "py$(/usr/local/bin/python3 -c 'import sys; print("%d%d" % sys.version_info[:2])')-pip"
           run: |
             set -e
             export PATH="$PATH:/sbin:/usr/sbin:/usr/local/bin"
             uname -a
             python3 -m venv --system-site-packages /tmp/venv
             . /tmp/venv/bin/activate
-            python -m pip install --quiet pytest pytest-mock pytest-randomly pytest-benchmark
+            # Hypothesis 6.155.7 is the last release that's only Python. Later ones have
+            # a part written in Rust, with no wheel for DragonFly BSD, and DPorts doesn't
+            # always have a Hypothesis package for its default Python.
+            python -m pip install --quiet pytest pytest-mock pytest-randomly pytest-benchmark "hypothesis<=6.155.7"
 
             echo "::group::Unit tests"
             python -m pytest --benchmark-disable -p no:cacheprovider tests
