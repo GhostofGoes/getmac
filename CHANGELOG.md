@@ -87,6 +87,7 @@
     * **Timeouts are checked.** `--arp-timeout inf` used to wait forever, and `--command-timeout inf` made every command fail. On the command line these are errors now (use `0` for no timeout). In `settings`, a value that can't be waited for means no timeout.
     * `get_mac_address(ip6=...)` no longer raises `OSError` on a system with IPv6 turned off in the kernel.
     * Commands don't get the standard input of the program using getmac. Files are only read if they're regular files, up to 4 MB.
+    * `scripts/collect_samples.py` doesn't write through symbolic links, and only uses `tests/samples` as its default folder when it's run from a getmac checkout.
 
 ### Removed
 * Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.
