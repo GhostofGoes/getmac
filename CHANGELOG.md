@@ -251,7 +251,7 @@ e.g. '-dd' for DEBUG level 2.
 ### Changed
 * **Significant** performance improvement for remote hosts. Previously,
 the average for `get_mac_address(ip='10.0.0.100')` was 1.71 seconds.
-Now, the average is `12.7 miliseconds`, with the special case of a unpopulated
+Now, the average is `12.7 milliseconds`, with the special case of a unpopulated
 arp table being only slightly higher. This was brought about by changes in
 how the arp table is populated. The original method was to use the
 host's `ping` command to send an ICMP packet to the host. This took time,
