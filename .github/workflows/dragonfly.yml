@@ -44,12 +44,20 @@ jobs:
         uses: vmactions/dragonflybsd-vm@4ab776fa9f914fbea72f13715b451e77e7ef5c41 # v1.3.4
         with:
           release: ${{ matrix.release }}
+          # The packages in the VM image are older than the ones in DPorts, and
+          # "pkg install" doesn't upgrade a package that's already installed. Python
+          # needs the OpenSSL that's in DPorts now, and can't load its "ssl" module
+          # (which pip needs) with the older one, so all packages are upgraded first.
+          #
           # "python3" is the default Python in DPorts. Which version that is changes
           # over time, and the pip package has the version in its name (e.g. "py312-pip"),
           # so the name is made from the Python that was installed.
           prepare: |
+            set -e
+            pkg upgrade -y
             pkg install -y python3
             pkg install -y "py$(/usr/local/bin/python3 -c 'import sys; print("%d%d" % sys.version_info[:2])')-pip"
+            /usr/local/bin/python3 -c 'import ssl; print(ssl.OPENSSL_VERSION)'
           run: |
             set -e
             export PATH="$PATH:/sbin:/usr/sbin:/usr/local/bin"
