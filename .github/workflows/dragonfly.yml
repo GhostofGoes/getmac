@@ -44,10 +44,14 @@ jobs:
         uses: vmactions/dragonflybsd-vm@4ab776fa9f914fbea72f13715b451e77e7ef5c41 # v1.3.4
         with:
           release: ${{ matrix.release }}
-          # "python3" is the default Python in DPorts (3.11).
+          # "python3" is the default Python in DPorts. Which version that is changes
+          # over time, and the pip and Hypothesis packages have the version in their
+          # names (e.g. "py311-pip"), so the names are made from the Python that was installed.
           # Hypothesis has no DragonFly BSD wheels and needs Rust to build, so it's from DPorts.
           prepare: |
-            pkg install -y python3 py311-pip py311-hypothesis
+            pkg install -y python3
+            pypkg="py$(/usr/local/bin/python3 -c 'import sys; print("%d%d" % sys.version_info[:2])')"
+            pkg install -y "$pypkg-pip" "$pypkg-hypothesis"
           run: |
             set -e
             export PATH="$PATH:/sbin:/usr/sbin:/usr/local/bin"
