@@ -2,8 +2,8 @@
 
 """
 Tests of the command line. These run "python -m getmac" in another process, on
-the real system: the other tests don't use the system's network (see conftest.py),
-these show that the whole thing works on it.
+the real system: the other tests can't use the system (see conftest.py), these
+show that the whole thing works on it.
 """
 
 import platform
@@ -49,7 +49,10 @@ def default_mac():
 
 
 def test_cli_main_basic(default_mac):
-    assert run_cmd(BASE_CMD) == default_mac
+    code, stdout, _ = run(BASE_CMD)
+    assert stdout == default_mac
+    # The exit code says if a MAC was found
+    assert code == (0 if default_mac else 1)
 
 
 def test_cli_main_verbose(default_mac):
@@ -104,6 +107,6 @@ def test_cli_localhost():
 
 
 # TODO: figure out how to properly test CLI commands and isolate platform-specific behavior
-def test_cli_override_platform():
+def test_cli_override_platform(default_mac):
     plat = platform.system().lower()
-    assert run_cmd(BASE_CMD + ["-v", "-dd", "--override-platform", plat]) != ""
+    assert run_cmd(BASE_CMD + ["-v", "-dd", "--override-platform", plat]) == default_mac

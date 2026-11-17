@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import inspect
+import socket
 import sys
 from subprocess import CalledProcessError
 
@@ -45,6 +46,8 @@ def test_clean_mac():
     assert getmac._clean_mac("00000000000000000") is None
     assert getmac._clean_mac("  00-50-56-C0-00-01  ") == "00:50:56:c0:00:01"
     assert getmac._clean_mac("000000000000") == "00:00:00:00:00:00"
+    # Single-digit octets are padded (e.g. from "arp" on macOS and Solaris)
+    assert getmac._clean_mac("58:6d:8f:7:c9:94") == "58:6d:8f:07:c9:94"
 
 
 def test_search(get_sample):
@@ -64,16 +67,18 @@ def test_popen(mocker):
 def test_call_proc(mocker):
     mocker.patch("getmac.getmac.DEVNULL", "DEVNULL")
     mocker.patch("getmac.getmac.ENV", "ENV")
+    # The command gets no input, its errors are discarded, and it has a time limit
+    expected = {"stdin": "DEVNULL", "stderr": "DEVNULL", "env": "ENV", "timeout": 15.0}
 
     mocker.patch("getmac.getmac.WINDOWS", True)
     m = mocker.patch("getmac.getmac.check_output", return_value="WINSUCCESS")
     assert getmac._call_proc("CMD", "arg") == "WINSUCCESS"
-    m.assert_called_once_with("CMD" + " " + "arg", stderr="DEVNULL", env="ENV")
+    m.assert_called_once_with("CMD" + " " + "arg", **expected)
 
     mocker.patch("getmac.getmac.WINDOWS", False)
     m = mocker.patch("getmac.getmac.check_output", return_value="YAY")
     assert getmac._call_proc("CMD", "arg1 arg2") == "YAY"
-    m.assert_called_once_with(["CMD", "arg1", "arg2"], stderr="DEVNULL", env="ENV")
+    m.assert_called_once_with(["CMD", "arg1", "arg2"], **expected)
 
 
 def test_uuid_convert():
@@ -81,19 +86,14 @@ def test_uuid_convert():
     assert getmac._uuid_convert(278094213753144) == "FC:EC:DA:D3:29:38"
 
 
-def test_read_file_return(mocker, get_sample):
+def test_read_file_return(tmpdir, get_sample):
     data = get_sample("ifconfig.out")
-    mock_open = mocker.mock_open(read_data=data)
-    if PY2:
-        mocker.patch("__builtin__.open", mock_open)
-    else:
-        mocker.patch("builtins.open", mock_open)
-    assert getmac._read_file("ifconfig.out") == data
-    mock_open.assert_called_once_with("ifconfig.out")
+    tmpdir.join("ifconfig.out").write_binary(data.encode("utf-8"))
+    assert getmac._read_file(str(tmpdir.join("ifconfig.out"))) == data
 
 
-def test_read_file_not_exist():
-    assert getmac._read_file("DOESNOTEXIST") is None
+def test_read_file_not_exist(tmpdir):
+    assert getmac._read_file(str(tmpdir.join("DOESNOTEXIST"))) is None
 
 
 def test_fetch_ip_using_dns(mocker):
@@ -296,22 +296,40 @@ def test_get_mac_address_interface(mocker):
     getmac.get_by_method.assert_called_once_with("iface", "ens33")
 
 
-def test_get_mac_address_ip(mocker):
+def test_get_mac_address_ip(mocker, mock_socket):
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:12")
     assert getmac.get_mac_address(ip="192.0.2.2") == "00:01:02:04:00:12"
     getmac.get_by_method.assert_called_once_with("ip4", "192.0.2.2")
+    # A UDP packet is sent to the host first, to populate the ARP table.
+    # The socket is a mock in the tests (see conftest.py), so nothing is sent.
+    mock_socket.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM)
+    mock_socket.return_value.sendto.assert_called_once_with(
+        b"", ("192.0.2.2", getmac.PORT)
+    )
+    mock_socket.return_value.close.assert_called_once_with()
+
+    mock_socket.reset_mock()
+    assert getmac.get_mac_address(ip="192.0.2.2", network_request=False)
+    mock_socket.assert_not_called()
 
 
-def test_get_mac_address_ip6(mocker):
+def test_get_mac_address_ip6(mocker, mock_socket):
     mocker.patch("socket.has_ipv6", False)
     assert getmac.get_mac_address(ip6="fe80::1") is None
 
     mocker.patch("socket.has_ipv6", True)
     assert getmac.get_mac_address(ip6="192.168.0.1") is None
+    mock_socket.assert_not_called()
 
     mocker.patch("getmac.getmac.get_by_method", return_value="00:01:02:04:00:00")
     assert getmac.get_mac_address(ip6="fe80::1") == "00:01:02:04:00:00"
     getmac.get_by_method.assert_called_once_with("ip6", "fe80::1")
+    # A UDP packet is sent to the host first, to populate the neighbor table
+    mock_socket.assert_called_once_with(socket.AF_INET6, socket.SOCK_DGRAM)
+    mock_socket.return_value.sendto.assert_called_once_with(
+        b"", ("fe80::1", getmac.PORT)
+    )
+    mock_socket.return_value.close.assert_called_once_with()
 
 
 def test_get_mac_address_hostname(mocker):

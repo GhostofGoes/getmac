@@ -26,6 +26,8 @@ It provides one function: ``get_mac_address()``
 
 import ctypes
 import logging
+import math
+import numbers
 import os
 import platform
 import re
@@ -34,14 +36,17 @@ import socket
 import subprocess
 import struct
 import sys
+import threading
 import traceback
 import warnings
-from subprocess import CalledProcessError, check_output
+from subprocess import CalledProcessError
 
 try:
-    DEVNULL = subprocess.DEVNULL  # type: Union[int, BufferedWriter]
+    DEVNULL = subprocess.DEVNULL  # type: Union[int, IO[bytes]]
 except AttributeError:  # Python 2
-    DEVNULL = open(os.devnull, "wb")
+    # Opened for reading too: it's also what commands get as their input, and a
+    # command that reads from a file that's only open for writing gets an error
+    DEVNULL = open(os.devnull, "r+b")
 
 # Used for mypy (a data type analysis tool)
 # If you're copying the code, this section can be safely removed
@@ -49,23 +54,52 @@ try:
     from typing import TYPE_CHECKING
 
     if TYPE_CHECKING:
-        from io import BufferedWriter
-        from typing import Dict, IO, List, Optional, Set, Tuple, Type, Union
+        from typing import Any, Dict, IO, List, Optional, Set, Tuple, Type, Union
 except ImportError:
     pass
+
+try:
+    from subprocess import TimeoutExpired
+except ImportError:  # Python 2
+
+    class TimeoutExpired(Exception):  # type: ignore
+        """
+        A command took longer than ``COMMAND_TIMEOUT`` seconds and was stopped.
+        This is ``subprocess.TimeoutExpired`` on Python 3.
+        """
+
+        def __init__(self, cmd, timeout, output=None):
+            # type: (Any, float, Optional[bytes]) -> None
+            Exception.__init__(self, cmd, timeout)
+            self.cmd = cmd
+            self.timeout = timeout
+            self.output = output
+
+        def __str__(self):
+            # type: () -> str
+            return "Command '%s' timed out after %s seconds" % (self.cmd, self.timeout)
+
 
 # Configure logging
 log = logging.getLogger("getmac")  # type: logging.Logger
 if not log.handlers:
     log.addHandler(logging.NullHandler())
 
-__version__ = "0.9.6"
+__version__ = "0.9.7"
 
 PY2 = sys.version_info[0] == 2  # type: bool
 
 # Configurable settings
 DEBUG = 0  # type: int
 PORT = 55555  # type: int
+
+# How long a command that getmac runs (such as "arp" or "ipconfig.exe") can take,
+# in seconds. A command that takes longer is stopped, and the method that ran it
+# is treated like one that failed with an error: it isn't used again, and the
+# next method is tried. Commands normally finish in well under a second.
+# None or 0 means no limit, which is how it was before 0.9.7. So does a value
+# that can't be waited for (negative, infinity, not a number, or over a day).
+COMMAND_TIMEOUT = 15.0  # type: Optional[float]
 
 # Monkeypatch shutil.which for python 2.7 (TODO(python3): remove shutilwhich.py)
 if PY2:
@@ -161,6 +195,9 @@ MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
 # This can also happen on other platforms, like Solaris
 MAC_RE_SHORT = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 
+# Longer than this isn't a useful timeout, and very large numbers can't be waited for
+_MAX_TIMEOUT = 24 * 60 * 60
+
 # Ensure we only log the Python 2 warning once
 WARNED_UNSUPPORTED_PYTHONS = False
 
@@ -228,15 +265,31 @@ def _clean_mac(mac):
     return mac
 
 
+def _decode(data):
+    # type: (Any) -> str
+    """
+    The output of a command or the contents of a file as text.
+
+    Bytes that aren't UTF-8 (e.g. in the name of an interface, which can be any
+    bytes on Linux) are replaced, so they can't make a method fail with an error
+    and be removed. On Python 2, ``str`` is bytes and is returned as it is, like
+    it always has been.
+    """
+    if not PY2 and isinstance(data, (bytes, bytearray)):
+        return bytes(data).decode("utf-8", "replace")
+    return str(data)
+
+
 def _read_file(filepath):
     # type: (str) -> Optional[str]
     try:
-        with open(filepath) as f:
-            return f.read()
+        with open(filepath, "rb") as f:
+            data = f.read()
     # This is IOError on Python 2.7
     except (OSError, IOError):  # noqa: B014
         log.debug("Could not find file: '%s'", filepath)
         return None
+    return _decode(data)
 
 
 def _search(regex, text, group_index=0, flags=0):
@@ -272,6 +325,90 @@ def _popen(command, args):
     return _call_proc(executable, args)
 
 
+def _command_timeout():
+    # type: () -> Optional[float]
+    """
+    ``COMMAND_TIMEOUT`` as a number of seconds that can be waited for, or :obj:`None`
+    for no timeout: zero, a negative number, infinity, "not a number", something
+    that isn't a number, or more than a day.
+    """
+    value = COMMAND_TIMEOUT  # type: Any
+    if isinstance(value, bool) or not isinstance(value, numbers.Real):
+        return None
+    try:
+        seconds = float(value)
+    except (ValueError, OverflowError):
+        return None
+    if math.isnan(seconds) or math.isinf(seconds):
+        return None
+    if seconds <= 0 or seconds > _MAX_TIMEOUT:
+        return None
+    return seconds
+
+
+def _check_output_py2(cmd, stdin=None, stderr=None, env=None, timeout=None):
+    # type: (Any, Any, Any, Any, Optional[float]) -> bytes
+    """
+    ``subprocess.check_output()`` with a timeout, for Python 2, where it doesn't
+    have one. It returns what the command wrote to its output, and raises
+    ``CalledProcessError`` if the command's exit code isn't zero, like the
+    original. If the command is still running after ``timeout`` seconds, it's
+    stopped and ``TimeoutExpired`` is raised.
+
+    The command also isn't given the files that the program has open: Python 2
+    passes every open file and socket on to a command unless it's told not to
+    (Python 3 never does).
+    """
+    process = subprocess.Popen(
+        cmd,
+        stdin=stdin,
+        stdout=subprocess.PIPE,
+        stderr=stderr,
+        env=env,
+        # Can't be used on Windows with Python 2 if the input or output is redirected
+        close_fds=not WINDOWS,
+    )
+
+    timed_out = []  # type: List[bool]
+
+    def _stop():
+        # type: () -> None
+        # The exit code is set once the command has finished and has been waited
+        # for. After that its process ID could belong to another process.
+        if process.returncode is None:
+            timed_out.append(True)
+            try:
+                process.kill()
+            except EnvironmentError:
+                pass
+
+    timer = None
+    if timeout:
+        timer = threading.Timer(timeout, _stop)
+        timer.daemon = True
+        timer.start()
+    try:
+        output = process.communicate()[0]
+    finally:
+        if timer is not None:
+            timer.cancel()
+
+    if timed_out:
+        raise TimeoutExpired(cmd, timeout or 0, output=output)
+    if process.returncode:
+        raise CalledProcessError(process.returncode, cmd, output=output)
+    return output
+
+
+# The function used to run a command and get its output. It's a name in this
+# module so there's one place where commands are run (and one thing for tests
+# to replace), whatever the version of Python.
+if PY2:
+    check_output = _check_output_py2
+else:
+    check_output = subprocess.check_output
+
+
 def _call_proc(executable, args):
     # type: (str, str) -> str
     cmd = ""  # type: Union[str, List[str]]
@@ -280,15 +417,16 @@ def _call_proc(executable, args):
     else:
         cmd = [executable] + shlex.split(args)
 
-    output = check_output(cmd, stderr=DEVNULL, env=ENV)
+    # The command doesn't get the standard input of the program using getmac, and
+    # its error messages are discarded
+    output = check_output(
+        cmd, stdin=DEVNULL, stderr=DEVNULL, env=ENV, timeout=_command_timeout()
+    )
 
     if DEBUG >= 4:
         log.debug("Output from '%s' command: %s", executable, str(output))
 
-    if not PY2 and isinstance(output, bytes):
-        return str(output, "utf-8")
-    else:
-        return str(output)
+    return _decode(output)
 
 
 def _uuid_convert(mac):
@@ -440,7 +578,8 @@ class ArpFreebsd(Method):
 
     def get(self, arg):  # type: (str) -> Optional[str]
         regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + MAC_RE_COLON
-        return _search(regex, _popen("arp", arg))
+        # -n: don't look up the name of the host, which can take a long time
+        return _search(regex, _popen("arp", "-n %s" % arg))
 
 
 class ArpOpenbsd(Method):
@@ -461,6 +600,10 @@ class ArpVariousArgs(Method):
     _regex_std = r"\)\s+at\s+" + MAC_RE_COLON  # type: str
     _regex_darwin = r"\)\s+at\s+" + MAC_RE_SHORT  # type: str
     _args = (
+        # -n: don't look up the names of hosts. That's a DNS request for each
+        # lookup, and it can take a long time if the DNS server doesn't reply.
+        ("-n", True),  # "arp -n 192.168.1.1"
+        # Solaris "arp" only has -n with -a
         ("", True),  # "arp 192.168.1.1"
         # Linux
         ("-an", False),  # "arp -an"
@@ -607,10 +750,7 @@ class ArpingHost(Method):
                 return self._call_habets(arg)
         except CalledProcessError as ex:
             if ex.output and self._is_iputils:
-                if not PY2 and isinstance(ex.output, bytes):
-                    output = str(ex.output, "utf-8").lower()
-                else:
-                    output = str(ex.output).lower()
+                output = _decode(ex.output).lower()
 
                 if "habets" in output or "invalid option" in output:
                     if DEBUG:
@@ -1237,7 +1377,9 @@ class DefaultIfaceRouteGetCommand(Method):
         return check_command("route")
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
-        output = _popen("route", "get default")
+        # -n: don't look up the name of the gateway, which is a DNS request that
+        # can take a long time if the DNS server doesn't reply
+        output = _popen("route", "-n get default")
 
         if not output:
             return None
@@ -1289,7 +1431,8 @@ class DefaultIfaceFreeBsd(Method):
         return check_command("netstat")
 
     def get(self, arg=""):  # type: (str) -> Optional[str]
-        output = _popen("netstat", "-r")
+        # -n: don't look up the name of every address in the routing table
+        output = _popen("netstat", "-rn")
         return _search(r"default[ ]+\S+[ ]+\S+[ ]+(\S+)[\r\n]+", output)
 
 
