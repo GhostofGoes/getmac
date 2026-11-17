@@ -81,7 +81,7 @@
     * MACs are now checked for non-hexadecimal characters before they're returned. Before, a value like `zz:zz:zz:zz:zz:zz` from a command's output was returned as a MAC.
 * Lookups cope better with odd command output, files and settings:
     * **A lookup no longer waits on DNS.** `arp` is run with `-n`. Without it, `arp` looks up the name of the host, which could take as long as the DNS server took to reply (or the full `COMMAND_TIMEOUT` if it didn't), and a name could hide the entry.
-    * **`ipconfig.exe`: a DNS suffix that looks like a MAC isn't returned as the MAC.** The suffix is set by the network (DHCP) and is printed before the adapter's address.
+    * **`ipconfig.exe`: a DNS suffix that looks like a MAC isn't returned as the MAC.**
     * **A wrong MAC is no longer returned** in these cases: `ifconfig` output is only searched for a MAC at the start of a line, not inside text such as the name of a Wi-Fi network or a description. A longer hardware address (e.g. InfiniBand) isn't cut down to its first 6 bytes. An interface with an address that isn't a MAC is skipped when looking for a fallback interface.
     * **Fewer ways to make a method stop working.** A method that raises an unexpected error isn't used again. These no longer raise: `FcntlIface` for an interface that doesn't exist, reading `/proc/net/arp` or `/proc/net/route` when the name of an interface isn't UTF-8, and odd output in `GetmacExe` and `DefaultIfaceNetsh`.
     * **Timeouts are checked.** `--arp-timeout inf` used to wait forever, and `--command-timeout inf` made every command fail. On the command line these are errors now (use `0` for no timeout). In `settings`, a value that can't be waited for means no timeout.
