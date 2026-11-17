@@ -4,6 +4,16 @@
 
 **Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
 
+## 0.9.6 (10/03/2026)
+
+### Changed
+* Made library py.typed
+
+## 0.9.5 (07/15/2024)
+
+### Changed
+* Fixed macOS arp when MAC has one character sections in specific cases (Fixes issue #92)
+
 ## 0.9.4 (06/01/2023)
 
 ### Added
@@ -241,7 +251,7 @@ e.g. '-dd' for DEBUG level 2.
 ### Changed
 * **Significant** performance improvement for remote hosts. Previously,
 the average for `get_mac_address(ip='10.0.0.100')` was 1.71 seconds.
-Now, the average is `12.7 miliseconds`, with the special case of a unpopulated
+Now, the average is `12.7 milliseconds`, with the special case of a unpopulated
 arp table being only slightly higher. This was brought about by changes in
 how the arp table is populated. The original method was to use the
 host's `ping` command to send an ICMP packet to the host. This took time,

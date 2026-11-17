@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+"""
+Tests of the command line. These run "python -m getmac" in another process, on
+the real system: the other tests don't use the system's network (see conftest.py),
+these show that the whole thing works on it.
+"""
+
 import platform
 import sys
 from subprocess import PIPE, Popen
@@ -12,22 +18,46 @@ PY2 = sys.version_info[0] == 2
 BASE_CMD = [sys.executable, "-m", "getmac"]
 
 
+def run(command):
+    # type: (list) -> tuple
+    """Run a command, and return its exit code, output and errors."""
+    process = Popen(command, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    return (
+        process.returncode,
+        stdout.decode("utf-8", "replace").strip(),
+        stderr.decode("utf-8", "replace"),
+    )
+
+
 def run_cmd(command):
     # type: (list) -> str
-    stdout, _ = Popen(command, stdout=PIPE, stderr=PIPE).communicate()
-    return stdout.decode("utf-8").strip()
+    return run(command)[1]
 
 
-def test_cli_main_basic():
-    assert run_cmd(BASE_CMD) == get_mac_address()
+@pytest.fixture(scope="module")
+def default_mac():
+    """
+    The MAC of the default interface of the system the tests are run on, or an
+    empty string if it doesn't have one (e.g. there's no network). It's looked up
+    in another process, like the commands it's compared with.
+    """
+    script = "import getmac; print(getmac.get_mac_address() or '')"
+    code, stdout, stderr = run([sys.executable, "-c", script])
+    assert code == 0, stderr
+    return stdout
 
 
-def test_cli_main_verbose():
-    assert get_mac_address() in run_cmd(BASE_CMD + ["--verbose"])
+def test_cli_main_basic(default_mac):
+    assert run_cmd(BASE_CMD) == default_mac
 
 
-def test_cli_main_debug():
-    assert get_mac_address() in run_cmd(BASE_CMD + ["--verbose", "--debug"])
+def test_cli_main_verbose(default_mac):
+    assert default_mac in run_cmd(BASE_CMD + ["--verbose"])
+
+
+def test_cli_main_debug(default_mac):
+    assert default_mac in run_cmd(BASE_CMD + ["--verbose", "--debug"])
 
 
 def test_cli_main_invalid_interface():
@@ -47,10 +77,10 @@ def test_cli_version():
     assert __version__ in run_cmd(BASE_CMD + ["--version"])
 
 
-def test_cli_multiple_debug_levels():
-    assert get_mac_address() in run_cmd(BASE_CMD + ["-v", "-dd"])
-    assert get_mac_address() in run_cmd(BASE_CMD + ["-v", "-ddd"])
-    assert get_mac_address() in run_cmd(BASE_CMD + ["-v", "-dddd"])
+def test_cli_multiple_debug_levels(default_mac):
+    assert default_mac in run_cmd(BASE_CMD + ["-v", "-dd"])
+    assert default_mac in run_cmd(BASE_CMD + ["-v", "-ddd"])
+    assert default_mac in run_cmd(BASE_CMD + ["-v", "-dddd"])
 
 
 def test_cli_no_net():

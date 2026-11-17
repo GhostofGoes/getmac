@@ -1,156 +1,120 @@
 name: CI
-
 on:
-- release
-- push
-- pull_request
+  push:
+    branches:
+      - 0.9.x
+  pull_request:
+
+# Jobs only get read access to the repository
+permissions:
+  contents: read
+
+# Cancel runs for older commits on the same pull request
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  # The versions of pip for Python 2.7 and 3.5 warn that the Python is old
+  PIP_NO_PYTHON_VERSION_WARNING: 1
 
 jobs:
   lint:
     name: Run lint checks
-    runs-on: ubuntu-20.04
-    # Workaround to disable pip upgrade warnings until fixed in setup-python
-    # See: https://github.com/actions/setup-python/issues/532
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          python-version: "3.8"
-      - name: Install tox
-        run: python -m pip install tox
-      - name: Run lint checks
-        run: tox -e check
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install -r tests/style-requirements.txt
+      # The same commands as "tox -e check"
+      - name: Check formatting with black
+        run: black --check --diff getmac tests setup.py
+      - name: Run flake8
+        run: flake8 getmac tests setup.py
+      - name: Check spelling
+        run: codespell --check-filenames --ignore-words-list ether,caf getmac tests/conftest.py tests/test_cli.py tests/test_getmac.py tests/test_methods.py setup.py README.md CHANGELOG.md SECURITY.md
+
+  # The versions of Python that the runner images still have
   test:
-    name: Run tests
+    name: Python ${{ matrix.python-version }} on ${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
-    # Workaround to disable pip upgrade warnings until fixed in setup-python
-    # See: https://github.com/actions/setup-python/issues/532
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       # Versions available:
-      # pypy: https://downloads.python.org/pypy/versions.json
       # Python: https://github.com/actions/python-versions/blob/main/versions-manifest.json
-      # Additional info: https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md
+      # pypy: https://downloads.python.org/pypy/versions.json
       # OS images: https://github.com/actions/runner-images
       matrix:
+        platform:
+          - ubuntu-24.04
         python-version:
-          - "2.7"
-          - "3.5"
-          - "3.6"
-          - "3.7"
           - "3.8"
           - "3.9"
-          - "pypy-2.7"
-          - "pypy-3.6"
-          - "pypy-3.7"
-          - "pypy-3.8"
-          - "pypy-3.9"
-        architecture:
-          - x86
-          - x64
-        platform:
-          - ubuntu-20.04
-          - windows-latest
-          - macos-latest
-        exclude:
-          - platform: ubuntu-20.04
-            architecture: x86
-          - platform: macos-latest
-            architecture: x86
-          - platform: ubuntu-20.04
-            python-version: "3.4"
-          - platform: macos-latest
-            python-version: "3.4"
-          - platform: macos-latest
-            python-version: "pypy-2.7"
-          - platform: macos-latest
-            python-version: "pypy-3.6"
-          - platform: macos-latest
-            python-version: "pypy-3.7"
-          - platform: macos-latest
-            python-version: "pypy-3.8"
-          - platform: windows-latest
-            python-version: "pypy-2.7"
-          - platform: windows-latest
-            python-version: "pypy-3.6"
-            architecture: x64
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+          - "pypy3.9"
+          - "pypy3.10"
+        # Only a few jobs on Windows and macOS: the oldest and newest Python on
+        # Windows, and one on macOS (macOS minutes cost ten times as much)
+        include:
+          - platform: windows-2025
+            python-version: "3.8"
+          - platform: windows-2025
+            python-version: "3.13"
+          - platform: macos-26
+            python-version: "3.13"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: ${{ matrix.architecture }}
-      - name: Display platform and environment information
-        run: |
-          python --version
-          python -c "import sys; print('sys.version: %s' % str(sys.version))"
-          python -c "import sys; print('sys.platform: %s' % str(sys.platform))"
-          python -c "import os; print('os.name: %s' % str(os.name))"
-          python -c "import platform; print('platform.uname(): %s' % str(platform.uname()))"
+      - name: Show platform and environment information
+        run: python -c "import os, platform, sys; print(sys.version); print(platform.python_implementation(), platform.machine()); print('sys.platform:', sys.platform, 'os.name:', os.name); print(platform.uname())"
       - name: Install dependencies
-        run: python -m pip install tox coveralls tox-gh-actions
-      # TODO: fix benchmark results (maybe a separate Job?)
+        run: python -m pip install -r tests/test-requirements.txt
       - name: Run tests
-        run: tox
-      - uses: codecov/codecov-action@v3
-        with:
-          # codecov is annoying. Not sure why I'm still using it, 
-          # may need to look at something that has less heisenbugs.
-          # https://community.codecov.com/t/ci-failure-due-to-too-many-uploads-to-this-commit/2587/12
-          fail_ci_if_error: false
-      - name: Coveralls
-        if: ${{ matrix.platform == 'ubuntu-20.04' && github.event_name != 'pull_request' }}
-        uses: AndreMiras/coveralls-python-action@develop
-        with:
-          parallel: true
-          flag-name: ${{ matrix.python-version }}-${{ matrix.platform }}
-  coveralls_finish:
-    needs: test
-    runs-on: ubuntu-20.04
+        run: python -m pytest -ra
+
+  # Python 2.7 and 3.5 to 3.7 aren't on the runner images anymore, and getmac 0.9.x
+  # exists for them. They're tested in the official Python images from Docker Hub.
+  test-old-pythons:
+    name: Python ${{ matrix.python-version }} (container)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: python:${{ matrix.image-tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "2.7"
+            image-tag: 2.7.18-buster
+          - python-version: "3.5"
+            image-tag: 3.5.10-buster
+          - python-version: "3.6"
+            image-tag: 3.6.15-bullseye
+          - python-version: "3.7"
+            image-tag: 3.7.17-bookworm
     steps:
-    - name: Coveralls Finished
-      if: ${{ github.event_name != 'pull_request' }}
-      uses: AndreMiras/coveralls-python-action@develop
-      with:
-        parallel-finished: true
-
-
-# TODO: publish
-# TODO: need to do this for both "getmac" and "get-mac" packages
-# TODO: don't publish pre-releases OR publish them as pre-releases to PyPI
-
-# https://github.com/marketplace/actions/upload-a-build-artifact
-
-# name: "Build and publish a release"
-
-# on:
-#   release:
-#     types: [released]
-
-# jobs:
-#   publish:
-#     name: "📦 Publish Python distributions"
-#     runs-on: "ubuntu-20.04"
-#     strategy:
-#       matrix:
-#         python-version:
-#           - "3.8"
-#     steps:
-#       - uses: actions/checkout@v3
-#       - name: "🐍 Set up Python ${{ matrix.python-version }}"
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: "${{ matrix.python-version }}"
-#       - name: "🐍 Install wheel"
-#         run: "python -m pip install wheel --user"
-#       - name: "🐍 Build a binary wheel and a source tarball"
-#         run: "python setup.py sdist bdist_wheel"
-#       - name: "📦 Publish distribution to PyPI"
-#         uses: "pypa/gh-action-pypi-publish@master"
-#         if: "startsWith(github.ref, 'refs/tags')"
-#         with:
-#           password: "${{ secrets.pypi_password }}"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Show platform and environment information
+        run: python -c "import os, platform, sys; print(sys.version); print(platform.python_implementation(), platform.machine()); print('sys.platform:', sys.platform, 'os.name:', os.name)"
+      - name: Install dependencies
+        run: python -m pip install -r tests/test-requirements.txt
+      - name: Run tests
+        run: python -m pytest -ra

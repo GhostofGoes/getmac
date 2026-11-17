@@ -1,6 +1,7 @@
 .idea/
 .vscode/
 .vagrant/
+.pdm-python
 
 .pytest_cache
 
