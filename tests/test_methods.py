@@ -583,3 +583,56 @@ def test_uuid_lanscan(mocker):
     mocker.patch("getmac.getmac.check_command", return_value=True)
     assert getmac.UuidLanscan().test() is True
     getmac.check_command.assert_called_once_with("lanscan")
+
+
+# --- Commands that don't wait on DNS (0.9.7) ---------------------------------
+
+
+def test_arp_does_not_look_up_names(mocker):
+    """
+    "arp <ip>" looks up the name of the host (a DNS request), which can take a long
+    time, and the name can hide the entry. "-n" is used where the IP is an argument.
+    """
+    popen = mocker.patch(
+        "getmac.getmac._popen", return_value="? (192.0.2.1) at 2:0:0:0:0:1 on en0"
+    )
+    mocker.patch("getmac.getmac.DARWIN", True)
+
+    assert getmac.ArpVariousArgs().get("192.0.2.1") == "2:0:0:0:0:1"
+    getmac.ArpFreebsd().get("192.0.2.1")
+
+    assert popen.call_args_list == [
+        mocker.call("arp", "-n 192.0.2.1"),
+        mocker.call("arp", "-n 192.0.2.1"),
+    ]
+
+
+def test_arp_various_args_falls_back_to_no_option(mocker):
+    """Solaris "arp" doesn't have "-n" with an IP: the next thing tried is no option."""
+    cpe = CalledProcessError(cmd="arp", returncode=2)
+    output = "10.0.2.2 (10.0.2.2) at 52:54:0:12:35:2\n"
+    popen = mocker.patch("getmac.getmac._popen", side_effect=[cpe, output, output])
+    mocker.patch("getmac.getmac.SOLARIS", True)
+    method = getmac.ArpVariousArgs()
+
+    assert method.get("10.0.2.2") == "52:54:0:12:35:2"
+    assert method.get("10.0.2.2") == "52:54:0:12:35:2"
+
+    assert popen.call_args_list == [
+        mocker.call("arp", "-n 10.0.2.2"),
+        mocker.call("arp", " 10.0.2.2"),
+        mocker.call("arp", " 10.0.2.2"),
+    ]
+
+
+def test_default_interface_commands_do_not_look_up_names(mocker, get_sample):
+    """Without "-n", "route" and "netstat" look up the name of every address they print."""
+    content = get_sample("freebsd11/route_get_default.out")
+    popen = mocker.patch("getmac.getmac._popen", return_value=content)
+    assert getmac.DefaultIfaceRouteGetCommand().get() == "em0"
+    popen.assert_called_once_with("route", "-n get default")
+
+    content = get_sample("freebsd11/netstat_r.out")
+    popen = mocker.patch("getmac.getmac._popen", return_value=content)
+    assert getmac.DefaultIfaceFreeBsd().get() == "em0"
+    popen.assert_called_once_with("netstat", "-rn")

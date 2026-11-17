@@ -4,6 +4,16 @@
 
 **Announcement**: Compatibility with Python versions older than 3.7 (2.7, 3.4, 3.5, and 3.6) is deprecated and will be removed in getmac 1.0.0. If you are stuck on an unsupported Python, consider loosely pinning the version of this package in your dependency list, e.g. `getmac<1.0.0` or `getmac~=0.9.0`.
 
+## 0.9.7 (TBD)
+
+### Added
+* `getmac.getmac.COMMAND_TIMEOUT`: how many seconds a command that getmac runs can take (15 by default). A command that takes longer is stopped, the method that ran it isn't used again, and the next method is tried. Set it to `0` or `None` for no limit.
+
+### Changed
+* A lookup no longer waits on DNS. `arp`, `route` and `netstat` are run with `-n`, so they don't look up the name of every address they print. Without it, a lookup could take as long as the DNS server took to answer (10 seconds or more if it didn't).
+* The commands that getmac runs don't get the input of your program (its standard input). On Python 2 they also don't get its open files and sockets anymore (Python 3 never passed those on).
+* Text that isn't valid UTF-8 in a file or in the output of a command (such as an unusual interface name) is replaced, and no longer stops a method from being used.
+
 ## 0.9.6 (10/03/2026)
 
 ### Changed

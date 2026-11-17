@@ -46,6 +46,8 @@ def test_clean_mac():
     assert getmac._clean_mac("00000000000000000") is None
     assert getmac._clean_mac("  00-50-56-C0-00-01  ") == "00:50:56:c0:00:01"
     assert getmac._clean_mac("000000000000") == "00:00:00:00:00:00"
+    # Single-digit octets are padded (e.g. from "arp" on macOS and Solaris)
+    assert getmac._clean_mac("58:6d:8f:7:c9:94") == "58:6d:8f:07:c9:94"
 
 
 def test_search(get_sample):
@@ -65,16 +67,18 @@ def test_popen(mocker):
 def test_call_proc(mocker):
     mocker.patch("getmac.getmac.DEVNULL", "DEVNULL")
     mocker.patch("getmac.getmac.ENV", "ENV")
+    # The command gets no input, its errors are discarded, and it has a time limit
+    expected = {"stdin": "DEVNULL", "stderr": "DEVNULL", "env": "ENV", "timeout": 15.0}
 
     mocker.patch("getmac.getmac.WINDOWS", True)
     m = mocker.patch("getmac.getmac.check_output", return_value="WINSUCCESS")
     assert getmac._call_proc("CMD", "arg") == "WINSUCCESS"
-    m.assert_called_once_with("CMD" + " " + "arg", stderr="DEVNULL", env="ENV")
+    m.assert_called_once_with("CMD" + " " + "arg", **expected)
 
     mocker.patch("getmac.getmac.WINDOWS", False)
     m = mocker.patch("getmac.getmac.check_output", return_value="YAY")
     assert getmac._call_proc("CMD", "arg1 arg2") == "YAY"
-    m.assert_called_once_with(["CMD", "arg1", "arg2"], stderr="DEVNULL", env="ENV")
+    m.assert_called_once_with(["CMD", "arg1", "arg2"], **expected)
 
 
 def test_uuid_convert():

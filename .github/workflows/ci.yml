@@ -39,7 +39,7 @@ jobs:
       - name: Run flake8
         run: flake8 getmac tests setup.py
       - name: Check spelling
-        run: codespell --check-filenames --ignore-words-list ether,caf getmac tests/conftest.py tests/test_cli.py tests/test_getmac.py tests/test_methods.py setup.py README.md CHANGELOG.md SECURITY.md
+        run: codespell --check-filenames --ignore-words-list ether,caf getmac tests/conftest.py tests/test_cli.py tests/test_getmac.py tests/test_methods.py tests/test_robustness.py setup.py README.md CHANGELOG.md SECURITY.md
 
   # The versions of Python that the runner images still have
   test:
