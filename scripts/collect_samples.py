@@ -94,6 +94,7 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
         cmd("arp -a"),
         cmd("arp -an"),
         cmd("arp {ip}"),
+        cmd("arp -n {ip}"),
         cmd("arp -a {ip}"),
         cmd("arp -an {ip}"),
         cmd("netstat -i"),
@@ -235,6 +236,7 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
     # There's a group for each type of lookup, so platforms only get the ones they use.
     "other_ip": (  # MAC of a remote host
         cmd("arp {ip}"),
+        cmd("arp -n {ip}"),
         cmd("arp -an"),
         cmd("arp -an {ip}"),
         cmd("arp -a"),

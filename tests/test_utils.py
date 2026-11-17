@@ -34,8 +34,9 @@ def test_read_file_return(mocker, get_sample):
     data = get_sample("ifconfig.out")
     mock_open = mocker.mock_open(read_data=data)
     mocker.patch("builtins.open", mock_open)
+    mocker.patch("os.path.isfile", return_value=True)
     assert utils.read_file("ifconfig.out") == data
-    mock_open.assert_called_once_with("ifconfig.out")
+    mock_open.assert_called_once_with("ifconfig.out", encoding="utf-8", errors="replace")
 
 
 def test_read_file_not_exist():
@@ -58,12 +59,16 @@ def test_call_proc(mocker):
     mocker.patch.object(consts, "WINDOWS", True)
     m = mocker.patch("subprocess.check_output", return_value="WINSUCCESS")
     assert utils.call_proc("CMD", "arg") == "WINSUCCESS"
-    m.assert_called_once_with('"CMD" arg', stderr="DEVNULL", env="ENV", timeout=15.0)
+    m.assert_called_once_with(
+        '"CMD" arg', stdin="DEVNULL", stderr="DEVNULL", env="ENV", timeout=15.0
+    )
 
     mocker.patch.object(consts, "WINDOWS", False)
     m = mocker.patch("subprocess.check_output", return_value="YAY")
     assert utils.call_proc("CMD", "arg1 arg2") == "YAY"
-    m.assert_called_once_with(["CMD", "arg1", "arg2"], stderr="DEVNULL", env="ENV", timeout=15.0)
+    m.assert_called_once_with(
+        ["CMD", "arg1", "arg2"], stdin="DEVNULL", stderr="DEVNULL", env="ENV", timeout=15.0
+    )
 
     # check_output() returns bytes, since it isn't run in text mode
     mocker.patch("subprocess.check_output", return_value=b"BYTES")
