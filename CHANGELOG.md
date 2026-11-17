@@ -99,6 +99,7 @@
 
 
 ### Dev
+* Releases are checked more before they're published. A release tag has to be on `main` or a release branch (e.g. `1.0.x`), or nothing is published to PyPI or the container registry. Publishing a release's container image now waits for an approval (the `ghcr` environment), like publishing to PyPI does. The version of PDM that builds releases is pinned.
 * Switched to [PDM](https://pdm-project.org) for project management
 * Added `pyproject.toml` and consolidated the configurations for most tools
   * Removed `setup.py`,  `MANIFEST.in`, `requirements*.txt`, `tox.ini`
