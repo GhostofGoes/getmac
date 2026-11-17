@@ -11,7 +11,7 @@
 
 ### Changed
 * A lookup no longer waits on DNS. `arp`, `route` and `netstat` are run with `-n`, so they don't look up the name of every address they print. Without it, a lookup could take as long as the DNS server took to answer (10 seconds or more if it didn't).
-* The commands that getmac runs don't get the input of your program (its standard input). On Python 2 they also don't get its open files and sockets anymore (Python 3 never passed those on).
+* The commands that getmac runs no longer get the input of your program (its standard input). On Python 2 they also no longer get its open files and sockets (Python 3 never passed those on).
 * Text that isn't valid UTF-8 in a file or in the output of a command (such as an unusual interface name) is replaced, and no longer stops a method from being used.
 
 ## 0.9.6 (10/03/2026)
