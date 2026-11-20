@@ -67,6 +67,7 @@
 * Improved `IpconfigExe` to handle non-English `ipconfig` output, without relying on the "Physical Address" label. Interfaces are still only found by name in English output, which is a limitation that will be addressed in a future release.
 * Fixed interface names with characters like `(`, `*` and `.` not being found (e.g. `vEthernet (WSL)`).
 * Fixed `NetstatIface` returning the MAC of another interface.
+* `FcntlIface` logs a warning and returns `None` for an interface name longer than 15 bytes. Before, the name was cut off.
 * Fixed Windows commands failing on systems where adapter names have non-English characters.
 * Fixed `network_request=False` (`--no-net`) not always preventing methods that send network requests from being used.
 * Fixed `FORCE_METHOD` set to `ArpingHost` or `CtypesHost` still sending a UDP packet before the ARP request.
@@ -89,6 +90,14 @@
     * Fixed `LanscanIface` (HP-UX) failing when the interface name is empty or whitespace and `lanscan` prints a blank line.
     * Fixed `GetmacExe` (Windows) failing on Python 3.10 and older when `getmac.exe` output contains a NUL character.
     * MACs are now checked for non-hexadecimal characters before they're returned. Before, a value like `zz:zz:zz:zz:zz:zz` from a command's output was returned as a MAC.
+* Lookups cope better with odd command output, files and settings:
+    * **A lookup no longer waits on DNS.** `arp` is run with `-n`. Without it, `arp` looks up the name of the host, which could take as long as the DNS server took to reply (or the full `COMMAND_TIMEOUT` if it didn't), and a name could hide the entry.
+    * **`ipconfig.exe`: a DNS suffix that looks like a MAC isn't returned as the MAC.**
+    * **A wrong MAC is no longer returned** in these cases: `ifconfig` output is only searched for a MAC at the start of a line, not inside text such as the name of a Wi-Fi network or a description. A longer hardware address (e.g. InfiniBand) isn't cut down to its first 6 bytes. An interface with an address that isn't a MAC is skipped when looking for a fallback interface.
+    * **Fewer ways to make a method stop working.** A method that raises an unexpected error isn't used again. These no longer raise: `FcntlIface` for an interface that doesn't exist, reading `/proc/net/arp` or `/proc/net/route` when the name of an interface isn't UTF-8, and odd output in `GetmacExe` and `DefaultIfaceNetsh`.
+    * **Timeouts are checked.** `--arp-timeout inf` used to wait forever, and `--command-timeout inf` made every command fail. On the command line these are errors now (use `0` for no timeout). In `settings`, a value that can't be waited for means no timeout.
+    * `get_mac_address(ip6=...)` no longer raises `OSError` on a system with IPv6 turned off in the kernel.
+    * Commands don't get the standard input of the program using getmac. Files are only read if they're regular files, up to 4 MB.
 
 ### Removed
 * Removed support for Python 2.7 - 3.8. Most of the tooling used by getmac no longer works with 3.8 and older. If you need to use one of these versions, pin to `getmac<1.0.0`.

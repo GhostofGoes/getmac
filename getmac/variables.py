@@ -101,8 +101,9 @@ class Settings(VarsClass):
     This keeps a lookup from hanging forever on a command that never exits.
     Commands usually finish in well under a second, but some, such as ``arp`` without
     ``-n`` on macOS, can be slow due to DNS lookups.
-    :obj:`None` or ``0`` waits for as long as the command takes.
-    There's no command-line flag for this one.
+    :obj:`None` or ``0`` waits for as long as the command takes, and so does a value
+    that can't be waited for (negative, infinity, or more than a day).
+    On the command line, it's ``--command-timeout``.
     """
 
 

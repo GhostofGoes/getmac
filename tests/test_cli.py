@@ -1005,6 +1005,17 @@ def test_cli_logging_goes_to_stderr_only(flag):
         assert proc.stderr == ""
 
 
+@pytest.mark.parametrize("flag", ["--arp-timeout", "--command-timeout"])
+@pytest.mark.parametrize("value", ["inf", "nan", "Infinity"])
+def test_main_timeout_has_to_be_finite(mock_get_mac, run_cli, flag, value):
+    """Infinity and "not a number" can't be waited for: one hung, the other broke lookups."""
+    code, _, stderr = run_cli("-4", "192.0.2.1", flag, value)
+
+    assert code == 2
+    assert "not a number of seconds" in stderr
+    mock_get_mac.assert_not_called()
+
+
 @pytest.mark.parametrize(
     ("argv", "expected"),
     [

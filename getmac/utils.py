@@ -4,6 +4,7 @@ and should be relatively standalone. They are intended for
 internal use by getmac.
 """
 
+import math
 import os
 import re
 import shlex
@@ -17,6 +18,26 @@ from .variables import consts, gvars, settings
 # A clean MAC: lowercase hexadecimal digits in six colon-separated pairs.
 # Compiled once, since clean_mac() checks every MAC that getmac returns.
 _CLEAN_MAC_RE = re.compile(r"[0-9a-f]{2}(?::[0-9a-f]{2}){5}")
+
+# The most that's read from a file, in characters. /proc/net/arp with a full
+# neighbor table is well under this.
+_MAX_FILE_SIZE = 4 * 1024 * 1024
+
+# Longer than this isn't a useful timeout, and very large numbers can't be waited for
+_MAX_TIMEOUT = 24 * 60 * 60
+
+
+def _seconds_or_none(value: object) -> Optional[float]:
+    """
+    A timeout setting as a number of seconds that's safe to wait for, or :obj:`None`
+    for no timeout: zero, a negative number, infinity, "not a number", something that
+    isn't a number, or more than :data:`_MAX_TIMEOUT` seconds.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if not math.isfinite(value) or value <= 0 or value > _MAX_TIMEOUT:
+        return None
+    return float(value)
 
 
 def check_command(command: str) -> bool:
@@ -124,10 +145,16 @@ def read_file(filepath: str) -> Optional[str]:
         the file failed.
     """
     try:
-        with open(filepath) as f:
-            return f.read()
-    except OSError:
-        gvars.log.debug(f"Could not find file: '{filepath}'")
+        # Only regular files: opening something like a named pipe would wait forever
+        if not os.path.isfile(filepath):
+            gvars.log.debug(f"Could not find file: '{filepath}'")
+            return None
+        # The files getmac reads are a few kilobytes. Bytes that aren't UTF-8 (e.g. in the
+        # name of an interface) are replaced, so the rest of the file can still be used.
+        with open(filepath, encoding="utf-8", errors="replace") as f:
+            return f.read(_MAX_FILE_SIZE)
+    except (OSError, ValueError):
+        gvars.log.debug(f"Could not read file: '{filepath}'")
         return None
 
 
@@ -231,9 +258,11 @@ def call_proc(executable: str, args: str) -> str:
 
     output: Union[str, bytes] = subprocess.check_output(
         cmd,
+        # Commands don't get the standard input of the program using getmac
+        stdin=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         env=gvars.ENV,
-        timeout=settings.COMMAND_TIMEOUT or None,
+        timeout=_seconds_or_none(settings.COMMAND_TIMEOUT),
     )
 
     if settings.DEBUG >= 4:

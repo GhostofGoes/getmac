@@ -30,6 +30,7 @@ from the system. Review and redact them before committing!
 # ruff: noqa: T201
 
 import argparse
+import errno
 import ipaddress
 import os
 import platform
@@ -94,6 +95,7 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
         cmd("arp -a"),
         cmd("arp -an"),
         cmd("arp {ip}"),
+        cmd("arp -n {ip}"),
         cmd("arp -a {ip}"),
         cmd("arp -an {ip}"),
         cmd("netstat -i"),
@@ -235,6 +237,7 @@ GROUPS: dict[str, tuple[Spec, ...]] = {
     # There's a group for each type of lookup, so platforms only get the ones they use.
     "other_ip": (  # MAC of a remote host
         cmd("arp {ip}"),
+        cmd("arp -n {ip}"),
         cmd("arp -an"),
         cmd("arp -an {ip}"),
         cmd("arp -a"),
@@ -781,7 +784,8 @@ class Collector:
             sample.status = "not installed"
         elif sample.path and not os.access(sample.path, os.R_OK):
             sample.status = "not found"
-        elif (self.out_dir / sample.filename).exists() and not force:
+        # lexists(): a symbolic link that points nowhere is still something that's there
+        elif os.path.lexists(self.out_dir / sample.filename) and not force:
             sample.status = "exists"
 
     def collect(self, sample: Sample) -> None:
@@ -820,9 +824,12 @@ class Collector:
 
         # Save output of failed commands too, it's useful for handling errors
         if output:
-            self.out_dir.mkdir(parents=True, exist_ok=True)
-            # Write the raw bytes, so Windows line endings ("\r\n") are kept
-            (self.out_dir / sample.filename).write_bytes(output)
+            try:
+                # Write the raw bytes, so Windows line endings ("\r\n") are kept
+                write_output(self.out_dir, sample.filename, output)
+            except OSError as ex:
+                sample.status, sample.detail = "failed", f"couldn't save the output: {ex}"
+                return
             if sample.status == "failed":
                 sample.detail += ", output saved"
 
@@ -851,6 +858,66 @@ def _print_sample(sample: Sample) -> None:
         print(f"  {'':>13}    {sample.stderr.splitlines()[0][:150]}")
 
 
+def write_output(directory: Path, filename: str, data: bytes, append: bool = False) -> None:
+    """
+    Write a file in the output directory, without following a symbolic link.
+
+    This script is often run as root, and the output directory can be somewhere other
+    users can write to (e.g. it was copied to /tmp and run there). A symbolic link
+    left there with the name of a sample or the log would otherwise make root write
+    to whatever it points at.
+
+    Raises:
+        OSError: the directory or the file is a symbolic link, or it can't be written
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / filename
+    if directory.is_symlink() or path.is_symlink():
+        raise OSError(errno.ELOOP, "not writing through a symbolic link", str(path))
+
+    flags = os.O_WRONLY | os.O_CREAT | (os.O_APPEND if append else os.O_TRUNC)
+    flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+    dir_fd = None
+    if os.open in os.supports_dir_fd and hasattr(os, "O_DIRECTORY"):
+        # Open the file relative to the directory that was just checked
+        dir_fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        fd = os.open(filename if dir_fd is not None else path, flags, 0o644, dir_fd=dir_fd)
+    finally:
+        if dir_fd is not None:
+            os.close(dir_fd)
+    with os.fdopen(fd, "ab" if append else "wb") as f:
+        f.write(data)
+
+
+def shared_directory_warning(directory: Path) -> Optional[str]:
+    """
+    A warning if other users can change what's in an output directory that exists,
+    or :obj:`None`. They could change the samples before they're committed.
+    """
+    if not hasattr(os, "geteuid") or not directory.is_dir():
+        return None
+    info = directory.stat()
+    owners = {os.geteuid()}
+    if os.environ.get("SUDO_UID", "").isdigit():  # Run with sudo in the user's own checkout
+        owners.add(int(os.environ["SUDO_UID"]))
+    if info.st_uid not in owners:
+        return f"{directory} belongs to another user (uid {info.st_uid})"
+    if info.st_mode & 0o022:
+        return f"other users can write to {directory}"
+    return None
+
+
+def default_output_root() -> Path:
+    """
+    ``tests/samples`` if this script is in a getmac checkout, otherwise ``./samples``.
+    A ``tests/samples`` folder next to a copy of the script that's somewhere else
+    (e.g. /tmp/tests/samples) could have been put there by someone else.
+    """
+    in_checkout = (REPO_SAMPLES_DIR.parent.parent / "getmac" / "getmac.py").is_file()
+    return REPO_SAMPLES_DIR if in_checkout and REPO_SAMPLES_DIR.is_dir() else Path("samples")
+
+
 def write_log(log_path: Path, header: list[str], samples: list[Sample]) -> None:
     """Add the results of this run to the end of the log."""
     lines = [f"=== {line}" for line in header]
@@ -860,9 +927,8 @@ def write_log(log_path: Path, header: list[str], samples: list[Sample]) -> None:
         lines.append(f"[{sample.status}] {sample.label}{saved}{detail}")
         lines.extend(f"    stderr: {line}" for line in sample.stderr.splitlines()[:20])
 
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("a", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n\n")
+    text = "\n".join(lines) + "\n\n"
+    write_output(log_path.parent, log_path.name, text.encode("utf-8"), append=True)
 
 
 def wrote_files(samples: list[Sample]) -> bool:
@@ -906,7 +972,7 @@ def print_summary(samples: list[Sample], out_dir: Path, dry_run: bool) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    default_root = REPO_SAMPLES_DIR if REPO_SAMPLES_DIR.is_dir() else Path("samples")
+    default_root = default_output_root()
     parser = argparse.ArgumentParser(
         description=(
             "Collect samples of the output of the commands getmac uses on this platform, "
@@ -1012,6 +1078,10 @@ def main(args: Optional[list[str]] = None) -> int:
     ]
     print("\n".join(header[1:]))
     print(f"Output directory: {out_dir}\n")
+    for directory in (opts.output_root, out_dir):
+        warning = shared_directory_warning(directory)
+        if warning:
+            print(f"WARNING: {warning}. They could change the samples saved there.\n")
 
     samples = plan_samples(
         specs_for_platform(platform_name), interfaces, ips, strip_exe=platform_name == "windows"
@@ -1039,7 +1109,10 @@ def main(args: Optional[list[str]] = None) -> int:
             sample.status = sample.status or "not run"
 
     if wrote_files(samples):
-        write_log(out_dir / LOG_NAME, header, samples)
+        try:
+            write_log(out_dir / LOG_NAME, header, samples)
+        except OSError as ex:
+            print(f"WARNING: couldn't save the log: {ex}")
 
     print_summary(samples, out_dir, opts.dry_run)
     return 0

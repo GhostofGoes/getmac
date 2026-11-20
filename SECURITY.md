@@ -25,7 +25,8 @@ The sdist and wheel on PyPI (PyPI also stores their attestations, per PEP 740):
 
 ```bash
 pip download --no-deps getmac==1.0.0 -d dist/
-gh attestation verify dist/getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac
+gh attestation verify dist/getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac \
+  --signer-workflow GhostofGoes/getmac/.github/workflows/ci.yml
 ```
 
 The files attached to a [GitHub release](https://github.com/GhostofGoes/getmac/releases), with the provenance file attached to the same release:
@@ -38,5 +39,6 @@ gh attestation verify getmac-1.0.0-py3-none-any.whl --repo GhostofGoes/getmac \
 Docker images on the GitHub Container Registry:
 
 ```bash
-gh attestation verify oci://ghcr.io/ghostofgoes/getmac:1.0.0 --repo GhostofGoes/getmac
+gh attestation verify oci://ghcr.io/ghostofgoes/getmac:1.0.0 --repo GhostofGoes/getmac \
+  --signer-workflow GhostofGoes/getmac/.github/workflows/docker.yml
 ```

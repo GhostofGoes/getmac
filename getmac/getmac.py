@@ -141,6 +141,11 @@ class Method:
         return cls.__name__
 
 
+# A MAC that isn't followed by more octets. Otherwise the start of a longer
+# hardware address, like InfiniBand's 20 bytes, would match as a MAC.
+_MAC_END: Final[str] = r"(?!:?[0-9a-fA-F])"
+
+
 class ArpFile(Method):
     """
     Use the contents of ``/proc/net/arp`` to find the MAC address of a host.
@@ -216,8 +221,9 @@ class ArpFreebsd(Method):
         return utils.check_command("arp")
 
     def get(self, arg: str) -> Optional[str]:
-        regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + consts.MAC_RE_COLON
-        return utils.search(regex, utils.popen("arp", arg))
+        regex = r"\(" + re.escape(arg) + r"\)\s+at\s+" + consts.MAC_RE_COLON + _MAC_END
+        # -n: don't look up the name of the host, which can take a long time
+        return utils.search(regex, utils.popen("arp", f"-n {arg}"))
 
 
 class ArpOpenbsd(Method):
@@ -286,13 +292,17 @@ class ArpVariousArgs(Method):
     platforms = {"linux", "darwin", "freebsd", "sunos", "other"}
     method_type = "ip"
 
-    _regex_std: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_COLON
-    _regex_darwin: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_SHORT
+    _regex_std: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_COLON + _MAC_END
+    _regex_darwin: Final[str] = r"\)\s+at\s+" + consts.MAC_RE_SHORT + _MAC_END
     _regex_table: Final[str] = r"[ \t]+\S+[ \t]+" + consts.MAC_RE_COLON + r"\s"
 
     # Possible arp arguments to try
     # Second element indicates whether to include IP as argument
     _args = (
+        # -n: don't look up the names of hosts. That's a DNS request for each
+        # lookup, and it can take a long time if the DNS server doesn't reply.
+        ("-n", True),  # "arp -n 192.168.1.1"
+        # Solaris "arp" only has -n with -a
         ("", True),  # "arp 192.168.1.1"
         # Linux
         # NOTE: "arp -an" was also used by uuid._arp_getnode() in CPython
@@ -833,11 +843,25 @@ class FcntlIface(Method):
     def get(self, arg: str) -> Optional[str]:
         import fcntl
 
-        encoded_arg = arg.encode()
+        encoded_arg = os.fsencode(arg)
 
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            # 0x8927 = SIOCGIFHWADDR, get the hardware (MAC) address
-            info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15]))
+        # Interface names are at most 15 bytes (IFNAMSIZ - 1). A longer name isn't one,
+        # and would be cut off below.
+        if len(encoded_arg) > 15:
+            gvars.log.warning(
+                f"FcntlIface: interface name '{arg}' is longer than 15 bytes, not looking it up"
+            )
+            return None
+
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                # 0x8927 = SIOCGIFHWADDR, get the hardware (MAC) address
+                info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", encoded_arg[:15]))
+        except OSError as ex:
+            # E.g. "No such device" for an interface that doesn't exist. That isn't
+            # a problem with the method, so it isn't raised (which would mark it unusable).
+            gvars.log.debug(f"FcntlIface failed for '{arg}': {ex}")
+            return None
 
         return ":".join(f"{byte:02x}" for byte in info[18:24])
 
@@ -876,7 +900,11 @@ class GetmacExe(Method):
         # Columns: Connection Name, Network Adapter, Physical Address, Transport Name
         # The csv module raises an error for NUL characters before Python 3.11
         lines = command_output.replace("\0", "").splitlines()
-        rows = [row for row in csv.reader(lines) if len(row) >= 3]
+        try:
+            rows = [row for row in csv.reader(lines) if len(row) >= 3]
+        except csv.Error as ex:
+            gvars.log.debug(f"Failed to parse the output of getmac.exe: {ex}")
+            return None
         name = arg.casefold()
 
         # Connection names first, since a connection could be named after another adapter
@@ -936,14 +964,34 @@ class IpconfigExe(Method):
         # Adapter names first, then descriptions
         for header, details in sections:
             if header.casefold().partition(" adapter ")[2] == name:
-                return utils.search(self._mac_regex, details, flags=re.MULTILINE)
+                return self._find_mac(details)
 
         for _, details in sections:
             description = utils.search(self._description_regex, details, flags=re.MULTILINE)
             if description and description.casefold() == name:
-                return utils.search(self._mac_regex, details, flags=re.MULTILINE)
+                return self._find_mac(details)
 
         return None
+
+    def _find_mac(self, details: str) -> Optional[str]:
+        """
+        The MAC in an adapter's section. The first lines of a section are the media
+        state (if it's disconnected) and the DNS suffix of the connection, which is
+        set by the network (DHCP) and could be text that looks like a MAC. The MAC
+        comes after those, so a match there is only used if there's no other.
+        """
+        lines = [line for line in details.splitlines() if line.strip()]
+        matches = [
+            (index, mac)
+            for index, mac in (
+                (index, utils.search(self._mac_regex, line)) for index, line in enumerate(lines)
+            )
+            if mac
+        ]
+        for index, mac in matches:
+            if index >= 2:
+                return mac
+        return matches[0][1] if matches else None
 
 
 class WmicExe(Method):
@@ -1015,9 +1063,7 @@ class DarwinNetworksetupIface(Method):
         return utils.search(consts.MAC_RE_COLON, command_output)
 
 
-# A MAC that isn't followed by more octets. Otherwise the start of a longer
-# hardware address, like InfiniBand's 20-byte "HWaddr", would match as a MAC.
-_IFCONFIG_MAC_END: Final[str] = r"(?!:?[0-9a-fA-F])"
+_IFCONFIG_MAC_END: Final[str] = _MAC_END
 
 # This only took 15-20 hours of throwing my brain against a wall multiple times
 # over the span of 1-2 years to figure out. It works for almost all conceivable
@@ -1030,7 +1076,10 @@ IFCONFIG_REGEX: Final[str] = (
     # that isn't is the next interface, and its MAC must not be matched.
     r"(?:[^\n]|\n(?=\s))*?(?:"
     r"(?:\w+[: ]\s?flags=)|"  # Prevent interfaces w/o a MAC from matching
-    r"\s(?:ether|address|HWaddr|hwaddr|lladdr)[ :]?\s?"  # Handle various prefixes
+    # The label of the MAC. It starts a line, apart from "HWaddr" (old Linux ifconfig),
+    # which is on the same line as the name of the interface. Anywhere else, it's part
+    # of some other text, like the name of a Wi-Fi network or a description.
+    r"(?:\n[ \t]+(?:ether|address|lladdr)|\s(?:HWaddr|hwaddr))[ :]?\s?"
     # Match the MAC. Octets can be a single digit, e.g. "0:c:29:c1:70:2a" on Solaris.
     r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})" + _IFCONFIG_MAC_END + r")"
 )
@@ -1451,8 +1500,10 @@ class DefaultIfaceNetsh(Method):
         )
 
         # Default routes, lowest metric first
+        # A metric is a 32-bit number. Longer isn't one, and int() refuses very long numbers.
         default_routes = sorted(
-            (route for route in routes if route[1] == "0.0.0.0/0"), key=lambda r: int(r[0])
+            (route for route in routes if route[1] == "0.0.0.0/0" and len(route[0]) <= 10),
+            key=lambda r: int(r[0]),
         )
 
         # A default route through a gateway shows the gateway's IP instead of the
@@ -1964,10 +2015,12 @@ def _lookup_host(method_type: str, host: str, network_request: bool, wait: bool)
     and for its entry to be added to the table (GitHub issue #101).
     """
     mac = get_by_method(method_type, host, network_request)
-    if mac or not wait or settings.ARP_TIMEOUT <= 0:
+    # Infinity or "not a number" would wait forever
+    arp_timeout = utils._seconds_or_none(settings.ARP_TIMEOUT)
+    if mac or not wait or not arp_timeout:
         return mac
 
-    deadline = time.monotonic() + settings.ARP_TIMEOUT
+    deadline = time.monotonic() + arp_timeout
     delay = 0.01
 
     while True:
@@ -2019,7 +2072,8 @@ def _default_interface_mac(network_request: bool) -> Optional[str]:
             continue
 
         mac = get_by_method("iface", iface, network_request)
-        if mac and utils.clean_mac(mac) != "00:00:00:00:00:00":
+        # An interface with an address that isn't a MAC (e.g. a tunnel) is skipped too
+        if mac and utils.clean_mac(mac) not in (None, "00:00:00:00:00:00"):
             gvars.log.debug(f"Using the MAC of the first interface with a MAC, '{iface}'")
             return mac
 
@@ -2240,23 +2294,19 @@ def get_mac_address(
                     f"to {ip or ip6}:{settings.PORT}"
                 )
 
-            if ip:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            else:
-                sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-
+            # Creating the socket can fail too, e.g. if IPv6 is turned off in the kernel
+            sock = None
             try:
-                if ip:
-                    sock.sendto(b"", (ip, settings.PORT))
-                else:
-                    sock.sendto(b"", (ip6, settings.PORT))
+                sock = socket.socket(socket.AF_INET if ip else socket.AF_INET6, socket.SOCK_DGRAM)
+                sock.sendto(b"", (ip or ip6, settings.PORT))
                 udp_packet_sent = True
             except Exception:
                 gvars.log.error("Failed to send ARP table population packet")
                 if settings.DEBUG:
                     gvars.log.debug(traceback.format_exc())
             finally:
-                sock.close()
+                if sock is not None:
+                    sock.close()
         elif settings.DEBUG:
             gvars.log.debug(
                 f"Not sending UDP packet, using network request "

@@ -18,7 +18,7 @@ git tag 1.0.0
 git push origin 1.0.0
 ```
 1. CI runs the checks, builds the sdist (`.tar.gz`) and wheel (`.whl`), creates build provenance attestations for them, and publishes them to PyPI (the `publish-pypi` job in `ci.yml`). The Docker workflow publishes the container image for the tag at the same time.
-1. Approve the deployment for the `pypi` environment in the workflow run.
+1. Approve the deployment for the `pypi` environment in the workflow run (`ci.yml`), and for the `ghcr` environment in the Docker workflow run (`docker.yml`). Both workflows first check that the tag is on `main` or a release branch (e.g. `1.0.x`), and stop if it isn't.
 1. Check the release on PyPI, and verify the attestation of the published files:
 ```bash
 pip download --no-deps getmac==1.0.0 -d dist/
@@ -47,3 +47,13 @@ pdm run check_package
 ```bash
 twine upload dist/*
 ```
+
+## Repository settings the release process relies on
+
+These are set on GitHub and PyPI, not in the repository, so check them when something about releases changes.
+
+- **Environments** (Settings > Environments): `pypi` and `ghcr` have required reviewers, and are limited to tags (deployment branches and tags: `[0-9]*`). `ghcr-edge` (the `edge` image for `main`) is limited to the `main` branch and has no reviewers.
+- **Tag rules** (Settings > Rules > Rulesets): only maintainers can create, move or delete tags matching `[0-9]*`.
+- **PyPI Trusted Publisher** for `getmac`: repository `GhostofGoes/getmac`, workflow `ci.yml`, environment `pypi`. With the environment set, a different workflow or job can't publish.
+- **No long-lived PyPI token** is needed for 1.0 releases. Delete any that exist once 0.9.x no longer needs one.
+

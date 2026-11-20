@@ -213,6 +213,11 @@ jobs:
       && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # A release needs the same approval as publishing to PyPI: the "ghcr" environment
+    # has required reviewers (Settings > Environments). The "edge" image for main
+    # is published without waiting, from an environment of its own.
+    environment:
+      name: ${{ github.ref_type == 'tag' && 'ghcr' || 'ghcr-edge' }}
     permissions:
       contents: read
       packages: write # Push the image to ghcr.io
@@ -237,6 +242,22 @@ jobs:
           fi
           echo "VERSION=$version" >> "$GITHUB_ENV"
           echo "CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - name: Check that a release tag is on main or a release branch
+        if: github.ref_type == 'tag'
+        run: |
+          # A release has to come from main or a release branch (e.g. "1.0.x"). A tag on
+          # some other commit, e.g. on a branch that was never merged, isn't published.
+          released=false
+          for branch in $(git for-each-ref --format='%(refname)' \
+              refs/remotes/origin/main 'refs/remotes/origin/[0-9]*.[0-9]*.x'); do
+            if git merge-base --is-ancestor "$GITHUB_SHA" "$branch"; then
+              released=true
+            fi
+          done
+          if [[ "$released" != true ]]; then
+            echo "::error::Tag '$GITHUB_REF_NAME' ($GITHUB_SHA) isn't on main or a release branch"
+            exit 1
+          fi
       # The "1.0", "1", and "latest" tags are only moved if this is the newest
       # release with the same minor version, major version, or overall, so publishing
       # an older release again doesn't move them back to it. Pre-releases and

@@ -2,8 +2,10 @@
 
 import importlib.util
 import inspect
+import os
 import platform
 import shlex
+import sys
 import warnings
 from contextlib import ExitStack, suppress
 from pathlib import Path
@@ -487,3 +489,82 @@ def test_find_interfaces_sysfs(mocker, tmp_path, collect_samples):
 
     assert collect_samples.find_interfaces("linux", 1.0) == ["eth0", "lo"]
     run_quiet.assert_not_called()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Symbolic links need extra rights")
+def test_write_output_does_not_follow_symlinks(collect_samples, tmp_path):
+    """
+    The script is often run as root, in a directory other users may be able to write
+    to. A symbolic link with the name of a sample or the log isn't written through.
+    """
+    out_dir = tmp_path / "samples"
+    out_dir.mkdir()
+    target = tmp_path / "target"
+    target.write_text("original")
+    (out_dir / "arp_-a.out").symlink_to(target)
+    (out_dir / "dangling.out").symlink_to(tmp_path / "created_by_root")
+    (out_dir / "collect_samples.log").symlink_to(target)
+
+    for name, append in (("arp_-a.out", False), ("dangling.out", False)):
+        with pytest.raises(OSError, match="symbolic link"):
+            collect_samples.write_output(out_dir, name, b"data", append=append)
+    with pytest.raises(OSError, match="symbolic link"):
+        collect_samples.write_log(out_dir / "collect_samples.log", ["header"], [])
+
+    assert target.read_text() == "original"
+    assert not (tmp_path / "created_by_root").exists()
+
+    # The directory itself can't be a symbolic link either
+    (tmp_path / "link").symlink_to(out_dir, target_is_directory=True)
+    with pytest.raises(OSError, match="symbolic link"):
+        collect_samples.write_output(tmp_path / "link", "new.out", b"data")
+    assert not (out_dir / "new.out").exists()
+
+    # A normal file is written, replaced, and added to
+    collect_samples.write_output(out_dir, "ok.out", b"one\r\n")
+    collect_samples.write_output(out_dir, "ok.out", b"two\r\n")
+    collect_samples.write_output(out_dir, "ok.out", b"three", append=True)
+    assert (out_dir / "ok.out").read_bytes() == b"two\r\nthree"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Symbolic links need extra rights")
+def test_dangling_symlink_is_an_existing_sample(collect_samples, tmp_path):
+    """exists() is False for a symbolic link that points nowhere, so it was written to."""
+    (tmp_path / "ip_link.out").symlink_to(tmp_path / "nowhere")
+    collector = collect_samples.Collector(tmp_path, timeout=1, windows=False)
+    sample = collect_samples.Sample("ip link", argv=("ip", "link"), filename="ip_link.out")
+    collector._find_command = lambda _sample: True
+
+    collector.check(sample, force=False, network=True)
+
+    assert sample.status == "exists"
+
+
+def test_default_output_root_is_only_the_repo_in_a_checkout(collect_samples, mocker, tmp_path):
+    """
+    A copy of the script in e.g. /tmp/work/ doesn't use /tmp/tests/samples, which
+    someone else could have created.
+    """
+    assert collect_samples.default_output_root() == collect_samples.REPO_SAMPLES_DIR
+
+    (tmp_path / "tests" / "samples").mkdir(parents=True)
+    mocker.patch.object(collect_samples, "REPO_SAMPLES_DIR", tmp_path / "tests" / "samples")
+    assert collect_samples.default_output_root() == Path("samples")
+
+
+@pytest.mark.skipif(not hasattr(os, "geteuid"), reason="POSIX permissions")
+def test_shared_directory_warning(collect_samples, mocker, tmp_path):
+    tmp_path.chmod(0o755)
+    assert collect_samples.shared_directory_warning(tmp_path) is None
+    assert collect_samples.shared_directory_warning(tmp_path / "missing") is None
+
+    tmp_path.chmod(0o777)
+    assert "other users can write" in collect_samples.shared_directory_warning(tmp_path)
+
+    tmp_path.chmod(0o755)
+    mocker.patch("os.geteuid", return_value=os.geteuid() + 1)
+    mocker.patch.dict(os.environ, {"SUDO_UID": ""})
+    assert "belongs to another user" in collect_samples.shared_directory_warning(tmp_path)
+    # Run with sudo in the user's own checkout
+    mocker.patch.dict(os.environ, {"SUDO_UID": str(tmp_path.stat().st_uid)})
+    assert collect_samples.shared_directory_warning(tmp_path) is None
