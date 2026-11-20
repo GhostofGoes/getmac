@@ -72,7 +72,7 @@ def run_cli(mocker, capsys):
     def _run_cli(*args: str) -> tuple[Union[int, str, None], str, str]:
         mocker.patch.object(sys, "argv", ["getmac", *args])
         mocker.patch.dict(os.environ, NO_COLOR_ENV)
-        mocker.patch.object(gvars, "LAST_METHOD", gvars.LAST_METHOD)  # main() changes it
+        mocker.patch.object(gvars, "LAST_METHOD", gvars.LAST_METHOD)  # main() changes this value
         root = logging.getLogger()
         orig_handlers, orig_level = root.handlers, root.level
         root.handlers = []
@@ -167,7 +167,7 @@ def test_build_parser_defaults():
         (["-d"], "debug", 1),
         (["-dd"], "debug", 2),
         (["-dddd"], "debug", 4),
-        (["-vdd"], "debug", 2),  # Short options can still be combined
+        (["-vdd"], "debug", 2),  # You can still combine short options
         (["--override-port", "12345"], "override_port", 12345),
         (["--arp-timeout", "1.5"], "arp_timeout", 1.5),
         (["--arp-timeout", "0"], "arp_timeout", 0),
@@ -317,7 +317,7 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
         f"{MAC}\n",
         "getmac: warning: No methods for platform 'x'!\n",
     )
-    assert warnings.showwarning is original  # Put back when main() is done
+    assert warnings.showwarning is original  # main() restores it at the end
 
 
 # --- argparse handling -------------------------------------------------------
@@ -338,7 +338,8 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
         ),
         (["--arp-timeout", "abc"], "argument --arp-timeout: not a number of seconds: 'abc'"),
         (["--arp-timeout=-1"], "argument --arp-timeout: must be 0 or more seconds: '-1'"),
-        # Not "expected one argument" (argparse takes -1 for an option, because of -4 and -6)
+        # The error is not "expected one argument". argparse reads -1 as an option, because
+        # -4 and -6 are options.
         (["--arp-timeout", "-1"], "argument --arp-timeout: must be 0 or more seconds: '-1'"),
         (["--arp-timeout", "-.5"], "argument --arp-timeout: must be 0 or more seconds: '-.5'"),
         (
@@ -385,7 +386,7 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
         (["--exclude-method", "BoGuS"], "argument --exclude-method: unknown method 'BoGuS'"),
         (["--list-methods", "-4", "10.0.0.1"], "not allowed with argument"),
         (["--bogus"], "unrecognized arguments: --bogus"),
-        # The start of an option isn't accepted (allow_abbrev=False)
+        # getmac does not accept the start of an option (allow_abbrev=False)
         (["--int", "eth0"], "unrecognized arguments: --int eth0"),
         (["--no", "-4", "10.0.0.1"], "arguments: --no (did you mean '--no-net'?)\n"),
         # Suggestions for typos
@@ -400,7 +401,7 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
                 "'--interface' for '--interfaces=eth0', '--no-net' for '--no-nett'?)\n"
             ),
         ),
-        (["-z"], "unrecognized arguments: -z\n"),  # Short options are too short to guess
+        (["-z"], "unrecognized arguments: -z\n"),  # A short option is too short for a suggestion
         (
             ["--override-platform", "Linx"],
             "argument --override-platform: unknown platform 'Linx' (did you mean 'linux'?)\n",
@@ -419,7 +420,8 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
     ],
 )
 def test_main_argparse_errors(mock_get_mac, run_cli, mocker, args, error):
-    mocker.patch("getmac.getmac.METHODS", list(getmac.METHODS))  # -E removes from it
+    # -E removes methods from this list
+    mocker.patch("getmac.getmac.METHODS", list(getmac.METHODS))
 
     code, out, err = run_cli(*args)
 
@@ -452,7 +454,7 @@ def test_help_text(mocker, columns):
     assert "  3    error (printed to stderr)\n" in text
     assert "docs:   https://ghostofgoes.github.io/getmac/cli.html\n" in text
     assert "issues: https://github.com/GhostofGoes/getmac/issues\n" in text
-    # Options in the help text aren't split at the '-', e.g. '--list-' and 'methods'
+    # The help text does not split an option at the '-', for example into '--list-' and 'methods'
     assert not any(line.endswith("-") for line in text.splitlines())
 
 
@@ -824,7 +826,7 @@ def test_main_json(run_cli, args, lookup, target):
     code, out, err = run_cli("--json", *args)
 
     assert (code, err) == (0, "")
-    assert out.count("\n") == 1  # One line, since stdout isn't a terminal
+    assert out.count("\n") == 1  # The output is one line, because stdout is not a terminal
     assert json.loads(out) == {
         "mac": MAC,
         "lookup": lookup,
@@ -855,7 +857,8 @@ def test_main_json_not_found(run_cli, mocker):
 @pytest.mark.parametrize("args", [[], ["-n", "localhost"]])
 def test_main_json_default_and_hostname(mock_get_mac, run_cli, args, method, expected):
     def _lookup(**_kwargs):
-        gvars.LAST_METHOD = method  # E.g. empty for localhost, which doesn't use a method
+        # For example, the value is empty for localhost, which does not use a method
+        gvars.LAST_METHOD = method
         return MAC
 
     mock_get_mac.side_effect = _lookup
@@ -990,7 +993,7 @@ def test_cli_version():
 
 @pytest.mark.parametrize("flag", [None, "-v", "-d"])
 def test_cli_logging_goes_to_stderr_only(flag):
-    # An IPv6 address without a ':' fails the lookup before any real command runs
+    # An IPv6 address without a ':' makes the lookup fail before getmac runs a real command
     proc = run_cmd(*([flag] if flag else []), "--override-port", "44444", "-6", "BoGuS")
 
     assert proc.stdout == ""
@@ -1014,10 +1017,10 @@ def test_cli_logging_goes_to_stderr_only(flag):
         (["--arp-timeout", "-inf"], ["--arp-timeout=-inf"]),
         (["--arp-timeout", "-Infinity"], ["--arp-timeout=-Infinity"]),
         (["--arp-timeout", "1"], ["--arp-timeout", "1"]),
-        (["--arp-timeout", "-v"], ["--arp-timeout", "-v"]),  # Not a number
+        (["--arp-timeout", "-v"], ["--arp-timeout", "-v"]),  # "-v" is not a number
         (["--arp-timeout", "-4", "10.0.0.1"], ["--arp-timeout=-4", "10.0.0.1"]),
         (["--arp-timeout"], ["--arp-timeout"]),
-        (["-i", "-1"], ["-i", "-1"]),  # Only for options that take a number
+        (["-i", "-1"], ["-i", "-1"]),  # "-i" does not take a number
         (["--", "--arp-timeout", "-1"], ["--", "--arp-timeout", "-1"]),
     ],
 )

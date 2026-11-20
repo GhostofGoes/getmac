@@ -358,7 +358,7 @@ def test_get_by_method_force_method(mocker):
     mocker.patch("getmac.utils.read_file", return_value=None)
     mocker.patch.object(settings, "FORCE_METHOD", "SysIfaceFile")
     assert getmac.get_by_method("iface", "ens33") is None
-    assert gvars.LAST_METHOD == ""  # Only set when something is found
+    assert gvars.LAST_METHOD == ""  # A lookup sets it only when it finds something
 
     mocker.patch("getmac.utils.read_file", return_value="00:0c:29:b5:72:37\n")
     assert getmac.get_by_method("iface", "ens33") == "00:0c:29:b5:72:37\n"
@@ -394,7 +394,7 @@ def test_get_by_method_fallback_on_error(mocker, get_sample, error, falls_back):
     result = getmac.get_by_method("ip4", "192.168.16.2")
 
     assert result == ("00:50:56:f1:4c:50" if falls_back else None)
-    # The method that found it, not the one that failed
+    # This is the method that found the MAC, not the method that failed
     assert gvars.LAST_METHOD == ("ArpFile" if falls_back else "")
     assert ip_neighbor.unusable is falls_back
     assert getmac.METHOD_CACHE["ip4"] is (arp_file if falls_back else ip_neighbor)

@@ -219,7 +219,7 @@ getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
 getmac --json -i eth0
 ```
 
-The MAC is printed to stdout and the exit code is `0`. If nothing was found, nothing is printed and the exit code is `1`. Bad arguments (e.g. using two lookup options at once) exit with `2`. If the lookup fails with an error (e.g. no methods work on this platform), the error is printed to stderr and the exit code is `3`. Log messages (`-v`) go to stderr.
+getmac prints the MAC to stdout and exits with code `0`. If getmac finds nothing, it prints nothing and exits with code `1`. If the arguments are not valid (for example, two lookup options at once), getmac exits with code `2`. If the lookup fails with an error (for example, no methods work on this platform), getmac prints the error to stderr. The exit code is then `3`. Log messages (`-v`) go to stderr.
 
 ## API: `get_mac_address()`
 - `interface`: Name of a network interface on the system

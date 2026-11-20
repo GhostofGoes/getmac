@@ -1578,20 +1578,24 @@ def get_method_by_name(method_name: str) -> Optional[type[Method]]:
 
 def get_method_names() -> list[str]:
     """
-    The names of the :class:`~getmac.getmac.Method` classes in
-    :data:`~getmac.getmac.METHODS`, in order, e.g. ``["ArpFile", ...]``. These are the
-    names :func:`~getmac.getmac.get_method_by_name` and
-    :attr:`~getmac.variables.Settings.FORCE_METHOD` accept (ignoring case).
+    Get the names of the :class:`~getmac.getmac.Method` classes in
+    :data:`~getmac.getmac.METHODS`, in order, for example ``["ArpFile", ...]``.
+
+    :func:`~getmac.getmac.get_method_by_name` and
+    :attr:`~getmac.variables.Settings.FORCE_METHOD` accept these names, and ignore case.
     """
     return [method.__name__ for method in METHODS]
 
 
 def get_platform_names() -> set[str]:
     """
-    The platform names that :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM` can be
-    set to: :attr:`Method.VALID_PLATFORM_NAMES <getmac.getmac.Method.VALID_PLATFORM_NAMES>`,
-    and any other platform a method in :data:`~getmac.getmac.METHODS` is for (e.g. one
-    added with a custom method).
+    Get the platform names that you can set
+    :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM` to.
+
+    These are the names in
+    :attr:`Method.VALID_PLATFORM_NAMES <getmac.getmac.Method.VALID_PLATFORM_NAMES>`, and
+    each other platform that a method in :data:`~getmac.getmac.METHODS` supports (for
+    example, a platform that a custom method adds).
     """
     return set(Method.VALID_PLATFORM_NAMES).union(*(method.platforms for method in METHODS))
 

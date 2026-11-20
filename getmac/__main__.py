@@ -42,13 +42,13 @@ issues: {ISSUES_URL}
 # Exit codes
 EXIT_FOUND: Final[int] = 0
 EXIT_NOT_FOUND: Final[int] = 1
-EXIT_USAGE: Final[int] = 2  # What argparse uses for invalid arguments
+EXIT_USAGE: Final[int] = 2  # argparse uses this code for arguments that are not valid
 EXIT_ERROR: Final[int] = 3
-EXIT_INTERRUPTED: Final[int] = 130  # 128 + SIGINT, what shells use for Ctrl-C
+EXIT_INTERRUPTED: Final[int] = 130  # 128 + SIGINT. Shells use this code for Ctrl-C.
 
 
-# Options whose value can be a negative number, which argparse otherwise takes
-# for an option (since -4 and -6 are options), see _join_negative_values()
+# These options take a number. If the number is negative (for example "-1"), argparse reads
+# it as an option, because -4 and -6 are options. _join_negative_values() prevents that.
 NUMBER_OPTIONS: Final[tuple[str, ...]] = ("--arp-timeout", "--command-timeout", "--override-port")
 NEGATIVE_NUMBER: Final[re.Pattern[str]] = re.compile(
     r"-(\d+\.?\d*(e\d+)?|\.\d+|inf(inity)?|nan)", re.IGNORECASE
@@ -60,7 +60,7 @@ def _seconds(value: str) -> float:
         seconds = float(value)
     except ValueError:
         raise argparse.ArgumentTypeError(f"not a number of seconds: '{value}'") from None
-    if not math.isfinite(seconds):  # nan and inf
+    if not math.isfinite(seconds):  # The value is nan or inf
         raise argparse.ArgumentTypeError(f"not a number of seconds: '{value}'")
     if seconds < 0:
         raise argparse.ArgumentTypeError(f"must be 0 or more seconds: '{value}'")
@@ -79,9 +79,10 @@ def _port(value: str) -> int:
 
 def _join_negative_values(argv: list[str]) -> list[str]:
     """
-    Turn e.g. ``--arp-timeout -1`` into ``--arp-timeout=-1``. Because ``-4`` and ``-6``
-    are options, argparse takes ``-1`` for an option too, and says the option is
-    "expected one argument" instead of saying what's wrong with the value.
+    Join a number option and its negative value. For example, ``--arp-timeout -1`` becomes
+    ``--arp-timeout=-1``. Because ``-4`` and ``-6`` are options, argparse reads ``-1`` as an
+    option too. Its error is then "expected one argument", which does not tell the user
+    what is wrong with the value.
     """
     joined: list[str] = []
     args = iter(argv)
@@ -104,7 +105,7 @@ def _join_negative_values(argv: list[str]) -> list[str]:
 
 
 class _HelpFormatter(argparse.RawDescriptionHelpFormatter):
-    """Keeps the description and examples as written, and doesn't split '--list-methods'."""
+    """Keep the description and the examples as written, and do not split '--list-methods'."""
 
     def _split_lines(self, text: str, width: int) -> list[str]:
         text = self._whitespace_matcher.sub(" ", text).strip()
@@ -112,7 +113,10 @@ class _HelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 
 def _closest(name: str, names: Iterable[str]) -> Optional[str]:
-    """The one of ``names`` that's closest to ``name`` (ignoring case), if any are close."""
+    """
+    Return the name in ``names`` that is closest to ``name``. The comparison ignores case.
+    If no name is close, return :obj:`None`.
+    """
     lowered = {n.lower(): n for n in names}
     matches = difflib.get_close_matches(name.strip().lower(), lowered, n=1)
     return lowered[matches[0]] if matches else None
@@ -125,7 +129,7 @@ def _did_you_mean(name: str, names: Iterable[str]) -> str:
 
 class _ArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
-        """Suggest the option that was meant, e.g. '--interface' for '--interfaces'."""
+        """Suggest the closest option, for example '--interface' for '--interfaces'."""
         prefix = "unrecognized arguments: "
         if message.startswith(prefix):
             options = [
@@ -153,8 +157,8 @@ class _ArgumentParser(argparse.ArgumentParser):
 def build_parser() -> argparse.ArgumentParser:
     parser = _ArgumentParser(
         prog="getmac",
-        # Don't accept the start of an option, e.g. "--int" for "--interface". If scripts
-        # use them, adding an option with the same start (e.g. "--interval") breaks them.
+        # Do not accept the start of an option, for example "--int" for "--interface". A new
+        # option with the same start (for example "--interval") breaks the scripts that use it.
         allow_abbrev=False,
         description="Get MAC addresses of network interfaces or LAN hosts.\n"
         "With no arguments, prints the MAC of the default interface.",
@@ -307,7 +311,7 @@ def _exclude_methods(parser: argparse.ArgumentParser, names: list[str]) -> None:
             gvars.log.debug(f"Excluding method '{method.__name__}'")
 
 
-# --list-methods statuses, and what they're shown as without --json
+# The --list-methods statuses, and the text that getmac prints for each one without --json
 METHOD_STATUSES: Final[dict[str, str]] = {
     "primary": "primary",
     "fallback": "fallback",
@@ -322,9 +326,9 @@ def _platform() -> str:
 
 def _method_statuses(network_request: bool) -> dict[str, list[tuple[str, str]]]:
     """
-    The methods that would be considered for each type of lookup, the way
-    :func:`~getmac.getmac.initialize_method_cache` picks them, and their status
-    (a key of :data:`METHOD_STATUSES`).
+    Return the methods that getmac considers for each type of lookup, and the status of
+    each one (a key of :data:`METHOD_STATUSES`). This function selects the methods the same
+    way that :func:`~getmac.getmac.initialize_method_cache` does.
     """
     platform = _platform()
     statuses: dict[str, list[tuple[str, str]]] = {}
@@ -388,12 +392,13 @@ def _list_methods(network_request: bool, as_json: bool) -> None:
 
 
 def _print_json(data: dict[str, Any]) -> None:
-    # Indented for people, one line for scripts (e.g. to read it line by line)
+    # Indent the JSON for people. Print one line for scripts, which can then read the
+    # output line by line.
     print(json.dumps(data, indent=2 if sys.stdout.isatty() else None))  # noqa: T201
 
 
 def _show_warning(message: Union[Warning, str], *_args: object, **_kwargs: object) -> None:
-    """Print warnings like the other messages, without a file path and a line of code."""
+    """Print a warning like the other messages, without a file path and a line of code."""
     print(f"getmac: warning: {message}", file=sys.stderr)  # noqa: T201
 
 
@@ -404,10 +409,13 @@ def _error(message: str) -> NoReturn:
 
 def main() -> None:
     """
-    Run the ``getmac`` command. Exits with :data:`EXIT_FOUND` (``0``) if the MAC (or
-    interface) was found and printed, :data:`EXIT_NOT_FOUND` (``1``) if it wasn't,
-    :data:`EXIT_USAGE` (``2``) if the arguments are invalid, :data:`EXIT_ERROR` (``3``)
-    if the lookup failed with an error, and :data:`EXIT_INTERRUPTED` (``130``) on Ctrl-C.
+    Run the ``getmac`` command, then exit with one of these codes:
+
+    - :data:`EXIT_FOUND` (``0``): getmac found the MAC (or the interface) and printed it.
+    - :data:`EXIT_NOT_FOUND` (``1``): getmac did not find it.
+    - :data:`EXIT_USAGE` (``2``): the arguments are not valid.
+    - :data:`EXIT_ERROR` (``3``): the lookup failed with an error.
+    - :data:`EXIT_INTERRUPTED` (``130``): the user pressed Ctrl-C.
     """
     try:
         with warnings.catch_warnings():
@@ -493,12 +501,14 @@ def _main() -> NoReturn:
                 network_request=not args.NO_NET,
             )
     except RuntimeError as ex:
-        # No methods for the platform, or none of them work. The message says why.
+        # There are no methods for the platform, or none of them work. The message gives
+        # the cause.
         if args.debug:
             traceback.print_exc()
         _error(str(ex))
     except Exception as ex:
-        # E.g. a method forced with --force-method raised. Its exceptions aren't caught.
+        # For example, a method forced with --force-method raised an exception. getmac does
+        # not catch the exceptions of a forced method.
         if args.debug:
             traceback.print_exc()
         _error(
@@ -516,7 +526,10 @@ def _main() -> NoReturn:
 
 
 def _result_json(args: argparse.Namespace, result: Optional[str]) -> dict[str, Any]:
-    """What ``--json`` prints for a lookup. ``result`` is :obj:`None` if nothing was found."""
+    """
+    Return the data that ``--json`` prints for a lookup. If getmac found nothing, ``result``
+    is :obj:`None`.
+    """
     method = (gvars.LAST_METHOD or None) if result else None
 
     if args.default_interface:

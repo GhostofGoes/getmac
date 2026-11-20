@@ -85,7 +85,7 @@ RuntimeError: no methods
 
 getmac raises a :class:`RuntimeError` when there are no methods that match the type of lookup and your platform, or all of them failed their test (i.e. the commands they need aren't installed). This should almost never happen unless you're on an exotic platform or have an unusual configuration, or a platform update changed the commands getmac uses.
 
-On the command line, this is a ``getmac: error: ...`` message and exit code ``3``.
+On the command line, getmac prints a ``getmac: error: ...`` message and exits with code ``3``.
 
 1. Get the debug output. Level 2 (``-dd``) shows which methods were considered, and which failed their test.
 2. Check that the commands for your platform are installed. :doc:`platforms` lists them. getmac looks for commands on your ``PATH`` plus ``/sbin`` and ``/usr/sbin`` (see :ref:`usage-environment`).
