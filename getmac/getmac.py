@@ -1627,6 +1627,33 @@ def get_method_by_name(method_name: str) -> Optional[type[Method]]:
     return None
 
 
+def get_method_names() -> list[str]:
+    """
+    Get the names of the :class:`~getmac.getmac.Method` classes in
+    :data:`~getmac.getmac.METHODS`, in order, for example ``["ArpFile", ...]``.
+
+    :func:`~getmac.getmac.get_method_by_name` and
+    :attr:`~getmac.variables.Settings.FORCE_METHOD` accept these names, and ignore case.
+    """
+    return [method.__name__ for method in METHODS]
+
+
+def get_platform_names() -> set[str]:
+    """
+    Get the platform names that getmac knows.
+
+    These are the names in
+    :attr:`Method.VALID_PLATFORM_NAMES <getmac.getmac.Method.VALID_PLATFORM_NAMES>`, and
+    each other platform that a method in :data:`~getmac.getmac.METHODS` supports (for
+    example, a platform that a custom method adds).
+
+    The ``getmac`` command accepts only these names for ``--override-platform``.
+    :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM` accepts any name. If getmac does
+    not know the name, it warns, and uses the methods for the ``other`` platform.
+    """
+    return set(Method.VALID_PLATFORM_NAMES).union(*(method.platforms for method in METHODS))
+
+
 def get_instance_from_cache(method_type: str, method_name: str) -> Optional[Method]:
     """
     Get the cached instance of a named :class:`~getmac.getmac.Method`.
@@ -1906,6 +1933,9 @@ def _attempt_method_get(
 
         return _attempt_method_get(new_method, method_type, arg, network_request)
 
+    if result:
+        gvars.LAST_METHOD = str(method)
+
     return result
 
 
@@ -1945,7 +1975,10 @@ def get_by_method(method_type: str, arg: str = "", network_request: bool = True)
             gvars.log.error(f"Invalid FORCE_METHOD method name '{settings.FORCE_METHOD}'")
             return None
 
-        return forced_method().get(arg)
+        result = forced_method().get(arg)
+        if result:
+            gvars.LAST_METHOD = forced_method.__name__
+        return result
 
     # Initialize the cache if it hasn't been already
     if not METHOD_CACHE.get(method_type) and not initialize_method_cache(
@@ -2128,6 +2161,10 @@ def get_mac_address(
 
     # If debugging, start the timer
     start_time = time.perf_counter() if settings.DEBUG else 0.0
+
+    # The value must not name the method of an earlier lookup if no method finds this
+    # result (for example, for localhost)
+    gvars.LAST_METHOD = ""
 
     # Convert bytes to str, assuming UTF-8 encoding
     if isinstance(interface, bytes):
@@ -2321,8 +2358,8 @@ def get_default_interface() -> Optional[str]:
 
     This is essentially a convenience wrapper around
     :func:`~getmac.getmac.get_by_method` with the ``default_iface`` method type.
-    The code is literally
-    ``return getmac.getmac.get_by_method("default_iface")``.
+    It clears :attr:`gvars.LAST_METHOD <getmac.variables.Variables.LAST_METHOD>`, then
+    returns ``getmac.getmac.get_by_method("default_iface")``.
 
     Returns:
         The name of the default network interface, or :obj:`None`
@@ -2331,4 +2368,5 @@ def get_default_interface() -> Optional[str]:
     Raises:
         RuntimeError: if no method can be used to find the default interface.
     """
+    gvars.LAST_METHOD = ""
     return get_by_method("default_iface")

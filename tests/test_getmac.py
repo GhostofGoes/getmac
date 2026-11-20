@@ -29,6 +29,7 @@ def _empty_caches(mocker):
     mocker.patch("getmac.getmac.METHOD_CACHE", dict.fromkeys(getmac.METHOD_CACHE))
     mocker.patch("getmac.getmac.FALLBACK_CACHE", {k: [] for k in getmac.FALLBACK_CACHE})
     mocker.patch.object(gvars, "DEFAULT_IFACE", "")
+    mocker.patch.object(gvars, "LAST_METHOD", "")
 
 
 @pytest.fixture(autouse=True)
@@ -90,6 +91,25 @@ def test_popen(mocker):
     m = mocker.patch("getmac.utils.call_proc", return_value="SUCCESS")
     assert utils.popen("TESTCMD", "ARGS") == "SUCCESS"
     m.assert_called_once_with("TESTCMD", "ARGS")
+
+
+def test_get_method_names():
+    names = getmac.get_method_names()
+
+    assert names == [method.__name__ for method in getmac.METHODS]
+    assert "ArpFile" in names
+    assert all(getmac.get_method_by_name(name) for name in names)
+
+
+def test_get_platform_names(mocker):
+    assert getmac.get_platform_names() == getmac.Method.VALID_PLATFORM_NAMES
+
+    class FakeOsIface(getmac.Method):
+        platforms = {"fakeos", "linux"}
+        method_type = "iface"
+
+    mocker.patch("getmac.getmac.METHODS", [*getmac.METHODS, FakeOsIface])
+    assert getmac.get_platform_names() == {*getmac.Method.VALID_PLATFORM_NAMES, "fakeos"}
 
 
 def test_get_method_by_name():
@@ -335,9 +355,14 @@ def test_get_by_method_force_method(mocker):
     mocker.patch.object(settings, "FORCE_METHOD", "testing123")
     assert getmac.get_by_method("iface", arg="some_arg") is None
 
-    mocker.patch("getmac.utils.read_file", return_value="00:0c:29:b5:72:37\n")
+    mocker.patch("getmac.utils.read_file", return_value=None)
     mocker.patch.object(settings, "FORCE_METHOD", "SysIfaceFile")
+    assert getmac.get_by_method("iface", "ens33") is None
+    assert gvars.LAST_METHOD == ""  # A lookup sets it only when it finds something
+
+    mocker.patch("getmac.utils.read_file", return_value="00:0c:29:b5:72:37\n")
     assert getmac.get_by_method("iface", "ens33") == "00:0c:29:b5:72:37\n"
+    assert gvars.LAST_METHOD == "SysIfaceFile"
 
 
 @pytest.mark.parametrize(
@@ -369,6 +394,8 @@ def test_get_by_method_fallback_on_error(mocker, get_sample, error, falls_back):
     result = getmac.get_by_method("ip4", "192.168.16.2")
 
     assert result == ("00:50:56:f1:4c:50" if falls_back else None)
+    # This is the method that found the MAC, not the method that failed
+    assert gvars.LAST_METHOD == ("ArpFile" if falls_back else "")
     assert ip_neighbor.unusable is falls_back
     assert getmac.METHOD_CACHE["ip4"] is (arp_file if falls_back else ip_neighbor)
     assert getmac.FALLBACK_CACHE["ip4"] == ([] if falls_back else [arp_file])
@@ -440,6 +467,23 @@ def test_get_mac_address_force_method(mocker):
     mocker.patch("getmac.utils.read_file", return_value="00:0c:29:b5:72:37\n")
     mocker.patch.object(settings, "FORCE_METHOD", "SysIfaceFile")
     assert getmac.get_mac_address(interface="ens33") == "00:0c:29:b5:72:37"
+
+
+@pytest.mark.parametrize("kwargs", [{"hostname": "localhost"}, {"ip": "127.0.0.1"}])
+def test_get_mac_address_clears_last_method(mocker, kwargs):
+    """No method finds the MAC of localhost, so the method of an earlier lookup is wrong."""
+    mocker.patch.object(gvars, "LAST_METHOD", "FromAnEarlierLookup")
+
+    assert get_mac_address(**kwargs) == "00:00:00:00:00:00"
+    assert gvars.LAST_METHOD == ""
+
+
+def test_get_default_interface_clears_last_method(mocker):
+    mocker.patch.object(gvars, "LAST_METHOD", "FromAnEarlierLookup")
+    mocker.patch("getmac.getmac.get_by_method", return_value=None)
+
+    assert getmac.get_default_interface() is None
+    assert gvars.LAST_METHOD == ""
 
 
 def test_get_mac_address_localhost():

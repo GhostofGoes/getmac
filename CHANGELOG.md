@@ -33,6 +33,9 @@
 * New command line argument, `--default-interface` (`-D`), which prints the name of the default interface.
 * New command line argument, `--exclude-method METHOD` (`-E`), that enables skipping of one or more methods (useful for troubleshooting).
 * New command line argument, `--list-methods`, that lists the available methods for the current platform and shows their status (primary, fallback, or test failed).
+* New command line argument, `--json`, that prints the result as JSON, with the method that found it and the platform. It also works with `--default-interface` and `--list-methods`. The new `gvars.LAST_METHOD` also has the name of the method. `get_mac_address()` and `get_default_interface()` clear it when they start, so it is empty if no method found the result.
+* New functions, `getmac.getmac.get_method_names()` and `getmac.getmac.get_platform_names()`. They return the names of the methods that `FORCE_METHOD` accepts, and the names of the platforms that getmac knows. The command line uses them to make sure that the values of `--force-method`, `--exclude-method`, and `--override-platform` are valid.
+* `getmac --help` now shows examples, the exit codes, and links to the docs and the issue tracker. The help for `-v`, `-d`, `--override-port`, `--override-platform`, and `--force-method` says what each option does, and does not mention the internals of getmac. The help text and the error messages of the command line use short sentences and plain words.
 * Fully support Solaris and illumos (OmniOS, OpenIndiana, SmartOS) ([issue #41](https://github.com/GhostofGoes/getmac/issues/41))
     * Most methods now work for regular users, not just root.
         * New method, `DladmIface`, which gets interface MACs using `dladm`.
@@ -74,6 +77,18 @@
 * Fixed `DarwinNetworksetupIface` (macOS) being marked unusable after looking up an interface that isn't a hardware port, like a VPN tunnel ([issue #91](https://github.com/GhostofGoes/getmac/issues/91)).
 * Windows: the path of each command getmac runs is now quoted. Before, a path with a space in it (e.g. `C:\Program Files\...`) could make Windows run a different program, such as `C:\Program.exe`.
 * Python 3.13+ on Android is detected as Linux, so the Linux methods are used. The error when no methods work lists them, since the commands they use are often missing on Android ([issue #95](https://github.com/GhostofGoes/getmac/issues/95)).
+* **BREAKING CHANGE**: update scripts that read the exit code of `getmac`. An error now exits with code `3`, and prints one line on stderr, `getmac: error: ...`. Before, an error printed a traceback and exited with code `1`, which is also the code for "not found".
+    * An example of an error is when no methods work on the platform. `-d` adds the traceback.
+    * A warning is also one line, `getmac: warning: ...`, without the file path and the line of code.
+    * Ctrl-C ends getmac with the SIGINT signal and without a traceback. A shell reports exit code `130`, and stops a loop or a script that runs getmac. On Windows, the exit code is `130`.
+    * An error when getmac writes to stdout (for example, a full disk) is also one line with exit code `3`. If the reader of a pipe closes it (for example, `getmac | head -1`), getmac exits with code `3` and prints no message.
+* **BREAKING CHANGE**: write command line options in full, for example `--interface` and not `--int`. Before, getmac accepted the start of an option if it matched only one option. A new option with the same start can break a script that uses the short form. If you write only the start of an option, the error names the options that start with it, for example `Did you mean '--interface'?`. If an option, a method name, or a platform name has a typo, the error suggests the closest one.
+* The command line now makes sure that its options are valid before it does a lookup:
+    * `--force-method` and `--override-platform` must name a method or a platform that getmac knows. Before, a typo looked like "not found", or caused a traceback. `settings.OVERRIDE_PLATFORM` in Python still accepts any name, and uses the methods for `other` if it does not know the name.
+    * `--force-method` cannot name a method that is also given to `--exclude-method`.
+    * `--override-port` must be from 1 to 65535.
+    * `--arp-timeout` and `--command-timeout` do not accept `nan` or `inf`.
+    * For a negative number, for example `--arp-timeout -1`, the error now says what is wrong with the value. Before, the error was "expected one argument".
 * Fixed several issues found with fuzz testing using [Hypothesis](https://hypothesis.readthedocs.io/):
     * Fixed `DefaultIfaceLinuxRouteFile` failing, and being marked unusable, when a line in `/proc/net/route` has fewer than two fields.
     * Fixed `LanscanIface` (HP-UX) failing when the interface name is empty or whitespace and `lanscan` prints a blank line.

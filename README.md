@@ -198,7 +198,7 @@ getmac --ip 192.168.0.1 --command-timeout 5
 # The platform detected by getmac can be overridden via '--override-platform'.
 # This is useful when debugging issues or if you know a method
 # for a different platform works on the current platform.
-# Any values returned by platform.system() are valid.
+# 'getmac --help' lists the platforms.
 getmac -i eth0 --override-platform linux
 getmac --ip 192.168.0.1 --override-platform windows
 
@@ -214,9 +214,12 @@ getmac --list-methods
 
 # Force a specific method to be used, regardless of the consequences or if it even works
 getmac -v -dddd --ip 192.168.0.1 --force-method ctypeshost
+
+# Print the result as JSON, with the method that found it and the platform
+getmac --json -i eth0
 ```
 
-The MAC is printed to stdout and the exit code is `0`. If nothing was found, nothing is printed and the exit code is `1`. Bad arguments (e.g. using two lookup options at once) exit with `2`. Log messages (`-v`) go to stderr.
+getmac prints the MAC to stdout and exits with code `0`. If getmac finds nothing, it prints nothing and exits with code `1`. If the arguments are not valid (for example, two lookup options at once), getmac exits with code `2`. If the lookup fails with an error (for example, no methods work on this platform), getmac prints the error to stderr. The exit code is then `3`. Log messages (`-v`) go to stderr.
 
 ## API: `get_mac_address()`
 - `interface`: Name of a network interface on the system
@@ -246,7 +249,7 @@ Settings are attributes of `getmac.settings` (`from getmac import settings`). Se
 - `settings.PORT`: UDP port used to populate the ARP/NDP table (see the documentation of the `network_request` argument in `get_mac_address()` for details). Default is `55555`.
 - `settings.ARP_TIMEOUT`: How long to keep checking the ARP/NDP table for a host after sending the UDP packet, in seconds. The host's entry is only added once it replies, which can take longer than getmac takes to check. Default is `0` (check once, without waiting). Lookups of hosts that don't reply take this much longer.
 - `settings.COMMAND_TIMEOUT`: How long to wait for a command that getmac runs (such as `arp` or `ipconfig.exe`) to finish, in seconds. A command that takes longer is stopped, and the next method is tried. Default is `15`. `None` or `0` waits for as long as the command takes.
-- `settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. `"linux"`, `"windows"`, `"freebsd"`, etc.). Any value returned by `platform.system()` is valid.
+- `settings.OVERRIDE_PLATFORM`: Override the platform detection with the given value (e.g. `"linux"`, `"windows"`, `"freebsd"`, etc.). Any value returned by `platform.system()` is valid. On the command line, `--override-platform` accepts only the platforms that `getmac --help` lists.
 - `settings.FORCE_METHOD`: Force a specific method to be used, e.g. `"IpNeighborShow"`. This will be used regardless of its method type or platform compatibility, and `Method.test()` will NOT be checked! The list of available methods is in `getmac.getmac.METHODS` (and in the [API reference](https://ghostofgoes.github.io/getmac/api.html)).
 - `ARP_PATH` (environment variable): The file to read the ARP table from, instead of `/proc/net/arp`. Linux only, and read when getmac is imported. Useful in containers.
 

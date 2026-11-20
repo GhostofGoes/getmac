@@ -36,6 +36,8 @@ Basic Usage
 
 Only one of ``--interface``, ``--ip``, ``--ip6``, ``--hostname``, ``--default-interface``, and ``--list-methods`` can be used at a time.
 
+Write each option in full, for example ``--interface`` and not ``--int``. If you write only the start of an option, the error names the options that start with it. If an option, a method name, or a platform name has a typo, the error suggests the closest one.
+
 
 .. _python-invoke:
 
@@ -69,8 +71,12 @@ Output and exit codes
 =====================
 
 - ``0``: the MAC was printed to stdout (also for ``--help`` and ``--version``).
-- ``1``: nothing was found, or every method failed, and nothing is printed. An uncaught :class:`RuntimeError` is a traceback, and exits with ``1`` too.
+- ``1``: getmac found nothing, and printed nothing.
 - ``2``: the arguments are invalid or conflict (e.g. ``-i`` with ``-4``). The usage message goes to stderr.
+- ``3``: the lookup failed with an error. For example, there are no methods for the platform, or none of them work. getmac prints the error to stderr as ``getmac: error: ...``. With ``-d``, it also prints the traceback. getmac also exits with ``3`` if it cannot write to stdout. If the reader of a pipe closed it (for example, ``getmac | head -1``), there is no error message.
+- ``130``: you stopped getmac with :kbd:`Ctrl-C`. On Linux, macOS, and other Unix-like systems, getmac ends with the SIGINT signal, and the shell reports ``130``. A loop or a script in the shell then also stops.
+
+getmac prints warnings to stderr as ``getmac: warning: ...``.
 
 Log messages (``-v``) go to stderr, so stdout only ever has the MAC. This makes it easy to use in scripts:
 
@@ -91,7 +97,34 @@ Log messages (``-v``) go to stderr, so stdout only ever has the MAC. This makes 
       $mac = py -m getmac -i "Ethernet 3"
       if ($LASTEXITCODE -eq 0) { "Found: $mac" } else { "No MAC found" }
 
-Nothing found and a lookup that failed look the same (exit code ``1``, no output). Use ``-v`` to see why.
+If getmac finds nothing (exit code ``1``), use ``-v`` to see the cause.
+
+
+JSON output
+-----------
+
+``--json`` prints the result as JSON, with the method that found it and the platform. The output is one line. If stdout is a terminal, the output is indented. If getmac finds nothing, ``mac`` is ``null`` and the exit code is ``1``. If there is an error (exit code ``3``), getmac prints nothing to stdout.
+
+.. code-block:: shell
+
+   $ getmac --json -i eth0
+   {"mac": "00:0c:29:b5:72:37", "lookup": "interface", "target": "eth0", "method": "SysIfaceFile", "platform": "linux"}
+
+``lookup`` is ``interface``, ``ip``, ``ip6``, ``hostname``, or ``default`` (no arguments). ``target`` is the value that you gave for the lookup (``null`` for ``default``). ``method`` is ``null`` if getmac used no method, for example for ``localhost``.
+
+With ``--default-interface``, the result is the name of the interface:
+
+.. code-block:: shell
+
+   $ getmac --json -D
+   {"interface": "eth0", "method": "DefaultIfaceLinuxRouteFile", "platform": "linux"}
+
+With ``--list-methods``, each type of lookup has a list of its methods, in the order that getmac tries them. The ``status`` is ``primary``, ``fallback``, ``failed`` (the test of the method failed), or ``skipped`` (the method sends packets, and ``--no-net`` is set).
+
+.. code-block:: shell
+
+   $ getmac --json --list-methods
+   {"platform": "linux", "methods": {"ip4": [{"name": "ArpFile", "status": "primary"}, ...], ...}}
 
 
 Remote hosts
@@ -193,7 +226,7 @@ Example output on Linux:
 
 getmac uses the ``primary`` method for a lookup. If that method fails, getmac tries the ``fallback`` methods in order (see :ref:`module-api-fallback`). The other options change the list too, such as ``--override-platform``, ``--exclude-method``, and ``--no-net`` (which skips methods that send packets).
 
-The platform detected by getmac can be overridden via ``--override-platform``. This is useful when debugging issues or if you know a method for a different platform works on the current platform. Any value returned by ``platform.system()`` is valid.
+You can override the platform that getmac detects with ``--override-platform``. Use it when you debug a problem, or if you know that a method for a different platform works on the current platform. The platforms are the ones in :attr:`Method.platforms <getmac.getmac.Method.platforms>`: ``android``, ``darwin``, ``dragonfly``, ``freebsd``, ``hp-ux``, ``linux``, ``netbsd``, ``openbsd``, ``other``, ``sunos``, ``windows``, and ``wsl``. getmac ignores the case of the name. Any other name is an error. If getmac does not know the platform of a system, it uses the methods for ``other``. To test that case, use ``--override-platform other``.
 
 .. code-block:: shell
 
@@ -204,7 +237,7 @@ The platform detected by getmac can be overridden via ``--override-platform``. T
    getmac --ip 192.168.0.1 --override-platform windows
 
 
-A specific method can also be used with ``--force-method``, regardless of the consequences or if it even works. The method names are listed in the :doc:`api` (case doesn't matter), and ``--list-methods`` shows the ones for your platform.
+You can also make getmac use one specific method with ``--force-method``. getmac then uses the method even if it does not work on your system. The :doc:`api` lists the method names, and ``--list-methods`` shows the ones for your platform. getmac ignores the case of the name. A name that is not a method, or that is also given to ``--exclude-method``, is an error.
 
 .. code-block:: shell
 

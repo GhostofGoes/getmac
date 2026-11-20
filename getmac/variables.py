@@ -54,7 +54,8 @@ class Settings(VarsClass):
 
     It's only read when the method cache for a lookup type is built, so set it
     before the first lookup (or reset the caches).
-    On the command line, use ``--override-platform``.
+    On the command line, use ``--override-platform``. It accepts only the names from
+    :func:`~getmac.getmac.get_platform_names`.
     """
 
     FORCE_METHOD: str = ""
@@ -288,6 +289,16 @@ class Variables(VarsClass):
     DEFAULT_IFACE: str = ""
     """
     Name of the local host's default network interface.
+    """
+
+    LAST_METHOD: str = ""
+    """
+    Name of the method that found the result of the last lookup, for example
+    ``"SysIfaceFile"``. The result is a MAC, or the name of the default interface.
+    :func:`~getmac.get_mac_address` and :func:`~getmac.get_default_interface` clear the
+    value when they start. Thus the value is empty if the lookup found nothing, or if no
+    method found the result (for example, for ``localhost``). The ``--json`` option of
+    the ``getmac`` command uses this value.
     """
 
     def __init__(self) -> None:

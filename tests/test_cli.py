@@ -1,14 +1,23 @@
 import itertools
+import json
 import logging
 import os
+import signal
 import subprocess
 import sys
+import warnings
 from typing import Union
 
 import pytest
 
 from getmac import __version__, get_mac_address, getmac
-from getmac.__main__ import build_parser, main
+from getmac.__main__ import (
+    _die_from_sigint,
+    _discard_stdout,
+    _join_negative_values,
+    build_parser,
+    main,
+)
 from getmac.variables import consts, gvars, settings
 
 BASE_CMD = [sys.executable, "-m", "getmac"]
@@ -53,6 +62,22 @@ def _restore_settings():
         settings.ARP_TIMEOUT,
         settings.COMMAND_TIMEOUT,
     ) = orig
+
+
+@pytest.fixture(autouse=True)
+def _no_last_method(mocker):
+    """
+    Start each test without the method of an earlier lookup, and restore the value after
+    the test. `main()` and the lookup functions change `gvars.LAST_METHOD`, and the tests
+    run in a random order.
+    """
+    mocker.patch.object(gvars, "LAST_METHOD", "")
+
+
+@pytest.fixture(autouse=True)
+def mock_die_from_sigint(mocker):
+    """`main()` ends the process with SIGINT on Ctrl-C. Do not let it end pytest."""
+    return mocker.patch("getmac.__main__._die_from_sigint")
 
 
 @pytest.fixture
@@ -147,6 +172,7 @@ def test_build_parser_defaults():
     assert args.default_interface is False
     assert args.exclude_method is None
     assert args.list_methods is False
+    assert args.json is False
 
 
 @pytest.mark.parametrize(
@@ -163,6 +189,7 @@ def test_build_parser_defaults():
         (["-d"], "debug", 1),
         (["-dd"], "debug", 2),
         (["-dddd"], "debug", 4),
+        (["-vdd"], "debug", 2),  # You can still combine short options
         (["--override-port", "12345"], "override_port", 12345),
         (["--arp-timeout", "1.5"], "arp_timeout", 1.5),
         (["--arp-timeout", "0"], "arp_timeout", 0),
@@ -180,6 +207,7 @@ def test_build_parser_defaults():
             ["ArpFile", "IpNeighborShow"],
         ),
         (["--list-methods"], "list_methods", True),
+        (["--json"], "json", True),
     ],
 )
 def test_build_parser_flag_values(argv, attr, expected):
@@ -246,6 +274,148 @@ def test_main_exit_code_failure(mock_get_mac, run_cli):
     mock_get_mac.assert_called_once()
 
 
+# --- errors, warnings, and Ctrl-C ---------------------------------------------
+
+
+@pytest.mark.parametrize("args", [[], ["-i", "eth0"], ["-D"]])
+def test_main_runtime_error_is_a_message(mocker, run_cli, args):
+    error = RuntimeError("All 3 'iface' methods failed to test!")
+    mocker.patch("getmac.getmac.get_mac_address", side_effect=error)
+    mocker.patch("getmac.getmac.get_default_interface", side_effect=error)
+
+    assert run_cli(*args) == (
+        3,
+        "",
+        "getmac: error: All 3 'iface' methods failed to test!\n",
+    )
+
+
+@pytest.mark.parametrize("args", [[], ["-D"]])
+def test_main_unexpected_error_asks_for_a_report(mocker, run_cli, args):
+    error = OSError("boom")
+    mocker.patch("getmac.getmac.get_mac_address", side_effect=error)
+    mocker.patch("getmac.getmac.get_default_interface", side_effect=error)
+
+    code, out, err = run_cli(*args)
+
+    assert (code, out) == (3, "")
+    assert err.startswith(
+        "getmac: error: the lookup failed with an unexpected error (OSError: boom).\n"
+    )
+    assert "Add '-v -dddd' to the same command, and include its output in the report.\n" in err
+    assert "https://github.com/GhostofGoes/getmac/issues" in err
+    assert "Traceback" not in err
+
+
+def test_main_warning_as_error_is_a_message(mock_get_mac, run_cli):
+    """With `python -W error`, a warning from the lookup is an exception."""
+    mock_get_mac.side_effect = RuntimeWarning("No methods for platform 'x'!")
+
+    assert run_cli() == (3, "", "getmac: error: No methods for platform 'x'!\n")
+
+
+@pytest.mark.parametrize("error", [RuntimeError("no methods"), OSError("boom")])
+def test_main_error_with_debug_prints_traceback(mock_get_mac, run_cli, error):
+    mock_get_mac.side_effect = error
+
+    code, out, err = run_cli("-d")
+
+    assert (code, out) == (3, "")
+    assert "Traceback (most recent call last):" in err
+    assert f"{type(error).__name__}: {error}" in err
+    assert "getmac: error: " in err
+
+
+@pytest.mark.parametrize("windows", [True, False])
+@pytest.mark.parametrize("args", [[], ["-D"], ["--list-methods"]])
+def test_main_ctrl_c_is_quiet(mocker, run_cli, mock_die_from_sigint, args, windows):
+    mocker.patch("getmac.getmac.get_mac_address", side_effect=KeyboardInterrupt)
+    mocker.patch("getmac.getmac.get_default_interface", side_effect=KeyboardInterrupt)
+    mocker.patch("getmac.__main__._list_methods", side_effect=KeyboardInterrupt)
+    mocker.patch.object(consts, "WINDOWS", windows)
+
+    # 130 is the exit code on Windows. On other systems, the process ends with SIGINT
+    # first (see test_cli_ctrl_c_ends_with_sigint). The mock stops that here.
+    assert run_cli(*args) == (130, "", "")
+    assert mock_die_from_sigint.call_count == (0 if windows else 1)
+
+
+def test_die_from_sigint_uses_the_default_handler(mocker):
+    calls = mocker.Mock()
+    mocker.patch("signal.signal", calls.signal)
+    mocker.patch("os.kill", calls.kill)
+
+    _die_from_sigint()
+
+    # The default handler must be in place before the signal, or Python raises
+    # KeyboardInterrupt again
+    assert calls.mock_calls == [
+        mocker.call.signal(signal.SIGINT, signal.SIG_DFL),
+        mocker.call.kill(os.getpid(), signal.SIGINT),
+    ]
+
+
+# --- stdout that cannot be written ---------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("error", "stderr"),
+    [
+        (BrokenPipeError(32, "Broken pipe"), ""),
+        (
+            OSError(28, "No space left on device"),
+            "getmac: error: cannot write to stdout: [Errno 28] No space left on device\n",
+        ),
+    ],
+)
+@pytest.mark.parametrize("args", [["-i", "eth0"], ["--json"], ["--list-methods"]])
+@pytest.mark.usefixtures("mock_get_mac", "stub_methods")
+def test_main_stdout_write_error_exits_3(mocker, run_cli, args, error, stderr):
+    discard = mocker.patch("getmac.__main__._discard_stdout")
+    mocker.patch.object(sys.stdout, "write", side_effect=error)
+
+    assert run_cli(*args) == (3, "", stderr)
+    discard.assert_called_once_with()
+
+
+def test_discard_stdout_points_stdout_at_the_null_device(mocker):
+    mocker.patch("sys.stdout", mocker.Mock(**{"fileno.return_value": 1}))
+    mock_open = mocker.patch("os.open", return_value=42)
+    mock_dup2 = mocker.patch("os.dup2")
+
+    _discard_stdout()
+
+    mock_open.assert_called_once_with(os.devnull, os.O_WRONLY)
+    mock_dup2.assert_called_once_with(42, 1)
+
+
+def test_discard_stdout_without_a_file_descriptor(mocker):
+    mocker.patch("sys.stdout", mocker.Mock(**{"fileno.side_effect": ValueError("no fileno")}))
+    mocker.patch("os.open", return_value=42)
+    mock_dup2 = mocker.patch("os.dup2")
+
+    _discard_stdout()  # Does not raise
+
+    mock_dup2.assert_not_called()
+
+
+@pytest.mark.parametrize("flag", [None, "-v"])
+def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
+    def _lookup(**_kwargs):
+        warnings.warn("No methods for platform 'x'!", RuntimeWarning, stacklevel=2)
+        return MAC
+
+    mock_get_mac.side_effect = _lookup
+    original = warnings.showwarning
+
+    assert run_cli(*([flag] if flag else [])) == (
+        0,
+        f"{MAC}\n",
+        "getmac: warning: No methods for platform 'x'!\n",
+    )
+    assert warnings.showwarning is original  # main() restores it at the end
+
+
 # --- argparse handling -------------------------------------------------------
 
 
@@ -254,25 +424,147 @@ def test_main_exit_code_failure(mock_get_mac, run_cli):
     [
         *((a + b, "not allowed with argument") for a, b in itertools.combinations(TARGET_ARGS, 2)),
         (["--interface", "eth0", "--hostname", "myhost"], "not allowed with argument"),
-        (["--override-port", "abc"], "argument --override-port: invalid int value: 'abc'"),
-        (["--arp-timeout", "abc"], "argument --arp-timeout: not a number of seconds: 'abc'"),
-        (["--arp-timeout=-1"], "argument --arp-timeout: must be 0 or more seconds: '-1'"),
+        (["--override-port", "abc"], "argument --override-port: 'abc' is not a port number.\n"),
+        *(
+            (
+                ["--override-port", port],
+                f"argument --override-port: '{port}' is not a port from 1 to 65535.\n",
+            )
+            for port in ("0", "65536", "-1", "-80")
+        ),
+        *(
+            ([flag, "abc"], f"argument {flag}: 'abc' is not a number of seconds.\n")
+            for flag in ("--arp-timeout", "--command-timeout")
+        ),
+        # For "--arp-timeout -1", the error is not "expected one argument". argparse reads
+        # -1 as an option, because -4 and -6 are options.
+        *(
+            (
+                args,
+                (
+                    f"argument {args[0].split('=')[0]}: '{value}' is less than 0. "
+                    "The number of seconds must be 0 or more.\n"
+                ),
+            )
+            for args, value in (
+                (["--arp-timeout=-1"], "-1"),
+                (["--arp-timeout", "-1"], "-1"),
+                (["--arp-timeout", "-.5"], "-.5"),
+                (["--arp-timeout", "-1e-3"], "-1e-3"),
+                (["--command-timeout", "-1.5"], "-1.5"),
+                (["--command-timeout=-1"], "-1"),
+            )
+        ),
+        *(
+            (
+                [flag, value],
+                (
+                    f"argument {flag}: '{value}' is not a number of seconds that getmac can wait. "
+                    "Use 0 for no timeout.\n"
+                ),
+            )
+            for flag, value in (
+                *(("--arp-timeout", value) for value in ("nan", "inf", "-inf", "Infinity")),
+                *(("--command-timeout", value) for value in ("nan", "inf")),
+            )
+        ),
+        (["--arp-timeout"], "argument --arp-timeout: expected one argument"),
         (
-            ["--command-timeout", "abc"],
-            "argument --command-timeout: not a number of seconds: 'abc'",
+            ["--override-platform", "BoGuS"],
+            (
+                "argument --override-platform: 'BoGuS' is not the name of a platform. "
+                "Use one of these: android, "
+            ),
         ),
         (
-            ["--command-timeout=-1"],
-            "argument --command-timeout: must be 0 or more seconds: '-1'",
+            ["--force-method", "BoGuS"],
+            (
+                "argument --force-method: 'BoGuS' is not the name of a method. "
+                "Use --list-methods to see the methods for this platform.\n"
+            ),
+        ),
+        (
+            ["--force-method", "arpfile", "-E", "ArpFile"],
+            (
+                "argument --force-method: 'arpfile' is also given to --exclude-method. "
+                "Use only one of the two options for a method.\n"
+            ),
         ),
         (["-i"], "argument -i/--interface: expected one argument"),
         (["-D", "-i", "eth0"], "not allowed with argument"),
-        (["--exclude-method", "BoGuS"], "argument --exclude-method: unknown method 'BoGuS'"),
+        (
+            ["--exclude-method", "BoGuS"],
+            "argument --exclude-method: 'BoGuS' is not the name of a method.\n",
+        ),
         (["--list-methods", "-4", "10.0.0.1"], "not allowed with argument"),
         (["--bogus"], "unrecognized arguments: --bogus"),
+        # getmac does not accept the start of an option (allow_abbrev=False)
+        # The error suggests the option that the start belongs to, not the closest spelling
+        (
+            ["--int", "eth0"],
+            "unrecognized arguments: --int eth0. Did you mean '--interface'?\n",
+        ),
+        (["--arp", "1"], "unrecognized arguments: --arp 1. Did you mean '--arp-timeout'?\n"),
+        (
+            ["--override", "x"],
+            (
+                "unrecognized arguments: --override x. "
+                "Did you mean '--override-port' or '--override-platform'?\n"
+            ),
+        ),
+        (
+            ["--i=eth0"],
+            "unrecognized arguments: --i=eth0. Did you mean '--interface', '--ip' or '--ip6'?\n",
+        ),
+        (
+            ["--override", "--interfaces"],
+            (
+                "unrecognized arguments: --override --interfaces. Did you mean "
+                "'--override-port' or '--override-platform' for '--override', "
+                "'--interface' for '--interfaces'?\n"
+            ),
+        ),
+        (["--no", "-4", "10.0.0.1"], "arguments: --no. Did you mean '--no-net'?\n"),
+        # Suggestions for typos
+        (
+            ["--interfaces", "eth0"],
+            "unrecognized arguments: --interfaces eth0. Did you mean '--interface'?\n",
+        ),
+        (
+            ["--interfaces=eth0", "--no-nett", "--zzzzzzzz"],
+            (
+                "unrecognized arguments: --interfaces=eth0 --no-nett --zzzzzzzz. Did you mean "
+                "'--interface' for '--interfaces=eth0', '--no-net' for '--no-nett'?\n"
+            ),
+        ),
+        (["-z"], "unrecognized arguments: -z\n"),  # A short option is too short for a suggestion
+        (
+            ["--override-platform", "Linx"],
+            (
+                "argument --override-platform: 'Linx' is not the name of a platform. "
+                "Did you mean 'linux'?\n"
+            ),
+        ),
+        (
+            ["--force-method", "ipneighbourshow"],
+            (
+                "argument --force-method: 'ipneighbourshow' is not the name of a method. "
+                "Did you mean 'IpNeighborShow'?\n"
+            ),
+        ),
+        (
+            ["-E", "arpfil"],
+            (
+                "argument --exclude-method: 'arpfil' is not the name of a method. "
+                "Did you mean 'ArpFile'?\n"
+            ),
+        ),
     ],
 )
-def test_main_argparse_errors(mock_get_mac, run_cli, args, error):
+def test_main_argparse_errors(mock_get_mac, run_cli, mocker, args, error):
+    # -E removes methods from this list
+    mocker.patch("getmac.getmac.METHODS", list(getmac.METHODS))
+
     code, out, err = run_cli(*args)
 
     assert code == 2
@@ -293,6 +585,21 @@ def test_main_help(mock_get_mac, run_cli, flag):
     mock_get_mac.assert_not_called()
 
 
+@pytest.mark.parametrize("columns", ["40", "80", "200"])
+def test_help_text(mocker, columns):
+    mocker.patch.dict(os.environ, {"COLUMNS": columns})
+    text = build_parser().format_help()
+
+    assert "With no arguments, getmac prints the MAC of the default interface." in text
+    assert "\nexamples:\n  getmac                    MAC of the default interface\n" in text
+    assert "\nexit codes:\n" in text
+    assert "  3    an error occurred (getmac printed it to stderr)\n" in text
+    assert "docs:   https://ghostofgoes.github.io/getmac/cli.html\n" in text
+    assert "issues: https://github.com/GhostofGoes/getmac/issues\n" in text
+    # The help text does not split an option at the '-', for example into '--list-' and 'methods'
+    assert not any(line.endswith("-") for line in text.splitlines())
+
+
 # --- settings mutation + logging ---------------------------------------------
 
 
@@ -305,7 +612,7 @@ def test_main_help(mock_get_mac, run_cli, flag):
         (["--command-timeout", "0"], "COMMAND_TIMEOUT", 0),
         (["--override-platform", " Linux "], "OVERRIDE_PLATFORM", "linux"),
         (["--override-platform", "FreeBSD"], "OVERRIDE_PLATFORM", "freebsd"),
-        (["--force-method", " SomeMethod "], "FORCE_METHOD", "somemethod"),
+        (["--force-method", " ArpFile "], "FORCE_METHOD", "arpfile"),
         (["--force-method", "IpNeighborShow"], "FORCE_METHOD", "ipneighborshow"),
         (["-d"], "DEBUG", 1),
         (["--debug"], "DEBUG", 1),
@@ -645,6 +952,165 @@ def test_main_list_methods_override_platform_and_exclude(run_cli):
     )
 
 
+# --- --json --------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("args", "lookup", "target"),
+    [
+        (["-i", "eth0"], "interface", "eth0"),
+        (["-4", "192.0.2.1", "-N"], "ip", "192.0.2.1"),
+    ],
+)
+@pytest.mark.usefixtures("stub_methods")
+def test_main_json(run_cli, mocker, args, lookup, target):
+    mocker.patch.object(gvars, "LAST_METHOD", "FromAnEarlierLookup")
+    code, out, err = run_cli("--json", *args)
+
+    assert (code, err) == (0, "")
+    assert out.count("\n") == 1  # The output is one line, because stdout is not a terminal
+    assert json.loads(out) == {
+        "mac": MAC,
+        "lookup": lookup,
+        "target": target,
+        "method": "StubIp4" if lookup == "ip" else "StubIface",
+        "platform": consts.PLATFORM,
+    }
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_json_not_found(run_cli, mocker):
+    mocker.patch.object(StubFakeOsIface, "get", return_value=None)
+    mocker.patch.object(gvars, "LAST_METHOD", "FromAnEarlierLookup")
+
+    code, out, err = run_cli("--json", "-i", "eth9", "--override-platform", "fakeos")
+
+    assert (code, err) == (1, "")
+    assert json.loads(out) == {
+        "mac": None,
+        "lookup": "interface",
+        "target": "eth9",
+        "method": None,
+        "platform": "fakeos",
+    }
+
+
+@pytest.mark.parametrize(("method", "expected"), [("SysIfaceFile", "SysIfaceFile"), ("", None)])
+@pytest.mark.parametrize("args", [[], ["-n", "localhost"]])
+def test_main_json_default_and_hostname(mock_get_mac, run_cli, args, method, expected):
+    def _lookup(**_kwargs):
+        # For example, the value is empty for localhost, which does not use a method
+        gvars.LAST_METHOD = method
+        return MAC
+
+    mock_get_mac.side_effect = _lookup
+
+    code, out, _ = run_cli("--json", *args)
+
+    assert code == 0
+    assert json.loads(out) == {
+        "mac": MAC,
+        "lookup": "hostname" if args else "default",
+        "target": "localhost" if args else None,
+        "method": expected,
+        "platform": consts.PLATFORM,
+    }
+
+
+@pytest.mark.parametrize("iface", ["eth0", None])
+def test_main_json_default_interface(mock_get_mac, run_cli, mocker, iface):
+    def _default_interface():
+        gvars.LAST_METHOD = "DefaultIfaceIpRoute"
+        return iface
+
+    mocker.patch("getmac.getmac.get_default_interface", side_effect=_default_interface)
+
+    code, out, err = run_cli("-D", "--json")
+
+    assert (code, err) == (0 if iface else 1, "")
+    assert json.loads(out) == {
+        "interface": iface,
+        "method": "DefaultIfaceIpRoute" if iface else None,
+        "platform": consts.PLATFORM,
+    }
+    mock_get_mac.assert_not_called()
+
+
+def test_main_json_is_indented_in_a_terminal(mock_get_mac, run_cli, mocker):
+    mocker.patch.object(sys.stdout, "isatty", return_value=True)
+
+    code, out, _ = run_cli("--json")
+
+    assert code == 0
+    assert out.startswith('{\n  "mac": "00:11:22:33:44:55",\n')
+    mock_get_mac.assert_called_once()
+
+
+@pytest.mark.parametrize("flag", ["-i", "-4", "-n"])
+def test_main_json_empty_target_is_a_default_lookup(mock_get_mac, run_cli, flag):
+    """`get_mac_address()` reads an empty value as no value, and uses the default interface."""
+    code, out, _ = run_cli("--json", flag, "")
+
+    assert code == 0
+    mock_get_mac.assert_called_once()
+    assert json.loads(out) == {
+        "mac": MAC,
+        "lookup": "default",
+        "target": None,
+        "method": None,
+        "platform": consts.PLATFORM,
+    }
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_json_empty_ip6_is_not_a_default_lookup(run_cli):
+    """`get_mac_address()` does not accept an empty IPv6 address, and finds nothing."""
+    code, out, _ = run_cli("--json", "-6", "")
+
+    assert code == 1
+    assert json.loads(out) == {
+        "mac": None,
+        "lookup": "ip6",
+        "target": "",
+        "method": None,
+        "platform": consts.PLATFORM,
+    }
+
+
+def test_main_json_error_prints_no_json(mock_get_mac, run_cli):
+    mock_get_mac.side_effect = RuntimeError("no methods")
+
+    assert run_cli("--json") == (3, "", "getmac: error: no methods\n")
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_list_methods_json(mock_get_mac, run_cli, mocker):
+    mocker.patch("getmac.getmac.METHODS", list(LIST_METHODS))
+
+    code, out, err = run_cli("--list-methods", "--json", "-N")
+
+    assert (code, err) == (0, "")
+    assert json.loads(out) == {
+        "platform": consts.PLATFORM,
+        "methods": {
+            "ip4": [
+                {"name": "StubNetIp4", "status": "skipped"},
+                {"name": "StubIp4", "status": "primary"},
+                {"name": "StubIp", "status": "fallback"},
+            ],
+            "ip6": [{"name": "StubIp", "status": "primary"}],
+            "iface": [
+                {"name": "StubFailingIface", "status": "failed"},
+                {"name": "StubIface", "status": "primary"},
+                {"name": "StubRaisingIface", "status": "failed"},
+                {"name": "StubIfaceFallback", "status": "fallback"},
+            ],
+            "default_iface": [{"name": "StubOtherDefaultIface", "status": "primary"}],
+        },
+    }
+    mock_get_mac.assert_not_called()
+
+
 # --- true end-to-end subprocess smoke tests ----------------------------------
 
 
@@ -679,6 +1145,18 @@ def test_cli_list_methods():
     assert proc.returncode == 0
 
 
+def test_cli_json():
+    proc = run_cmd("--json")
+    mac = get_mac_address()
+    result = json.loads(proc.stdout)
+
+    assert result["mac"] == mac
+    assert result["lookup"] == "default"
+    assert result["platform"] == consts.PLATFORM
+    assert proc.stderr == ""
+    assert proc.returncode == (0 if mac else 1)
+
+
 def test_cli_version():
     proc = run_cmd("--version")
     assert proc.stdout == f"getmac {__version__}\n"
@@ -688,14 +1166,14 @@ def test_cli_version():
 
 @pytest.mark.parametrize("flag", [None, "-v", "-d"])
 def test_cli_logging_goes_to_stderr_only(flag):
-    # An unknown forced method fails the lookup before any real command runs
-    proc = run_cmd(*([flag] if flag else []), "--force-method", " BoGuS ", "-i", "eth0")
+    # An IPv6 address without a ':' makes the lookup fail before getmac runs a real command
+    proc = run_cmd(*([flag] if flag else []), "--override-port", "44444", "-6", "BoGuS")
 
     assert proc.stdout == ""
     assert proc.returncode == 1
     if flag:
-        assert "WARNING  Forcing method 'bogus' to be used for 'iface' lookup" in proc.stderr
-        assert "ERROR    Invalid FORCE_METHOD method name 'bogus'\n" in proc.stderr
+        assert "DEBUG    Using UDP port 44444" in proc.stderr
+        assert "ERROR    Invalid IPv6 address (no ':'): BoGuS\n" in proc.stderr
     else:
         assert proc.stderr == ""
 
@@ -709,3 +1187,107 @@ def test_main_timeout_has_to_be_finite(mock_get_mac, run_cli, flag, value):
     assert code == 2
     assert "not a number of seconds" in stderr
     mock_get_mac.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("argv", "expected"),
+    [
+        ([], []),
+        (["-i", "eth0"], ["-i", "eth0"]),
+        (["--arp-timeout", "-1", "-v"], ["--arp-timeout=-1", "-v"]),
+        (["--override-port", "-80"], ["--override-port=-80"]),
+        (["--command-timeout", "-.5"], ["--command-timeout=-.5"]),
+        (["--arp-timeout", "-1e3"], ["--arp-timeout=-1e3"]),
+        (["--arp-timeout", "-1e-3"], ["--arp-timeout=-1e-3"]),
+        (["--arp-timeout", "-2.5E+1"], ["--arp-timeout=-2.5E+1"]),
+        (["--arp-timeout", "-.5e3"], ["--arp-timeout=-.5e3"]),
+        (["--arp-timeout", "-inf"], ["--arp-timeout=-inf"]),
+        (["--arp-timeout", "-Infinity"], ["--arp-timeout=-Infinity"]),
+        (["--arp-timeout", "1"], ["--arp-timeout", "1"]),
+        (["--arp-timeout", "-v"], ["--arp-timeout", "-v"]),  # "-v" is not a number
+        (["--arp-timeout", "-4", "10.0.0.1"], ["--arp-timeout=-4", "10.0.0.1"]),
+        (["--arp-timeout"], ["--arp-timeout"]),
+        (["-i", "-1"], ["-i", "-1"]),  # "-i" does not take a number
+        (["--", "--arp-timeout", "-1"], ["--", "--arp-timeout", "-1"]),
+    ],
+)
+def test_join_negative_values(argv, expected):
+    assert _join_negative_values(argv) == expected
+
+
+INTERRUPTED_MAIN = """
+import sys
+from unittest import mock
+
+from getmac.__main__ import main
+
+sys.argv = ["getmac"]
+with mock.patch("getmac.getmac.get_mac_address", side_effect=KeyboardInterrupt):
+    main()
+"""
+
+
+@pytest.mark.skipif(consts.WINDOWS, reason="Windows has no SIGINT exit status")
+def test_cli_ctrl_c_ends_with_sigint():
+    """A shell stops a loop only if the command in the loop ends with SIGINT."""
+    proc = subprocess.run(
+        [sys.executable, "-c", INTERRUPTED_MAIN], capture_output=True, text=True, check=False
+    )
+
+    assert proc.returncode == -signal.SIGINT
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+
+
+@pytest.mark.skipif(consts.WINDOWS, reason="A closed pipe is a different error on Windows")
+def test_cli_closed_stdout_pipe_exits_3_quietly():
+    read_fd, write_fd = os.pipe()
+    os.close(read_fd)  # For example, "getmac | head -1" after head exits
+    try:
+        proc = subprocess.run(
+            [*BASE_CMD, "-n", "localhost"],
+            stdout=write_fd,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    finally:
+        os.close(write_fd)
+
+    assert (proc.returncode, proc.stderr) == (3, "")
+
+
+@pytest.mark.skipif(not os.path.exists("/dev/full"), reason="Needs /dev/full (Linux)")
+def test_cli_stdout_write_error_is_one_line():
+    with open("/dev/full", "w") as full:
+        proc = subprocess.run(
+            [*BASE_CMD, "-n", "localhost"],
+            stdout=full,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+
+    assert proc.returncode == 3
+    assert proc.stderr == (
+        "getmac: error: cannot write to stdout: [Errno 28] No space left on device\n"
+    )
+
+
+def test_cli_warning_as_error_is_one_line():
+    # There are no ip4 methods for hp-ux, so getmac warns before it tests a method
+    args = ["-N", "-4", "192.0.2.1", "--override-platform", "hp-ux"]
+    proc = subprocess.run(
+        [sys.executable, "-W", "error", "-m", "getmac", *args],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, **NO_COLOR_ENV},
+    )
+
+    assert proc.stdout == ""
+    assert proc.stderr == (
+        "getmac: error: No methods for platform 'hp-ux'! "
+        "Your system may not be supported. Falling back to platform 'other'.\n"
+    )
+    assert proc.returncode == 3

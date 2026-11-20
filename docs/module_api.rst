@@ -167,10 +167,12 @@ Example output on a Linux system:
    iface: SysIfaceFile, fallbacks: ['FcntlIface', 'IpLinkIface']
    default_iface: DefaultIfaceLinuxRouteFile, fallbacks: ['DefaultIfaceIpRoute']
 
-Two helper functions look methods up by name:
+These helper functions look methods up by name, and list the names:
 
 - :func:`~getmac.getmac.get_instance_from_cache` returns the cached *instance* of a method, primary or fallback, for one lookup type. The name must match the class name exactly, for example ``get_instance_from_cache("iface", "SysIfaceFile")``.
 - :func:`~getmac.getmac.get_method_by_name` returns the *class* with a given name from :data:`~getmac.getmac.METHODS`, ignoring case. This is how ``FORCE_METHOD`` finds a method.
+- :func:`~getmac.getmac.get_method_names` returns the names of the methods in :data:`~getmac.getmac.METHODS`, in order.
+- :func:`~getmac.getmac.get_platform_names` returns the platform names that getmac knows. The command line accepts only these names for ``--override-platform``.
 
 .. _module-api-logging:
 
