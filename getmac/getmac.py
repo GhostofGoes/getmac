@@ -1640,13 +1640,16 @@ def get_method_names() -> list[str]:
 
 def get_platform_names() -> set[str]:
     """
-    Get the platform names that you can set
-    :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM` to.
+    Get the platform names that getmac knows.
 
     These are the names in
     :attr:`Method.VALID_PLATFORM_NAMES <getmac.getmac.Method.VALID_PLATFORM_NAMES>`, and
     each other platform that a method in :data:`~getmac.getmac.METHODS` supports (for
     example, a platform that a custom method adds).
+
+    The ``getmac`` command accepts only these names for ``--override-platform``.
+    :attr:`~getmac.variables.Settings.OVERRIDE_PLATFORM` accepts any name. If getmac does
+    not know the name, it warns, and uses the methods for the ``other`` platform.
     """
     return set(Method.VALID_PLATFORM_NAMES).union(*(method.platforms for method in METHODS))
 

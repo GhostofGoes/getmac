@@ -226,7 +226,7 @@ Example output on Linux:
 
 getmac uses the ``primary`` method for a lookup. If that method fails, getmac tries the ``fallback`` methods in order (see :ref:`module-api-fallback`). The other options change the list too, such as ``--override-platform``, ``--exclude-method``, and ``--no-net`` (which skips methods that send packets).
 
-You can override the platform that getmac detects with ``--override-platform``. Use it when you debug a problem, or if you know that a method for a different platform works on the current platform. The platforms are the ones in :attr:`Method.platforms <getmac.getmac.Method.platforms>`: ``android``, ``darwin``, ``dragonfly``, ``freebsd``, ``hp-ux``, ``linux``, ``netbsd``, ``openbsd``, ``other``, ``sunos``, ``windows``, and ``wsl``. getmac ignores the case of the name. Any other name is an error.
+You can override the platform that getmac detects with ``--override-platform``. Use it when you debug a problem, or if you know that a method for a different platform works on the current platform. The platforms are the ones in :attr:`Method.platforms <getmac.getmac.Method.platforms>`: ``android``, ``darwin``, ``dragonfly``, ``freebsd``, ``hp-ux``, ``linux``, ``netbsd``, ``openbsd``, ``other``, ``sunos``, ``windows``, and ``wsl``. getmac ignores the case of the name. Any other name is an error. If getmac does not know the platform of a system, it uses the methods for ``other``. To test that case, use ``--override-platform other``.
 
 .. code-block:: shell
 

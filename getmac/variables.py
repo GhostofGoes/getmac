@@ -54,7 +54,8 @@ class Settings(VarsClass):
 
     It's only read when the method cache for a lookup type is built, so set it
     before the first lookup (or reset the caches).
-    On the command line, use ``--override-platform``.
+    On the command line, use ``--override-platform``. It accepts only the names from
+    :func:`~getmac.getmac.get_platform_names`.
     """
 
     FORCE_METHOD: str = ""
