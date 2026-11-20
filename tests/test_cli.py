@@ -290,7 +290,10 @@ def test_main_unexpected_error_asks_for_a_report(mocker, run_cli, args):
     code, out, err = run_cli(*args)
 
     assert (code, out) == (3, "")
-    assert err.startswith("getmac: error: unexpected OSError: boom\n")
+    assert err.startswith(
+        "getmac: error: the lookup failed with an unexpected error (OSError: boom).\n"
+    )
+    assert "Add '-v -dddd' to the same command, and include its output in the report.\n" in err
     assert "https://github.com/GhostofGoes/getmac/issues" in err
     assert "Traceback" not in err
 
@@ -412,122 +415,140 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
     [
         *((a + b, "not allowed with argument") for a, b in itertools.combinations(TARGET_ARGS, 2)),
         (["--interface", "eth0", "--hostname", "myhost"], "not allowed with argument"),
-        (["--override-port", "abc"], "argument --override-port: not a port number: 'abc'"),
+        (["--override-port", "abc"], "argument --override-port: 'abc' is not a port number.\n"),
         *(
             (
                 ["--override-port", port],
-                f"argument --override-port: must be a port from 1 to 65535: '{port}'",
+                f"argument --override-port: '{port}' is not a port from 1 to 65535.\n",
             )
             for port in ("0", "65536", "-1", "-80")
         ),
-        (["--arp-timeout", "abc"], "argument --arp-timeout: not a number of seconds: 'abc'"),
-        (["--arp-timeout=-1"], "argument --arp-timeout: must be 0 or more seconds: '-1'"),
-        # The error is not "expected one argument". argparse reads -1 as an option, because
-        # -4 and -6 are options.
-        (["--arp-timeout", "-1"], "argument --arp-timeout: must be 0 or more seconds: '-1'"),
-        (["--arp-timeout", "-.5"], "argument --arp-timeout: must be 0 or more seconds: '-.5'"),
-        (
-            ["--command-timeout", "-1.5"],
-            "argument --command-timeout: must be 0 or more seconds: '-1.5'",
+        *(
+            ([flag, "abc"], f"argument {flag}: 'abc' is not a number of seconds.\n")
+            for flag in ("--arp-timeout", "--command-timeout")
         ),
-        (
-            ["--arp-timeout", "-1e-3"],
-            "argument --arp-timeout: must be 0 or more seconds: '-1e-3'",
+        # For "--arp-timeout -1", the error is not "expected one argument". argparse reads
+        # -1 as an option, because -4 and -6 are options.
+        *(
+            (
+                args,
+                (
+                    f"argument {args[0].split('=')[0]}: '{value}' is less than 0. "
+                    "The number of seconds must be 0 or more.\n"
+                ),
+            )
+            for args, value in (
+                (["--arp-timeout=-1"], "-1"),
+                (["--arp-timeout", "-1"], "-1"),
+                (["--arp-timeout", "-.5"], "-.5"),
+                (["--arp-timeout", "-1e-3"], "-1e-3"),
+                (["--command-timeout", "-1.5"], "-1.5"),
+                (["--command-timeout=-1"], "-1"),
+            )
         ),
         *(
             (
-                ["--arp-timeout", value],
-                f"argument --arp-timeout: not a number of seconds: '{value}'",
+                [flag, value],
+                (
+                    f"argument {flag}: '{value}' is not a number of seconds that getmac can wait. "
+                    "Use 0 for no timeout.\n"
+                ),
             )
-            for value in ("nan", "inf", "-inf", "Infinity")
-        ),
-        *(
-            (
-                ["--command-timeout", value],
-                f"argument --command-timeout: not a number of seconds: '{value}'",
+            for flag, value in (
+                *(("--arp-timeout", value) for value in ("nan", "inf", "-inf", "Infinity")),
+                *(("--command-timeout", value) for value in ("nan", "inf")),
             )
-            for value in ("nan", "inf")
         ),
         (["--arp-timeout"], "argument --arp-timeout: expected one argument"),
         (
             ["--override-platform", "BoGuS"],
-            "argument --override-platform: unknown platform 'BoGuS' (choose from android, ",
+            (
+                "argument --override-platform: 'BoGuS' is not the name of a platform. "
+                "Use one of these: android, "
+            ),
         ),
         (
             ["--force-method", "BoGuS"],
-            "argument --force-method: unknown method 'BoGuS' (--list-methods shows",
+            (
+                "argument --force-method: 'BoGuS' is not the name of a method. "
+                "Use --list-methods to see the methods for this platform.\n"
+            ),
         ),
         (
             ["--force-method", "arpfile", "-E", "ArpFile"],
-            "argument --force-method: 'arpfile' is excluded with --exclude-method",
-        ),
-        (
-            ["--command-timeout", "abc"],
-            "argument --command-timeout: not a number of seconds: 'abc'",
-        ),
-        (
-            ["--command-timeout=-1"],
-            "argument --command-timeout: must be 0 or more seconds: '-1'",
+            (
+                "argument --force-method: 'arpfile' is also given to --exclude-method. "
+                "Use only one of the two options for a method.\n"
+            ),
         ),
         (["-i"], "argument -i/--interface: expected one argument"),
         (["-D", "-i", "eth0"], "not allowed with argument"),
-        (["--exclude-method", "BoGuS"], "argument --exclude-method: unknown method 'BoGuS'"),
+        (
+            ["--exclude-method", "BoGuS"],
+            "argument --exclude-method: 'BoGuS' is not the name of a method.\n",
+        ),
         (["--list-methods", "-4", "10.0.0.1"], "not allowed with argument"),
         (["--bogus"], "unrecognized arguments: --bogus"),
         # getmac does not accept the start of an option (allow_abbrev=False)
         # The error suggests the option that the start belongs to, not the closest spelling
         (
             ["--int", "eth0"],
-            "unrecognized arguments: --int eth0 (did you mean '--interface'?)\n",
+            "unrecognized arguments: --int eth0. Did you mean '--interface'?\n",
         ),
-        (["--arp", "1"], "unrecognized arguments: --arp 1 (did you mean '--arp-timeout'?)\n"),
+        (["--arp", "1"], "unrecognized arguments: --arp 1. Did you mean '--arp-timeout'?\n"),
         (
             ["--override", "x"],
             (
-                "unrecognized arguments: --override x "
-                "(did you mean '--override-port' or '--override-platform'?)\n"
+                "unrecognized arguments: --override x. "
+                "Did you mean '--override-port' or '--override-platform'?\n"
             ),
         ),
         (
             ["--i=eth0"],
-            "unrecognized arguments: --i=eth0 (did you mean '--interface', '--ip' or '--ip6'?)\n",
+            "unrecognized arguments: --i=eth0. Did you mean '--interface', '--ip' or '--ip6'?\n",
         ),
         (
             ["--override", "--interfaces"],
             (
-                "unrecognized arguments: --override --interfaces (did you mean "
+                "unrecognized arguments: --override --interfaces. Did you mean "
                 "'--override-port' or '--override-platform' for '--override', "
-                "'--interface' for '--interfaces'?)\n"
+                "'--interface' for '--interfaces'?\n"
             ),
         ),
-        (["--no", "-4", "10.0.0.1"], "arguments: --no (did you mean '--no-net'?)\n"),
+        (["--no", "-4", "10.0.0.1"], "arguments: --no. Did you mean '--no-net'?\n"),
         # Suggestions for typos
         (
             ["--interfaces", "eth0"],
-            "unrecognized arguments: --interfaces eth0 (did you mean '--interface'?)\n",
+            "unrecognized arguments: --interfaces eth0. Did you mean '--interface'?\n",
         ),
         (
             ["--interfaces=eth0", "--no-nett", "--zzzzzzzz"],
             (
-                "unrecognized arguments: --interfaces=eth0 --no-nett --zzzzzzzz (did you mean "
-                "'--interface' for '--interfaces=eth0', '--no-net' for '--no-nett'?)\n"
+                "unrecognized arguments: --interfaces=eth0 --no-nett --zzzzzzzz. Did you mean "
+                "'--interface' for '--interfaces=eth0', '--no-net' for '--no-nett'?\n"
             ),
         ),
         (["-z"], "unrecognized arguments: -z\n"),  # A short option is too short for a suggestion
         (
             ["--override-platform", "Linx"],
-            "argument --override-platform: unknown platform 'Linx' (did you mean 'linux'?)\n",
+            (
+                "argument --override-platform: 'Linx' is not the name of a platform. "
+                "Did you mean 'linux'?\n"
+            ),
         ),
         (
             ["--force-method", "ipneighbourshow"],
             (
-                "argument --force-method: unknown method 'ipneighbourshow' "
-                "(did you mean 'IpNeighborShow'?)\n"
+                "argument --force-method: 'ipneighbourshow' is not the name of a method. "
+                "Did you mean 'IpNeighborShow'?\n"
             ),
         ),
         (
             ["-E", "arpfil"],
-            "argument --exclude-method: unknown method 'arpfil' (did you mean 'ArpFile'?)\n",
+            (
+                "argument --exclude-method: 'arpfil' is not the name of a method. "
+                "Did you mean 'ArpFile'?\n"
+            ),
         ),
     ],
 )
@@ -560,10 +581,10 @@ def test_help_text(mocker, columns):
     mocker.patch.dict(os.environ, {"COLUMNS": columns})
     text = build_parser().format_help()
 
-    assert "With no arguments, prints the MAC of the default interface." in text
+    assert "With no arguments, getmac prints the MAC of the default interface." in text
     assert "\nexamples:\n  getmac                    MAC of the default interface\n" in text
     assert "\nexit codes:\n" in text
-    assert "  3    error (printed to stderr)\n" in text
+    assert "  3    an error occurred (getmac printed it to stderr)\n" in text
     assert "docs:   https://ghostofgoes.github.io/getmac/cli.html\n" in text
     assert "issues: https://github.com/GhostofGoes/getmac/issues\n" in text
     # The help text does not split an option at the '-', for example into '--list-' and 'methods'

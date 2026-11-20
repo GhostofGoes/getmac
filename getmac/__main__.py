@@ -31,15 +31,15 @@ examples:
   getmac -D                 name of the default interface
 
 exit codes:
-  0    found, and printed to stdout
-  1    not found
-  2    invalid arguments
-  3    error (printed to stderr)
-  130  stopped with Ctrl-C
+  0    getmac found the result and printed it to stdout
+  1    getmac did not find the result
+  2    the arguments are not valid
+  3    an error occurred (getmac printed it to stderr)
+  130  you stopped getmac with Ctrl-C
 
 docs:   {DOCS_URL}
 issues: {ISSUES_URL}
-        (include the output of the command with '-v -dddd' added)
+        (Add '-v -dddd' to the command, and include its output in the report.)
 """
 
 # Exit codes
@@ -62,12 +62,16 @@ def _seconds(value: str) -> float:
     try:
         seconds = float(value)
     except ValueError:
-        raise argparse.ArgumentTypeError(f"not a number of seconds: '{value}'") from None
+        raise argparse.ArgumentTypeError(f"'{value}' is not a number of seconds.") from None
     if not math.isfinite(seconds):
         # "inf" and "nan" are numbers to float(), but can't be waited for
-        raise argparse.ArgumentTypeError(f"not a number of seconds: '{value}' (use 0 for none)")
+        raise argparse.ArgumentTypeError(
+            f"'{value}' is not a number of seconds that getmac can wait. Use 0 for no timeout."
+        )
     if seconds < 0:
-        raise argparse.ArgumentTypeError(f"must be 0 or more seconds: '{value}'")
+        raise argparse.ArgumentTypeError(
+            f"'{value}' is less than 0. The number of seconds must be 0 or more."
+        )
     return seconds
 
 
@@ -75,9 +79,9 @@ def _port(value: str) -> int:
     try:
         port = int(value)
     except ValueError:
-        raise argparse.ArgumentTypeError(f"not a port number: '{value}'") from None
+        raise argparse.ArgumentTypeError(f"'{value}' is not a port number.") from None
     if not 1 <= port <= 65535:
-        raise argparse.ArgumentTypeError(f"must be a port from 1 to 65535: '{value}'")
+        raise argparse.ArgumentTypeError(f"'{value}' is not a port from 1 to 65535.")
     return port
 
 
@@ -128,7 +132,7 @@ def _closest(name: str, names: Iterable[str]) -> Optional[str]:
 
 def _did_you_mean(name: str, names: Iterable[str]) -> str:
     closest = _closest(name, names)
-    return f" (did you mean '{closest}'?)" if closest else ""
+    return f" Did you mean '{closest}'?" if closest else ""
 
 
 def _one_of(names: list[str]) -> str:
@@ -174,12 +178,12 @@ class _ArgumentParser(argparse.ArgumentParser):
             ]
             suggestions = [(arg, options) for arg, options in suggestions if options]
             if len(suggestions) == 1:
-                message += f" (did you mean {_one_of(suggestions[0][1])}?)"
+                message += f". Did you mean {_one_of(suggestions[0][1])}?"
             elif suggestions:
                 message += (
-                    " (did you mean "
+                    ". Did you mean "
                     + ", ".join(f"{_one_of(options)} for '{arg}'" for arg, options in suggestions)
-                    + "?)"
+                    + "?"
                 )
         super().error(message)
 
@@ -190,8 +194,8 @@ def build_parser() -> argparse.ArgumentParser:
         # Do not accept the start of an option, for example "--int" for "--interface". A new
         # option with the same start (for example "--interval") breaks the scripts that use it.
         allow_abbrev=False,
-        description="Get MAC addresses of network interfaces or LAN hosts.\n"
-        "With no arguments, prints the MAC of the default interface.",
+        description="Get the MAC address of a network interface or of a host on the LAN.\n"
+        "With no arguments, getmac prints the MAC of the default interface.",
         epilog=EPILOG,
         formatter_class=_HelpFormatter,
     )
@@ -230,13 +234,13 @@ def build_parser() -> argparse.ArgumentParser:
         "-D",
         "--default-interface",
         action="store_true",
-        help="Print the name of the default network interface, instead of a MAC",
+        help="Print the name of the default network interface, and not a MAC",
     )
     group.add_argument(
         "--list-methods",
         action="store_true",
         help="List the methods for each type of lookup on this platform, in the order "
-        "getmac tries them, and whether each one works here. Then exit.",
+        "that getmac tries them. Show if each method works here. Then exit.",
     )
 
     parser.add_argument(
@@ -245,30 +249,30 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-network-requests",
         action="store_true",
         dest="NO_NET",
-        help="Do not use arping or send a UDP packet to refresh the ARP table",
+        help="Do not use arping, and do not send a UDP packet, to refresh the ARP table",
     )
     parser.add_argument(
         "--arp-timeout",
         type=_seconds,
         default=None,
         metavar="SECONDS",
-        help="After sending the UDP packet to refresh the ARP table, keep checking it for "
-        "the host for up to this many seconds (default: 0, check once)",
+        help="After getmac sends the UDP packet to refresh the ARP table, look for the host "
+        "in the table for up to this many seconds (default: 0, look one time)",
     )
     parser.add_argument(
         "--command-timeout",
         type=_seconds,
         default=None,
         metavar="SECONDS",
-        help="Stop a command that getmac runs (e.g. 'arp' or 'ipconfig.exe') if it takes "
-        "longer than this many seconds, and try the next method "
-        "(default: 15, 0 to wait for as long as it takes)",
+        help="If a command that getmac runs (for example 'arp' or 'ipconfig.exe') takes "
+        "longer than this many seconds, stop it and try the next method (default: 15). "
+        "0 means that getmac waits until the command ends.",
     )
     parser.add_argument(
         "--json",
         action="store_true",
         help="Print the result as JSON, with the method that found it and the platform. "
-        "Also works with -D and --list-methods.",
+        "This option also works with -D and --list-methods.",
     )
 
     tshooting = parser.add_argument_group("troubleshooting")
@@ -276,39 +280,41 @@ def build_parser() -> argparse.ArgumentParser:
         "-v",
         "--verbose",
         action="store_true",
-        help="Print log messages to stderr, e.g. which methods were tried "
-        "(by default, only the result is printed)",
+        help="Print log messages to stderr, for example the methods that getmac tried "
+        "(by default, getmac prints only the result)",
     )
     tshooting.add_argument(
         "-d",
         "--debug",
         action="count",
-        help="Print more detail about each method getmac tries, and implies -v. "
-        "Give it more than once for more detail, up to -dddd (every command and its output).",
+        help="Print more detail about each method that getmac tries. This option includes "
+        "-v. Use it more than one time for more detail, up to -dddd (each command and its "
+        "output).",
     )
     tshooting.add_argument(
         "--override-port",
         type=_port,
         metavar="PORT",
         help="Send the UDP packet that refreshes the ARP table to this port "
-        "(default: 55555). Only used if arping isn't available and -N isn't set.",
+        "(default: 55555). getmac uses the port only if arping is not available and -N "
+        "is not set.",
     )
     tshooting.add_argument(
         "--override-platform",
         type=str,
         default=None,
         metavar="PLATFORM",
-        help="Use the methods for this platform instead of the one getmac detects: "
-        + ", ".join(sorted(getmac.Method.VALID_PLATFORM_NAMES)),
+        help="Use the methods for this platform, and not the methods for the platform that "
+        "getmac detects: " + ", ".join(sorted(getmac.Method.VALID_PLATFORM_NAMES)),
     )
     tshooting.add_argument(
         "--force-method",
         type=str,
         default=None,
         metavar="METHOD",
-        help="Use only this method, e.g. 'IpNeighborShow', even if it isn't for this "
-        "platform or type of lookup, and without checking first that it works here "
-        "(see --list-methods for the names)",
+        help="Use only this method, for example 'IpNeighborShow'. getmac uses it even if it "
+        "is not for this platform or this type of lookup, and does not test it first. "
+        "See --list-methods for the names.",
     )
     tshooting.add_argument(
         "-E",
@@ -316,8 +322,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=None,
         metavar="METHOD",
-        help="Don't use this method, e.g. 'ArpFile'. getmac uses the next method "
-        "that works instead. Give it more than once to exclude more methods.",
+        help="Do not use this method, for example 'ArpFile'. getmac uses the next method "
+        "that works. Use this option more than one time to exclude more methods.",
     )
 
     return parser
@@ -330,7 +336,7 @@ def _exclude_methods(parser: argparse.ArgumentParser, names: list[str]) -> None:
         method = getmac.get_method_by_name(name.strip())
         if method is None:
             parser.error(
-                f"argument --exclude-method: unknown method '{name}'"
+                f"argument --exclude-method: '{name}' is not the name of a method."
                 + _did_you_mean(name, getmac.get_method_names())
             )
         excluded.append(method)
@@ -480,7 +486,7 @@ def main() -> None:
     - :data:`EXIT_FOUND` (``0``): getmac found the MAC (or the interface) and printed it.
     - :data:`EXIT_NOT_FOUND` (``1``): getmac did not find it.
     - :data:`EXIT_USAGE` (``2``): the arguments are not valid.
-    - :data:`EXIT_ERROR` (``3``): the lookup failed with an error, or getmac could not
+    - :data:`EXIT_ERROR` (``3``): the lookup failed with an error, or getmac failed to
       write to stdout.
     - :data:`EXIT_INTERRUPTED` (``130``): the user pressed Ctrl-C, on Windows.
 
@@ -526,10 +532,11 @@ def _main() -> NoReturn:
         platform = args.override_platform.strip().lower()
         if platform not in getmac.get_platform_names():
             parser.error(
-                f"argument --override-platform: unknown platform '{args.override_platform}'"
+                f"argument --override-platform: '{args.override_platform}' is not the name "
+                "of a platform."
                 + (
                     _did_you_mean(platform, getmac.get_platform_names())
-                    or f" (choose from {', '.join(sorted(getmac.get_platform_names()))})"
+                    or f" Use one of these: {', '.join(sorted(getmac.get_platform_names()))}."
                 )
             )
         settings.OVERRIDE_PLATFORM = platform
@@ -539,10 +546,10 @@ def _main() -> NoReturn:
         forced = getmac.get_method_by_name(args.force_method.strip())
         if forced is None:
             parser.error(
-                f"argument --force-method: unknown method '{args.force_method}'"
+                f"argument --force-method: '{args.force_method}' is not the name of a method."
                 + (
                     _did_you_mean(args.force_method, getmac.get_method_names())
-                    or " (--list-methods shows the methods for this platform)"
+                    or " Use --list-methods to see the methods for this platform."
                 )
             )
         settings.FORCE_METHOD = args.force_method.strip().lower()
@@ -552,7 +559,8 @@ def _main() -> NoReturn:
 
     if forced is not None and forced not in getmac.METHODS:
         parser.error(
-            f"argument --force-method: '{args.force_method}' is excluded with --exclude-method"
+            f"argument --force-method: '{args.force_method}' is also given to "
+            "--exclude-method. Use only one of the two options for a method."
         )
 
     if args.list_methods:
@@ -583,9 +591,9 @@ def _main() -> NoReturn:
         if args.debug:
             traceback.print_exc()
         _error(
-            f"unexpected {type(ex).__name__}: {ex}\n"
-            f"If this looks like a bug, please report it at {ISSUES_URL}, "
-            "with the output of the same command with '-v -dddd' added"
+            f"the lookup failed with an unexpected error ({type(ex).__name__}: {ex}).\n"
+            f"If you think that this is a bug, report it at {ISSUES_URL}. "
+            "Add '-v -dddd' to the same command, and include its output in the report."
         )
 
     if args.json:
