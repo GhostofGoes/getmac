@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import contextlib
 import difflib
 import json
 import logging
 import math
+import os
 import re
+import signal
 import sys
 import textwrap
 import traceback
@@ -383,19 +386,19 @@ def _list_methods(network_request: bool, as_json: bool) -> None:
         )
         return
 
-    print(f"Platform: {_platform()}")  # noqa: T201
+    _print(f"Platform: {_platform()}")
     for method_type, methods in statuses.items():
-        print(f"\n{method_type}:")  # noqa: T201
+        _print(f"\n{method_type}:")
         if not methods:
-            print("  (none)")  # noqa: T201
+            _print("  (none)")
         for name, status in methods:
-            print(f"  {name:<28} {METHOD_STATUSES[status]}")  # noqa: T201
+            _print(f"  {name:<28} {METHOD_STATUSES[status]}")
 
 
 def _print_json(data: dict[str, Any]) -> None:
     # Indent the JSON for people. Print one line for scripts, which can then read the
     # output line by line.
-    print(json.dumps(data, indent=2 if sys.stdout.isatty() else None))  # noqa: T201
+    _print(json.dumps(data, indent=2 if sys.stdout.isatty() else None))
 
 
 def _show_warning(message: Union[Warning, str], *_args: object, **_kwargs: object) -> None:
@@ -408,6 +411,42 @@ def _error(message: str) -> NoReturn:
     sys.exit(EXIT_ERROR)
 
 
+def _print(text: str) -> None:
+    """
+    Print ``text`` to stdout. If stdout cannot be written, exit with :data:`EXIT_ERROR`.
+    If the reader of a pipe closed it (for example ``getmac | head -1``), there is no
+    error message.
+    """
+    try:
+        print(text)  # noqa: T201
+        # Flush now. If not, a write error occurs when Python exits, and it is a traceback.
+        sys.stdout.flush()
+    except OSError as ex:
+        _discard_stdout()
+        if isinstance(ex, BrokenPipeError):
+            sys.exit(EXIT_ERROR)
+        _error(f"cannot write to stdout: {ex}")
+
+
+def _discard_stdout() -> None:
+    """Send stdout to the null device, so that Python does not fail again when it exits."""
+    # stdout has no file descriptor if a program replaced it, for example in a test
+    with contextlib.suppress(OSError, ValueError):
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+
+
+def _die_from_sigint() -> None:
+    """
+    End this process with SIGINT, the way that a program without a handler for Ctrl-C
+    ends. A shell stops a loop or a script only if the command ended with SIGINT.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        with contextlib.suppress(OSError, ValueError):
+            stream.flush()
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    os.kill(os.getpid(), signal.SIGINT)
+
+
 def main() -> None:
     """
     Run the ``getmac`` command, then exit with one of these codes:
@@ -415,14 +454,20 @@ def main() -> None:
     - :data:`EXIT_FOUND` (``0``): getmac found the MAC (or the interface) and printed it.
     - :data:`EXIT_NOT_FOUND` (``1``): getmac did not find it.
     - :data:`EXIT_USAGE` (``2``): the arguments are not valid.
-    - :data:`EXIT_ERROR` (``3``): the lookup failed with an error.
-    - :data:`EXIT_INTERRUPTED` (``130``): the user pressed Ctrl-C.
+    - :data:`EXIT_ERROR` (``3``): the lookup failed with an error, or getmac could not
+      write to stdout.
+    - :data:`EXIT_INTERRUPTED` (``130``): the user pressed Ctrl-C, on Windows.
+
+    On other systems, Ctrl-C ends the process with SIGINT. A shell reports that as ``130``.
     """
     try:
         with warnings.catch_warnings():
             warnings.showwarning = _show_warning
             _main()
     except KeyboardInterrupt:
+        # On Windows, a process that ends itself with SIGINT has exit code 2 (EXIT_USAGE)
+        if not consts.WINDOWS:
+            _die_from_sigint()
         sys.exit(EXIT_INTERRUPTED)
 
 
@@ -521,7 +566,7 @@ def _main() -> NoReturn:
     if args.json:
         _print_json(_result_json(args, result or None))
     elif result:
-        print(result)  # noqa: T201
+        _print(result)
 
     sys.exit(EXIT_FOUND if result else EXIT_NOT_FOUND)
 

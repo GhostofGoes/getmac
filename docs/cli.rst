@@ -73,8 +73,8 @@ Output and exit codes
 - ``0``: the MAC was printed to stdout (also for ``--help`` and ``--version``).
 - ``1``: getmac found nothing, and printed nothing.
 - ``2``: the arguments are invalid or conflict (e.g. ``-i`` with ``-4``). The usage message goes to stderr.
-- ``3``: the lookup failed with an error. For example, there are no methods for the platform, or none of them work. getmac prints the error to stderr as ``getmac: error: ...``. With ``-d``, it also prints the traceback.
-- ``130``: you stopped getmac with :kbd:`Ctrl-C`.
+- ``3``: the lookup failed with an error. For example, there are no methods for the platform, or none of them work. getmac prints the error to stderr as ``getmac: error: ...``. With ``-d``, it also prints the traceback. getmac also exits with ``3`` if it cannot write to stdout. If the reader of a pipe closed it (for example, ``getmac | head -1``), there is no error message.
+- ``130``: you stopped getmac with :kbd:`Ctrl-C`. On Linux, macOS, and other Unix-like systems, getmac ends with the SIGINT signal, and the shell reports ``130``. A loop or a script in the shell then also stops.
 
 getmac prints warnings to stderr as ``getmac: warning: ...``.
 

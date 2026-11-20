@@ -2,6 +2,7 @@ import itertools
 import json
 import logging
 import os
+import signal
 import subprocess
 import sys
 import warnings
@@ -10,7 +11,13 @@ from typing import Union
 import pytest
 
 from getmac import __version__, get_mac_address, getmac
-from getmac.__main__ import _join_negative_values, build_parser, main
+from getmac.__main__ import (
+    _die_from_sigint,
+    _discard_stdout,
+    _join_negative_values,
+    build_parser,
+    main,
+)
 from getmac.variables import consts, gvars, settings
 
 BASE_CMD = [sys.executable, "-m", "getmac"]
@@ -55,6 +62,12 @@ def _restore_settings():
         settings.ARP_TIMEOUT,
         settings.COMMAND_TIMEOUT,
     ) = orig
+
+
+@pytest.fixture(autouse=True)
+def mock_die_from_sigint(mocker):
+    """`main()` ends the process with SIGINT on Ctrl-C. Do not let it end pytest."""
+    return mocker.patch("getmac.__main__._die_from_sigint")
 
 
 @pytest.fixture
@@ -294,13 +307,77 @@ def test_main_error_with_debug_prints_traceback(mock_get_mac, run_cli, error):
     assert "getmac: error: " in err
 
 
+@pytest.mark.parametrize("windows", [True, False])
 @pytest.mark.parametrize("args", [[], ["-D"], ["--list-methods"]])
-def test_main_ctrl_c_exits_130_quietly(mocker, run_cli, args):
+def test_main_ctrl_c_is_quiet(mocker, run_cli, mock_die_from_sigint, args, windows):
     mocker.patch("getmac.getmac.get_mac_address", side_effect=KeyboardInterrupt)
     mocker.patch("getmac.getmac.get_default_interface", side_effect=KeyboardInterrupt)
     mocker.patch("getmac.__main__._list_methods", side_effect=KeyboardInterrupt)
+    mocker.patch.object(consts, "WINDOWS", windows)
 
+    # 130 is the exit code on Windows. On other systems, the process ends with SIGINT
+    # first (see test_cli_ctrl_c_ends_with_sigint). The mock stops that here.
     assert run_cli(*args) == (130, "", "")
+    assert mock_die_from_sigint.call_count == (0 if windows else 1)
+
+
+def test_die_from_sigint_uses_the_default_handler(mocker):
+    calls = mocker.Mock()
+    mocker.patch("signal.signal", calls.signal)
+    mocker.patch("os.kill", calls.kill)
+
+    _die_from_sigint()
+
+    # The default handler must be in place before the signal, or Python raises
+    # KeyboardInterrupt again
+    assert calls.mock_calls == [
+        mocker.call.signal(signal.SIGINT, signal.SIG_DFL),
+        mocker.call.kill(os.getpid(), signal.SIGINT),
+    ]
+
+
+# --- stdout that cannot be written ---------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("error", "stderr"),
+    [
+        (BrokenPipeError(32, "Broken pipe"), ""),
+        (
+            OSError(28, "No space left on device"),
+            "getmac: error: cannot write to stdout: [Errno 28] No space left on device\n",
+        ),
+    ],
+)
+@pytest.mark.parametrize("args", [["-i", "eth0"], ["--json"], ["--list-methods"]])
+@pytest.mark.usefixtures("mock_get_mac", "stub_methods")
+def test_main_stdout_write_error_exits_3(mocker, run_cli, args, error, stderr):
+    discard = mocker.patch("getmac.__main__._discard_stdout")
+    mocker.patch.object(sys.stdout, "write", side_effect=error)
+
+    assert run_cli(*args) == (3, "", stderr)
+    discard.assert_called_once_with()
+
+
+def test_discard_stdout_points_stdout_at_the_null_device(mocker):
+    mocker.patch("sys.stdout", mocker.Mock(**{"fileno.return_value": 1}))
+    mock_open = mocker.patch("os.open", return_value=42)
+    mock_dup2 = mocker.patch("os.dup2")
+
+    _discard_stdout()
+
+    mock_open.assert_called_once_with(os.devnull, os.O_WRONLY)
+    mock_dup2.assert_called_once_with(42, 1)
+
+
+def test_discard_stdout_without_a_file_descriptor(mocker):
+    mocker.patch("sys.stdout", mocker.Mock(**{"fileno.side_effect": ValueError("no fileno")}))
+    mocker.patch("os.open", return_value=42)
+    mock_dup2 = mocker.patch("os.dup2")
+
+    _discard_stdout()  # Does not raise
+
+    mock_dup2.assert_not_called()
 
 
 @pytest.mark.parametrize("flag", [None, "-v"])
@@ -1037,3 +1114,62 @@ def test_main_timeout_has_to_be_finite(mock_get_mac, run_cli, flag, value):
 )
 def test_join_negative_values(argv, expected):
     assert _join_negative_values(argv) == expected
+
+
+INTERRUPTED_MAIN = """
+import sys
+from unittest import mock
+
+from getmac.__main__ import main
+
+sys.argv = ["getmac"]
+with mock.patch("getmac.getmac.get_mac_address", side_effect=KeyboardInterrupt):
+    main()
+"""
+
+
+@pytest.mark.skipif(consts.WINDOWS, reason="Windows has no SIGINT exit status")
+def test_cli_ctrl_c_ends_with_sigint():
+    """A shell stops a loop only if the command in the loop ends with SIGINT."""
+    proc = subprocess.run(
+        [sys.executable, "-c", INTERRUPTED_MAIN], capture_output=True, text=True, check=False
+    )
+
+    assert proc.returncode == -signal.SIGINT
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+
+
+@pytest.mark.skipif(consts.WINDOWS, reason="A closed pipe is a different error on Windows")
+def test_cli_closed_stdout_pipe_exits_3_quietly():
+    read_fd, write_fd = os.pipe()
+    os.close(read_fd)  # For example, "getmac | head -1" after head exits
+    try:
+        proc = subprocess.run(
+            [*BASE_CMD, "-n", "localhost"],
+            stdout=write_fd,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    finally:
+        os.close(write_fd)
+
+    assert (proc.returncode, proc.stderr) == (3, "")
+
+
+@pytest.mark.skipif(not os.path.exists("/dev/full"), reason="Needs /dev/full (Linux)")
+def test_cli_stdout_write_error_is_one_line():
+    with open("/dev/full", "w") as full:
+        proc = subprocess.run(
+            [*BASE_CMD, "-n", "localhost"],
+            stdout=full,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+
+    assert proc.returncode == 3
+    assert proc.stderr == (
+        "getmac: error: cannot write to stdout: [Errno 28] No space left on device\n"
+    )
