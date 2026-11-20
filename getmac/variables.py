@@ -292,9 +292,12 @@ class Variables(VarsClass):
 
     LAST_METHOD: str = ""
     """
-    Name of the method that found the last result, for example ``"SysIfaceFile"``. The
-    result is a MAC, or the name of the default interface. The ``--json`` option of the
-    ``getmac`` command uses this value. A lookup that finds nothing does not clear it.
+    Name of the method that found the result of the last lookup, for example
+    ``"SysIfaceFile"``. The result is a MAC, or the name of the default interface.
+    :func:`~getmac.get_mac_address` and :func:`~getmac.get_default_interface` clear the
+    value when they start. Thus the value is empty if the lookup found nothing, or if no
+    method found the result (for example, for ``localhost``). The ``--json`` option of
+    the ``getmac`` command uses this value.
     """
 
     def __init__(self) -> None:

@@ -922,8 +922,8 @@ def test_main_list_methods_override_platform_and_exclude(run_cli):
     ],
 )
 @pytest.mark.usefixtures("stub_methods")
-def test_main_json(run_cli, args, lookup, target):
-    gvars.LAST_METHOD = "FromAnEarlierLookup"
+def test_main_json(run_cli, mocker, args, lookup, target):
+    mocker.patch.object(gvars, "LAST_METHOD", "FromAnEarlierLookup")
     code, out, err = run_cli("--json", *args)
 
     assert (code, err) == (0, "")
@@ -940,7 +940,7 @@ def test_main_json(run_cli, args, lookup, target):
 @pytest.mark.usefixtures("stub_methods")
 def test_main_json_not_found(run_cli, mocker):
     mocker.patch.object(StubFakeOsIface, "get", return_value=None)
-    gvars.LAST_METHOD = "FromAnEarlierLookup"
+    mocker.patch.object(gvars, "LAST_METHOD", "FromAnEarlierLookup")
 
     code, out, err = run_cli("--json", "-i", "eth9", "--override-platform", "fakeos")
 
@@ -1003,6 +1003,42 @@ def test_main_json_is_indented_in_a_terminal(mock_get_mac, run_cli, mocker):
     assert code == 0
     assert out.startswith('{\n  "mac": "00:11:22:33:44:55",\n')
     mock_get_mac.assert_called_once()
+
+
+@pytest.mark.parametrize("flag", ["-i", "-4", "-n"])
+def test_main_json_empty_target_is_a_default_lookup(mock_get_mac, run_cli, flag):
+    """`get_mac_address()` reads an empty value as no value, and uses the default interface."""
+    code, out, _ = run_cli("--json", flag, "")
+
+    assert code == 0
+    mock_get_mac.assert_called_once()
+    assert json.loads(out) == {
+        "mac": MAC,
+        "lookup": "default",
+        "target": None,
+        "method": None,
+        "platform": consts.PLATFORM,
+    }
+
+
+@pytest.mark.usefixtures("stub_methods")
+def test_main_json_empty_ip6_is_not_a_default_lookup(run_cli):
+    """`get_mac_address()` does not accept an empty IPv6 address, and finds nothing."""
+    code, out, _ = run_cli("--json", "-6", "")
+
+    assert code == 1
+    assert json.loads(out) == {
+        "mac": None,
+        "lookup": "ip6",
+        "target": "",
+        "method": None,
+        "platform": consts.PLATFORM,
+    }
+
+
+def test_main_json_tests_do_not_change_last_method():
+    """The tests above set `gvars.LAST_METHOD`. They must put the original value back."""
+    assert gvars.LAST_METHOD == ""
 
 
 def test_main_json_error_prints_no_json(mock_get_mac, run_cli):

@@ -2159,6 +2159,10 @@ def get_mac_address(
     # If debugging, start the timer
     start_time = time.perf_counter() if settings.DEBUG else 0.0
 
+    # The value must not name the method of an earlier lookup if no method finds this
+    # result (for example, for localhost)
+    gvars.LAST_METHOD = ""
+
     # Convert bytes to str, assuming UTF-8 encoding
     if isinstance(interface, bytes):
         interface = interface.decode("utf-8")
@@ -2351,8 +2355,8 @@ def get_default_interface() -> Optional[str]:
 
     This is essentially a convenience wrapper around
     :func:`~getmac.getmac.get_by_method` with the ``default_iface`` method type.
-    The code is literally
-    ``return getmac.getmac.get_by_method("default_iface")``.
+    It clears :attr:`gvars.LAST_METHOD <getmac.variables.Variables.LAST_METHOD>`, then
+    returns ``getmac.getmac.get_by_method("default_iface")``.
 
     Returns:
         The name of the default network interface, or :obj:`None`
@@ -2361,4 +2365,5 @@ def get_default_interface() -> Optional[str]:
     Raises:
         RuntimeError: if no method can be used to find the default interface.
     """
+    gvars.LAST_METHOD = ""
     return get_by_method("default_iface")

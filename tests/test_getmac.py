@@ -469,6 +469,23 @@ def test_get_mac_address_force_method(mocker):
     assert getmac.get_mac_address(interface="ens33") == "00:0c:29:b5:72:37"
 
 
+@pytest.mark.parametrize("kwargs", [{"hostname": "localhost"}, {"ip": "127.0.0.1"}])
+def test_get_mac_address_clears_last_method(mocker, kwargs):
+    """No method finds the MAC of localhost, so the method of an earlier lookup is wrong."""
+    mocker.patch.object(gvars, "LAST_METHOD", "FromAnEarlierLookup")
+
+    assert get_mac_address(**kwargs) == "00:00:00:00:00:00"
+    assert gvars.LAST_METHOD == ""
+
+
+def test_get_default_interface_clears_last_method(mocker):
+    mocker.patch.object(gvars, "LAST_METHOD", "FromAnEarlierLookup")
+    mocker.patch("getmac.getmac.get_by_method", return_value=None)
+
+    assert getmac.get_default_interface() is None
+    assert gvars.LAST_METHOD == ""
+
+
 def test_get_mac_address_localhost():
     assert get_mac_address(hostname="localhost") == "00:00:00:00:00:00"
     assert get_mac_address(hostname=b"localhost") == "00:00:00:00:00:00"

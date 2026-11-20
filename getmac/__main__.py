@@ -559,8 +559,6 @@ def _main() -> NoReturn:
         _list_methods(network_request=not args.NO_NET, as_json=args.json)
         sys.exit(EXIT_FOUND)
 
-    gvars.LAST_METHOD = ""
-
     try:
         if args.default_interface:
             result = getmac.get_default_interface()
@@ -609,8 +607,12 @@ def _result_json(args: argparse.Namespace, result: Optional[str]) -> dict[str, A
 
     lookup, target = "default", None
     for name in ("interface", "ip", "ip6", "hostname"):
-        if getattr(args, name) is not None:
-            lookup, target = name, getattr(args, name)
+        value = getattr(args, name)
+        # get_mac_address() reads an empty value as no value, and looks up the default
+        # interface. The exception is ip6, for which an empty value is an address that
+        # is not valid.
+        if value or (name == "ip6" and value is not None):
+            lookup, target = name, value
 
     return {
         "mac": result,
