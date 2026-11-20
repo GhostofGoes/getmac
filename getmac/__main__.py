@@ -54,7 +54,7 @@ EXIT_INTERRUPTED: Final[int] = 130  # 128 + SIGINT. Shells use this code for Ctr
 # it as an option, because -4 and -6 are options. _join_negative_values() prevents that.
 NUMBER_OPTIONS: Final[tuple[str, ...]] = ("--arp-timeout", "--command-timeout", "--override-port")
 NEGATIVE_NUMBER: Final[re.Pattern[str]] = re.compile(
-    r"-(\d+\.?\d*(e\d+)?|\.\d+|inf(inity)?|nan)", re.IGNORECASE
+    r"-((\d+\.?\d*|\.\d+)(e[+-]?\d+)?|inf(inity)?|nan)", re.IGNORECASE
 )
 
 
@@ -570,9 +570,10 @@ def _main() -> NoReturn:
                 hostname=args.hostname,
                 network_request=not args.NO_NET,
             )
-    except RuntimeError as ex:
+    except (RuntimeError, Warning) as ex:
         # There are no methods for the platform, or none of them work. The message gives
-        # the cause.
+        # the cause. A warning is an exception here if Python makes warnings errors, for
+        # example with "python -W error".
         if args.debug:
             traceback.print_exc()
         _error(str(ex))

@@ -295,6 +295,13 @@ def test_main_unexpected_error_asks_for_a_report(mocker, run_cli, args):
     assert "Traceback" not in err
 
 
+def test_main_warning_as_error_is_a_message(mock_get_mac, run_cli):
+    """With `python -W error`, a warning from the lookup is an exception."""
+    mock_get_mac.side_effect = RuntimeWarning("No methods for platform 'x'!")
+
+    assert run_cli() == (3, "", "getmac: error: No methods for platform 'x'!\n")
+
+
 @pytest.mark.parametrize("error", [RuntimeError("no methods"), OSError("boom")])
 def test_main_error_with_debug_prints_traceback(mock_get_mac, run_cli, error):
     mock_get_mac.side_effect = error
@@ -422,6 +429,10 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
         (
             ["--command-timeout", "-1.5"],
             "argument --command-timeout: must be 0 or more seconds: '-1.5'",
+        ),
+        (
+            ["--arp-timeout", "-1e-3"],
+            "argument --arp-timeout: must be 0 or more seconds: '-1e-3'",
         ),
         *(
             (
@@ -1162,6 +1173,9 @@ def test_main_timeout_has_to_be_finite(mock_get_mac, run_cli, flag, value):
         (["--override-port", "-80"], ["--override-port=-80"]),
         (["--command-timeout", "-.5"], ["--command-timeout=-.5"]),
         (["--arp-timeout", "-1e3"], ["--arp-timeout=-1e3"]),
+        (["--arp-timeout", "-1e-3"], ["--arp-timeout=-1e-3"]),
+        (["--arp-timeout", "-2.5E+1"], ["--arp-timeout=-2.5E+1"]),
+        (["--arp-timeout", "-.5e3"], ["--arp-timeout=-.5e3"]),
         (["--arp-timeout", "-inf"], ["--arp-timeout=-inf"]),
         (["--arp-timeout", "-Infinity"], ["--arp-timeout=-Infinity"]),
         (["--arp-timeout", "1"], ["--arp-timeout", "1"]),
@@ -1233,3 +1247,22 @@ def test_cli_stdout_write_error_is_one_line():
     assert proc.stderr == (
         "getmac: error: cannot write to stdout: [Errno 28] No space left on device\n"
     )
+
+
+def test_cli_warning_as_error_is_one_line():
+    # There are no ip4 methods for hp-ux, so getmac warns before it tests a method
+    args = ["-N", "-4", "192.0.2.1", "--override-platform", "hp-ux"]
+    proc = subprocess.run(
+        [sys.executable, "-W", "error", "-m", "getmac", *args],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, **NO_COLOR_ENV},
+    )
+
+    assert proc.stdout == ""
+    assert proc.stderr == (
+        "getmac: error: No methods for platform 'hp-ux'! "
+        "Your system may not be supported. Falling back to platform 'other'.\n"
+    )
+    assert proc.returncode == 3
