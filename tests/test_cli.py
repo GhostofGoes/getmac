@@ -65,6 +65,16 @@ def _restore_settings():
 
 
 @pytest.fixture(autouse=True)
+def _no_last_method(mocker):
+    """
+    Start each test without the method of an earlier lookup, and restore the value after
+    the test. `main()` and the lookup functions change `gvars.LAST_METHOD`, and the tests
+    run in a random order.
+    """
+    mocker.patch.object(gvars, "LAST_METHOD", "")
+
+
+@pytest.fixture(autouse=True)
 def mock_die_from_sigint(mocker):
     """`main()` ends the process with SIGINT on Ctrl-C. Do not let it end pytest."""
     return mocker.patch("getmac.__main__._die_from_sigint")
@@ -85,7 +95,6 @@ def run_cli(mocker, capsys):
     def _run_cli(*args: str) -> tuple[Union[int, str, None], str, str]:
         mocker.patch.object(sys, "argv", ["getmac", *args])
         mocker.patch.dict(os.environ, NO_COLOR_ENV)
-        mocker.patch.object(gvars, "LAST_METHOD", gvars.LAST_METHOD)  # main() changes this value
         root = logging.getLogger()
         orig_handlers, orig_level = root.handlers, root.level
         root.handlers = []
@@ -1066,11 +1075,6 @@ def test_main_json_empty_ip6_is_not_a_default_lookup(run_cli):
         "method": None,
         "platform": consts.PLATFORM,
     }
-
-
-def test_main_json_tests_do_not_change_last_method():
-    """The tests above set `gvars.LAST_METHOD`. They must put the original value back."""
-    assert gvars.LAST_METHOD == ""
 
 
 def test_main_json_error_prints_no_json(mock_get_mac, run_cli):
