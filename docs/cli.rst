@@ -36,7 +36,7 @@ Basic Usage
 
 Only one of ``--interface``, ``--ip``, ``--ip6``, ``--hostname``, ``--default-interface``, and ``--list-methods`` can be used at a time.
 
-Write each option in full, for example ``--interface`` and not ``--int``. If an option, a method name, or a platform name has a typo, the error suggests the closest one.
+Write each option in full, for example ``--interface`` and not ``--int``. If you write only the start of an option, the error names the options that start with it. If an option, a method name, or a platform name has a typo, the error suggests the closest one.
 
 
 .. _python-invoke:

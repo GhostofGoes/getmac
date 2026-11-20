@@ -464,7 +464,31 @@ def test_main_warnings_are_one_line(mock_get_mac, run_cli, flag):
         (["--list-methods", "-4", "10.0.0.1"], "not allowed with argument"),
         (["--bogus"], "unrecognized arguments: --bogus"),
         # getmac does not accept the start of an option (allow_abbrev=False)
-        (["--int", "eth0"], "unrecognized arguments: --int eth0"),
+        # The error suggests the option that the start belongs to, not the closest spelling
+        (
+            ["--int", "eth0"],
+            "unrecognized arguments: --int eth0 (did you mean '--interface'?)\n",
+        ),
+        (["--arp", "1"], "unrecognized arguments: --arp 1 (did you mean '--arp-timeout'?)\n"),
+        (
+            ["--override", "x"],
+            (
+                "unrecognized arguments: --override x "
+                "(did you mean '--override-port' or '--override-platform'?)\n"
+            ),
+        ),
+        (
+            ["--i=eth0"],
+            "unrecognized arguments: --i=eth0 (did you mean '--interface', '--ip' or '--ip6'?)\n",
+        ),
+        (
+            ["--override", "--interfaces"],
+            (
+                "unrecognized arguments: --override --interfaces (did you mean "
+                "'--override-port' or '--override-platform' for '--override', "
+                "'--interface' for '--interfaces'?)\n"
+            ),
+        ),
         (["--no", "-4", "10.0.0.1"], "arguments: --no (did you mean '--no-net'?)\n"),
         # Suggestions for typos
         (

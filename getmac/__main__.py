@@ -131,28 +131,54 @@ def _did_you_mean(name: str, names: Iterable[str]) -> str:
     return f" (did you mean '{closest}'?)" if closest else ""
 
 
+def _one_of(names: list[str]) -> str:
+    """Quote the names and join them, for example ``'a', 'b' or 'c'``."""
+    quoted = [f"'{name}'" for name in names]
+    if len(quoted) == 1:
+        return quoted[0]
+    return ", ".join(quoted[:-1]) + " or " + quoted[-1]
+
+
 class _ArgumentParser(argparse.ArgumentParser):
+    def _suggest(self, arg: str) -> list[str]:
+        """
+        Return the options that the user can mean with ``arg``, an option that does not
+        exist. These are the options that start with ``arg`` (for example '--interface'
+        for '--int'), or if there are none, the option with the closest spelling.
+        """
+        name = arg.split("=", 1)[0]
+        long_options = [
+            [opt for opt in action.option_strings if opt.startswith("--")]
+            for action in self._actions
+        ]
+        # One option for each action, because '--no-net' and '--no-network-requests' are
+        # the same option
+        starts = [
+            next(opt for opt in options if opt.startswith(name))
+            for options in long_options
+            if any(opt.startswith(name) for opt in options)
+        ]
+        if starts:
+            return starts
+        closest = _closest(name, [opt for options in long_options for opt in options])
+        return [closest] if closest else []
+
     def error(self, message: str) -> NoReturn:
-        """Suggest the closest option, for example '--interface' for '--interfaces'."""
+        """Suggest options for an unknown option, for example '--interface' for '--int'."""
         prefix = "unrecognized arguments: "
         if message.startswith(prefix):
-            options = [
-                opt
-                for action in self._actions
-                for opt in action.option_strings
-                if opt.startswith("--")
+            suggestions = [
+                (arg, self._suggest(arg))
+                for arg in message[len(prefix) :].split()
+                if arg.startswith("--")
             ]
-            suggestions = []
-            for arg in message[len(prefix) :].split():
-                closest = _closest(arg.split("=", 1)[0], options) if arg.startswith("--") else None
-                if closest:
-                    suggestions.append((arg, closest))
+            suggestions = [(arg, options) for arg, options in suggestions if options]
             if len(suggestions) == 1:
-                message += f" (did you mean '{suggestions[0][1]}'?)"
+                message += f" (did you mean {_one_of(suggestions[0][1])}?)"
             elif suggestions:
                 message += (
                     " (did you mean "
-                    + ", ".join(f"'{closest}' for '{arg}'" for arg, closest in suggestions)
+                    + ", ".join(f"{_one_of(options)} for '{arg}'" for arg, options in suggestions)
                     + "?)"
                 )
         super().error(message)
